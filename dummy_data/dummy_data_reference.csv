@@ -1,0 +1,70 @@
+Table,ID,Field1,Field2,Field3,Field4,Field5,Field6,Field7,Field8,Field9,Field10
+Platform_Managers,1,admin@attendanceplatform.com,$2b$10$examplehash,System Administrator,2024-01-01 10:00:00,,,,,
+Platform_Managers,2,manager@attendanceplatform.com,$2b$10$examplehash2,John Manager,2024-01-01 10:00:00,,,,,
+
+Subscription_Plans,1,Starter Plan,Perfect for small institutions getting started with automated attendance,99.99,monthly,500,50,20,"{""facial_recognition"": true, ""basic_reporting"": true, ""email_support"": true}",TRUE
+Subscription_Plans,2,Pro Plan,For medium-sized institutions,199.99,monthly,2000,200,50,"{""facial_recognition"": true, ""advanced_reporting"": true, ""priority_support"": true, ""api_access"": true}",TRUE
+Subscription_Plans,3,Enterprise Plan,For large institutions,499.99,annual,10000,500,200,"{""facial_recognition"": true, ""custom_reporting"": true, ""24/7_support"": true, ""api_access"": true, ""custom_integrations"": true}",TRUE
+
+Unregistered_Users,1,dean@university.edu,Dr. James Wilson,University of Technology,123 Education St, City,+1234567890,Interested in Starter Plan,1,approved,1
+Unregistered_Users,2,principal@college.edu,Ms. Sarah Johnson,City College,456 Learning Ave, Town,+0987654321,Need Pro Plan for 1500 students,2,pending,NULL
+
+Subscriptions,1,1,1,2024-01-01,2024-12-31,active,sub_123456789,2024-01-01 10:00:00,,
+Subscriptions,2,2,2,2024-02-01,2025-01-31,pending_payment,NULL,2024-01-01 10:00:00,,
+
+Assignments,1,1,1,1,2024-01-01 10:00:00,Approved for Starter Plan,,,,
+Assignments,2,1,2,2,2024-01-01 10:00:00,Pending payment verification,,,,
+
+Institutions,1,University of Technology,123 Education St, City,https://university.edu,1,TRUE,2024-01-01 10:00:00,,
+Institutions,2,City College,456 Learning Ave, Town,https://citycollege.edu,2,TRUE,2024-01-01 10:00:00,,
+
+Institution_Admins,1,admin@university.edu,$2b$10$examplehash,Dr. James Wilson,1,2024-01-01 10:00:00,,,,
+Institution_Admins,2,admin@college.edu,$2b$10$examplehash,Ms. Sarah Johnson,2,2024-01-01 10:00:00,,,,
+
+Venues,1,1,Lecture Hall A,Main Building,200,"{""projector"": true, ""ac"": true, ""whiteboard"": true}",TRUE,,
+Venues,2,1,Lab 101,Science Building,50,"{""computers"": 50, ""projector"": true, ""lab_equipment"": true}",TRUE,,
+Venues,3,2,Room 201,Academic Block,80,"{""projector"": true, ""speakers"": true}",TRUE,,
+
+Timetable_Slots,1,1,1,08:30:00,10:00:00,Morning Slot 1,,,,
+Timetable_Slots,2,1,1,10:15:00,11:45:00,Morning Slot 2,,,,
+Timetable_Slots,3,1,1,13:00:00,14:30:00,Afternoon Slot 1,,,,
+Timetable_Slots,4,2,2,09:00:00,10:30:00,Tuesday Morning,,,,
+
+Lecturers,1,1,prof.smith@university.edu,$2b$10$examplehash,Professor Smith,Computer Science,TRUE,,
+Lecturers,2,1,dr.jones@university.edu,$2b$10$examplehash,Dr. Jones,Mathematics,TRUE,,
+Lecturers,3,2,mr.brown@college.edu,$2b$10$examplehash,Mr. Brown,Physics,TRUE,,
+
+Courses,1,1,CS101,Introduction to Computer Science,Basic computer science concepts,3,TRUE,,
+Courses,2,1,MATH201,Calculus II,Advanced calculus topics,4,TRUE,,
+Courses,3,2,PHY101,General Physics,Fundamental physics principles,3,TRUE,,
+
+Course_Lecturers,1,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL
+Course_Lecturers,2,2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL
+Course_Lecturers,3,3,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL
+
+Students,1,1,S001,student1@university.edu,$2b$10$examplehash,John Doe,2023,TRUE,,
+Students,2,1,S002,student2@university.edu,$2b$10$examplehash,Jane Smith,2023,TRUE,,
+Students,3,1,S003,student3@university.edu,$2b$10$examplehash,Bob Johnson,2024,TRUE,,
+Students,4,2,C001,student4@college.edu,$2b$10$examplehash,Alice Williams,2023,TRUE,,
+Students,5,2,C002,student5@college.edu,$2b$10$examplehash,Charlie Brown,2024,TRUE,,
+
+Enrollments,1,1,1,2023-2024,Spring,2024-01-01,active,,,
+Enrollments,2,1,2,2023-2024,Spring,2024-01-01,active,,,
+Enrollments,3,2,1,2023-2024,Spring,2024-01-01,active,,,
+Enrollments,4,2,2,2023-2024,Spring,2024-01-01,active,,,
+Enrollments,5,3,1,2024-2025,Fall,2024-01-01,active,,,
+Enrollments,6,4,3,2023-2024,Spring,2024-01-01,active,,,
+Enrollments,7,5,3,2024-2025,Fall,2024-01-01,active,,,
+
+Sessions,1,1,1,1,1,2024-03-10,Introduction to Programming,completed,NULL,,
+Sessions,2,1,1,1,1,2024-03-11,Variables and Data Types,scheduled,NULL,,
+Sessions,3,2,2,2,2,2024-03-11,Integration Techniques,scheduled,NULL,,
+Sessions,4,3,3,3,3,2024-03-12,Newton's Laws,scheduled,NULL,,
+
+Attendance_Records,1,1,1,present,system,NULL,NULL,09:00:00,On time,2024-03-10 09:00:00
+Attendance_Records,2,1,2,late,lecturer,1,NULL,09:15:00,Arrived 15 min late,2024-03-10 09:15:00
+Attendance_Records,3,1,3,absent,system,NULL,NULL,NULL,Not present,2024-03-10 09:00:00
+Attendance_Records,4,2,1,present,system,NULL,NULL,08:30:00,Present,2024-03-11 08:30:00
+Attendance_Records,5,2,2,present,system,NULL,NULL,08:35:00,Present,2024-03-11 08:35:00
+Attendance_Records,6,3,1,present,lecturer,2,NULL,10:20:00,Attended,2024-03-11 10:20:00
+Attendance_Records,7,3,2,excused,lecturer,2,NULL,NULL,Medical leave,2024-03-11 10:20:00

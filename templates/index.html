@@ -1,0 +1,45 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Home - Attendance System{% endblock %}
+
+{% block content %}
+<div class="jumbotron bg-light p-5 rounded">
+    <h1 class="display-4">Welcome to Automated Attendance System</h1>
+    <p class="lead">A modern attendance tracking system with AI-powered features.</p>
+    <hr class="my-4">
+    <p>Track attendance, generate reports, and manage students efficiently.</p>
+    {% if not session.user %}
+        <a class="btn btn-primary btn-lg" href="{{ url_for('auth.register') }}">Get Started</a>
+        <a class="btn btn-outline-primary btn-lg" href="{{ url_for('auth.login') }}">Login</a>
+    {% else %}
+        <a class="btn btn-success btn-lg" href="{{ url_for('dashboard.dashboard') }}">Go to Dashboard</a>
+    {% endif %}
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Easy Tracking</h5>
+                <p class="card-text">Mark attendance with a single click using QR codes or facial recognition.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Real-time Reports</h5>
+                <p class="card-text">Generate attendance reports instantly for any date range.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">AI Powered</h5>
+                <p class="card-text">Leverage AI for predictive analytics and pattern recognition.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

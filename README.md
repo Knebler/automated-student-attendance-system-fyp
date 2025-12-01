@@ -7,6 +7,7 @@ A full-stack web application built for a school project demonstrates the integra
 This application showcases generative artificial intelligence capabilities. These capabilities include text summarization, content creation, or image generation. Users can interact with the AI models via a responsive interface powered by Bootstrap. All data is managed through a MySQL database, and user sessions are handled by Firebase Auth.
 
 ## Project Structure
+```
 automated-student-attendance-system/
 ├── README.md                           # Project documentation
 ├── requirements.txt                    # Python dependencies
@@ -130,9 +131,7 @@ automated-student-attendance-system/
 |── dummy_data/
 |   ├── dummy_data_reference.csv        # Shorthand dummy data for reference
 |   ├── load_dummy_data.py              # Standalone data loader script
-
-
-**Project Motivation:** 
+```
 
 ## Features
 

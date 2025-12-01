@@ -1,4 +1,4 @@
-# Project Name: Automated Student Attendance System
+# Automated Student Attendance System
 
 A full-stack web application built for a school project demonstrates the integration of generative AI within a modern, secure web environment. The project uses Python and Flask on the backend, MySQL for data storage, Bootstrap for a responsive user interface, and Firebase for authentication.
 

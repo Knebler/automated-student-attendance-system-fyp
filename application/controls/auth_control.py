@@ -48,6 +48,68 @@ class AuthControl:
                     err in error_message for err in ['INVALID_PASSWORD', 'EMAIL_NOT_FOUND']
                 ) else 'UNKNOWN'
             }
+
+    @staticmethod
+    def verify_session(app, session_obj):
+        """Verify an existing session and return user info.
+
+        This is a lightweight helper: it checks for an id_token / user_id in session
+        and attempts to load user details (User table) when present. Returns
+        a dict { success: bool, user: dict }.
+        """
+        try:
+            id_token = session_obj.get('id_token')
+            uid = session_obj.get('user_id')
+
+            if not uid or not id_token:
+                return {'success': False, 'error': 'No session present'}
+
+            # Prefer local user entry (users table) when present
+            user = None
+            try:
+                user_obj = User.get_by_firebase_uid(app, uid)
+                if user_obj:
+                    user = user_obj if isinstance(user_obj, dict) else (user_obj.to_dict() if hasattr(user_obj, 'to_dict') else None)
+            except Exception:
+                user = None
+
+            # fall back to session-stored user info
+            if not user:
+                user = session_obj.get('user')
+
+            return {'success': True, 'user': user}
+
+        except Exception as e:
+            # Any error -> mark as not authenticated
+            return {'success': False, 'error': str(e)}
+
+    @staticmethod
+    def register_user(app, email, password, name=None, role='student'):
+        """Register a new user in Firebase and create a local User record.
+
+        Returns {'success': True, 'firebase_uid': ..., 'id_token': ...} on success.
+        """
+        try:
+            firebase_auth = app.config['firebase_auth']
+            new_user = firebase_auth.create_user_with_email_and_password(email, password)
+            uid = new_user.get('localId')
+            id_token = new_user.get('idToken')
+
+            # Persist minimal user in local Users table
+            try:
+                User.create(app, {
+                    'firebase_uid': uid,
+                    'email': email,
+                    'name': name,
+                    'role': role
+                })
+            except Exception:
+                # best-effort - ignore if local create fails
+                pass
+
+            return {'success': True, 'firebase_uid': uid, 'id_token': id_token}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
     
     @staticmethod
     def get_user_by_email_and_type(app, email, user_type):

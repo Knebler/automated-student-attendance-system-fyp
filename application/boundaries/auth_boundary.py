@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, session, redirect, url_for, flash, current_app
+from flask import Blueprint, render_template, session, redirect, url_for, flash, current_app, request
 from application.controls.auth_control import AuthControl
 from application.controls.attendance_control import AttendanceControl
 
@@ -39,6 +39,59 @@ def profile():
         return redirect(url_for('auth.login'))
     
     return render_template('profile.html', user=auth_result['user'])
+
+
+@auth_bp.route('/login', methods=['GET', 'POST'])
+def login():
+    """Login route (GET shows form, POST authenticates)"""
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        user_type = request.form.get('role') or request.form.get('user_type') or 'student'
+
+        auth_result = AuthControl.authenticate_user(current_app, email, password, user_type=user_type)
+        if auth_result.get('success'):
+            # store minimal session state
+            session['user_id'] = auth_result.get('firebase_uid')
+            session['id_token'] = auth_result.get('id_token')
+            session['user_type'] = auth_result.get('user_type', user_type)
+            session['user'] = auth_result.get('user')
+            flash('Logged in successfully', 'success')
+            return redirect(url_for('dashboard.dashboard'))
+
+        flash(auth_result.get('error', 'Login failed'), 'danger')
+
+    return render_template('auth/login.html')
+
+
+@auth_bp.route('/register', methods=['GET', 'POST'])
+def register():
+    """User registration (creates Firebase user + local profile)."""
+    if request.method == 'POST':
+        name = request.form.get('name')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        role = request.form.get('role', 'student')
+
+        result = AuthControl.register_user(current_app, email, password, name=name, role=role)
+        if result.get('success'):
+            session['user_id'] = result.get('firebase_uid')
+            session['id_token'] = result.get('id_token')
+            session['user_type'] = role
+            session['user'] = {'email': email, 'name': name, 'role': role}
+            flash('Registration successful — you are now logged in', 'success')
+            return redirect(url_for('dashboard.dashboard'))
+
+        flash(result.get('error', 'Registration failed'), 'danger')
+
+    return render_template('auth/register.html')
+
+
+@auth_bp.route('/logout')
+def logout():
+    session.clear()
+    flash('You have been logged out', 'info')
+    return redirect(url_for('main.home'))
 
 @auth_bp.route('/attendance-history')
 def attendance_history():

@@ -4,7 +4,7 @@ A full-stack web application built for a school project demonstrates the integra
 
 ## Overview
 
-This application showcases generative artificial intelligence capabilities. These capabilities include text summarization, content creation, or image generation. Users can interact with the AI models via a responsive interface powered by Bootstrap. All data is managed through a MySQL database, and user sessions are handled by Firebase Auth.
+This application showcases generative artificial intelligence capabilities with a focus on Facial Recognition. Users should use this system for their educational institute entirely for attendance taking purposes. Our application allows for a seamless integration experience with any educational institute's operations as the application's primary interface is Web-based. All data is managed through a MySQL database, and user sessions are handled by Firebase Auth.
 
 ## Project Structure
 ```

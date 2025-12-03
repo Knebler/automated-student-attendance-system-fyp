@@ -40,13 +40,21 @@ class AuthControl:
         except Exception as e:
             error_message = str(e)
             print(f"Authentication error: {error_message}")
-            
+            # Map common Firebase auth error codes/messages to friendly types
+            err_type = 'UNKNOWN'
+            friendly = error_message
+            lower = error_message.lower()
+            if 'invalid_password' in lower or 'invalid password' in lower:
+                err_type = 'INVALID_CREDENTIALS'
+                friendly = 'Incorrect password. Please try again.'
+            elif 'email_not_found' in lower or 'email not found' in lower:
+                err_type = 'INVALID_CREDENTIALS'
+                friendly = 'No account found for this email.'
+
             return {
                 'success': False,
-                'error': error_message,
-                'error_type': 'INVALID_CREDENTIALS' if any(
-                    err in error_message for err in ['INVALID_PASSWORD', 'EMAIL_NOT_FOUND']
-                ) else 'UNKNOWN'
+                'error': friendly,
+                'error_type': err_type
             }
 
     @staticmethod
@@ -109,7 +117,22 @@ class AuthControl:
 
             return {'success': True, 'firebase_uid': uid, 'id_token': id_token}
         except Exception as e:
-            return {'success': False, 'error': str(e)}
+            # Try to parse firebase error codes from the exception message
+            msg = str(e)
+            error_type = 'UNKNOWN'
+            if 'EMAIL_EXISTS' in msg or 'email exists' in msg.lower():
+                error_type = 'EMAIL_EXISTS'
+                friendly = 'Email already registered'
+            elif 'INVALID_EMAIL' in msg or 'invalid email' in msg.lower():
+                error_type = 'INVALID_EMAIL'
+                friendly = 'Provided email is invalid'
+            elif 'WEAK_PASSWORD' in msg or 'password' in msg.lower():
+                error_type = 'WEAK_PASSWORD'
+                friendly = 'Password does not meet strength requirements'
+            else:
+                friendly = msg
+
+            return {'success': False, 'error': friendly, 'error_type': error_type}
     
     @staticmethod
     def get_user_by_email_and_type(app, email, user_type):

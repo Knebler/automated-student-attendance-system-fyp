@@ -64,3 +64,4 @@ typing_extensions == 4.15.0
 uritemplate == 4.2.0
 urllib3 == 1.26.20
 Werkzeug == 3.0.1
+Flask-WTF == 1.2.2

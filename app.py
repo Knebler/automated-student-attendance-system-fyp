@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask_wtf import CSRFProtect
 import pyrebase
 from application import create_app
 import os
@@ -18,6 +19,10 @@ def create_flask_app(config_name='default'):
     
     # Initialize SQLAlchemy
     db = SQLAlchemy(app)
+
+    # Initialize CSRF protection for forms
+    csrf = CSRFProtect()
+    csrf.init_app(app)
     
     # Configure Firebase
     firebase_config = {

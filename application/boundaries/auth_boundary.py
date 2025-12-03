@@ -49,7 +49,13 @@ def login():
         password = request.form.get('password')
         user_type = request.form.get('role') or request.form.get('user_type') or 'student'
 
-        auth_result = AuthControl.authenticate_user(current_app, email, password, user_type=user_type)
+        try:
+            auth_result = AuthControl.authenticate_user(current_app, email, password, user_type=user_type)
+        except Exception as e:
+            current_app.logger.exception('Login exception')
+            flash('Internal error while attempting to authenticate. Try again later.', 'danger')
+            return render_template('auth/login.html')
+
         if auth_result.get('success'):
             # store minimal session state
             session['user_id'] = auth_result.get('firebase_uid')
@@ -82,7 +88,15 @@ def register():
             flash('Registration successful — you are now logged in', 'success')
             return redirect(url_for('dashboard.dashboard'))
 
-        flash(result.get('error', 'Registration failed'), 'danger')
+        # Show friendly error messages from AuthControl.register_user
+        if not result.get('success'):
+            err = result.get('error') or 'Registration failed'
+            if result.get('error_type') == 'EMAIL_EXISTS':
+                flash('That email is already registered. Try logging in instead.', 'warning')
+            elif result.get('error_type') == 'WEAK_PASSWORD':
+                flash('The password is too weak. Use a stronger password.', 'warning')
+            else:
+                flash(err, 'danger')
 
     return render_template('auth/register.html')
 

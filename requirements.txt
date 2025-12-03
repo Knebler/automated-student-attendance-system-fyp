@@ -49,6 +49,7 @@ PyJWT == 2.10.1
 PyMySQL == 1.1.2
 pyparsing == 3.2.5
 Pyrebase4 == 4.8.0
+pytest == 9.0.1
 python-dateutil == 2.8.2
 python-dotenv == 1.0.0
 python-jwt == 4.1.0

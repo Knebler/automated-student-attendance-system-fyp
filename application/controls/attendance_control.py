@@ -37,6 +37,30 @@ class AttendanceControl:
                 'success': False,
                 'error': str(e)
             }
+
+
+# Register dev actions for querying attendance
+try:
+    from application.boundaries.dev_actions import register_action
+
+    register_action(
+        'get_session_attendance',
+        AttendanceControl.get_session_attendance,
+        params=[{'name': 'session_id', 'label': 'Session ID', 'placeholder': 'e.g. 123'}],
+        description='Get attendance records for a session (dev-only)'
+    )
+
+    register_action(
+        'get_student_attendance_summary',
+        AttendanceControl.get_student_attendance_summary,
+        params=[
+            {'name': 'student_id', 'label': 'Student ID', 'placeholder': 'e.g. 456'},
+            {'name': 'days', 'label': 'Days', 'placeholder': 'Number of days to summarize (default 30)'}
+        ],
+        description='Get attendance summary for a student'
+    )
+except Exception:
+    pass
     
     @staticmethod
     def get_session_attendance(app, session_id):

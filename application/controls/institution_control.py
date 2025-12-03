@@ -32,6 +32,30 @@ class InstitutionControl:
                 'success': False,
                 'error': str(e)
             }
+
+
+# Expose useful dev actions for institution management
+try:
+    from application.boundaries.dev_actions import register_action
+
+    register_action(
+        'create_institution',
+        InstitutionControl.create_institution,
+        params=[
+            {'name': 'institution_data', 'label': 'Institution JSON', 'placeholder': '{"name":"My Inst","address":"..."}'},
+            {'name': 'subscription_id', 'label': 'Subscription ID', 'placeholder': 'Plan id or subscription id'}
+        ],
+        description='Create a new institution with subscription (dev only)'
+    )
+
+    register_action(
+        'get_institution_stats',
+        InstitutionControl.get_institution_stats,
+        params=[{'name': 'institution_id', 'label': 'Institution ID', 'placeholder': 'e.g. 1'}],
+        description='Get basic stats for an institution (dev only)'
+    )
+except Exception:
+    pass
     
     @staticmethod
     def get_institution_stats(app, institution_id):

@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, session, redirect, url_for, flash, current_app, request
 from application.controls.auth_control import AuthControl
 from application.controls.attendance_control import AttendanceControl
+from application.boundaries.dev_actions import register_action
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -127,3 +128,28 @@ def attendance_history():
     else:
         flash('Failed to load attendance history', 'danger')
         return redirect(url_for('dashboard.dashboard'))
+
+
+        # Dev-exposable auth actions (register + authenticate)
+        register_action(
+            'register_user',
+            AuthControl.register_user,
+            params=[
+                {'name': 'email', 'label': 'Email', 'placeholder': 'email@example.com'},
+                {'name': 'password', 'label': 'Password', 'placeholder': 'min 6 chars'},
+                {'name': 'name', 'label': 'Full name', 'placeholder': 'Optional display name'},
+                {'name': 'role', 'label': 'Role', 'placeholder': 'student | lecturer | platform_manager'}
+            ],
+            description='Create a Firebase user and a local user record (dev use only)'
+        )
+
+        register_action(
+            'authenticate_user',
+            AuthControl.authenticate_user,
+            params=[
+                {'name': 'email', 'label': 'Email', 'placeholder': 'email@example.com'},
+                {'name': 'password', 'label': 'Password', 'placeholder': 'password'},
+                {'name': 'user_type', 'label': 'User type', 'placeholder': 'student | lecturer | platform_manager'}
+            ],
+            description='Authenticate a user via Firebase (dev only)'
+        )

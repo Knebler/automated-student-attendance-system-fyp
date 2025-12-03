@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, session, current_app
 from application.controls.auth_control import AuthControl
 from application.controls.attendance_control import AttendanceControl
+from application.boundaries.dev_actions import register_action
 from datetime import datetime
 
 attendance_bp = Blueprint('attendance', __name__)
@@ -103,3 +104,19 @@ def get_daily_report():
     result = AttendanceControl.get_daily_report(current_app, report_date)
     
     return jsonify(result)
+
+
+# expose a dev action for marking attendance (for testing)
+register_action(
+    'mark_attendance',
+    AttendanceControl.mark_attendance,
+    params=[
+        {'name': 'session_id', 'label': 'Session ID', 'placeholder': 'e.g. 123'},
+        {'name': 'student_id', 'label': 'Student ID', 'placeholder': 'e.g. 456'},
+        {'name': 'status', 'label': 'Status', 'placeholder': 'present | absent | late | excused'},
+        {'name': 'marked_by', 'label': 'Marked By', 'placeholder': 'system | lecturer_id'},
+        {'name': 'lecturer_id', 'label': 'Lecturer ID', 'placeholder': 'optional'},
+        {'name': 'notes', 'label': 'Notes', 'placeholder': 'optional notes'},
+    ],
+    description='Mark attendance as present/absent for a student (dev only)'
+)

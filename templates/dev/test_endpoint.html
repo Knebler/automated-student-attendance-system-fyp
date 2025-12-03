@@ -12,14 +12,62 @@
 
         <form method="POST" action="{{ url_for('dev.test_endpoint') }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
           <div class="mb-3">
-            <label for="message" class="form-label">Message (plain text)</label>
-            <textarea class="form-control" id="message" name="message" rows="6"></textarea>
+            <label for="action" class="form-label">Action</label>
+            <select id="action" name="action" class="form-select">
+              {% for a in actions %}
+                <option value="{{ a.name }}">{{ a.name }}{% if a.description %} — {{ a.description }}{% endif %}</option>
+              {% endfor %}
+            </select>
           </div>
+
+          {% for a in actions %}
+          <div class="mb-3 action-field action-{{ a.name }}{% if not loop.first %} d-none{% endif %}">
+            {% if a.params %}
+              {% for p in a.params %}
+                <div class="mb-3">
+                  <label for="{{ p.name }}" class="form-label">{{ p.label or p.name }}</label>
+                  {% if p.name == 'message' or p.name == 'notes' or p.name.endswith('text') or p.get('multiline') %}
+                    <textarea id="{{ p.name }}" name="{{ p.name }}" class="form-control" rows="3" placeholder="{{ p.placeholder or '' }}"></textarea>
+                  {% elif p.get('type') == 'password' or p.name == 'password' %}
+                    <input id="{{ p.name }}" name="{{ p.name }}" class="form-control" type="password" placeholder="{{ p.placeholder or '' }}" />
+                  {% else %}
+                    <input id="{{ p.name }}" name="{{ p.name }}" class="form-control" placeholder="{{ p.placeholder or '' }}" />
+                  {% endif %}
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="mb-3">
+                <label class="form-label">No parameters</label>
+                <div class="text-muted small">This action does not require any input.</div>
+              </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+
           <div class="d-grid gap-2">
             <button type="submit" class="btn btn-primary">Send</button>
           </div>
         </form>
+
+        <script>
+          (function(){
+            var actionSelect = document.getElementById('action');
+            function updateFields(){
+              var choice = actionSelect.value;
+              // hide all action-field elements
+              var all = document.querySelectorAll('.action-field');
+              all.forEach(function(el){ el.classList.add('d-none'); });
+              // show the ones for this action and any generic ones matching multiple classes
+                var targets = document.querySelectorAll('.action-' + choice);
+              targets.forEach(function(el){ el.classList.remove('d-none'); });
+            }
+            actionSelect.addEventListener('change', updateFields);
+            // initial update
+            updateFields();
+          })();
+        </script>
 
         <hr>
         <p class="text-muted small">Note: this page is meant for development/testing only. Do not expose in production.</p>

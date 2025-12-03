@@ -5,7 +5,7 @@ from .institution import Institution
 from .course import Course
 from .lecturer import Lecturer
 from .student import Student
-#from .enrollment import Enrollment
+from .enrollment import Enrollment
 from .session import Session
 from .platform_manager import PlatformManager
 from .subscription_plan import SubscriptionPlan

@@ -65,6 +65,41 @@ class DatabaseControl:
             return count > 0
         except:
             return False
+
+    @staticmethod
+    def check_database_connection(app):
+        """Check whether the configured database is reachable.
+
+        Returns a dict { success: bool, message: str }.
+        Tries SQLAlchemy engine (app.config['db']) first, then falls back to
+        traditional mysql connector (app.config['mysql']) if present.
+        """
+        try:
+            # prefer SQLAlchemy session/engine if available
+            db = app.config.get('db')
+            if db is not None:
+                # run a lightweight query
+                try:
+                    session = db.session
+                    session.execute('SELECT 1')
+                    return {'success': True, 'message': 'ok'}
+                except Exception as e:
+                    return {'success': False, 'message': str(e)}
+
+            # fallback to mysql connector
+            mysql = app.config.get('mysql')
+            if mysql is not None:
+                try:
+                    cursor = mysql.connection.cursor()
+                    cursor.execute('SELECT 1')
+                    cursor.close()
+                    return {'success': True, 'message': 'ok'}
+                except Exception as e:
+                    return {'success': False, 'message': str(e)}
+
+            return {'success': False, 'message': 'no-database-configured'}
+        except Exception as e:
+            return {'success': False, 'message': str(e)}
     
     @staticmethod
     def insert_sample_data(app):
@@ -99,3 +134,26 @@ class DatabaseControl:
         
         app.config['mysql'].connection.commit()
         cursor.close()
+
+
+# Dev actions expose database helpers for testing
+try:
+    # lazy import so this module still loads when dev_actions isn't available
+    from application.boundaries.dev_actions import register_action
+
+    register_action(
+        'check_table_has_data',
+        DatabaseControl.check_table_has_data,
+        params=[{'name': 'table_name', 'label': 'Table name', 'placeholder': 'e.g. Students'}],
+        description='Return whether a given table contains any rows (dev only)'
+    )
+
+    register_action(
+        'insert_sample_data',
+        DatabaseControl.insert_sample_data,
+        params=[],
+        description='Insert sample data into the database (dev only)'
+    )
+except Exception:
+    # dev_actions may not be importable in production or tests — ignore
+    pass

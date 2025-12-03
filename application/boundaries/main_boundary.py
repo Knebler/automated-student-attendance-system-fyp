@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, current_app
 from application.controls.database_control import DatabaseControl
+from application.boundaries.dev_actions import register_action
 import datetime
 
 main_bp = Blueprint('main', __name__)
@@ -32,5 +33,14 @@ def health_check():
     return {
         'status': 'ok' if db_result['success'] else 'error',
         'database': db_result['message'],
-        'timestamp': datetime.now().isoformat()
+        'timestamp': datetime.datetime.now().isoformat()
     }
+
+
+# register a dev action for initializing the DB (callable will be invoked with app)
+register_action(
+    'init_database',
+    DatabaseControl.initialize_database,
+    params=[],
+    description='Create tables and sample data'
+)

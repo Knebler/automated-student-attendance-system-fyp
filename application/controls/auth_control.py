@@ -231,3 +231,28 @@ class AuthControl:
                 'success': False,
                 'error': str(e)
             }
+
+
+# Expose some auth helpers as dev actions when available
+try:
+    from application.boundaries.dev_actions import register_action
+
+    register_action(
+        'get_user_by_email_and_type',
+        AuthControl.get_user_by_email_and_type,
+        params=[
+            {'name': 'email', 'label': 'Email', 'placeholder': 'email@example.com'},
+            {'name': 'user_type', 'label': 'User type', 'placeholder': 'student | lecturer | platform_manager'}
+        ],
+        description='Lookup a user by email and type (dev only)'
+    )
+
+    register_action(
+        'register_institution',
+        AuthControl.register_institution,
+        params=[{'name': 'institution_data', 'label': 'Institution JSON', 'placeholder': '{"email":"x","institution_name":"..."}'}],
+        description='Submit an institution registration request (dev only)'
+    )
+except Exception:
+    # dev_actions not available in non-dev environments
+    pass

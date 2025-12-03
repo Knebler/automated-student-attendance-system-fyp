@@ -59,7 +59,8 @@ automated-student-attendance-system/
 │   │   ├── attendance_boundary.py      # Attendance-related routes
 │   │   ├── dashboard_boundary.py       # Dashboard routes for all user types
 │   │   ├── institution_boundary.py     # Institution management routes
-│   │   └── admin_boundary.py           # Platform admin routes
+│   │   ├── admin_boundary.py           # Platform admin routes
+│   │   └── dev_boundary.py             # Developer route
 │   │
 │   └── controls/                       # Business Logic (Controls)
 │       ├── __init__.py                 # Import all controls
@@ -114,6 +115,9 @@ automated-student-attendance-system/
 │   │   ├── footer.html                 # Footer
 │   │   ├── sidebar.html                # Sidebar for dashboards
 │   │   └── alerts.html                 # Alert messages
+│   │
+│   ├── dev/                            # Developer-only pages
+│   │   └── test_endpoint.html          # Endpoint testing page
 │   │
 │   └── index.html                      # Home page
 │
@@ -189,7 +193,14 @@ Follow these instructions to get the project running.
     mysql -u root -p < schema.sql
 
 6.  **Running the Application**
-    Run app.py and go to http://localhost:5000
+        Run app.py and go to http://localhost:5000
+
+### Dev helper endpoint
+For local development there is a small developer-only testing page that accepts a plain-text message (POST) and returns it as text/plain so you can quickly verify basic endpoint behavior or echo request bodies. Visit:
+
+    - GET/POST /dev/test-endpoint
+
+This endpoint is intended for development only and should not be exposed in production.
 
 ### Contribution Areas
  *  "application" folder is for anything backend related

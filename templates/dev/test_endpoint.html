@@ -1,0 +1,31 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Dev: Test Endpoint{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header"><strong>Dev — Test Endpoint</strong></div>
+      <div class="card-body">
+        <p>Use this page to POST a message and receive it back as plain text. Useful for quick endpoint testing.</p>
+
+        <form method="POST" action="{{ url_for('dev.test_endpoint') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="mb-3">
+            <label for="message" class="form-label">Message (plain text)</label>
+            <textarea class="form-control" id="message" name="message" rows="6"></textarea>
+          </div>
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary">Send</button>
+          </div>
+        </form>
+
+        <hr>
+        <p class="text-muted small">Note: this page is meant for development/testing only. Do not expose in production.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

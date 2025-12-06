@@ -1,0 +1,505 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Testimonials - AttendAI{% endblock %}
+
+{% block content %}
+<style>
+    /* Page Header */
+    .page-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding: 2rem 0;
+    }
+
+    .page-header h1 {
+        font-size: 2.5rem;
+        color: var(--text-dark);
+        margin-bottom: 1rem;
+        font-weight: bold;
+    }
+
+    .page-header p {
+        font-size: 1.1rem;
+        color: var(--text-light);
+        max-width: 800px;
+        margin: 0 auto;
+        line-height: 1.6;
+    }
+
+    /* Testimonials Grid */
+    .testimonials-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+        margin: 3rem 0;
+    }
+
+    .testimonial-card {
+        border: 2px solid var(--border-color);
+        border-radius: 16px;
+        padding: 2rem;
+        min-height: 320px;
+        display: flex;
+        flex-direction: column;
+        background-color: white;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .testimonial-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .testimonial-quote {
+        font-size: 2.5rem;
+        color: var(--primary-light);
+        position: absolute;
+        top: 1rem;
+        left: 1.5rem;
+        opacity: 0.3;
+        font-family: Georgia, serif;
+    }
+
+    .testimonial-content {
+        flex: 1;
+        margin-top: 2rem;
+    }
+
+    .testimonial-text {
+        font-size: 1rem;
+        color: var(--text-dark);
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+        font-style: italic;
+    }
+
+    .testimonial-author {
+        margin-top: auto;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--primary-light);
+    }
+
+    .author-name {
+        font-weight: bold;
+        color: var(--text-dark);
+        font-size: 1.1rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .author-role {
+        color: var(--text-light);
+        font-size: 0.9rem;
+    }
+
+    .author-organization {
+        color: var(--text-dark);
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    /* Ratings */
+    .testimonial-rating {
+        display: flex;
+        gap: 0.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .star {
+        color: #fbbf24;
+        font-size: 1.2rem;
+    }
+
+    /* Stats Section */
+    .stats-section {
+        background-color: var(--primary-light);
+        border: 2px solid var(--border-color);
+        border-radius: 16px;
+        padding: 3rem 2rem;
+        margin: 4rem 0;
+        text-align: center;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 2rem;
+    }
+
+    .stat-item h3 {
+        font-size: 2.5rem;
+        color: var(--text-dark);
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-item p {
+        color: var(--text-dark);
+        font-size: 1rem;
+    }
+
+    /* Trust Indicators */
+    .trust-section {
+        text-align: center;
+        margin: 4rem 0;
+    }
+
+    .trust-section h2 {
+        font-size: 2rem;
+        color: var(--text-dark);
+        margin-bottom: 2rem;
+        font-weight: bold;
+    }
+
+    .trust-logos {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 3rem;
+        flex-wrap: wrap;
+    }
+
+    .trust-logo {
+        font-size: 1.5rem;
+        color: var(--text-light);
+        font-weight: bold;
+        padding: 1rem 2rem;
+        border: 2px solid var(--border-color);
+        border-radius: 10px;
+        background-color: white;
+        min-width: 150px;
+        text-align: center;
+    }
+
+    /* Video Testimonials */
+    .video-section {
+        margin: 4rem 0;
+    }
+
+    .video-section h2 {
+        text-align: center;
+        font-size: 2rem;
+        color: var(--text-dark);
+        margin-bottom: 2rem;
+        font-weight: bold;
+    }
+
+    .video-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+    }
+
+    .video-card {
+        border: 2px solid var(--border-color);
+        border-radius: 16px;
+        padding: 2rem;
+        background-color: var(--primary-light);
+        text-align: center;
+    }
+
+    .video-placeholder {
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--text-dark);
+        color: white;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        font-size: 1.2rem;
+    }
+
+    .video-card h3 {
+        font-size: 1.25rem;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+        font-weight: bold;
+    }
+
+    /* CTA Section */
+    .cta-section {
+        text-align: center;
+        margin: 4rem 0;
+        padding: 3rem;
+        background-color: var(--primary-light);
+        border-radius: 16px;
+        border: 2px solid var(--border-color);
+    }
+
+    .cta-section h2 {
+        font-size: 2rem;
+        color: var(--text-dark);
+        margin-bottom: 1rem;
+        font-weight: bold;
+    }
+
+    .cta-section p {
+        font-size: 1.1rem;
+        color: var(--text-dark);
+        margin-bottom: 2rem;
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* Responsive */
+    @media (max-width: 1100px) {
+        .testimonials-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .testimonials-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+        }
+
+        .stats-section {
+            padding: 2rem 1.5rem;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        .trust-logos {
+            gap: 1rem;
+        }
+
+        .trust-logo {
+            min-width: 120px;
+            padding: 0.75rem 1rem;
+        }
+
+        .video-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .cta-section {
+            padding: 2rem 1.5rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .testimonial-card {
+            padding: 1.5rem;
+            min-height: 280px;
+        }
+
+        .page-header h1 {
+            font-size: 1.75rem;
+        }
+
+        .stat-item h3 {
+            font-size: 2rem;
+        }
+    }
+</style>
+
+<!-- Page Header -->
+<div class="page-header">
+    <h1>What Our Customers Say</h1>
+    <p>Join thousands of educational institutions and businesses that trust AttendAI for their attendance management needs. Here's what they have to say about their experience.</p>
+</div>
+
+<!-- Testimonials Grid -->
+<div class="testimonials-grid">
+    <!-- Testimonial 1 -->
+    <div class="testimonial-card card-custom">
+        <div class="testimonial-quote">"</div>
+        <div class="testimonial-rating">
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+        </div>
+        <div class="testimonial-content">
+            <p class="testimonial-text">"AttendAI has completely transformed how we track attendance. What used to take 2 hours daily now takes 10 minutes. The AI face recognition is incredibly accurate and has eliminated proxy attendance entirely."</p>
+            <div class="testimonial-author">
+                <div class="author-name">Dr. Sarah Johnson</div>
+                <div class="author-role">Dean of Students</div>
+                <div class="author-organization">University of Technology</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Testimonial 2 -->
+    <div class="testimonial-card card-custom">
+        <div class="testimonial-quote">"</div>
+        <div class="testimonial-rating">
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+        </div>
+        <div class="testimonial-content">
+            <p class="testimonial-text">"The real-time analytics dashboard is a game-changer. We can now identify at-risk students weeks before exams and provide timely interventions. Attendance rates have improved by 23% since implementation."</p>
+            <div class="testimonial-author">
+                <div class="author-name">Michael Chen</div>
+                <div class="author-role">IT Director</div>
+                <div class="author-organization">Global Business School</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Testimonial 3 -->
+    <div class="testimonial-card card-custom">
+        <div class="testimonial-quote">"</div>
+        <div class="testimonial-rating">
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+        </div>
+        <div class="testimonial-content">
+            <p class="testimonial-text">"Implementation was seamless, and their support team was incredibly helpful throughout the process. The ROI was apparent within the first month. We've saved over 200 administrative hours this semester alone."</p>
+            <div class="testimonial-author">
+                <div class="author-name">Robert Williams</div>
+                <div class="author-role">Principal</div>
+                <div class="author-organization">Metropolitan High School</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Testimonial 4 -->
+    <div class="testimonial-card card-custom">
+        <div class="testimonial-quote">"</div>
+        <div class="testimonial-rating">
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+        </div>
+        <div class="testimonial-content">
+            <p class="testimonial-text">"As a corporate training center, we needed a reliable system for tracking employee participation. AttendAI's integration with our HR system was flawless, and the reporting features are exactly what we needed."</p>
+            <div class="testimonial-author">
+                <div class="author-name">Lisa Martinez</div>
+                <div class="author-role">HR Director</div>
+                <div class="author-organization">TechCorp Solutions</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Testimonial 5 -->
+    <div class="testimonial-card card-custom">
+        <div class="testimonial-quote">"</div>
+        <div class="testimonial-rating">
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+        </div>
+        <div class="testimonial-content">
+            <p class="testimonial-text">"The mobile app integration has been a huge hit with our students. QR code check-ins are fast and convenient. Parents love the automatic notifications about their child's attendance."</p>
+            <div class="testimonial-author">
+                <div class="author-name">David Kim</div>
+                <div class="author-role">Technology Coordinator</div>
+                <div class="author-organization">International Academy</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Testimonial 6 -->
+    <div class="testimonial-card card-custom">
+        <div class="testimonial-quote">"</div>
+        <div class="testimonial-rating">
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+        </div>
+        <div class="testimonial-content">
+            <p class="testimonial-text">"We evaluated 5 different attendance systems, and AttendAI stood out for its user-friendly interface and powerful features. The predictive analytics have helped us improve student retention significantly."</p>
+            <div class="testimonial-author">
+                <div class="author-name">Amanda Wilson</div>
+                <div class="author-role">Academic Dean</div>
+                <div class="author-organization">Community College District</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Section -->
+<div class="stats-section">
+    <h2 style="font-size: 2rem; color: var(--text-dark); margin-bottom: 2rem;">Trusted by Organizations Worldwide</h2>
+    <div class="stats-grid">
+        <div class="stat-item">
+            <h3>500+</h3>
+            <p>Educational Institutions</p>
+        </div>
+        <div class="stat-item">
+            <h3>98%</h3>
+            <p>Customer Satisfaction</p>
+        </div>
+        <div class="stat-item">
+            <h3>250K+</h3>
+            <p>Students & Employees</p>
+        </div>
+        <div class="stat-item">
+            <h3>23%</h3>
+            <p>Avg. Attendance Increase</p>
+        </div>
+    </div>
+</div>
+
+<!-- Trust Indicators -->
+<div class="trust-section">
+    <h2>Trusted By Leading Organizations</h2>
+    <div class="trust-logos">
+        <div class="trust-logo">UNIVERSITY</div>
+        <div class="trust-logo">TECH CORP</div>
+        <div class="trust-logo">EDU GROUP</div>
+        <div class="trust-logo">GLOBAL INC</div>
+    </div>
+</div>
+
+<!-- Video Testimonials -->
+<div class="video-section">
+    <h2>Video Testimonials</h2>
+    <div class="video-grid">
+        <div class="video-card card-custom">
+            <div class="video-placeholder">
+                ▶ University Case Study
+            </div>
+            <h3>University Implementation Success</h3>
+            <p>See how a major university improved attendance tracking efficiency by 85%</p>
+        </div>
+        <div class="video-card card-custom">
+            <div class="video-placeholder">
+                ▶ Corporate Training Review
+            </div>
+            <h3>Corporate Training Transformation</h3>
+            <p>Learn how TechCorp integrated AttendAI with their HR systems</p>
+        </div>
+    </div>
+</div>
+
+<!-- CTA Section -->
+<div class="cta-section">
+    <h2>Join Our Satisfied Customers</h2>
+    <p>See for yourself why thousands of organizations trust AttendAI for their attendance management needs. Start your free trial today and experience the difference.</p>
+    {% if not session.user %}
+        <a class="btn-custom" href="{{ url_for('auth.register') }}" style="margin-right: 1rem;">Start Free Trial</a>
+        <a class="btn-custom btn-outline-custom" href="{{ url_for('main.subscriptions') }}">View Pricing</a>
+    {% else %}
+        <a class="btn-custom" href="{{ url_for('dashboard.dashboard') }}" style="margin-right: 1rem;">Go to Dashboard</a>
+        <a class="btn-custom btn-outline-custom" href="{{ url_for('main.features') }}">Explore Features</a>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,7 @@
+Platform Manager: admin@attendanceplatform.com / password
+
+Institution Admin: admin@university.edu / password
+
+Lecturer: prof.smith@university.edu / password
+
+Student: student1@university.edu / password

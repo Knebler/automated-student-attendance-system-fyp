@@ -1,10 +1,10 @@
-# Automated Student Attendance System
+# AttendAI (Automated Student Attendance System)
 
-A full-stack web application built for a school project demonstrates the integration of generative AI within a modern, secure web environment. The project uses Python and Flask on the backend, MySQL for data storage, Bootstrap for a responsive user interface, and Firebase for authentication.
+A full-stack web application built as a school project which aims to demonstrate the integration of generative AI within a modern, secure web environment. The project uses Python and Flask on the backend, MySQL for data storage, Bootstrap for a responsive user interface, and Firebase for authentication.
 
 ## Overview
 
-This application showcases generative artificial intelligence capabilities with a focus on Facial Recognition. Users should use this system for their educational institute entirely for attendance taking purposes. Our application allows for a seamless integration experience with any educational institute's operations as the application's primary interface is Web-based. All data is managed through a MySQL database, and user sessions are handled by Firebase Auth.
+This application showcases generative artificial intelligence capabilities with a focus on Facial Recognition. Users should use this system for their educational institute entirely for attendance taking purposes. Our application allows for a seamless integration experience with any educational institute's operations as the application's primary interface is Web-based. All data is managed through a MySQL database, and user sessions are handled by Firebase Authentication.
 
 ## Project Structure
 ```
@@ -193,7 +193,7 @@ Follow these instructions to get the project running.
     mysql -u root -p < schema.sql
 
 6.  **Running the Application**
-        Run app.py and go to http://localhost:5000
+        Run app.py and go to http://localhost:5000 / http://127.0.0.1:5000 / http://192.168.18.64:5000
 
 ### Dev helper endpoint
 For local development there is a small developer-only testing page that accepts a plain-text message (POST) and returns it as text/plain so you can quickly verify basic endpoint behavior or echo request bodies. Visit:
@@ -208,4 +208,4 @@ This endpoint is intended for development only and should not be exposed in prod
  *  "templates" folder is for anything frontend related
  *  "static" folder is for anything frontend related in styles
 
-This file will be updated when message standards are consolidated for testing.
+This file will be updated when message standards are consolidated.

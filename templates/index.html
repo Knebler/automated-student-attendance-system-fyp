@@ -182,7 +182,7 @@
             background: linear-gradient(
                 to right,
                 rgba(0, 22, 65, 0.9),
-                rgba(0, 51, 255, 0.8)
+                rgba(0, 22, 65, 0.3)
             );
         }
 
@@ -650,7 +650,7 @@
         Join hundreds of institutions already benefiting from AI-powered
         attendance tracking.
     </p>
-    {% if not session.user %}
+    <!-- {% if not session.user %} -->
         <a class="btn-custom"
            href="{{ url_for('auth.register') }}"
            style="margin-right: 0.75rem;">
@@ -660,7 +660,7 @@
            href="{{ url_for('main.subscriptions') }}">
             View Pricing
         </a>
-    {% else %}
+    <!-- {% else %} -->
         <a class="btn-custom"
            href="{{ url_for('dashboard.dashboard') }}"
            style="margin-right: 0.75rem;">
@@ -670,7 +670,7 @@
            href="{{ url_for('main.features') }}">
             Explore Features
         </a>
-    {% endif %}
+    <!-- {% endif %} -->
 </div>
 
 <script>

@@ -1,0 +1,450 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Subscription Plans - AttendAI{% endblock %}
+
+{% block content %}
+<style>
+    /* Page Header */
+    .page-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding: 2rem 0;
+    }
+
+    .page-header h1 {
+        font-size: 2.5rem;
+        color: var(--text-dark);
+        margin-bottom: 1rem;
+        font-weight: bold;
+    }
+
+    .page-header p {
+        font-size: 1.1rem;
+        color: var(--text-light);
+        max-width: 800px;
+        margin: 0 auto;
+        line-height: 1.6;
+    }
+
+    /* Plans Grid */
+    .plans-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+        margin: 3rem 0;
+    }
+
+    .plan-card {
+        border: 2px solid var(--border-color);
+        border-radius: 15px;
+        padding: 2rem;
+        min-height: 600px;
+        display: flex;
+        flex-direction: column;
+        background-color: white;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .plan-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .plan-card.popular {
+        border-color: #059669;
+        border-width: 3px;
+    }
+
+    .popular-badge {
+        position: absolute;
+        top: 0;
+        right: 0;
+        background-color: #059669;
+        color: white;
+        padding: 0.5rem 1.5rem;
+        font-size: 0.85rem;
+        font-weight: bold;
+        border-radius: 0 15px 0 15px;
+    }
+
+    .plan-title {
+        text-align: center;
+        font-size: 1.5rem;
+        color: var(--text-dark);
+        margin-bottom: 1rem;
+        font-weight: bold;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--primary-light);
+    }
+
+    .plan-price {
+        text-align: center;
+        margin: 1.5rem 0;
+    }
+
+    .price-amount {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: var(--text-dark);
+    }
+
+    .price-period {
+        font-size: 1rem;
+        color: var(--text-light);
+        margin-top: 0.5rem;
+    }
+
+    .plan-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 1rem 0;
+    }
+
+    .plan-features {
+        list-style: none;
+        margin: 1.5rem 0;
+    }
+
+    .plan-features li {
+        padding: 0.75rem 0;
+        color: var(--text-dark);
+        border-bottom: 1px solid var(--primary-light);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .plan-features li:last-child {
+        border-bottom: none;
+    }
+
+    .feature-icon {
+        color: #059669;
+        font-weight: bold;
+    }
+
+    .feature-unavailable {
+        color: var(--text-light);
+        text-decoration: line-through;
+    }
+
+    .plan-button {
+        text-align: center;
+        margin-top: 2rem;
+    }
+
+    /* Plan Comparison */
+    .comparison-table {
+        margin: 4rem 0;
+        overflow-x: auto;
+    }
+
+    .comparison-table h2 {
+        text-align: center;
+        font-size: 2rem;
+        color: var(--text-dark);
+        margin-bottom: 2rem;
+        font-weight: bold;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+
+    th, td {
+        padding: 1rem;
+        text-align: center;
+        border: 1px solid var(--border-color);
+    }
+
+    th {
+        background-color: var(--primary-light);
+        font-weight: bold;
+        color: var(--text-dark);
+    }
+
+    td {
+        color: var(--text-dark);
+    }
+
+    .feature-name {
+        text-align: left;
+        font-weight: 500;
+    }
+
+    .checkmark {
+        color: #059669;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+
+    .xmark {
+        color: #dc2626;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+
+    /* FAQ Section */
+    .faq-section {
+        margin: 4rem 0;
+    }
+
+    .faq-section h2 {
+        text-align: center;
+        font-size: 2rem;
+        color: var(--text-dark);
+        margin-bottom: 2rem;
+        font-weight: bold;
+    }
+
+    .faq-item {
+        border: 2px solid var(--border-color);
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        background-color: white;
+        transition: all 0.3s ease;
+    }
+
+    .faq-item:hover {
+        background-color: var(--primary-light);
+    }
+
+    .faq-question {
+        font-weight: bold;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    .faq-answer {
+        color: var(--text-dark);
+        line-height: 1.6;
+    }
+
+    /* Responsive */
+    @media (max-width: 1100px) {
+        .plans-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .plan-card {
+            min-height: 550px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .plans-grid {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        .plan-card {
+            min-height: 500px;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+        }
+
+        table {
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 0.75rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .plan-card {
+            padding: 1.5rem;
+            min-height: 450px;
+        }
+
+        .price-amount {
+            font-size: 2rem;
+        }
+
+        .plan-features li {
+            font-size: 0.9rem;
+        }
+    }
+</style>
+
+<!-- Page Header -->
+<div class="page-header">
+    <h1>Choose Your Perfect Plan</h1>
+    <p>Select the subscription that fits your needs. All plans include core features with varying levels of advanced capabilities and support.</p>
+</div>
+
+<!-- Plans Grid -->
+<div class="plans-grid">
+    <!-- Basic Plan -->
+    <div class="plan-card">
+        <h3 class="plan-title">Basic</h3>
+        <div class="plan-price">
+            <div class="price-amount">$19</div>
+            <div class="price-period">per month</div>
+        </div>
+        <div class="plan-content">
+            <ul class="plan-features">
+                <li><span class="feature-icon">✓</span> Up to 50 students</li>
+                <li><span class="feature-icon">✓</span> Basic attendance tracking</li>
+                <li><span class="feature-icon">✓</span> QR code check-ins</li>
+                <li><span class="feature-icon">✓</span> Monthly reports</li>
+                <li><span class="feature-icon">✓</span> Email support</li>
+                <li class="feature-unavailable"><span class="xmark">✗</span> AI face recognition</li>
+                <li class="feature-unavailable"><span class="xmark">✗</span> Advanced analytics</li>
+                <li class="feature-unavailable"><span class="xmark">✗</span> Priority support</li>
+            </ul>
+            <div class="plan-button">
+                <a href="#" class="btn-custom btn-outline-custom">Get Started</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Professional Plan (Most Popular) -->
+    <div class="plan-card popular">
+        <div class="popular-badge">MOST POPULAR</div>
+        <h3 class="plan-title">Professional</h3>
+        <div class="plan-price">
+            <div class="price-amount">$49</div>
+            <div class="price-period">per month</div>
+        </div>
+        <div class="plan-content">
+            <ul class="plan-features">
+                <li><span class="feature-icon">✓</span> Up to 500 students</li>
+                <li><span class="feature-icon">✓</span> Advanced attendance tracking</li>
+                <li><span class="feature-icon">✓</span> QR code + PIN check-ins</li>
+                <li><span class="feature-icon">✓</span> AI face recognition</li>
+                <li><span class="feature-icon">✓</span> Real-time analytics</li>
+                <li><span class="feature-icon">✓</span> Custom report generation</li>
+                <li><span class="feature-icon">✓</span> Priority email support</li>
+                <li class="feature-unavailable"><span class="xmark">✗</span> Dedicated account manager</li>
+            </ul>
+            <div class="plan-button">
+                <a href="#" class="btn-custom" style="background-color: #059669; border-color: #059669;">Get Started</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enterprise Plan -->
+    <div class="plan-card">
+        <h3 class="plan-title">Enterprise</h3>
+        <div class="plan-price">
+            <div class="price-amount">$99</div>
+            <div class="price-period">per month</div>
+        </div>
+        <div class="plan-content">
+            <ul class="plan-features">
+                <li><span class="feature-icon">✓</span> Unlimited students</li>
+                <li><span class="feature-icon">✓</span> Enterprise-grade tracking</li>
+                <li><span class="feature-icon">✓</span> Multi-factor authentication</li>
+                <li><span class="feature-icon">✓</span> Advanced AI recognition</li>
+                <li><span class="feature-icon">✓</span> Predictive analytics</li>
+                <li><span class="feature-icon">✓</span> API access</li>
+                <li><span class="feature-icon">✓</span> Custom integrations</li>
+                <li><span class="feature-icon">✓</span> 24/7 dedicated support</li>
+            </ul>
+            <div class="plan-button">
+                <a href="#" class="btn-custom">Contact Sales</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Plan Comparison Table -->
+<div class="comparison-table">
+    <h2>Plan Comparison</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Features</th>
+                <th>Basic</th>
+                <th>Professional</th>
+                <th>Enterprise</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="feature-name">Maximum Students</td>
+                <td>50</td>
+                <td>500</td>
+                <td>Unlimited</td>
+            </tr>
+            <tr>
+                <td class="feature-name">Attendance Methods</td>
+                <td>QR Code</td>
+                <td>QR Code + PIN</td>
+                <td>Multi-factor</td>
+            </tr>
+            <tr>
+                <td class="feature-name">AI Face Recognition</td>
+                <td><span class="xmark">✗</span></td>
+                <td><span class="checkmark">✓</span></td>
+                <td><span class="checkmark">✓</span></td>
+            </tr>
+            <tr>
+                <td class="feature-name">Real-time Analytics</td>
+                <td><span class="xmark">✗</span></td>
+                <td><span class="checkmark">✓</span></td>
+                <td><span class="checkmark">✓</span></td>
+            </tr>
+            <tr>
+                <td class="feature-name">Custom Reports</td>
+                <td><span class="xmark">✗</span></td>
+                <td><span class="checkmark">✓</span></td>
+                <td><span class="checkmark">✓</span></td>
+            </tr>
+            <tr>
+                <td class="feature-name">API Access</td>
+                <td><span class="xmark">✗</span></td>
+                <td><span class="xmark">✗</span></td>
+                <td><span class="checkmark">✓</span></td>
+            </tr>
+            <tr>
+                <td class="feature-name">Support</td>
+                <td>Email</td>
+                <td>Priority Email</td>
+                <td>24/7 Dedicated</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- FAQ Section -->
+<div class="faq-section">
+    <h2>Frequently Asked Questions</h2>
+    <div class="faq-item">
+        <div class="faq-question">Can I switch plans later?</div>
+        <div class="faq-answer">Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately, and you'll only pay the difference for the remainder of your billing cycle.</div>
+    </div>
+    <div class="faq-item">
+        <div class="faq-question">Is there a free trial?</div>
+        <div class="faq-answer">Yes! All plans come with a 14-day free trial. No credit card required to start your trial.</div>
+    </div>
+    <div class="faq-item">
+        <div class="faq-question">What payment methods do you accept?</div>
+        <div class="faq-answer">We accept all major credit cards (Visa, MasterCard, American Express), PayPal, and bank transfers for enterprise plans.</div>
+    </div>
+    <div class="faq-item">
+        <div class="faq-question">Can I cancel anytime?</div>
+        <div class="faq-answer">Absolutely. You can cancel your subscription at any time. There are no cancellation fees, and you'll continue to have access until the end of your billing period.</div>
+    </div>
+</div>
+
+<!-- CTA Section -->
+<div class="page-header" style="margin-top: 4rem;">
+    <h2>Still have questions?</h2>
+    <p>Contact our sales team for personalized assistance in choosing the right plan for your organization.</p>
+    <a href="mailto:sales@attendai.com" class="btn-custom mt-3">Contact Sales</a>
+</div>
+{% endblock %}

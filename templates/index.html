@@ -1,265 +1,449 @@
-{% extends "layouts/base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AttendAI</title>
 
-{% block title %}Home - AttendAI{% endblock %}
+    <!-- {% extends "layouts/base.html" %}
 
-{% block content %}
-<style>
-    .main-heading {
-        font-size: 2.5rem;
-        font-weight: bold;
-        color: var(--text-dark);
-        margin-bottom: 2rem;
-        line-height: 1.3;
-        font-style: italic;
-    }
+    {% block title %}Home - AttendAI{% endblock %}
 
-    /* Hero Card */
-    .hero-card {
-        border: 2px solid var(--border-color);
-        border-radius: 12px;
-        overflow: hidden;
-        margin-bottom: 3rem;
-        position: relative;
-    }
+    {% block content %} -->
+    <style>
+        body {
+            font-family: "Montserrat", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #FFFFFF;
+            color: #001641;
+        }
 
-    .hero-image {
-        height: 250px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        border-bottom: 1px solid var(--border-color);
-        color: white;
-        font-size: 1.2rem;
-        font-weight: 500;
-        position: relative;
-    }
-
-    .hero-image::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(to right, rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.4));
-    }
-
-    .hero-image-content {
-        position: relative;
-        z-index: 2;
-        text-align: center;
-        padding: 0 1rem;
-        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
-    }
-
-    .hero-content {
-        padding: 1.5rem;
-        text-align: center;
-    }
-
-    .hero-content p {
-        color: var(--text-dark);
-        margin-bottom: 1rem;
-        line-height: 1.5;
-        font-size: 1.1rem;
-    }
-
-    /* Feature Cards */
-    .features-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 2rem;
-        margin-top: 2rem;
-    }
-
-    .feature-card {
-        border: 2px solid var(--border-color);
-        border-radius: 12px;
-        overflow: hidden;
-        transition: transform 0.3s ease;
-        background-color: white;
-    }
-
-    .feature-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-    }
-
-    .feature-image {
-        height: 180px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        border-bottom: 1px solid var(--border-color);
-        color: white;
-        position: relative;
-    }
-
-    .feature-image::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(to bottom, rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.3));
-    }
-
-    .feature-image-content {
-        position: relative;
-        z-index: 2;
-        font-size: 0.9rem;
-        font-weight: 500;
-        text-align: center;
-        padding: 0.5rem 1rem;
-        background: rgba(15, 23, 42, 0.8);
-        border-radius: 4px;
-        color: white;
-    }
-
-    .feature-content {
-        padding: 1.25rem;
-        text-align: center;
-    }
-
-    .feature-content h3 {
-        font-size: 1.25rem;
-        font-weight: bold;
-        font-style: italic;
-        margin-bottom: 0.5rem;
-        color: var(--text-dark);
-    }
-
-    .feature-content p {
-        font-size: 0.95rem;
-        color: var(--text-dark);
-        margin-bottom: 1rem;
-        line-height: 1.4;
-    }
-
-    /* Icon Styles */
-    .feature-icon {
-        font-size: 2.5rem;
-        margin-bottom: 1rem;
-        color: var(--text-dark);
-    }
-
-    /* Stats Section */
-    .stats-section {
-        background-color: var(--primary-light);
-        border: 2px solid var(--border-color);
-        border-radius: 16px;
-        padding: 3rem 2rem;
-        margin: 4rem 0;
-        text-align: center;
-    }
-
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 2rem;
-    }
-
-    .stat-item h3 {
-        font-size: 2.5rem;
-        color: var(--text-dark);
-        font-weight: bold;
-        margin-bottom: 0.5rem;
-    }
-
-    .stat-item p {
-        color: var(--text-dark);
-        font-size: 1rem;
-    }
-
-    /* Responsive */
-    @media (max-width: 1024px) {
-        .features-grid {
-            grid-template-columns: repeat(2, 1fr);
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.25rem 0;
+            border-bottom: 1px solid #E0E3EB;
             gap: 1.5rem;
+            background-color: transparent;
         }
 
-        .stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1.5rem;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .features-grid {
-            grid-template-columns: 1fr;
-            gap: 1.5rem;
+        header img {
+            height: 64px;
+            width: auto;
+            margin-left: 1rem;
         }
 
-        .main-heading {
-            font-size: 2rem;
+        .navbar {
+            list-style: none;
+            display: flex;
+            gap: 1.75rem;
+            margin: 0;
+            padding: 0;
         }
 
-        .hero-image {
-            height: 200px;
+        .navbar li a {
+            text-decoration: none;
+            color: #001641;
+            font-weight: 500;
+            font-size: 0.95rem;
+            position: relative;
+            padding-bottom: 0.15rem;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            transition: color 0.25s ease;
         }
 
-        .stats-grid {
-            grid-template-columns: 1fr;
-            gap: 1.5rem;
+        .navbar li a::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: -3px;
+            width: 0;
+            height: 2px;
+            background-color: #ED0A00;
+            transition: width 0.25s ease;
         }
+
+        .navbar li a:hover {
+            color: #ED0A00;
+        }
+
+        .navbar li a:hover::after {
+            width: 100%;
+        }
+
+        header button {
+            margin-right: 1rem;
+            padding: 0.55rem 1.6rem;
+            border-radius: 999px;
+            border: 1px solid #001641;
+            background-color: #001641;
+            color: #FFFFFF;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            transition:
+                background-color 0.25s ease,
+                color 0.25s ease,
+                border-color 0.25s ease,
+                box-shadow 0.25s ease;
+        }
+
+        header button:hover {
+            background-color: #FFFFFF;
+            color: #001641;
+            border-color: #ED0A00;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+        }
+
+        /* GLOBAL BUTTONS ------------------------------------------------- */
 
         .btn-custom {
-            display: block;
-            margin: 0.5rem auto;
-            width: 200px;
+            display: inline-block;
+            padding: 0.65rem 1.8rem;
+            border-radius: 999px;
+            border: 1px solid #001641;
+            background-color: #001641;
+            color: #FFFFFF;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            transition:
+                background-color 0.25s ease,
+                color 0.25s ease,
+                box-shadow 0.25s ease,
+                border-color 0.25s ease;
         }
-    }
 
-    @media (max-width: 480px) {
+        .btn-custom:hover {
+            background-color: #FFFFFF;
+            border-color: #ED0A00;
+            color: #001641;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+        }
+
+        .btn-outline-custom {
+            background-color: transparent;
+            color: #001641;
+            border-color: #001641;
+        }
+
+        .btn-outline-custom:hover {
+            background-color: #001641;
+            color: #FFFFFF;
+            border-color: #001641;
+        }
+
+        /* TYPOGRAPHY ----------------------------------------------------- */
+
         .main-heading {
-            font-size: 1.75rem;
+            font-size: 2.6rem;
+            font-weight: 700;
+            color: #001641;
+            margin: 2rem 0 2rem;
+            line-height: 1.2;
         }
-        
+
+        /* HERO CARD ------------------------------------------------------ */
+
+        .hero-card {
+            border: 1px solid #E0E3EB;
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 3rem;
+            position: relative;
+            background-color: #FFFFFF;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.06);
+        }
+
         .hero-image {
-            height: 160px;
+            height: 260px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            border-bottom: 1px solid #E0E3EB;
+            color: #FFFFFF;
+            font-size: 1.2rem;
+            font-weight: 500;
+            position: relative;
         }
-        
+
+        .hero-image::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                to right,
+                rgba(0, 22, 65, 0.9),
+                rgba(0, 51, 255, 0.8)
+            );
+        }
+
+        .hero-image-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            padding: 0 1rem;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+        }
+
+        .hero-content {
+            padding: 1.8rem 2rem 2rem;
+            text-align: center;
+        }
+
+        .hero-content p {
+            color: #001641;
+            margin-bottom: 1.4rem;
+            line-height: 1.5;
+            font-size: 1.05rem;
+        }
+
+        /* FEATURE CARDS -------------------------------------------------- */
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .feature-card {
+            border: 1px solid #E0E3EB;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative; /* for sliding border */
+            background-color: #FFFFFF;
+            transition:
+                transform 0.3s ease,
+                box-shadow 0.3s ease,
+                border-color 0.3s ease;
+            z-index: 0;
+        }
+
+        /* Sliding red border line (bottom edge) */
+        .feature-card::before {
+            content: "";
+            position: absolute;
+            bottom: -1px;         
+            left: 0;
+            height: 3px;
+            width: 100%;
+            background-color: #ED0A00;
+            transform: translateX(-100%);
+            transition: transform 0.35s ease;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .feature-card:hover::before {
+            transform: translateX(0);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 35px rgba(0, 0, 0, 0.1);
+        }
+
         .feature-image {
-            height: 150px;
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            border-bottom: 1px solid #E0E3EB;
+            color: #FFFFFF;
+            position: relative;
+        }
+
+        .feature-image::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                to bottom,
+                rgba(0, 22, 65, 0.85),
+                rgba(0, 22, 65, 0.55)
+            );
+        }
+
+        .feature-image-content {
+            position: relative;
+            z-index: 2;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-align: center;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+        }
+
+        .feature-content {
+            padding: 1.25rem 1.4rem 1.5rem;
+            text-align: center;
+        }
+
+        .feature-content h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 0.6rem;
+            color: #001641;
+        }
+
+        .feature-content p {
+            font-size: 0.95rem;
+            color: #001641;
+            margin-bottom: 1rem;
+            line-height: 1.4;
+        }
+
+        .feature-icon {
+            font-size: 2.4rem;
+            margin-bottom: 0.8rem;
+            color: #001641;
+        }
+
+        /* STATS SECTION -------------------------------------------------- */
+
+        .stats-section {
+            background-color: #F2F2F2;
+            border-radius: 18px;
+            padding: 3rem 2rem;
+            margin: 4rem 0;
+            text-align: center;
+            border-top: 4px solid #001641;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
         }
 
         .stat-item h3 {
-            font-size: 2rem;
+            font-size: 2.5rem;
+            color: #001641;
+            font-weight: 700;
+            margin-bottom: 0.4rem;
         }
-    }
 
-    /* Loading Animation for Images */
-    @keyframes shimmer {
-        0% {
-            background-position: -1000px 0;
+        .stat-item p {
+            color: #001641;
+            font-size: 0.98rem;
         }
-        100% {
-            background-position: 1000px 0;
+
+        /* RESPONSIVE ----------------------------------------------------- */
+
+        @media (max-width: 1024px) {
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
-    }
 
-    .image-loading {
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-        background-size: 1000px 100%;
-        animation: shimmer 2s infinite;
-    }
-</style>
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
 
-<!-- Font Awesome for icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+            .navbar {
+                flex-wrap: wrap;
+            }
 
-<h1 class="main-heading">Welcome to AttendAI, a sophisticated Attendance Management System</h1>
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .main-heading {
+                font-size: 2.1rem;
+            }
+
+            .hero-image {
+                height: 220px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-custom {
+                width: 210px;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-heading {
+                font-size: 1.8rem;
+            }
+
+            .hero-image {
+                height: 180px;
+            }
+
+            .feature-image {
+                height: 150px;
+            }
+
+            .stat-item h3 {
+                font-size: 2.1rem;
+            }
+        }
+
+        /* Loading Animation for Images ----------------------------------- */
+
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+
+        .image-loading {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite;
+        }
+    </style>
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+<header>
+    <img src="Logo_nobackground.png" alt="AttendAI logo" class="navbar-logo">
+    <nav>
+        <ul class="navbar">
+            <li><a href="#">Features</a></li>
+            <li><a href="#">About Us</a></li>
+            <li><a href="#">Subscription</a></li>
+            <li><a href="#">Testimonials</a></li>
+            <li><a href="#">FAQ</a></li>
+        </ul>
+    </nav>
+    <button>Sign in</button>
+</header>
+
+<h1 class="main-heading">
+    Welcome to AttendAI, a sophisticated Attendance Management System
+</h1>
 
 <!-- Hero Card -->
 <div class="hero-card card-custom">
-    <div class="hero-image" style="background-image: url('https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80');">
+    <div class="hero-image"
+         style="background-image: url('https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=1200&q=80');">
         <div class="hero-image-content">
             AI-Powered Attendance Tracking System
             <div style="font-size: 0.9rem; margin-top: 0.5rem; opacity: 0.9;">
@@ -268,19 +452,34 @@
         </div>
     </div>
     <div class="hero-content">
-        <p>AttendAI - a sophisticated but easy to use attendance management software powered by artificial intelligence</p>
+        <p>
+            AttendAI – a sophisticated but easy to use attendance management
+            software powered by artificial intelligence.
+        </p>
         {% if not session.user %}
-            <a class="btn-custom" href="{{ url_for('auth.register') }}">Get Started</a>
-            <a class="btn-custom btn-outline-custom" href="{{ url_for('auth.login') }}">Login</a>
+            <a class="btn-custom"
+               href="{{ url_for('auth.register') }}"
+               style="margin-right: 0.75rem;">
+                Get Started
+            </a>
+            <a class="btn-custom btn-outline-custom"
+               href="{{ url_for('auth.login') }}">
+                Login
+            </a>
         {% else %}
-            <a class="btn-custom" style="background-color: #059669; border-color: #059669;" href="{{ url_for('dashboard.dashboard') }}">Go to Dashboard</a>
+            <a class="btn-custom"
+               href="{{ url_for('dashboard.dashboard') }}">
+                Go to Dashboard
+            </a>
         {% endif %}
     </div>
 </div>
 
 <!-- Stats Section -->
 <div class="stats-section">
-    <h2 style="font-size: 2rem; color: var(--text-dark); margin-bottom: 2rem;">Trusted by Organizations Worldwide</h2>
+    <h2 style="font-size: 2rem; color: #001641; margin-bottom: 2rem;">
+        Trusted by Organizations Worldwide
+    </h2>
     <div class="stats-grid">
         <div class="stat-item">
             <h3>500+</h3>
@@ -291,8 +490,8 @@
             <p>Customer Satisfaction</p>
         </div>
         <div class="stat-item">
-            <h3>250K+</h3>
-            <p>Students & Employees</p>
+            <h3>250K+</</p>
+            <p>Students &amp; Employees</p>
         </div>
         <div class="stat-item">
             <h3>85%</h3>
@@ -305,7 +504,8 @@
 <div class="features-grid">
     <!-- Our Team Card -->
     <div class="feature-card card-custom">
-        <div class="feature-image" style="background-image: url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80');">
+        <div class="feature-image"
+             style="background-image: url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80');">
             <div class="feature-image-content">
                 Meet Our Team
             </div>
@@ -315,14 +515,20 @@
                 <i class="fas fa-users"></i>
             </div>
             <h3>Our Team</h3>
-            <p>Learn more about AttendAI and the dedicated team behind our innovative solutions</p>
-            <a href="{{ url_for('main.about') }}" class="btn-custom">Learn More</a>
+            <p>
+                Learn more about AttendAI and the dedicated team behind our
+                innovative solutions.
+            </p>
+            <a href="{{ url_for('main.about') }}" class="btn-custom btn-outline-custom">
+                Learn More
+            </a>
         </div>
     </div>
 
     <!-- Testimonials Card -->
     <div class="feature-card card-custom">
-        <div class="feature-image" style="background-image: url('https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w-800&q=80');">
+        <div class="feature-image"
+             style="background-image: url('https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=800&q=80');">
             <div class="feature-image-content">
                 Success Stories
             </div>
@@ -332,14 +538,20 @@
                 <i class="fas fa-star"></i>
             </div>
             <h3>Testimonials</h3>
-            <p>Read glowing reviews from educational institutions and businesses using AttendAI</p>
-            <a href="{{ url_for('main.testimonials') }}" class="btn-custom">Read Stories</a>
+            <p>
+                Read reviews from educational institutions and businesses
+                using AttendAI.
+            </p>
+            <a href="{{ url_for('main.testimonials') }}" class="btn-custom btn-outline-custom">
+                Read Stories
+            </a>
         </div>
     </div>
 
     <!-- Plans Card -->
     <div class="feature-card card-custom">
-        <div class="feature-image" style="background-image: url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80');">
+        <div class="feature-image"
+             style="background-image: url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=800&q=80');">
             <div class="feature-image-content">
                 Affordable Plans
             </div>
@@ -349,14 +561,20 @@
                 <i class="fas fa-tags"></i>
             </div>
             <h3>Affordable Plans</h3>
-            <p>Choose from our range of subscription plans designed to suit institutions of all sizes</p>
-            <a href="{{ url_for('main.subscriptions') }}" class="btn-custom">View Plans</a>
+            <p>
+                Choose from our range of subscription plans designed to suit
+                institutions of all sizes.
+            </p>
+            <a href="{{ url_for('main.subscriptions') }}" class="btn-custom btn-outline-custom">
+                View Plans
+            </a>
         </div>
     </div>
 
     <!-- AI Features Card -->
     <div class="feature-card card-custom">
-        <div class="feature-image" style="background-image: url('https://images.unsplash.com/photo-1677442136019-21780ecad995?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80');">
+        <div class="feature-image"
+             style="background-image: url('https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=800&q=80');">
             <div class="feature-image-content">
                 AI Technology
             </div>
@@ -366,14 +584,20 @@
                 <i class="fas fa-robot"></i>
             </div>
             <h3>AI Powered</h3>
-            <p>Leverage artificial intelligence for facial recognition and predictive analytics</p>
-            <a href="{{ url_for('main.features') }}" class="btn-custom">Explore Features</a>
+            <p>
+                Leverage artificial intelligence for facial recognition and
+                predictive analytics.
+            </p>
+            <a href="{{ url_for('main.features') }}" class="btn-custom btn-outline-custom">
+                Explore Features
+            </a>
         </div>
     </div>
 
     <!-- Real-time Reports Card -->
     <div class="feature-card card-custom">
-        <div class="feature-image" style="background-image: url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80');">
+        <div class="feature-image"
+             style="background-image: url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80');">
             <div class="feature-image-content">
                 Data Analytics
             </div>
@@ -383,14 +607,19 @@
                 <i class="fas fa-chart-line"></i>
             </div>
             <h3>Real-time Reports</h3>
-            <p>Generate comprehensive attendance reports and analytics instantly</p>
-            <a href="{{ url_for('main.features') }}" class="btn-custom">See Analytics</a>
+            <p>
+                Generate comprehensive attendance reports and analytics instantly.
+            </p>
+            <a href="{{ url_for('main.features') }}" class="btn-custom btn-outline-custom">
+                See Analytics
+            </a>
         </div>
     </div>
 
     <!-- Easy Tracking Card -->
     <div class="feature-card card-custom">
-        <div class="feature-image" style="background-image: url('https://images.unsplash.com/photo-1611224923853-80b023f02d71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80');">
+        <div class="feature-image"
+             style="background-image: url('https://images.unsplash.com/photo-1611224923853-80b023f02d71?auto=format&fit=crop&w=800&q=80');">
             <div class="feature-image-content">
                 QR Code Scanning
             </div>
@@ -400,24 +629,47 @@
                 <i class="fas fa-qrcode"></i>
             </div>
             <h3>Easy Tracking</h3>
-            <p>Mark attendance with a single click using QR codes or facial recognition</p>
-            <a href="{{ url_for('main.features') }}" class="btn-custom">Learn How</a>
+            <p>
+                Mark attendance with a single click using QR codes or facial
+                recognition.
+            </p>
+            <a href="{{ url_for('main.features') }}" class="btn-custom btn-outline-custom">
+                Learn How
+            </a>
         </div>
     </div>
 </div>
 
 <!-- Final CTA Section -->
 <div class="stats-section" style="margin-top: 2rem;">
-    <h2 style="font-size: 2rem; color: var(--text-dark); margin-bottom: 1rem;">Ready to Transform Your Attendance Management?</h2>
-    <p style="font-size: 1.1rem; color: var(--text-dark); margin-bottom: 2rem; max-width: 800px; margin-left: auto; margin-right: auto;">
-        Join hundreds of institutions already benefiting from AI-powered attendance tracking
+    <h2 style="font-size: 2rem; color: #001641; margin-bottom: 1rem;">
+        Ready to Transform Your Attendance Management?
+    </h2>
+    <p style="font-size: 1.1rem; color: #001641; margin-bottom: 2rem;
+              max-width: 800px; margin-left: auto; margin-right: auto;">
+        Join hundreds of institutions already benefiting from AI-powered
+        attendance tracking.
     </p>
     {% if not session.user %}
-        <a class="btn-custom" href="{{ url_for('auth.register') }}" style="margin-right: 1rem; background-color: #059669; border-color: #059669;">Start Free Trial</a>
-        <a class="btn-custom btn-outline-custom" href="{{ url_for('main.subscriptions') }}">View Pricing</a>
+        <a class="btn-custom"
+           href="{{ url_for('auth.register') }}"
+           style="margin-right: 0.75rem;">
+            Start Free Trial
+        </a>
+        <a class="btn-custom btn-outline-custom"
+           href="{{ url_for('main.subscriptions') }}">
+            View Pricing
+        </a>
     {% else %}
-        <a class="btn-custom" href="{{ url_for('dashboard.dashboard') }}" style="margin-right: 1rem; background-color: #059669; border-color: #059669;">Go to Dashboard</a>
-        <a class="btn-custom btn-outline-custom" href="{{ url_for('main.features') }}">Explore Features</a>
+        <a class="btn-custom"
+           href="{{ url_for('dashboard.dashboard') }}"
+           style="margin-right: 0.75rem;">
+            Go to Dashboard
+        </a>
+        <a class="btn-custom btn-outline-custom"
+           href="{{ url_for('main.features') }}">
+            Explore Features
+        </a>
     {% endif %}
 </div>
 
@@ -425,57 +677,34 @@
     // Image loading and fallback handling
     document.addEventListener('DOMContentLoaded', function() {
         const images = document.querySelectorAll('.hero-image, .feature-image');
-        
+
         images.forEach(img => {
             const originalBg = img.style.backgroundImage;
-            
-            // Add loading class
             img.classList.add('image-loading');
-            
-            // Create test image to check if URL loads
+
             const testImage = new Image();
             testImage.src = originalBg.replace(/url\(['"]?(.*?)['"]?\)/, '$1');
-            
+
             testImage.onload = function() {
                 img.classList.remove('image-loading');
             };
-            
+
             testImage.onerror = function() {
                 img.classList.remove('image-loading');
-                // Fallback to solid color
                 img.style.backgroundImage = 'none';
-                img.style.backgroundColor = 'var(--primary-light)';
-                
-                // Show fallback text more prominently
+                img.style.backgroundColor = '#F2F2F2';
+
                 const content = img.querySelector('.feature-image-content, .hero-image-content');
                 if (content) {
-                    content.style.background = 'var(--primary-dark)';
+                    content.style.background = '#001641';
                     content.style.padding = '1rem';
                     content.style.borderRadius = '8px';
                 }
             };
         });
-        
-        // Add hover effects for feature cards
-        const featureCards = document.querySelectorAll('.feature-card');
-        featureCards.forEach(card => {
-            card.addEventListener('mouseenter', function() {
-                const img = this.querySelector('.feature-image');
-                if (img) {
-                    const currentBg = img.style.backgroundImage;
-                    // Slight zoom effect on hover
-                    img.style.transform = 'scale(1.05)';
-                    img.style.transition = 'transform 0.5s ease';
-                }
-            });
-            
-            card.addEventListener('mouseleave', function() {
-                const img = this.querySelector('.feature-image');
-                if (img) {
-                    img.style.transform = 'scale(1)';
-                }
-            });
-        });
     });
 </script>
-{% endblock %}
+<!-- {% endblock %} -->
+
+</body>
+</html>

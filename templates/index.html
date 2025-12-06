@@ -17,6 +17,29 @@
 
 </div>
 
+<!-- Public tabs linking to unregistered pages -->
+<div class="row mt-3">
+    <div class="col-12">
+        <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('main.about') }}">About</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('main.features') }}">Features</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('main.subscriptions') }}">Plans</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('main.faq') }}">FAQ</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('main.testimonials') }}">Testimonials</a>
+            </li>
+        </ul>
+    </div>
+</div>
+
 <div class="row mt-5">
     <div class="col-md-4">
         <div class="card">

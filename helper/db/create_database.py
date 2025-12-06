@@ -9,10 +9,10 @@ def create_db():
     try:
         # Connect to MySQL without specifying a database
         conn = mysql.connector.connect(
-            host=os.getenv('MYSQL_HOST', 'localhost'),
-            user=os.getenv('MYSQL_USER', 'root'),
-            password=os.getenv('MYSQL_PASSWORD', ''),
-            port=int(os.getenv('MYSQL_PORT', '3306'))
+            host=os.getenv('DB_HOST', 'localhost'),
+            user=os.getenv('DB_USERNAME', 'root'),
+            password=os.getenv('DB_PASSWORD', ''),
+            port=int(os.getenv('DB_PORT', '3306'))
         )
         
         cursor = conn.cursor()

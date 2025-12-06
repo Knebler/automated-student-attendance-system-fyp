@@ -12,8 +12,33 @@ def home():
 
 @main_bp.route('/about')
 def about():
-    """About page route"""
-    return render_template('about.html')
+    """About page route (public/unregistered)"""
+    # serve the unregistered about page
+    return render_template('unregistered/aboutus.html')
+
+
+@main_bp.route('/faq')
+def faq():
+    """Public FAQ page"""
+    return render_template('unregistered/faq.html')
+
+
+@main_bp.route('/features')
+def features():
+    """Public Features page"""
+    return render_template('unregistered/features.html')
+
+
+@main_bp.route('/subscriptions')
+def subscriptions():
+    """Public Subscription summary page"""
+    return render_template('unregistered/subscriptionsummary.html')
+
+
+@main_bp.route('/testimonials')
+def testimonials():
+    """Public Testimonials page"""
+    return render_template('unregistered/testimonials.html')
 
 @main_bp.route('/init-db')
 def init_database():

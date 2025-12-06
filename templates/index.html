@@ -19,6 +19,7 @@
         border-radius: 12px;
         overflow: hidden;
         margin-bottom: 3rem;
+        position: relative;
     }
 
     .hero-image {
@@ -26,22 +27,43 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background-color: var(--primary-light);
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
         border-bottom: 1px solid var(--border-color);
-        color: var(--text-light);
+        color: white;
         font-size: 1.2rem;
         font-weight: 500;
+        position: relative;
+    }
+
+    .hero-image::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(to right, rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.4));
+    }
+
+    .hero-image-content {
+        position: relative;
+        z-index: 2;
+        text-align: center;
+        padding: 0 1rem;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
     }
 
     .hero-content {
-        padding: 2rem;
+        padding: 1.5rem;
         text-align: center;
     }
 
     .hero-content p {
         color: var(--text-dark);
-        margin-bottom: 1.5rem;
-        line-height: 1.6;
+        margin-bottom: 1rem;
+        line-height: 1.5;
         font-size: 1.1rem;
     }
 
@@ -58,10 +80,12 @@
         border-radius: 12px;
         overflow: hidden;
         transition: transform 0.3s ease;
+        background-color: white;
     }
 
     .feature-card:hover {
         transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
     }
 
     .feature-image {
@@ -69,15 +93,38 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background-color: var(--primary-light);
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
         border-bottom: 1px solid var(--border-color);
-        color: var(--text-light);
-        font-size: 1rem;
+        color: white;
+        position: relative;
+    }
+
+    .feature-image::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(to bottom, rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.3));
+    }
+
+    .feature-image-content {
+        position: relative;
+        z-index: 2;
+        font-size: 0.9rem;
         font-weight: 500;
+        text-align: center;
+        padding: 0.5rem 1rem;
+        background: rgba(15, 23, 42, 0.8);
+        border-radius: 4px;
+        color: white;
     }
 
     .feature-content {
-        padding: 1.5rem;
+        padding: 1.25rem;
         text-align: center;
     }
 
@@ -85,20 +132,60 @@
         font-size: 1.25rem;
         font-weight: bold;
         font-style: italic;
-        margin-bottom: 0.75rem;
+        margin-bottom: 0.5rem;
         color: var(--text-dark);
     }
 
     .feature-content p {
         font-size: 0.95rem;
         color: var(--text-dark);
-        margin-bottom: 1.5rem;
-        line-height: 1.5;
+        margin-bottom: 1rem;
+        line-height: 1.4;
+    }
+
+    /* Icon Styles */
+    .feature-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        color: var(--text-dark);
+    }
+
+    /* Stats Section */
+    .stats-section {
+        background-color: var(--primary-light);
+        border: 2px solid var(--border-color);
+        border-radius: 16px;
+        padding: 3rem 2rem;
+        margin: 4rem 0;
+        text-align: center;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 2rem;
+    }
+
+    .stat-item h3 {
+        font-size: 2.5rem;
+        color: var(--text-dark);
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-item p {
+        color: var(--text-dark);
+        font-size: 1rem;
     }
 
     /* Responsive */
     @media (max-width: 1024px) {
         .features-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .stats-grid {
             grid-template-columns: repeat(2, 1fr);
             gap: 1.5rem;
         }
@@ -116,11 +203,11 @@
 
         .hero-image {
             height: 200px;
-            font-size: 1rem;
         }
 
-        .hero-content {
-            padding: 1.5rem;
+        .stats-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
         }
 
         .btn-custom {
@@ -142,18 +229,46 @@
         .feature-image {
             height: 150px;
         }
+
+        .stat-item h3 {
+            font-size: 2rem;
+        }
+    }
+
+    /* Loading Animation for Images */
+    @keyframes shimmer {
+        0% {
+            background-position: -1000px 0;
+        }
+        100% {
+            background-position: 1000px 0;
+        }
+    }
+
+    .image-loading {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 1000px 100%;
+        animation: shimmer 2s infinite;
     }
 </style>
+
+<!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <h1 class="main-heading">Welcome to AttendAI, a sophisticated Attendance Management System</h1>
 
 <!-- Hero Card -->
-<div class="hero-card">
-    <div class="hero-image">
-        AI-Powered Attendance Tracking System
+<div class="hero-card card-custom">
+    <div class="hero-image" style="background-image: url('https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80');">
+        <div class="hero-image-content">
+            AI-Powered Attendance Tracking System
+            <div style="font-size: 0.9rem; margin-top: 0.5rem; opacity: 0.9;">
+                Revolutionizing how institutions track and analyze attendance
+            </div>
+        </div>
     </div>
     <div class="hero-content">
-        <p>AttendAI - a sophisticated but easy to use attendance management software</p>
+        <p>AttendAI - a sophisticated but easy to use attendance management software powered by artificial intelligence</p>
         {% if not session.user %}
             <a class="btn-custom" href="{{ url_for('auth.register') }}">Get Started</a>
             <a class="btn-custom btn-outline-custom" href="{{ url_for('auth.login') }}">Login</a>
@@ -163,39 +278,204 @@
     </div>
 </div>
 
+<!-- Stats Section -->
+<div class="stats-section">
+    <h2 style="font-size: 2rem; color: var(--text-dark); margin-bottom: 2rem;">Trusted by Organizations Worldwide</h2>
+    <div class="stats-grid">
+        <div class="stat-item">
+            <h3>500+</h3>
+            <p>Educational Institutions</p>
+        </div>
+        <div class="stat-item">
+            <h3>98%</h3>
+            <p>Customer Satisfaction</p>
+        </div>
+        <div class="stat-item">
+            <h3>250K+</h3>
+            <p>Students & Employees</p>
+        </div>
+        <div class="stat-item">
+            <h3>85%</h3>
+            <p>Time Savings</p>
+        </div>
+    </div>
+</div>
+
 <!-- Feature Cards -->
 <div class="features-grid">
-    <div class="feature-card">
-        <div class="feature-image">
-            Our Team
+    <!-- Our Team Card -->
+    <div class="feature-card card-custom">
+        <div class="feature-image" style="background-image: url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80');">
+            <div class="feature-image-content">
+                Meet Our Team
+            </div>
         </div>
         <div class="feature-content">
+            <div class="feature-icon">
+                <i class="fas fa-users"></i>
+            </div>
             <h3>Our Team</h3>
-            <p>Learn more about AttendAI and the team behind it</p>
+            <p>Learn more about AttendAI and the dedicated team behind our innovative solutions</p>
             <a href="{{ url_for('main.about') }}" class="btn-custom">Learn More</a>
         </div>
     </div>
 
-    <div class="feature-card">
-        <div class="feature-image">
-            Testimonials
+    <!-- Testimonials Card -->
+    <div class="feature-card card-custom">
+        <div class="feature-image" style="background-image: url('https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w-800&q=80');">
+            <div class="feature-image-content">
+                Success Stories
+            </div>
         </div>
         <div class="feature-content">
+            <div class="feature-icon">
+                <i class="fas fa-star"></i>
+            </div>
             <h3>Testimonials</h3>
-            <p>Read glowing reviews from our customers.</p>
-            <a href="{{ url_for('main.testimonials') }}" class="btn-custom">Learn More</a>
+            <p>Read glowing reviews from educational institutions and businesses using AttendAI</p>
+            <a href="{{ url_for('main.testimonials') }}" class="btn-custom">Read Stories</a>
         </div>
     </div>
 
-    <div class="feature-card">
-        <div class="feature-image">
-            Subscription Plans
+    <!-- Plans Card -->
+    <div class="feature-card card-custom">
+        <div class="feature-image" style="background-image: url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80');">
+            <div class="feature-image-content">
+                Affordable Plans
+            </div>
         </div>
         <div class="feature-content">
+            <div class="feature-icon">
+                <i class="fas fa-tags"></i>
+            </div>
             <h3>Affordable Plans</h3>
-            <p>Our range of affordable subscription plans to suit your needs.</p>
-            <a href="{{ url_for('main.subscriptions') }}" class="btn-custom">Learn More</a>
+            <p>Choose from our range of subscription plans designed to suit institutions of all sizes</p>
+            <a href="{{ url_for('main.subscriptions') }}" class="btn-custom">View Plans</a>
+        </div>
+    </div>
+
+    <!-- AI Features Card -->
+    <div class="feature-card card-custom">
+        <div class="feature-image" style="background-image: url('https://images.unsplash.com/photo-1677442136019-21780ecad995?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80');">
+            <div class="feature-image-content">
+                AI Technology
+            </div>
+        </div>
+        <div class="feature-content">
+            <div class="feature-icon">
+                <i class="fas fa-robot"></i>
+            </div>
+            <h3>AI Powered</h3>
+            <p>Leverage artificial intelligence for facial recognition and predictive analytics</p>
+            <a href="{{ url_for('main.features') }}" class="btn-custom">Explore Features</a>
+        </div>
+    </div>
+
+    <!-- Real-time Reports Card -->
+    <div class="feature-card card-custom">
+        <div class="feature-image" style="background-image: url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80');">
+            <div class="feature-image-content">
+                Data Analytics
+            </div>
+        </div>
+        <div class="feature-content">
+            <div class="feature-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <h3>Real-time Reports</h3>
+            <p>Generate comprehensive attendance reports and analytics instantly</p>
+            <a href="{{ url_for('main.features') }}" class="btn-custom">See Analytics</a>
+        </div>
+    </div>
+
+    <!-- Easy Tracking Card -->
+    <div class="feature-card card-custom">
+        <div class="feature-image" style="background-image: url('https://images.unsplash.com/photo-1611224923853-80b023f02d71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80');">
+            <div class="feature-image-content">
+                QR Code Scanning
+            </div>
+        </div>
+        <div class="feature-content">
+            <div class="feature-icon">
+                <i class="fas fa-qrcode"></i>
+            </div>
+            <h3>Easy Tracking</h3>
+            <p>Mark attendance with a single click using QR codes or facial recognition</p>
+            <a href="{{ url_for('main.features') }}" class="btn-custom">Learn How</a>
         </div>
     </div>
 </div>
+
+<!-- Final CTA Section -->
+<div class="stats-section" style="margin-top: 2rem;">
+    <h2 style="font-size: 2rem; color: var(--text-dark); margin-bottom: 1rem;">Ready to Transform Your Attendance Management?</h2>
+    <p style="font-size: 1.1rem; color: var(--text-dark); margin-bottom: 2rem; max-width: 800px; margin-left: auto; margin-right: auto;">
+        Join hundreds of institutions already benefiting from AI-powered attendance tracking
+    </p>
+    {% if not session.user %}
+        <a class="btn-custom" href="{{ url_for('auth.register') }}" style="margin-right: 1rem; background-color: #059669; border-color: #059669;">Start Free Trial</a>
+        <a class="btn-custom btn-outline-custom" href="{{ url_for('main.subscriptions') }}">View Pricing</a>
+    {% else %}
+        <a class="btn-custom" href="{{ url_for('dashboard.dashboard') }}" style="margin-right: 1rem; background-color: #059669; border-color: #059669;">Go to Dashboard</a>
+        <a class="btn-custom btn-outline-custom" href="{{ url_for('main.features') }}">Explore Features</a>
+    {% endif %}
+</div>
+
+<script>
+    // Image loading and fallback handling
+    document.addEventListener('DOMContentLoaded', function() {
+        const images = document.querySelectorAll('.hero-image, .feature-image');
+        
+        images.forEach(img => {
+            const originalBg = img.style.backgroundImage;
+            
+            // Add loading class
+            img.classList.add('image-loading');
+            
+            // Create test image to check if URL loads
+            const testImage = new Image();
+            testImage.src = originalBg.replace(/url\(['"]?(.*?)['"]?\)/, '$1');
+            
+            testImage.onload = function() {
+                img.classList.remove('image-loading');
+            };
+            
+            testImage.onerror = function() {
+                img.classList.remove('image-loading');
+                // Fallback to solid color
+                img.style.backgroundImage = 'none';
+                img.style.backgroundColor = 'var(--primary-light)';
+                
+                // Show fallback text more prominently
+                const content = img.querySelector('.feature-image-content, .hero-image-content');
+                if (content) {
+                    content.style.background = 'var(--primary-dark)';
+                    content.style.padding = '1rem';
+                    content.style.borderRadius = '8px';
+                }
+            };
+        });
+        
+        // Add hover effects for feature cards
+        const featureCards = document.querySelectorAll('.feature-card');
+        featureCards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                const img = this.querySelector('.feature-image');
+                if (img) {
+                    const currentBg = img.style.backgroundImage;
+                    // Slight zoom effect on hover
+                    img.style.transform = 'scale(1.05)';
+                    img.style.transition = 'transform 0.5s ease';
+                }
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                const img = this.querySelector('.feature-image');
+                if (img) {
+                    img.style.transform = 'scale(1)';
+                }
+            });
+        });
+    });
+</script>
 {% endblock %}

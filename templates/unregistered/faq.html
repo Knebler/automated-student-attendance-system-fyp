@@ -1,0 +1,618 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}FAQ - AttendAI{% endblock %}
+
+{% block content %}
+<style>
+    /* Page Header */
+    .page-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding: 2rem 0;
+    }
+
+    .page-header h1 {
+        font-size: 2.5rem;
+        color: var(--text-dark);
+        margin-bottom: 1rem;
+        font-weight: bold;
+        font-style: italic;
+    }
+
+    .page-header p {
+        font-size: 1.1rem;
+        color: var(--text-light);
+        max-width: 800px;
+        margin: 0 auto;
+        line-height: 1.6;
+    }
+
+    /* Search Section */
+    .search-section {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 3rem;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .search-input {
+        flex: 1;
+        padding: 0.75rem 1.5rem;
+        border: 2px solid var(--border-color);
+        border-radius: 25px;
+        font-size: 1rem;
+        outline: none;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .search-input:focus {
+        border-color: #1e293b;
+    }
+
+    .search-btn {
+        background-color: var(--primary-dark);
+        color: white;
+        border: 2px solid var(--primary-dark);
+        padding: 0.75rem 2rem;
+        border-radius: 25px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .search-btn:hover {
+        background-color: #1e293b;
+        border-color: #1e293b;
+    }
+
+    /* FAQ Categories */
+    .category-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .category-tab {
+        padding: 0.75rem 1.5rem;
+        background-color: white;
+        border: 2px solid var(--border-color);
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        color: var(--text-dark);
+    }
+
+    .category-tab:hover {
+        background-color: var(--primary-light);
+    }
+
+    .category-tab.active {
+        background-color: var(--primary-dark);
+        color: white;
+        border-color: var(--primary-dark);
+    }
+
+    /* FAQ Accordion */
+    .faq-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 3rem;
+    }
+
+    .faq-item {
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        overflow: hidden;
+        background-color: white;
+        transition: all 0.3s ease;
+    }
+
+    .faq-item:hover {
+        border-color: #1e293b;
+    }
+
+    .faq-question {
+        background-color: white;
+        color: var(--text-dark);
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .faq-question:hover {
+        background-color: var(--primary-light);
+    }
+
+    .faq-question-text {
+        font-weight: 600;
+        font-size: 1.1rem;
+        flex: 1;
+        margin-right: 1rem;
+    }
+
+    .faq-icon {
+        font-size: 1.5rem;
+        font-weight: bold;
+        line-height: 1;
+        color: var(--text-dark);
+        transition: transform 0.3s ease;
+        min-width: 24px;
+        text-align: center;
+    }
+
+    .faq-item.active .faq-icon {
+        transform: rotate(45deg);
+    }
+
+    .faq-answer {
+        padding: 0;
+        color: var(--text-dark);
+        line-height: 1.7;
+        max-height: 0;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .faq-item.active .faq-answer {
+        padding: 1.5rem;
+        max-height: 1000px;
+    }
+
+    .faq-answer p {
+        margin-bottom: 1rem;
+    }
+
+    .faq-answer p:last-child {
+        margin-bottom: 0;
+    }
+
+    /* FAQ Categories Sections */
+    .category-section {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .category-section.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Contact Section */
+    .contact-section {
+        background-color: var(--primary-light);
+        border: 2px solid var(--border-color);
+        border-radius: 16px;
+        padding: 3rem;
+        margin: 4rem 0;
+        text-align: center;
+    }
+
+    .contact-section h3 {
+        font-size: 2rem;
+        color: var(--text-dark);
+        margin-bottom: 1rem;
+        font-weight: bold;
+    }
+
+    .contact-section p {
+        font-size: 1.1rem;
+        color: var(--text-dark);
+        margin-bottom: 2rem;
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+        line-height: 1.6;
+    }
+
+    .contact-options {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .contact-btn {
+        padding: 0.75rem 1.5rem;
+        background-color: white;
+        border: 2px solid var(--border-color);
+        border-radius: 25px;
+        text-decoration: none;
+        color: var(--text-dark);
+        font-weight: 500;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .contact-btn:hover {
+        background-color: var(--primary-dark);
+        color: white;
+        border-color: var(--primary-dark);
+        text-decoration: none;
+    }
+
+    /* Quick Links */
+    .quick-links {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+        margin: 3rem 0;
+    }
+
+    .quick-link-card {
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        background-color: white;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: var(--text-dark);
+    }
+
+    .quick-link-card:hover {
+        transform: translateY(-5px);
+        border-color: #1e293b;
+        text-decoration: none;
+    }
+
+    .quick-link-card h4 {
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+        font-weight: bold;
+    }
+
+    .quick-link-card p {
+        font-size: 0.95rem;
+        color: var(--text-light);
+        margin-bottom: 0;
+    }
+
+    /* No Results Message */
+    .no-results {
+        text-align: center;
+        padding: 3rem;
+        color: var(--text-light);
+        display: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .quick-links {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+
+        .search-section {
+            flex-direction: column;
+            max-width: 100%;
+        }
+
+        .search-btn {
+            width: 100%;
+        }
+
+        .category-tabs {
+            gap: 0.5rem;
+        }
+
+        .category-tab {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .faq-question {
+            padding: 1rem 1.25rem;
+        }
+
+        .faq-question-text {
+            font-size: 1rem;
+        }
+
+        .contact-section {
+            padding: 2rem 1.5rem;
+        }
+
+        .quick-links {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .page-header h1 {
+            font-size: 1.75rem;
+        }
+
+        .contact-options {
+            flex-direction: column;
+        }
+
+        .contact-btn {
+            justify-content: center;
+        }
+
+        .faq-question-text {
+            font-size: 0.95rem;
+        }
+    }
+</style>
+
+<!-- Page Header -->
+<div class="page-header">
+    <h1>Frequently Asked Questions</h1>
+    <p>Find answers to common questions about AttendAI. Can't find what you're looking for? Contact our support team for personalized assistance.</p>
+</div>
+
+<!-- Search Section -->
+<div class="search-section">
+    <input type="text" class="search-input" id="faqSearch" placeholder="Search questions...">
+    <button class="search-btn" onclick="searchFAQs()">Search</button>
+</div>
+
+<!-- Category Tabs -->
+<div class="category-tabs">
+    <div class="category-tab active" onclick="showCategory('general')">General</div>
+    <div class="category-tab" onclick="showCategory('features')">Features</div>
+    <div class="category-tab" onclick="showCategory('pricing')">Pricing & Plans</div>
+    <div class="category-tab" onclick="showCategory('technical')">Technical</div>
+    <div class="category-tab" onclick="showCategory('implementation')">Implementation</div>
+</div>
+
+<!-- General FAQs -->
+<div class="category-section active" id="general-faqs">
+    <div class="faq-list">
+        <!-- FAQ 1 -->
+        <div class="faq-item active">
+            <div class="faq-question" onclick="toggleFAQ(this)">
+                <span class="faq-question-text">What is AttendAI and how does it work?</span>
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                <p>AttendAI is an AI-powered attendance management system that revolutionizes how educational institutions and businesses track attendance. Our system uses multiple verification methods including facial recognition, QR code scanning, and mobile check-ins to accurately record attendance in real-time.</p>
+                <p>The platform processes attendance data through our secure cloud infrastructure, providing administrators with real-time dashboards, predictive analytics, and comprehensive reporting tools. Everything is designed to be user-friendly while maintaining enterprise-grade security and reliability.</p>
+            </div>
+        </div>
+
+        <!-- FAQ 2 -->
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFAQ(this)">
+                <span class="faq-question-text">Is there a free trial available?</span>
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                <p>Yes! We offer a 14-day free trial for all our plans. During the trial period, you'll have access to all features of the Professional plan, including AI face recognition, real-time analytics, and up to 500 student capacity. No credit card is required to start your trial.</p>
+                <p>Our support team will help you set up the system and provide training materials to ensure you get the most out of your trial period.</p>
+            </div>
+        </div>
+
+        <!-- FAQ 3 -->
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFAQ(this)">
+                <span class="faq-question-text">How accurate is the facial recognition technology?</span>
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                <p>Our AI-powered facial recognition system achieves 99.8% accuracy in optimal conditions. The system uses advanced machine learning algorithms that continuously improve with use. Key features include:</p>
+                <p>• Works in various lighting conditions<br>
+                • Adapts to different angles and distances<br>
+                • Handles accessories like glasses and masks<br>
+                • Protects against spoofing attempts<br>
+                • Processes recognition in under 2 seconds</p>
+                <p>We also provide multiple fallback methods (QR codes, PINs) to ensure reliability in all situations.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features FAQs -->
+<div class="category-section" id="features-faqs">
+    <div class="faq-list">
+        <!-- FAQ 1 -->
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFAQ(this)">
+                <span class="faq-question-text">Does AttendAI integrate with existing school management systems?</span>
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                <p>Yes, AttendAI offers seamless integration with popular school management systems including:</p>
+                <p>• Google Classroom and Microsoft Teams<br>
+                • Popular LMS platforms (Canvas, Moodle, Blackboard)<br>
+                • Student Information Systems (SIS)<br>
+                • Human Resource Management Systems (HRMS)</p>
+                <p>We provide comprehensive API documentation for custom integrations, and our technical team can assist with implementation to ensure smooth data synchronization.</p>
+            </div>
+        </div>
+
+        <!-- FAQ 2 -->
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFAQ(this)">
+                <span class="faq-question-text">Can parents or guardians receive attendance notifications?</span>
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                <p>Absolutely. AttendAI includes a comprehensive notification system that can alert parents and guardians via:</p>
+                <p>• Email notifications for daily, weekly, or monthly attendance reports<br>
+                • SMS alerts for immediate attendance concerns<br>
+                • Mobile app notifications through our dedicated parent portal<br>
+                • Customizable alert thresholds (e.g., notify when attendance drops below 90%)</p>
+                <p>Parents can also access a secure portal to view their child's attendance history, patterns, and receive automated alerts about upcoming parent-teacher meetings.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pricing FAQs -->
+<div class="category-section" id="pricing-faqs">
+    <div class="faq-list">
+        <!-- FAQ 1 -->
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFAQ(this)">
+                <span class="faq-question-text">What payment methods do you accept?</span>
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                <p>We accept all major payment methods for your convenience:</p>
+                <p>• Credit and debit cards (Visa, MasterCard, American Express)<br>
+                • PayPal for quick online payments<br>
+                • Bank transfers for enterprise customers<br>
+                • Annual billing with 15% discount<br>
+                • Purchase orders for educational institutions</p>
+                <p>All payments are processed through secure, PCI-compliant payment gateways to ensure your financial information is protected.</p>
+            </div>
+        </div>
+
+        <!-- FAQ 2 -->
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFAQ(this)">
+                <span class="faq-question-text">Can I upgrade or downgrade my plan later?</span>
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                <p>Yes, you can change your plan at any time. When upgrading, the new features become available immediately, and you'll be charged the prorated difference for the remainder of your billing cycle. When downgrading, the changes take effect at the start of your next billing cycle.</p>
+                <p>Our system automatically handles data migration between plans, so you don't need to worry about losing any attendance records or settings when changing plans.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Links -->
+<div class="quick-links">
+    <a href="{{ url_for('main.features') }}" class="quick-link-card">
+        <h4>Explore Features</h4>
+        <p>Learn about all the powerful features AttendAI offers</p>
+    </a>
+    <a href="{{ url_for('main.subscriptions') }}" class="quick-link-card">
+        <h4>View Pricing Plans</h4>
+        <p>Compare our affordable subscription options</p>
+    </a>
+    <a href="{{ url_for('main.testimonials') }}" class="quick-link-card">
+        <h4>Read Success Stories</h4>
+        <p>See how other institutions benefit from AttendAI</p>
+    </a>
+</div>
+
+<!-- Contact Section -->
+<div class="contact-section">
+    <h3>Still Have Questions?</h3>
+    <p>Our support team is here to help. Contact us through any of the channels below for personalized assistance.</p>
+    <div class="contact-options">
+        <a href="mailto:support@attendai.com" class="contact-btn">✉ Email Support</a>
+        <a href="#" class="contact-btn">💬 Live Chat</a>
+        <a href="#" class="contact-btn">📞 Call Support</a>
+    </div>
+</div>
+
+<!-- No Results Message -->
+<div class="no-results" id="noResults">
+    <h3>No matching questions found</h3>
+    <p>Try different keywords or contact our support team for assistance.</p>
+</div>
+
+<script>
+    // FAQ Toggle Function
+    function toggleFAQ(element) {
+        const faqItem = element.parentElement;
+        const icon = element.querySelector('.faq-icon');
+        const isActive = faqItem.classList.contains('active');
+
+        // Toggle current item
+        if (isActive) {
+            faqItem.classList.remove('active');
+            icon.textContent = '+';
+        } else {
+            faqItem.classList.add('active');
+            icon.textContent = '+';
+        }
+    }
+
+    // Category Tab Function
+    function showCategory(category) {
+        // Update active tab
+        document.querySelectorAll('.category-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        event.target.classList.add('active');
+
+        // Show selected category
+        document.querySelectorAll('.category-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        document.getElementById(category + '-faqs').classList.add('active');
+
+        // Reset search
+        document.getElementById('faqSearch').value = '';
+        document.getElementById('noResults').style.display = 'none';
+    }
+
+    // Search Function
+    function searchFAQs() {
+        const searchTerm = document.getElementById('faqSearch').value.toLowerCase().trim();
+        const allFAQs = document.querySelectorAll('.faq-item');
+        let foundResults = false;
+
+        if (searchTerm === '') {
+            // Reset to show all
+            allFAQs.forEach(faq => {
+                faq.style.display = '';
+            });
+            document.getElementById('noResults').style.display = 'none';
+            return;
+        }
+
+        allFAQs.forEach(faq => {
+            const question = faq.querySelector('.faq-question-text').textContent.toLowerCase();
+            const answer = faq.querySelector('.faq-answer').textContent.toLowerCase();
+            
+            if (question.includes(searchTerm) || answer.includes(searchTerm)) {
+                faq.style.display = '';
+                foundResults = true;
+                
+                // Expand matching FAQ
+                faq.classList.add('active');
+                faq.querySelector('.faq-icon').textContent = '+';
+            } else {
+                faq.style.display = 'none';
+            }
+        });
+
+        // Show no results message if needed
+        document.getElementById('noResults').style.display = foundResults ? 'none' : 'block';
+    }
+
+    // Search on Enter key
+    document.getElementById('faqSearch').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchFAQs();
+        }
+    });
+
+    // Initialize first FAQ as open
+    document.addEventListener('DOMContentLoaded', function() {
+        const firstFAQ = document.querySelector('.faq-item');
+        if (firstFAQ) {
+            firstFAQ.classList.add('active');
+            firstFAQ.querySelector('.faq-icon').textContent = '+';
+        }
+    });
+</script>
+{% endblock %}

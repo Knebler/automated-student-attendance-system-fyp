@@ -1,0 +1,468 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ testimonial.author_name }} - AttendAI Testimonial{% endblock %}
+
+{% block content %}
+<style>
+    /* Page Header */
+    .page-header {
+        margin-bottom: 3rem;
+        padding: 2rem 0;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-dark);
+        text-decoration: none;
+        font-weight: 500;
+        margin-bottom: 1.5rem;
+        transition: color 0.3s ease;
+    }
+
+    .back-link:hover {
+        color: var(--text-light);
+        text-decoration: none;
+    }
+
+    .back-arrow {
+        font-size: 1.2rem;
+    }
+
+    .testimonial-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: var(--text-dark);
+        margin-bottom: 1rem;
+        font-style: italic;
+        line-height: 1.3;
+    }
+
+    /* Author Section */
+    .author-section {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background-color: var(--primary-light);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+    }
+
+    .author-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid white;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .author-info {
+        flex: 1;
+    }
+
+    .author-name {
+        font-weight: bold;
+        color: var(--text-dark);
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .author-title {
+        color: var(--text-dark);
+        font-size: 1.1rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .author-organization {
+        color: var(--text-light);
+        font-size: 1rem;
+        font-weight: 500;
+    }
+
+    /* Ratings */
+    .testimonial-rating {
+        display: flex;
+        gap: 0.25rem;
+        margin-top: 0.5rem;
+    }
+
+    .star {
+        color: #fbbf24;
+        font-size: 1.5rem;
+    }
+
+    /* Testimonial Content */
+    .testimonial-content {
+        line-height: 1.8;
+        color: var(--text-dark);
+        margin: 3rem 0;
+    }
+
+    .testimonial-content p {
+        margin-bottom: 1.5rem;
+        text-align: justify;
+        font-size: 1.1rem;
+    }
+
+    .testimonial-content p:first-child::first-letter {
+        font-size: 3rem;
+        font-weight: bold;
+        float: left;
+        line-height: 1;
+        margin: 0.1em 0.1em 0 0;
+        color: var(--text-dark);
+    }
+
+    /* Key Results Section */
+    .results-section {
+        background-color: var(--primary-light);
+        border: 2px solid var(--border-color);
+        border-radius: 16px;
+        padding: 2.5rem;
+        margin: 3rem 0;
+    }
+
+    .results-section h3 {
+        font-size: 1.75rem;
+        color: var(--text-dark);
+        margin-bottom: 1.5rem;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .results-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 2rem;
+    }
+
+    .result-item {
+        text-align: center;
+        padding: 1.5rem;
+        background-color: white;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+    }
+
+    .result-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .result-label {
+        color: var(--text-dark);
+        font-size: 0.95rem;
+    }
+
+    /* Gallery Section */
+    .gallery-section {
+        margin: 3rem 0;
+    }
+
+    .gallery-section h3 {
+        font-size: 1.75rem;
+        color: var(--text-dark);
+        margin-bottom: 1.5rem;
+        font-weight: bold;
+    }
+
+    .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+    }
+
+    .gallery-item {
+        height: 200px;
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--primary-light);
+        color: var(--text-light);
+        font-size: 1rem;
+        transition: transform 0.3s ease;
+    }
+
+    .gallery-item:hover {
+        transform: translateY(-3px);
+    }
+
+    /* Related Testimonials */
+    .related-section {
+        margin: 4rem 0;
+        padding-top: 3rem;
+        border-top: 2px solid var(--border-color);
+    }
+
+    .related-section h3 {
+        font-size: 1.75rem;
+        color: var(--text-dark);
+        margin-bottom: 2rem;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .related-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+    }
+
+    .related-card {
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        background-color: white;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: block;
+    }
+
+    .related-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        text-decoration: none;
+    }
+
+    .related-author {
+        font-weight: bold;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .related-excerpt {
+        color: var(--text-dark);
+        font-size: 0.95rem;
+        line-height: 1.5;
+        margin-bottom: 1rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .read-more {
+        color: var(--text-light);
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    /* CTA Section */
+    .cta-section {
+        text-align: center;
+        margin: 4rem 0;
+        padding: 3rem;
+        background-color: var(--primary-light);
+        border-radius: 16px;
+        border: 2px solid var(--border-color);
+    }
+
+    .cta-section h3 {
+        font-size: 2rem;
+        color: var(--text-dark);
+        margin-bottom: 1rem;
+        font-weight: bold;
+    }
+
+    .cta-section p {
+        font-size: 1.1rem;
+        color: var(--text-dark);
+        margin-bottom: 2rem;
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .results-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .gallery-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .related-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .testimonial-title {
+            font-size: 2rem;
+        }
+
+        .author-section {
+            flex-direction: column;
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .author-avatar {
+            width: 100px;
+            height: 100px;
+        }
+
+        .results-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .gallery-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .related-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .cta-section {
+            padding: 2rem 1.5rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .testimonial-title {
+            font-size: 1.75rem;
+        }
+
+        .author-name {
+            font-size: 1.25rem;
+        }
+
+        .testimonial-content p {
+            font-size: 1rem;
+        }
+
+        .result-item {
+            padding: 1rem;
+        }
+
+        .result-value {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+
+<!-- Back Link -->
+<a href="{{ url_for('main.testimonials') }}" class="back-link">
+    <span class="back-arrow">←</span> Back to All Testimonials
+</a>
+
+<!-- Page Header -->
+<div class="page-header">
+    <h1 class="testimonial-title">"How AttendAI Transformed Our University's Attendance Tracking"</h1>
+</div>
+
+<!-- Author Section -->
+<div class="author-section">
+    <div class="author-avatar-placeholder" style="width: 80px; height: 80px; border-radius: 50%; background-color: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--text-light); border: 3px solid white;">
+        MA
+    </div>
+    <div class="author-info">
+        <div class="author-name">Madeline Ang</div>
+        <div class="author-title">Director of Human Resources</div>
+        <div class="author-organization">HelloWorld University</div>
+        <div class="testimonial-rating">
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+        </div>
+    </div>
+</div>
+
+<!-- Testimonial Content -->
+<div class="testimonial-content">
+    <p>When I first joined HelloWorld University as Director of HR, I was shocked to discover that our attendance tracking was still being done manually. Professors were spending 15-20 minutes at the start of each class taking roll calls, administrative staff were manually entering data into spreadsheets, and we had no real-time visibility into attendance patterns. The process was not only time-consuming but also prone to errors, with proxy attendance becoming a significant concern.</p>
+
+    <p>After researching several solutions, we chose AttendAI for its comprehensive feature set and proven track record in educational institutions. The implementation process was remarkably smooth - their team worked closely with our IT department to ensure seamless integration with our existing student information system. Within two weeks, we had the system up and running across all departments.</p>
+
+    <p>The impact was immediate and transformative. Professors reported saving an average of 12 hours per month on administrative tasks. The AI-powered face recognition system virtually eliminated proxy attendance, which had been a persistent problem affecting academic integrity. But perhaps the most significant benefit was the data insights we gained. For the first time, we could identify attendance patterns in real-time and intervene proactively with students who were at risk.</p>
+
+    <p>One particularly compelling case involved a sophomore computer science student whose attendance had dropped to 65%. Our old system would have flagged this at the end of the semester, far too late for meaningful intervention. With AttendAI's predictive analytics, we identified the pattern in Week 4 of the semester. Our academic advisors reached out, discovered the student was struggling with transportation issues, and arranged for remote access to lectures. The student finished the semester with 92% attendance and a B+ average.</p>
+
+    <p>The reporting features have also been invaluable for accreditation purposes. We can now generate comprehensive attendance reports for any time period with a few clicks, complete with analytics on trends, patterns, and correlations with academic performance. This has significantly reduced the administrative burden during accreditation cycles.</p>
+
+    <p>What truly sets AttendAI apart is their exceptional customer support. Whenever we've had questions or needed assistance with custom configurations, their team has been responsive, knowledgeable, and genuinely invested in our success. They've implemented several feature requests based on our feedback, demonstrating their commitment to continuous improvement.</p>
+</div>
+
+<!-- Results Section -->
+<div class="results-section">
+    <h3>Key Results Achieved with AttendAI</h3>
+    <div class="results-grid">
+        <div class="result-item">
+            <div class="result-value">85%</div>
+            <div class="result-label">Reduction in administrative time</div>
+        </div>
+        <div class="result-item">
+            <div class="result-value">99.7%</div>
+            <div class="result-label">Attendance accuracy rate</div>
+        </div>
+        <div class="result-item">
+            <div class="result-value">23%</div>
+            <div class="result-label">Increase in overall attendance</div>
+        </div>
+        <div class="result-item">
+            <div class="result-value">4.8/5</div>
+            <div class="result-label">Faculty satisfaction score</div>
+        </div>
+    </div>
+</div>
+
+<!-- Gallery Section -->
+<div class="gallery-section">
+    <h3>Implementation & Results</h3>
+    <div class="gallery-grid">
+        <div class="gallery-item">Dashboard Screenshot</div>
+        <div class="gallery-item">Implementation Team</div>
+        <div class="gallery-item">Results Presentation</div>
+    </div>
+</div>
+
+<!-- Related Testimonials -->
+<div class="related-section">
+    <h3>More Success Stories</h3>
+    <div class="related-grid">
+        <a href="#" class="related-card">
+            <div class="related-author">Dr. Sarah Johnson</div>
+            <div class="related-excerpt">"The predictive analytics helped us identify at-risk students weeks before exams and provide timely interventions..."</div>
+            <div class="read-more">Read Full Story →</div>
+        </a>
+        <a href="#" class="related-card">
+            <div class="related-author">Michael Chen</div>
+            <div class="related-excerpt">"Implementation was seamless, and their support team was incredibly helpful throughout the process..."</div>
+            <div class="read-more">Read Full Story →</div>
+        </a>
+        <a href="#" class="related-card">
+            <div class="related-author">Robert Williams</div>
+            <div class="related-excerpt">"The ROI was apparent within the first month. We've saved over 200 administrative hours this semester alone..."</div>
+            <div class="read-more">Read Full Story →</div>
+        </a>
+    </div>
+</div>
+
+<!-- CTA Section -->
+<div class="cta-section">
+    <h3>Ready to Transform Your Attendance Management?</h3>
+    <p>Like HelloWorld University, you can achieve significant improvements in efficiency, accuracy, and student outcomes with AttendAI. Start your free trial today and experience the difference.</p>
+    {% if not session.user %}
+        <a class="btn-custom" href="{{ url_for('auth.register') }}" style="margin-right: 1rem;">Start Free Trial</a>
+        <a class="btn-custom btn-outline-custom" href="{{ url_for('main.subscriptions') }}">View Pricing</a>
+    {% else %}
+        <a class="btn-custom" href="{{ url_for('dashboard.dashboard') }}" style="margin-right: 1rem;">Go to Dashboard</a>
+        <a class="btn-custom btn-outline-custom" href="{{ url_for('main.features') }}">Explore Features</a>
+    {% endif %}
+</div>
+{% endblock %}

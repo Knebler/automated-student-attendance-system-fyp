@@ -456,13 +456,13 @@
             AttendAI – a sophisticated but easy to use attendance management
             software powered by artificial intelligence.
         </p>
-        {% if not session.user %}
+        <!-- {% if not session.user %} -->
             <a class="btn-custom"
                href="{{ url_for('auth.register') }}"
                style="margin-right: 0.75rem;">
                 Get Started
             </a>
-            <a class="btn-custom btn-outline-custom"
+            <!-- <a class="btn-custom btn-outline-custom"
                href="{{ url_for('auth.login') }}">
                 Login
             </a>
@@ -471,7 +471,7 @@
                href="{{ url_for('dashboard.dashboard') }}">
                 Go to Dashboard
             </a>
-        {% endif %}
+        {% endif %} -->
     </div>
 </div>
 

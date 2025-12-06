@@ -1,10 +1,11 @@
 from application.entities.user import User
+from application.entities.base_entity import BaseEntity
 from application.entities.attendance import Attendance
 from application.entities.institution import Institution
 from application.entities.course import Course
 from application.entities.lecturer import Lecturer
 from application.entities.student import Student
-#from application.entities.enrollment import Enrollment
+from application.entities.enrollment import Enrollment
 from application.entities.session import Session
 from application.entities.platform_manager import PlatformManager
 from application.entities.subscription_plan import SubscriptionPlan
@@ -30,7 +31,7 @@ class DatabaseControl:
                 Lecturer,
                 Course,
                 Student,
-                #Enrollment,
+                Enrollment,
                 Session,
                 Attendance
             ]
@@ -58,12 +59,31 @@ class DatabaseControl:
     def check_table_has_data(app, table_name):
         """Check if a table has any data"""
         try:
-            cursor = app.config['mysql'].connection.cursor()
-            cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
-            count = cursor.fetchone()[0]
-            cursor.close()
-            return count > 0
-        except:
+            # prefer DB-API cursor via BaseEntity.get_db_connection
+            try:
+                cursor = BaseEntity.get_db_connection(app)
+                cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+                result = cursor.fetchone()
+                # close if supported
+                try:
+                    cursor.close()
+                except Exception:
+                    pass
+                if result:
+                    # tuple-like
+                    return int(result[0]) > 0
+                return False
+            except Exception:
+                # fallback to raw mysql connector if present
+                mysql = app.config.get('mysql')
+                if mysql is None:
+                    return False
+                cursor = mysql.connection.cursor()
+                cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+                count = cursor.fetchone()[0]
+                cursor.close()
+                return count > 0
+        except Exception:
             return False
 
     @staticmethod
@@ -104,7 +124,16 @@ class DatabaseControl:
     @staticmethod
     def insert_sample_data(app):
         """Insert sample data for testing"""
-        cursor = app.config['mysql'].connection.cursor()
+        # Prefer unified DBAPI cursor from BaseEntity so SQLAlchemy-backed apps will work
+        cursor = None
+        mysql = app.config.get('mysql')
+        try:
+            cursor = BaseEntity.get_db_connection(app)
+        except Exception:
+            cursor = None
+
+        if cursor is None and mysql is not None:
+            cursor = mysql.connection.cursor()
         
         # Insert sample subscription plan
         cursor.execute("""
@@ -132,8 +161,20 @@ class DatabaseControl:
             'System Administrator'
         ))
         
-        app.config['mysql'].connection.commit()
-        cursor.close()
+        # Commit depending on backend
+        try:
+            if mysql is not None and cursor is not None and getattr(mysql, 'connection', None):
+                mysql.connection.commit()
+            else:
+                # session-backed wrapper - use BaseEntity.commit_changes
+                BaseEntity.commit_changes(app)
+        except Exception:
+            pass
+
+        try:
+            cursor.close()
+        except Exception:
+            pass
 
 
 # Dev actions expose database helpers for testing

@@ -70,9 +70,14 @@ def test_endpoint():
         import importlib
         # Attempt to import controls so their register_action calls execute
         for m in ['application.controls.database_control',
-                  'application.controls.auth_control',
-                  'application.controls.attendance_control',
-                  'application.controls.institution_control']:
+              'application.controls.auth_control',
+              'application.controls.attendance_control',
+              'application.controls.institution_control',
+              # also import boundary modules that register dev actions
+              'application.boundaries.attendance_boundary',
+              'application.boundaries.auth_boundary',
+              # include main boundary which registers init_database
+              'application.boundaries.main_boundary']:
             try:
                 importlib.import_module(m)
             except Exception:

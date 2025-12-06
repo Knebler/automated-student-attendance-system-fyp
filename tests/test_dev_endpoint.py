@@ -1,11 +1,14 @@
 import pytest
+import os
 from flask import Flask
 
 
 @pytest.fixture
 def app():
     # create a minimal Flask app and register the dev blueprint
-    app = Flask(__name__)
+    # ensure Flask can find project-level templates during tests
+    templates_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates'))
+    app = Flask(__name__, template_folder=templates_path)
     app.config['TESTING'] = True
     app.config['WTF_CSRF_ENABLED'] = False
     # Ensure templates referencing csrf_token() don't fail in tests

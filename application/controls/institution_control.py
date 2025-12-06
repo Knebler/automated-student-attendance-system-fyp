@@ -3,6 +3,7 @@ from application.entities.course import Course
 from application.entities.lecturer import Lecturer
 from application.entities.student import Student
 from application.entities.subscription import Subscription
+from application.entities.base_entity import BaseEntity
 from datetime import datetime
 
 class InstitutionControl:
@@ -33,6 +34,74 @@ class InstitutionControl:
                 'error': str(e)
             }
 
+    @staticmethod
+    def get_institution_stats(app, institution_id):
+        """Get statistics for an institution"""
+        try:
+            # Count active students
+            student_row = BaseEntity.execute_query(
+                app,
+                "SELECT COUNT(*) FROM Students WHERE institution_id = %s AND is_active = TRUE",
+                (institution_id,),
+                fetch_one=True
+            )
+            student_count = student_row[0] if student_row and student_row[0] is not None else 0
+
+            # Count active lecturers
+            lecturer_row = BaseEntity.execute_query(
+                app,
+                "SELECT COUNT(*) FROM Lecturers WHERE institution_id = %s AND is_active = TRUE",
+                (institution_id,),
+                fetch_one=True
+            )
+            lecturer_count = lecturer_row[0] if lecturer_row and lecturer_row[0] is not None else 0
+
+            # Count active courses
+            course_row = BaseEntity.execute_query(
+                app,
+                "SELECT COUNT(*) FROM Courses WHERE institution_id = %s AND is_active = TRUE",
+                (institution_id,),
+                fetch_one=True
+            )
+            course_count = course_row[0] if course_row and course_row[0] is not None else 0
+
+            # Get recent attendance rate
+            result = BaseEntity.execute_query(
+                app,
+                '''
+                SELECT 
+                    COUNT(DISTINCT s.session_id) as total_sessions,
+                    COUNT(CASE WHEN ar.status = 'present' THEN 1 END) as present_count
+                FROM Sessions s
+                JOIN Courses c ON s.course_id = c.course_id
+                LEFT JOIN Attendance_Records ar ON s.session_id = ar.session_id
+                WHERE c.institution_id = %s 
+                AND s.session_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+                ''',
+                (institution_id,),
+                fetch_one=True
+            )
+
+            total_sessions = result[0] if result and result[0] else 1
+            attendance_rate = (result[1] / total_sessions * 100) if total_sessions > 0 and result and result[1] else 0
+
+            return {
+                'success': True,
+                'stats': {
+                    'student_count': student_count,
+                    'lecturer_count': lecturer_count,
+                    'course_count': course_count,
+                    'attendance_rate': round(attendance_rate, 2),
+                    'last_updated': datetime.now().isoformat()
+                }
+            }
+
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e)
+            }
+
 
 # Expose useful dev actions for institution management
 try:
@@ -56,59 +125,3 @@ try:
     )
 except Exception:
     pass
-    
-    @staticmethod
-    def get_institution_stats(app, institution_id):
-        """Get statistics for an institution"""
-        try:
-            cursor = app.config['mysql'].connection.cursor()
-            
-            # Count active students
-            cursor.execute("SELECT COUNT(*) FROM Students WHERE institution_id = %s AND is_active = TRUE", 
-                         (institution_id,))
-            student_count = cursor.fetchone()[0]
-            
-            # Count active lecturers
-            cursor.execute("SELECT COUNT(*) FROM Lecturers WHERE institution_id = %s AND is_active = TRUE", 
-                         (institution_id,))
-            lecturer_count = cursor.fetchone()[0]
-            
-            # Count active courses
-            cursor.execute("SELECT COUNT(*) FROM Courses WHERE institution_id = %s AND is_active = TRUE", 
-                         (institution_id,))
-            course_count = cursor.fetchone()[0]
-            
-            # Get recent attendance rate
-            cursor.execute("""
-            SELECT 
-                COUNT(DISTINCT s.session_id) as total_sessions,
-                COUNT(CASE WHEN ar.status = 'present' THEN 1 END) as present_count
-            FROM Sessions s
-            JOIN Courses c ON s.course_id = c.course_id
-            LEFT JOIN Attendance_Records ar ON s.session_id = ar.session_id
-            WHERE c.institution_id = %s 
-            AND s.session_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-            """, (institution_id,))
-            
-            result = cursor.fetchone()
-            total_sessions = result[0] if result[0] else 1
-            attendance_rate = (result[1] / total_sessions * 100) if total_sessions > 0 else 0
-            
-            cursor.close()
-            
-            return {
-                'success': True,
-                'stats': {
-                    'student_count': student_count,
-                    'lecturer_count': lecturer_count,
-                    'course_count': course_count,
-                    'attendance_rate': round(attendance_rate, 2),
-                    'last_updated': datetime.now().isoformat()
-                }
-            }
-            
-        except Exception as e:
-            return {
-                'success': False,
-                'error': str(e)
-            }

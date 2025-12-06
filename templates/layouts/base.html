@@ -3,57 +3,372 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Attendance System{% endblock %}</title>
+    <title>{% block title %}AttendAI{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    <style>
+        :root {
+            --primary-dark: #0f172a;
+            --primary-light: #f8fafc;
+            --border-color: #0f172a;
+            --text-dark: #0f172a;
+            --text-light: #64748b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            color: var(--text-dark);
+            background-color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navigation - Design from indexdesign.html */
+        .navbar-custom {
+            background-color: var(--primary-dark);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .navbar-brand-custom {
+            color: white;
+            font-size: 1.75rem;
+            font-weight: bold;
+            font-style: italic;
+            text-decoration: none;
+        }
+
+        .navbar-brand-custom:hover {
+            color: white;
+            text-decoration: none;
+        }
+
+        .nav-links-custom {
+            display: flex;
+            list-style: none;
+            gap: 0.5rem;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-links-custom li {
+            padding: 0 1rem;
+            border-right: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .nav-links-custom li:last-child {
+            border-right: none;
+        }
+
+        .nav-link-custom {
+            color: white;
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link-custom:hover {
+            text-decoration: underline;
+            color: #e2e8f0;
+        }
+
+        /* Main Content Container */
+        .main-container {
+            flex: 1;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Alert Messages */
+        .alert-container {
+            max-width: 1200px;
+            margin: 2rem auto 0 auto;
+            padding: 0 2rem;
+        }
+
+        .alert-custom {
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--primary-light);
+            color: var(--text-dark);
+        }
+
+        .alert-success {
+            border-color: #059669;
+            background-color: #f0fdf4;
+        }
+
+        .alert-danger {
+            border-color: #dc2626;
+            background-color: #fef2f2;
+        }
+
+        .alert-warning {
+            border-color: #d97706;
+            background-color: #fffbeb;
+        }
+
+        .alert-info {
+            border-color: #0891b2;
+            background-color: #f0f9ff;
+        }
+
+        /* Common Design Elements */
+        .btn-custom {
+            background-color: var(--primary-dark);
+            color: white;
+            border: 2px solid var(--primary-dark);
+            padding: 0.75rem 2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .btn-custom:hover {
+            background-color: #1e293b;
+            border-color: #1e293b;
+            color: white;
+            text-decoration: none;
+        }
+
+        .btn-outline-custom {
+            background-color: white;
+            color: var(--primary-dark);
+            border: 2px solid var(--primary-dark);
+        }
+
+        .btn-outline-custom:hover {
+            background-color: var(--primary-dark);
+            color: white;
+        }
+
+        .card-custom {
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            background-color: white;
+        }
+
+        .card-header-custom {
+            background-color: var(--primary-light);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+            font-weight: bold;
+        }
+
+        .card-body-custom {
+            padding: 1.5rem;
+        }
+
+        /* Footer */
+        .footer-custom {
+            background-color: var(--primary-dark);
+            color: white;
+            padding: 2rem;
+            margin-top: 3rem;
+            border-top: 2px solid var(--border-color);
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Utility Classes */
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .mt-1 { margin-top: 0.5rem; }
+        .mt-2 { margin-top: 1rem; }
+        .mt-3 { margin-top: 1.5rem; }
+        .mt-4 { margin-top: 2rem; }
+        .mt-5 { margin-top: 3rem; }
+        .mb-1 { margin-bottom: 0.5rem; }
+        .mb-2 { margin-bottom: 1rem; }
+        .mb-3 { margin-bottom: 1.5rem; }
+        .mb-4 { margin-bottom: 2rem; }
+        .mb-5 { margin-bottom: 3rem; }
+        .p-1 { padding: 0.5rem; }
+        .p-2 { padding: 1rem; }
+        .p-3 { padding: 1.5rem; }
+        .p-4 { padding: 2rem; }
+        .p-5 { padding: 3rem; }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .navbar-custom {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .nav-links-custom {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .nav-links-custom li {
+                padding: 0.5rem;
+                border-right: none;
+            }
+
+            .main-container {
+                padding: 1rem;
+            }
+
+            .alert-container {
+                padding: 0 1rem;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+        }
+
+        /* Mobile Menu Toggle (for small screens) */
+        .navbar-toggler-custom {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .navbar-toggler-custom {
+                display: block;
+            }
+
+            .nav-links-custom {
+                display: none;
+                width: 100%;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .nav-links-custom.show {
+                display: flex;
+            }
+
+            .nav-links-custom li {
+                width: 100%;
+                text-align: center;
+                padding: 0.75rem;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            }
+
+            .nav-links-custom li:last-child {
+                border-bottom: none;
+            }
+        }
+    </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-             <a class="navbar-brand" href="{{ url_for('main.home') }}">Attendance System</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    {% if session.user %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('dashboard.dashboard') }}">Dashboard</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('dashboard.profile') }}">Profile</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.register') }}">Register</a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </div>
-        </div>
+    <!-- Custom Navigation -->
+    <nav class="navbar-custom">
+        <a class="navbar-brand-custom" href="{{ url_for('main.home') }}">AttendAI</a>
+        
+        <button class="navbar-toggler-custom" onclick="toggleMobileMenu()">
+            ☰
+        </button>
+        
+        <ul class="nav-links-custom" id="mobileMenu">
+            {% if session.user %}
+                <!-- Public links -->
+                <li><a class="nav-link-custom" href="{{ url_for('main.home') }}">Home</a></li>
+                <li><a class="nav-link-custom" href="{{ url_for('main.features') }}">Features</a></li>
+                <li><a class="nav-link-custom" href="{{ url_for('main.about') }}">About Us</a></li>
+                
+                <!-- User links -->
+                <li><a class="nav-link-custom" href="{{ url_for('dashboard.dashboard') }}">Dashboard</a></li>
+                <li><a class="nav-link-custom" href="{{ url_for('dashboard.profile') }}">Profile</a></li>
+                <li><a class="nav-link-custom" href="{{ url_for('auth.logout') }}">Logout</a></li>
+            {% else %}
+                <!-- Public links -->
+                <li><a class="nav-link-custom" href="{{ url_for('main.features') }}">Features</a></li>
+                <li><a class="nav-link-custom" href="{{ url_for('main.about') }}">About</a></li>
+                <li><a class="nav-link-custom" href="{{ url_for('main.subscriptions') }}">Subcription</a></li>
+                <li><a class="nav-link-custom" href="{{ url_for('main.testimonials') }}">Testimonials</a></li>
+                <li><a class="nav-link-custom" href="{{ url_for('main.faq') }}">FAQ</a></li>
+                
+                <!-- Auth links -->
+                <li><a class="nav-link-custom" href="{{ url_for('auth.login') }}">Login</a></li>
+                <li><a class="nav-link-custom" href="{{ url_for('auth.register') }}">Register</a></li>
+            {% endif %}
+        </ul>
     </nav>
 
-    <div class="container mt-4">
+    <!-- Alert Messages -->
+    <div class="alert-container">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show">
+                    <div class="alert-custom alert-{{ category }} mt-3">
                         {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'" style="float: right; background: none; border: none; font-size: 1.2rem; cursor: pointer;">×</button>
                     </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
+    </div>
 
+    <!-- Main Content -->
+    <div class="main-container">
         {% block content %}{% endblock %}
     </div>
 
+    <!-- Footer -->
+    <footer class="footer-custom">
+        <div class="footer-content">
+            <div>
+                <span class="navbar-brand-custom">AttendAI</span>
+                <p class="mt-1" style="font-size: 0.9rem; opacity: 0.8;">AI-Powered Attendance Management</p>
+            </div>
+            <div>
+                <p style="font-size: 0.9rem;">&copy; 2026 AttendAI. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            menu.classList.toggle('show');
+        }
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('mobileMenu');
+            const toggler = document.querySelector('.navbar-toggler-custom');
+            
+            if (!menu.contains(event.target) && !toggler.contains(event.target)) {
+                menu.classList.remove('show');
+            }
+        });
+    </script>
+
+    <!-- Bootstrap JS (kept for any components that might need it) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     {% block scripts %}{% endblock %}
 </body>

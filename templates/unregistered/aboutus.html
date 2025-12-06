@@ -1,0 +1,309 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}About Us - AttendAI{% endblock %}
+
+{% block content %}
+<style>
+    /* Intro Section */
+    .intro-section {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding: 2rem 0;
+    }
+
+    .intro-section h2 {
+        font-size: 2rem;
+        color: var(--text-dark);
+        margin-bottom: 1rem;
+        font-weight: bold;
+    }
+
+    .intro-section p {
+        font-size: 1.1rem;
+        color: var(--text-light);
+        max-width: 800px;
+        margin: 0 auto;
+        line-height: 1.6;
+    }
+
+    /* Our Story Card */
+    .story-card {
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        padding: 3rem 2rem;
+        margin-bottom: 3rem;
+        background-color: white;
+        text-align: center;
+        transition: transform 0.3s ease;
+    }
+
+    .story-card:hover {
+        transform: translateY(-3px);
+    }
+
+    .story-card h2 {
+        font-size: 1.75rem;
+        color: var(--text-dark);
+        margin-bottom: 1.5rem;
+        font-weight: bold;
+    }
+
+    .story-card p {
+        font-size: 1.1rem;
+        color: var(--text-dark);
+        line-height: 1.7;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    /* Team Cards */
+    .team-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .team-card {
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        height: 320px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        padding: 2rem;
+        background-color: white;
+        transition: transform 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .team-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .team-card-content {
+        text-align: center;
+        z-index: 2;
+        position: relative;
+    }
+
+    .team-card h3 {
+        font-size: 1.25rem;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+        font-weight: bold;
+    }
+
+    .team-card p {
+        font-size: 0.95rem;
+        color: var(--text-light);
+        margin-bottom: 1rem;
+    }
+
+    .team-image-placeholder {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--primary-light);
+        color: var(--text-light);
+        font-size: 1rem;
+        opacity: 0.3;
+    }
+
+    /* Section Title */
+    .section-title {
+        text-align: center;
+        font-size: 2rem;
+        color: var(--text-dark);
+        margin: 3rem 0 2rem 0;
+        font-weight: bold;
+        position: relative;
+    }
+
+    .section-title::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 3px;
+        background-color: var(--border-color);
+    }
+
+    /* Mission & Vision */
+    .mission-vision-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+        margin: 3rem 0;
+    }
+
+    .mission-card, .vision-card {
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        padding: 2rem;
+        background-color: white;
+        transition: transform 0.3s ease;
+    }
+
+    .mission-card:hover, .vision-card:hover {
+        transform: translateY(-3px);
+    }
+
+    .mission-card h3, .vision-card h3 {
+        font-size: 1.5rem;
+        color: var(--text-dark);
+        margin-bottom: 1rem;
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .mission-card p, .vision-card p {
+        font-size: 1rem;
+        color: var(--text-dark);
+        line-height: 1.6;
+        text-align: center;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .team-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .mission-vision-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .team-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        .team-card {
+            height: 280px;
+            padding: 1.5rem;
+        }
+
+        .story-card {
+            padding: 2rem 1rem;
+        }
+
+        .intro-section h2 {
+            font-size: 1.75rem;
+        }
+
+        .section-title {
+            font-size: 1.75rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .team-card {
+            height: 250px;
+        }
+
+        .intro-section p {
+            font-size: 1rem;
+        }
+    }
+</style>
+
+<!-- Intro Section -->
+<section class="intro-section">
+    <h2>About AttendAI</h2>
+    <p>We're revolutionizing attendance management with AI-powered solutions that make tracking, reporting, and analytics seamless for educational institutions and businesses worldwide.</p>
+</section>
+
+<!-- Our Story Card -->
+<section class="story-card card-custom">
+    <h2>Our Story</h2>
+    <p>Founded in 2023, AttendAI began as a student project at a leading technology university. Our team recognized the inefficiencies in traditional attendance tracking systems and set out to create a smarter solution. Today, we serve over 500 institutions across 30 countries, helping them save thousands of hours annually while improving accuracy and insights.</p>
+</section>
+
+<!-- Mission & Vision -->
+<h2 class="section-title">Our Mission & Vision</h2>
+<div class="mission-vision-grid">
+    <div class="mission-card card-custom">
+        <h3>Our Mission</h3>
+        <p>To revolutionize attendance management through innovative AI technology, making it effortless for organizations to track, analyze, and optimize participation while providing actionable insights for better decision-making.</p>
+    </div>
+    <div class="vision-card card-custom">
+        <h3>Our Vision</h3>
+        <p>To become the global standard in attendance management systems, empowering every educational and corporate institution with smart, seamless, and scalable solutions that enhance productivity and engagement.</p>
+    </div>
+</div>
+
+<!-- Team Section -->
+<h2 class="section-title">Meet Our Team</h2>
+<div class="team-grid">
+    <div class="team-card card-custom">
+        <div class="team-image-placeholder">
+            Team Member 1
+        </div>
+        <div class="team-card-content">
+            <h3>Alex Johnson</h3>
+            <p>CEO & Founder</p>
+            <a href="#" class="btn-custom" style="padding: 0.5rem 1.5rem; font-size: 0.85rem;">View Profile</a>
+        </div>
+    </div>
+
+    <div class="team-card card-custom">
+        <div class="team-image-placeholder">
+            Team Member 2
+        </div>
+        <div class="team-card-content">
+            <h3>Maria Chen</h3>
+            <p>CTO & AI Lead</p>
+            <a href="#" class="btn-custom" style="padding: 0.5rem 1.5rem; font-size: 0.85rem;">View Profile</a>
+        </div>
+    </div>
+
+    <div class="team-card card-custom">
+        <div class="team-image-placeholder">
+            Team Member 3
+        </div>
+        <div class="team-card-content">
+            <h3>David Rodriguez</h3>
+            <p>Head of Product</p>
+            <a href="#" class="btn-custom" style="padding: 0.5rem 1.5rem; font-size: 0.85rem;">View Profile</a>
+        </div>
+    </div>
+</div>
+
+<!-- Values Section -->
+<h2 class="section-title">Our Values</h2>
+<div class="team-grid">
+    <div class="team-card card-custom" style="justify-content: center;">
+        <div class="team-card-content">
+            <h3>Innovation</h3>
+            <p>Constantly pushing boundaries with AI and machine learning to deliver cutting-edge solutions.</p>
+        </div>
+    </div>
+
+    <div class="team-card card-custom" style="justify-content: center;">
+        <div class="team-card-content">
+            <h3>Reliability</h3>
+            <p>99.9% uptime guarantee with robust, secure systems you can trust.</p>
+        </div>
+    </div>
+
+    <div class="team-card card-custom" style="justify-content: center;">
+        <div class="team-card-content">
+            <h3>User-Centric</h3>
+            <p>Designed with real users in mind for intuitive, frictionless experiences.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

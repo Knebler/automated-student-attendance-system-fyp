@@ -1,68 +1,200 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}Home - Attendance System{% endblock %}
+{% block title %}Home - AttendAI{% endblock %}
 
 {% block content %}
-<div class="jumbotron bg-light p-5 rounded">
-    <h1 class="display-4">Welcome to Automated Attendance System</h1>
-    <p class="lead">A modern attendance tracking system with AI-powered features.</p>
-    <hr class="my-4">
-    <p>Track attendance, generate reports, and manage students efficiently.</p>
-    {% if not session.user %}
-        <a class="btn btn-primary btn-lg" href="{{ url_for('auth.register') }}">Get Started</a>
-        <a class="btn btn-outline-primary btn-lg" href="{{ url_for('auth.login') }}">Login</a>
-    {% else %}
-        <a class="btn btn-success btn-lg" href="{{ url_for('dashboard.dashboard') }}">Go to Dashboard</a>
-    {% endif %}
+<style>
+    .main-heading {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: var(--text-dark);
+        margin-bottom: 2rem;
+        line-height: 1.3;
+        font-style: italic;
+    }
 
-</div>
+    /* Hero Card */
+    .hero-card {
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 3rem;
+    }
 
-<!-- Public tabs linking to unregistered pages -->
-<div class="row mt-3">
-    <div class="col-12">
-        <ul class="nav nav-tabs" role="tablist">
-            <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('main.about') }}">About</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('main.features') }}">Features</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('main.subscriptions') }}">Plans</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('main.faq') }}">FAQ</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('main.testimonials') }}">Testimonials</a>
-            </li>
-        </ul>
+    .hero-image {
+        height: 250px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--primary-light);
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-light);
+        font-size: 1.2rem;
+        font-weight: 500;
+    }
+
+    .hero-content {
+        padding: 2rem;
+        text-align: center;
+    }
+
+    .hero-content p {
+        color: var(--text-dark);
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+        font-size: 1.1rem;
+    }
+
+    /* Feature Cards */
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .feature-card {
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        overflow: hidden;
+        transition: transform 0.3s ease;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .feature-image {
+        height: 180px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--primary-light);
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-light);
+        font-size: 1rem;
+        font-weight: 500;
+    }
+
+    .feature-content {
+        padding: 1.5rem;
+        text-align: center;
+    }
+
+    .feature-content h3 {
+        font-size: 1.25rem;
+        font-weight: bold;
+        font-style: italic;
+        margin-bottom: 0.75rem;
+        color: var(--text-dark);
+    }
+
+    .feature-content p {
+        font-size: 0.95rem;
+        color: var(--text-dark);
+        margin-bottom: 1.5rem;
+        line-height: 1.5;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .features-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .features-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        .main-heading {
+            font-size: 2rem;
+        }
+
+        .hero-image {
+            height: 200px;
+            font-size: 1rem;
+        }
+
+        .hero-content {
+            padding: 1.5rem;
+        }
+
+        .btn-custom {
+            display: block;
+            margin: 0.5rem auto;
+            width: 200px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .main-heading {
+            font-size: 1.75rem;
+        }
+        
+        .hero-image {
+            height: 160px;
+        }
+        
+        .feature-image {
+            height: 150px;
+        }
+    }
+</style>
+
+<h1 class="main-heading">Welcome to AttendAI, a sophisticated Attendance Management System</h1>
+
+<!-- Hero Card -->
+<div class="hero-card">
+    <div class="hero-image">
+        AI-Powered Attendance Tracking System
+    </div>
+    <div class="hero-content">
+        <p>AttendAI - a sophisticated but easy to use attendance management software</p>
+        {% if not session.user %}
+            <a class="btn-custom" href="{{ url_for('auth.register') }}">Get Started</a>
+            <a class="btn-custom btn-outline-custom" href="{{ url_for('auth.login') }}">Login</a>
+        {% else %}
+            <a class="btn-custom" style="background-color: #059669; border-color: #059669;" href="{{ url_for('dashboard.dashboard') }}">Go to Dashboard</a>
+        {% endif %}
     </div>
 </div>
 
-<div class="row mt-5">
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Easy Tracking</h5>
-                <p class="card-text">Mark attendance with a single click using QR codes or facial recognition.</p>
-            </div>
+<!-- Feature Cards -->
+<div class="features-grid">
+    <div class="feature-card">
+        <div class="feature-image">
+            Our Team
+        </div>
+        <div class="feature-content">
+            <h3>Our Team</h3>
+            <p>Learn more about AttendAI and the team behind it</p>
+            <a href="{{ url_for('main.about') }}" class="btn-custom">Learn More</a>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Real-time Reports</h5>
-                <p class="card-text">Generate attendance reports instantly for any date range.</p>
-            </div>
+
+    <div class="feature-card">
+        <div class="feature-image">
+            Testimonials
+        </div>
+        <div class="feature-content">
+            <h3>Testimonials</h3>
+            <p>Read glowing reviews from our customers.</p>
+            <a href="{{ url_for('main.testimonials') }}" class="btn-custom">Learn More</a>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">AI Powered</h5>
-                <p class="card-text">Leverage AI for predictive analytics and pattern recognition.</p>
-            </div>
+
+    <div class="feature-card">
+        <div class="feature-image">
+            Subscription Plans
+        </div>
+        <div class="feature-content">
+            <h3>Affordable Plans</h3>
+            <p>Our range of affordable subscription plans to suit your needs.</p>
+            <a href="{{ url_for('main.subscriptions') }}" class="btn-custom">Learn More</a>
         </div>
     </div>
 </div>

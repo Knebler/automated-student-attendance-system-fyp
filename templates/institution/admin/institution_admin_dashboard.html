@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - AttendAI{% endblock %}
+
+{% block content %}
+<div class="dashboard-admin">
+    <h1 class="page-title mb-4">Admin Dashboard</h1>
+
+    <div class="dashboard-grid">
+        <!-- Left Column -->
+        <div class="left-column">
+            <!-- Institution Profile Card -->
+            <div class="card-custom mb-4">
+                <div class="card-header-custom">Institution Profile</div>
+                <div class="card-body-custom">
+                    <div class="profile-info">
+                        <p><strong>Name of Institution:</strong> XXXXXX</p>
+                        <p><strong>Subscription Status:</strong> ACTIVE</p>
+                        <p><strong>Subscription Renewal:</strong> XX/XX/XXXX</p>
+                    </div>
+                    <button class="btn-custom manage-btn">Manage</button>
+                </div>
+            </div>
+
+            <!-- Quick Actions Card -->
+            <div class="card-custom">
+                <div class="card-header-custom">Quick Actions</div>
+                <div class="card-body-custom">
+                    <div class="quick-actions">
+                        <a href="{{ url_for('dashboard.manage_users') }}" class="btn-custom action-btn text-center mb-2">Manage Users</a>
+                        <a href="{{ url_for('dashboard.manage_attendance') }}" class="btn-custom action-btn text-center mb-2">Manage Attendance</a>
+                        <a href="{{ url_for('dashboard.manage_classes') }}" class="btn-custom action-btn text-center mb-2">Manage Classes</a>
+                        <a href="{{ url_for('dashboard.institution_profile') }}" class="btn-custom action-btn text-center mb-2">Institution Profile</a>
+                        <a href="{{ url_for('dashboard.import_data') }}" class="btn-custom action-btn text-center">Data Importation</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Middle Column - User Management -->
+        <div class="card-custom mb-4">
+            <div class="card-header-custom">User Management</div>
+            <div class="card-body-custom">
+                <div class="stats-box mb-3">
+                    <div class="stats-header"><strong>Total Users:</strong> XXXX</div>
+                    <div class="stats-row">
+                        <span><strong>Admins:</strong> XXX</span>
+                        <span><strong>Lecturers:</strong> XXX</span>
+                        <span><strong>Students:</strong> XXX</span>
+                    </div>
+                </div>
+
+                <div class="section-title mb-2">Recently Accessed</div>
+                <div class="list-item mb-2">
+                    <div class="list-item-info">
+                        <span><strong>Name:</strong> XXXXXXX</span>
+                        <span><strong>Date Accessed:</strong> XX/XX/XX</span>
+                    </div>
+                    <button class="btn-custom more-btn">More</button>
+                </div>
+                <div class="list-item mb-3">
+                    <div class="list-item-info">
+                        <span><strong>Name:</strong> XXXXXXX</span>
+                        <span><strong>Date Accessed:</strong> XX/XX/XX</span>
+                    </div>
+                    <button class="btn-custom more-btn">More</button>
+                </div>
+
+                <div class="section-title section-spacing mb-2">Recent Actions</div>
+                <div class="list-item mb-2">
+                    <div class="list-item-info">
+                        <span><strong>Action:</strong> XXXXXXX</span>
+                        <span><strong>Date:</strong> XX/XX/XX</span>
+                    </div>
+                    <button class="btn-custom more-btn">More</button>
+                </div>
+                <div class="list-item">
+                    <div class="list-item-info">
+                        <span><strong>Action:</strong> XXXXXXX</span>
+                        <span><strong>Date:</strong> XX/XX/XX</span>
+                    </div>
+                    <button class="btn-custom more-btn">More</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Attendance Management -->
+        <div class="card-custom">
+            <div class="card-header-custom">Attendance Management</div>
+            <div class="card-body-custom">
+                <div class="section-title mb-2">Actions Required</div>
+                <div class="list-item mb-3">
+                    <div class="list-item-info">
+                        <span><strong>Name:</strong> XXXXXXX</span>
+                        <span><strong>Date Accessed:</strong> XX/XX/XX</span>
+                    </div>
+                    <button class="btn-custom more-btn">More</button>
+                </div>
+
+                <div class="section-title section-spacing mb-2">Classes Today</div>
+                <div class="class-item mb-2">
+                    <div class="class-info">
+                        <span><strong>Name:</strong> XXXXXXX</span>
+                        <span><strong>Venue:</strong> XXXXXXX</span>
+                        <span><strong>Lecturer:</strong> XXXXXXX</span>
+                    </div>
+                    <button class="btn-custom view-btn">View</button>
+                </div>
+                <div class="class-item mb-2">
+                    <div class="class-info">
+                        <span><strong>Name:</strong> XXXXXXX</span>
+                        <span><strong>Venue:</strong> XXXXXXX</span>
+                        <span><strong>Lecturer:</strong> XXXXXXX</span>
+                    </div>
+                    <button class="btn-custom view-btn">View</button>
+                </div>
+                <div class="class-item mb-3">
+                    <div class="class-info">
+                        <span><strong>Name:</strong> XXXXXXX</span>
+                        <span><strong>Venue:</strong> XXXXXXX</span>
+                        <span><strong>Lecturer:</strong> XXXXXXX</span>
+                    </div>
+                    <button class="btn-custom view-btn">View</button>
+                </div>
+
+                <div class="section-title section-spacing mb-2">Recent Actions</div>
+                <div class="list-item mb-2">
+                    <div class="list-item-info">
+                        <span><strong>Action:</strong> XXXXXXX</span>
+                        <span><strong>Date:</strong> XX/XX/XX</span>
+                    </div>
+                    <button class="btn-custom more-btn">More</button>
+                </div>
+                <div class="list-item">
+                    <div class="list-item-info">
+                        <span><strong>Action:</strong> XXXXXXX</span>
+                        <span><strong>Date:</strong> XX/XX/XX</span>
+                    </div>
+                    <button class="btn-custom more-btn">More</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Dashboard Admin Specific Styles */
+    .dashboard-admin {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        font-style: italic;
+        color: var(--text-dark);
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 1rem;
+    }
+
+    /* Dashboard Grid */
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1fr 1.2fr 1.3fr;
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    /* Institution Profile Card */
+    .profile-info {
+        background-color: var(--primary-light);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .profile-info p {
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .profile-info p:last-child {
+        margin-bottom: 0;
+    }
+
+    .profile-info strong {
+        font-weight: 600;
+    }
+
+    .manage-btn {
+        padding: 0.5rem 1.5rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        display: block;
+        margin-left: auto;
+        width: fit-content;
+    }
+
+    /* Quick Actions Card */
+    .quick-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .action-btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+
+    /* User Management Card */
+    .stats-box {
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 0.75rem;
+        margin-bottom: 1.25rem;
+        background-color: var(--primary-light);
+    }
+
+    .stats-header {
+        text-align: center;
+        font-size: 0.85rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .stats-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8rem;
+    }
+
+    .section-title {
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        font-size: 1rem;
+        color: var(--text-dark);
+    }
+
+    .list-item {
+        background-color: var(--primary-light);
+        border-radius: 8px;
+        padding: 0.6rem 0.75rem;
+        margin-bottom: 0.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.8rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .list-item-info {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .more-btn {
+        padding: 0.3rem 1rem;
+        border-radius: 15px;
+        font-size: 0.75rem;
+        background-color: var(--primary-dark);
+        color: white;
+        border: none;
+    }
+
+    .more-btn:hover {
+        background-color: #1e293b;
+    }
+
+    /* Attendance Management Card */
+    .class-item {
+        background-color: var(--primary-light);
+        border-radius: 8px;
+        padding: 0.6rem 0.75rem;
+        margin-bottom: 0.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.8rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .class-info {
+        display: flex;
+        gap: 1.5rem;
+    }
+
+    .view-btn {
+        padding: 0.3rem 1rem;
+        border-radius: 15px;
+        font-size: 0.75rem;
+        background-color: var(--primary-dark);
+        color: white;
+        border: none;
+    }
+
+    .view-btn:hover {
+        background-color: #1e293b;
+    }
+
+    .section-spacing {
+        margin-top: 1.25rem;
+    }
+
+    /* Left Column */
+    .left-column {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+        }
+
+        .stats-row {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .list-item-info,
+        .class-info {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+    }
+</style>
+{% endblock %}

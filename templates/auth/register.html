@@ -24,16 +24,16 @@
                         <label for="password" class="form-label">Password</label>
                         <input type="password" class="form-control" id="password" name="password" required>
                     </div>
+                    <!-- Registration is restricted to Institution Admins only -->
+                    <input type="hidden" id="role" name="role" value="institution_admin">
+
                     <div class="mb-3">
-                        <label for="role" class="form-label">Role</label>
-                        <select class="form-control" id="role" name="role">
-                            <option value="student">Student</option>
-                            <option value="teacher">Teacher</option>
-                            <option value="admin">Admin</option>
-                        </select>
+                        <label for="institution_name" class="form-label">Educational Institute</label>
+                        <input type="text" class="form-control" id="institution_name" name="institution_name" required placeholder="Your institution name (e.g., Example University)">
+                        <small class="form-text text-muted">Only institution admins can register here — your request will be reviewed before an account is issued.</small>
                     </div>
                     <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary">Register</button>
+                        <button type="submit" class="btn btn-primary">Submit registration request</button>
                         <a href="{{ url_for('auth.login') }}" class="btn btn-link">Already have an account? Login</a>
                     </div>
                 </form>

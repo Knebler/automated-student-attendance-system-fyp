@@ -1,0 +1,388 @@
+{% extends "base.html" %}
+
+{% block title %}Platform Manager Dashboard - AttendAI{% endblock %}
+
+{% block content %}
+<div class="platform-manager-dashboard">
+    <h1 class="page-title mb-4">Platform Manager Dashboard</h1>
+
+    <div class="dashboard-grid">
+        <!-- Left Column -->
+        <div class="left-column">
+            <!-- Platform Overview Card -->
+            <div class="card-custom mb-4">
+                <div class="card-header-custom">Platform Overview</div>
+                <div class="card-body-custom">
+                    <div class="stats-box">
+                        <div class="stat-row mb-2">
+                            <span class="stat-label">Total Institutions:</span>
+                            <span class="stat-value"> XXXXXX</span>
+                        </div>
+                        <div class="stat-row mb-2">
+                            <span class="stat-label">Active Institutions:</span>
+                            <span class="stat-value"> XXXXXX</span>
+                        </div>
+                        <div class="stat-row mb-2">
+                            <span class="stat-label">Pending Subscriptions:</span>
+                            <span class="stat-value"> XXXXXX</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Total Registered Users:</span>
+                            <span class="stat-value"> XXXXXX</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions Card -->
+            <div class="card-custom">
+                <div class="card-header-custom">Quick Actions</div>
+                <div class="card-body-custom">
+                    <div class="quick-actions">
+                        <a href="{{ url_for('platform.view_subscription_requests') }}" class="btn-custom action-btn text-center mb-2">View Subscription Requests</a>
+                        <a href="{{ url_for('platform.create_institution_profile') }}" class="btn-custom action-btn text-center mb-2">Create Institution Profile</a>
+                        <a href="{{ url_for('platform.manage_admin_accounts') }}" class="btn-custom action-btn text-center mb-2">Manage Admin Accounts</a>
+                        <a href="{{ url_for('platform.view_user_profiles') }}" class="btn-custom action-btn text-center mb-2">View User Profiles</a>
+                        <a href="{{ url_for('platform.system_settings') }}" class="btn-custom action-btn text-center">Open System Settings</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Middle Column -->
+        <div class="card-custom">
+            <div class="card-header-custom">Subscription & Institution Status</div>
+            <div class="card-body-custom">
+                <div class="column-section mb-4">
+                    <h3 class="section-title mb-3">Pending Subscriptions</h3>
+                    <div class="list-item mb-2">
+                        <div class="list-item-content">
+                            <span class="list-item-text">Institution: XXXXXXX</span>
+                            <span class="list-item-text">Request Date: XX/XX/XX</span>
+                        </div>
+                        <button class="btn-custom more-btn">More</button>
+                    </div>
+                    <div class="list-item mb-2">
+                        <div class="list-item-content">
+                            <span class="list-item-text">Institution: XXXXXXX</span>
+                            <span class="list-item-text">Request Date: XX/XX/XX</span>
+                        </div>
+                        <button class="btn-custom more-btn">More</button>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-item-content">
+                            <span class="list-item-text">Institution: XXXXXXX</span>
+                            <span class="list-item-text">Request Date: XX/XX/XX</span>
+                        </div>
+                        <button class="btn-custom more-btn">More</button>
+                    </div>
+                </div>
+
+                <div class="column-section">
+                    <h3 class="section-title mb-3">Recent Institution Changes</h3>
+                    <div class="list-item mb-2">
+                        <div class="list-item-content">
+                            <span class="list-item-text">Action: XXXXXXX</span>
+                            <span class="list-item-text">Date: XX/XX/XX</span>
+                        </div>
+                        <button class="btn-custom more-btn">More</button>
+                    </div>
+                    <div class="list-item">
+                        <div class="list-item-content">
+                            <span class="list-item-text">Action: XXXXXXX</span>
+                            <span class="list-item-text">Date: XX/XX/XX</span>
+                        </div>
+                        <button class="btn-custom more-btn">More</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="card-custom">
+            <div class="card-header-custom">System & Reports Snapshot</div>
+            <div class="card-body-custom">
+                <div class="column-section mb-4">
+                    <h3 class="section-title mb-3">System Performance</h3>
+                    <div class="performance-box">
+                        <div class="status-row mb-2">
+                            <span class="stat-label">Overall Status:</span>
+                            <span class="checkmark">✓</span>
+                            <span class="status-normal">Normal</span>
+                        </div>
+                        <div class="stat-row mb-2">
+                            <span class="stat-label">Average Response Time:</span>
+                            <span class="stat-value"> xx ms</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Last Incident:</span>
+                            <span class="stat-value"> None in last 24h</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="column-section">
+                    <h3 class="section-title mb-3">Recent User Reports</h3>
+                    <div class="report-card mb-3">
+                        <div class="report-header mb-2">
+                            <span class="report-info">Case ID: XXXXXXX</span>
+                            <span class="report-info">Institution: XXXXXXX</span>
+                            <span class="report-info">Date: XXXXXX</span>
+                        </div>
+                        <div class="report-footer">
+                            <span class="report-info">Type: XXXXXX</span>
+                            <button class="btn-outline-custom view-details-btn">View Details</button>
+                        </div>
+                    </div>
+                    <div class="report-card">
+                        <div class="report-header mb-2">
+                            <span class="report-info">Case ID: XXXXXXX</span>
+                            <span class="report-info">Institution: XXXXXXX</span>
+                            <span class="report-info">Date: XXXXXX</span>
+                        </div>
+                        <div class="report-footer">
+                            <span class="report-info">Type: XXXXXX</span>
+                            <button class="btn-outline-custom view-details-btn">View Details</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Platform Manager Dashboard Specific Styles */
+    .platform-manager-dashboard {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        font-style: italic;
+        color: var(--text-dark);
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 1rem;
+    }
+
+    /* Dashboard Grid */
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    /* Stats Box */
+    .stats-box {
+        background-color: var(--primary-light);
+        border-radius: 15px;
+        padding: 1.25rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .stat-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .stat-label {
+        font-weight: bold;
+        color: var(--text-dark);
+    }
+
+    .stat-value {
+        color: var(--text-dark);
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .action-btn {
+        padding: 0.875rem 1.5rem;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+
+    /* Section Title */
+    .section-title {
+        font-size: 1.125rem;
+        font-weight: bold;
+        text-decoration: underline;
+        text-underline-offset: 4px;
+        color: var(--text-dark);
+    }
+
+    /* List Items */
+    .list-item {
+        background-color: var(--primary-light);
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.625rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid var(--border-color);
+    }
+
+    .list-item-content {
+        display: flex;
+        gap: 1.25rem;
+        flex-wrap: wrap;
+    }
+
+    .list-item-text {
+        font-size: 0.875rem;
+        color: var(--text-dark);
+    }
+
+    .more-btn {
+        padding: 0.375rem 1rem;
+        border-radius: 15px;
+        font-size: 0.75rem;
+        min-width: 60px;
+    }
+
+    /* Column sections */
+    .column-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .column-section:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Left Column */
+    .left-column {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    /* System Performance Box */
+    .performance-box {
+        background-color: var(--primary-light);
+        border-radius: 15px;
+        padding: 1.25rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .status-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .status-normal {
+        color: #059669;
+        font-weight: bold;
+    }
+
+    .checkmark {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        background-color: #059669;
+        color: white;
+        border-radius: 4px;
+        font-size: 12px;
+    }
+
+    /* Report Card */
+    .report-card {
+        background-color: var(--primary-light);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .report-card:last-child {
+        margin-bottom: 0;
+    }
+
+    .report-header {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.625rem;
+    }
+
+    .report-info {
+        font-size: 0.875rem;
+        color: var(--text-dark);
+    }
+
+    .report-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 0.5rem;
+    }
+
+    .view-details-btn {
+        padding: 0.375rem 0.875rem;
+        border-radius: 15px;
+        font-size: 0.75rem;
+        min-width: 100px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+        }
+
+        .list-item-content {
+            flex-direction: column;
+            gap: 0.3125rem;
+        }
+
+        .report-header {
+            flex-direction: column;
+            gap: 0.3125rem;
+        }
+
+        .report-footer {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .view-details-btn {
+            align-self: flex-end;
+        }
+
+        .stat-row {
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+    }
+</style>
+{% endblock %}

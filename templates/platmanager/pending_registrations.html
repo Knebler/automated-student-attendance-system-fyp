@@ -1,0 +1,47 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Pending Registrations - Admin{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>Pending Registration Requests</h2>
+
+        {% if requests %}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Email</th>
+                        <th>Full name</th>
+                        <th>Institution</th>
+                        <th>Applied</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in requests %}
+                    <tr>
+                        <td>{{ r[0] }}</td>
+                        <td>{{ r[1] }}</td>
+                        <td>{{ r[2] }}</td>
+                        <td>{{ r[3] }}</td>
+                        <td>{{ r[4] }}</td>
+                        <td>
+                            <form method="post" action="{{ url_for('platform.approve_registration', unreg_user_id=r[0]) }}" style="display:inline">
+                                <input type="hidden" name="temp_password" value="">
+                                <button class="btn btn-sm btn-success" type="submit">Approve</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="alert alert-info">No pending registration requests right now.</div>
+        {% endif %}
+
+    </div>
+</div>
+
+{% endblock %}

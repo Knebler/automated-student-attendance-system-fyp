@@ -10,6 +10,13 @@ def create_app(app):
     from application.boundaries.dashboard_boundary import dashboard_bp
     from application.boundaries.institution_boundary import institution_bp
     from application.boundaries.admin_boundary import admin_bp
+    # Platform manager routes
+    try:
+        from application.boundaries.platform_boundary import platform_bp
+        has_platform = True
+    except Exception:
+        platform_bp = None
+        has_platform = False
     # Dev tooling (only for development)
     try:
         from application.boundaries.dev_boundary import dev_bp
@@ -25,6 +32,8 @@ def create_app(app):
     app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
     app.register_blueprint(institution_bp, url_prefix='/institution')
     app.register_blueprint(admin_bp, url_prefix='/admin')
+    if has_platform and platform_bp:
+        app.register_blueprint(platform_bp, url_prefix='/platform')
     if has_dev and dev_bp:
         # Register development endpoints under /dev
         app.register_blueprint(dev_bp, url_prefix='/dev')

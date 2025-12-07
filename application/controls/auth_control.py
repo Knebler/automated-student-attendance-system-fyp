@@ -4,6 +4,7 @@ from application.entities.platform_manager import PlatformManager
 from application.entities.student import Student
 from application.entities.lecturer import Lecturer
 from application.entities.institution import Institution
+from application.controls.institution_control import InstitutionControl
 from datetime import datetime
 import traceback
 
@@ -345,6 +346,108 @@ class AuthControl:
                 'success': False,
                 'error': str(e)
             }
+
+    @staticmethod
+    def approve_unregistered_user(app, unreg_user_id, reviewer_id=None, admin_password=None):
+        """Approve a pending Unregistered_Users entry, create subscription, institution and institution admin.
+
+        Returns { success: bool, message: str, admin_password: str?, institution_id: int? }
+        """
+        try:
+            # Load the pending unregistered user
+            cursor = BaseEntity.get_db_connection(app)
+            cursor.execute("SELECT unreg_user_id, email, full_name, institution_name, institution_address, phone_number, selected_plan_id, status FROM Unregistered_Users WHERE unreg_user_id = %s", (unreg_user_id,))
+            row = cursor.fetchone()
+            if not row:
+                return {'success': False, 'error': 'Registration request not found'}
+
+            status = row[7]
+            if status != 'pending':
+                return {'success': False, 'error': f'Request is not pending (status={status})'}
+
+            email = row[1]
+            full_name = row[2]
+            institution_name = row[3]
+            institution_address = row[4]
+            selected_plan = row[6]
+
+            # 1) Create a Subscription record for this unregistered user
+            from datetime import date, timedelta
+            start_date = date.today()
+            end_date = start_date + timedelta(days=365)
+
+            sub_query = "INSERT INTO Subscriptions (unreg_user_id, plan_id, start_date, end_date, status) VALUES (%s, %s, %s, %s, %s)"
+            cursor.execute(sub_query, (unreg_user_id, selected_plan, start_date, end_date, 'active'))
+            subscription_id = getattr(cursor, 'lastrowid', None)
+            # commit is handled below
+
+            # 2) Create Institution with the subscription_id
+            inst_data = {
+                'name': institution_name,
+                'address': institution_address,
+                'website': None
+            }
+            # Use InstitutionControl which handles creation via entities
+            ins_result = InstitutionControl.create_institution(app, inst_data, subscription_id)
+            if not ins_result.get('success'):
+                BaseEntity.rollback_changes(app)
+                return {'success': False, 'error': 'Failed to create institution: ' + (ins_result.get('error') or '')}
+
+            institution_id = ins_result.get('institution_id')
+
+            # 3) Create Firebase user (if available) or proceed to create local admin
+            firebase_auth = app.config.get('firebase_auth')
+            created_firebase_uid = None
+            used_password = admin_password
+            if not used_password:
+                # auto-generate a temporary password
+                import secrets
+                used_password = secrets.token_urlsafe(10)
+
+            if firebase_auth:
+                try:
+                    # reuse register_user flow which creates firebase user and local Users table entry
+                    reg_res = AuthControl.register_user(app, email, used_password, name=full_name, role='institution_admin')
+                    if not reg_res.get('success'):
+                        # attempt continued local creation but report firebase issue
+                        created_firebase_uid = None
+                    else:
+                        created_firebase_uid = reg_res.get('firebase_uid')
+                except Exception:
+                    created_firebase_uid = None
+
+            # 4) Insert into Institution_Admins local table
+            import bcrypt
+            pw_hash = bcrypt.hashpw(used_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+            admin_query = "INSERT INTO Institution_Admins (email, password_hash, full_name, institution_id) VALUES (%s, %s, %s, %s)"
+            cursor.execute(admin_query, (email, pw_hash, full_name, institution_id))
+
+            # 5) Update Unregistered_Users status to approved
+            update_q = "UPDATE Unregistered_Users SET status='approved', reviewed_by=%s, reviewed_at=NOW(), response_message=%s WHERE unreg_user_id = %s"
+            resp_msg = f'Approved by reviewer {reviewer_id}' if reviewer_id else 'Approved by platform manager'
+            cursor.execute(update_q, (reviewer_id, resp_msg, unreg_user_id))
+
+            # Final commit
+            try:
+                BaseEntity.commit_changes(app)
+            except Exception:
+                try:
+                    # In case underlying DB is mysql connector
+                    mysql = app.config.get('mysql')
+                    if mysql:
+                        mysql.connection.commit()
+                except Exception:
+                    pass
+
+            return {'success': True, 'message': 'Approved and account created', 'admin_password': used_password, 'institution_id': institution_id}
+
+        except Exception as e:
+            try:
+                BaseEntity.rollback_changes(app)
+            except Exception:
+                pass
+            return {'success': False, 'error': str(e)}
 
 
 # Expose some auth helpers as dev actions when available

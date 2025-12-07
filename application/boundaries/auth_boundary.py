@@ -80,24 +80,34 @@ def register():
         password = request.form.get('password')
         role = request.form.get('role', 'student')
 
-        result = AuthControl.register_user(current_app, email, password, name=name, role=role)
-        if result.get('success'):
-            session['user_id'] = result.get('firebase_uid')
-            session['id_token'] = result.get('id_token')
-            session['user_type'] = role
-            session['user'] = {'email': email, 'name': name, 'role': role}
-            flash('Registration successful — you are now logged in', 'success')
-            return redirect(url_for('dashboard.dashboard'))
+        # Only institution admins are allowed to register via this form
+        if role != 'institution_admin':
+            flash('Registration is restricted to Institution Admins only.', 'warning')
+            return render_template('auth/register.html')
 
-        # Show friendly error messages from AuthControl.register_user
-        if not result.get('success'):
-            err = result.get('error') or 'Registration failed'
-            if result.get('error_type') == 'EMAIL_EXISTS':
-                flash('That email is already registered. Try logging in instead.', 'warning')
-            elif result.get('error_type') == 'WEAK_PASSWORD':
-                flash('The password is too weak. Use a stronger password.', 'warning')
-            else:
-                flash(err, 'danger')
+        institution_name = request.form.get('institution_name')
+        # require institution name
+        if not institution_name:
+            flash('Educational Institute name is required for Institution Admin registration.', 'warning')
+            return render_template('auth/register.html')
+
+        # Build payload for institution registration (creates a pending/unregistered entry)
+        institution_data = {
+            'email': email,
+            'full_name': name,
+            'institution_name': institution_name,
+            'institution_address': request.form.get('institution_address') or '',
+            'phone_number': request.form.get('phone_number') or '',
+            'message': request.form.get('message') or '',
+            'selected_plan_id': request.form.get('selected_plan_id') or None
+        }
+
+        result = AuthControl.register_institution(current_app, institution_data)
+        if result.get('success'):
+            flash(result.get('message') or 'Registration request submitted — awaiting approval', 'success')
+            return redirect(url_for('main.home'))
+        else:
+            flash(result.get('error') or 'Failed to submit registration request', 'danger')
 
     return render_template('auth/register.html')
 

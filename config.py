@@ -9,11 +9,11 @@ class Config:
     DEBUG = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
     
     # MySQL Configuration for SQLAlchemy
-    MYSQL_HOST = os.getenv('MYSQL_HOST', 'localhost')
-    MYSQL_USER = os.getenv('MYSQL_USER', 'root')
-    MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD', '')
-    MYSQL_DB = os.getenv('MYSQL_DB', 'attendance_system')
-    MYSQL_PORT = int(os.getenv('MYSQL_PORT', '3306'))
+    MYSQL_HOST = os.getenv('DB_HOST', 'localhost')
+    MYSQL_USER = os.getenv('DB_USER', 'root')
+    MYSQL_PASSWORD = os.getenv('DB_PASSWORD', '')
+    MYSQL_DB = os.getenv('DB_NAME', 'attendance_system')
+    MYSQL_PORT = int(os.getenv('DB_PORT', '3306'))
     
     # Firebase Configuration
     FIREBASE_API_KEY = os.getenv('FIREBASE_API_KEY')

@@ -5,6 +5,8 @@ from .institution import Institution
 from .course import Course
 from .lecturer import Lecturer
 from .student import Student
+from .institution_admin import InstitutionAdmin
+from .unregistered_user import UnregisteredUser
 from .enrollment import Enrollment
 from .session import Session
 from .platform_manager import PlatformManager
@@ -21,6 +23,8 @@ __all__ = [
     'Course',
     'Lecturer',
     'Student',
+    'InstitutionAdmin',
+    'UnregisteredUser',
     'Enrollment',
     'Session',
     'PlatformManager',

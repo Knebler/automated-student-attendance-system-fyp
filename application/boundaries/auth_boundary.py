@@ -149,7 +149,7 @@ try:
             {'name': 'email', 'label': 'Email', 'placeholder': 'email@example.com'},
             {'name': 'password', 'label': 'Password', 'placeholder': 'min 6 chars'},
             {'name': 'name', 'label': 'Full name', 'placeholder': 'Optional display name'},
-            {'name': 'role', 'label': 'Role', 'placeholder': 'student | lecturer | platform_manager'}
+            {'name': 'role', 'label': 'Role', 'placeholder': 'student | lecturer | institution_admin | platform_manager'}
         ],
         description='Create a Firebase user and a local user record (dev use only)'
     )
@@ -160,7 +160,7 @@ try:
         params=[
             {'name': 'email', 'label': 'Email', 'placeholder': 'email@example.com'},
             {'name': 'password', 'label': 'Password', 'placeholder': 'password'},
-            {'name': 'user_type', 'label': 'User type', 'placeholder': 'student | lecturer | platform_manager'}
+            {'name': 'user_type', 'label': 'User type', 'placeholder': 'student | lecturer | institution_admin | platform_manager'}
         ],
         description='Authenticate a user via Firebase (dev only)'
     )

@@ -300,7 +300,17 @@
                 <li><a class="nav-link-custom" href="{{ url_for('main.about') }}">About Us</a></li>
                 
                 <!-- User links -->
-                <li><a class="nav-link-custom" href="{{ url_for('dashboard.dashboard') }}">Dashboard</a></li>
+                {# Choose dashboard route by role stored in session.user.user_type #}
+                {% set _role = session.user.user_type if session.user and session.user.user_type else None %}
+                {% if _role in ['platform_manager','platform','platmanager'] %}
+                    <li><a class="nav-link-custom" href="{{ url_for('platform.platform_dashboard') }}">Dashboard</a></li>
+                {% elif _role in ['institution_admin','admin'] %}
+                    <li><a class="nav-link-custom" href="{{ url_for('institution.dashboard') }}">Dashboard</a></li>
+                {% elif _role in ['lecturer','teacher'] %}
+                    <li><a class="nav-link-custom" href="{{ url_for('institution_lecturer.dashboard') }}">Dashboard</a></li>
+                {% else %}
+                    <li><a class="nav-link-custom" href="{{ url_for('dashboard.dashboard') }}">Dashboard</a></li>
+                {% endif %}
                 <li><a class="nav-link-custom" href="{{ url_for('dashboard.profile') }}">Profile</a></li>
                 <li><a class="nav-link-custom" href="{{ url_for('auth.logout') }}">Logout</a></li>
             {% else %}

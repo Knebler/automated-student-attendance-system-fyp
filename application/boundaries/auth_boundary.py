@@ -61,9 +61,25 @@ def login():
             # store minimal session state
             session['user_id'] = auth_result.get('firebase_uid')
             session['id_token'] = auth_result.get('id_token')
-            session['user_type'] = auth_result.get('user_type', user_type)
+            resolved_type = auth_result.get('user_type', user_type)
+            session['user_type'] = resolved_type
             session['user'] = auth_result.get('user')
             flash('Logged in successfully', 'success')
+
+            # Redirect users to the role-specific dashboard
+            # platform_manager -> platform dashboard
+            if resolved_type in ['platform_manager', 'platform', 'platmanager']:
+                return redirect(url_for('platform.platform_dashboard'))
+
+            # institution_admin -> institution admin dashboard
+            if resolved_type in ['institution_admin', 'admin']:
+                return redirect(url_for('institution.institution_dashboard'))
+
+            # lecturer -> lecturer dashboard (separate scope)
+            if resolved_type in ['lecturer', 'teacher']:
+                return redirect(url_for('institution_lecturer.lecturer_dashboard'))
+
+            # all other users (students, default) -> main dashboard
             return redirect(url_for('dashboard.dashboard'))
 
         flash(auth_result.get('error', 'Login failed'), 'danger')

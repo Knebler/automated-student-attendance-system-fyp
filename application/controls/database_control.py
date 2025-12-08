@@ -1,4 +1,3 @@
-from application.entities.user import User
 from application.entities.base_entity import BaseEntity
 from application.entities.attendance import Attendance
 from application.entities.institution import Institution

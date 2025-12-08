@@ -5,26 +5,28 @@ from application.controls.attendance_control import AttendanceControl
 
 institution_bp = Blueprint('institution', __name__)
 
+
 @institution_bp.route('/dashboard')
 def institution_dashboard():
-    """Institution dashboard for admins/lecturers"""
+    """Institution admin dashboard (admins / platform managers)"""
     auth_result = AuthControl.verify_session(current_app, session)
-    
+
     if not auth_result['success']:
         flash('Please login to access institution dashboard', 'warning')
         return redirect(url_for('auth.login'))
-    
+
     user_type = auth_result['user'].get('user_type')
-    
-    if user_type not in ['institution_admin', 'lecturer', 'platform_manager']:
-        flash('Access denied. Institution privileges required.', 'danger')
+
+    # allow institution admins and platform managers here
+    if user_type not in ['institution_admin', 'platform_manager']:
+        flash('Access denied. Institution admin privileges required.', 'danger')
         return redirect(url_for('dashboard.dashboard'))
-    
+
     institution_id = auth_result['user'].get('institution_id')
-    
+
     # Get institution statistics
     stats_result = InstitutionControl.get_institution_stats(current_app, institution_id)
-    
-    return render_template('institution/dashboard.html',
+
+    return render_template('institution/admin/institution_admin_dashboard.html',
                          user=auth_result['user'],
                          stats=stats_result.get('stats') if stats_result['success'] else {})

@@ -8,7 +8,7 @@ cffi == 2.0.0
 charset-normalizer == 3.4.4
 click == 8.3.1
 colorama == 0.4.6
-crytography == 46.0.3
+cryptography == 46.0.3
 firebase-admin == 6.2.0
 Flask == 3.0.0
 Flask-SQLAlchemy == 3.1.1
@@ -66,3 +66,7 @@ uritemplate == 4.2.0
 urllib3 == 1.26.20
 Werkzeug == 3.0.1
 Flask-WTF == 1.2.2
+scikit-learn           
+pandas                 
+numpy<2                
+pywin32

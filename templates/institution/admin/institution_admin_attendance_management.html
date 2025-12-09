@@ -1,0 +1,200 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Attendance Management - Admin - AttendAI{% endblock %}
+
+{% block content %}
+<div class="dashboard-admin">
+    <h1 class="page-title mb-4">Attendance Management</h1>
+
+    <!-- Classes Card -->
+    <div class="card-custom mb-4">
+        <div class="card-header-custom">Classes</div>
+        <div class="card-body-custom">
+            {% if sessions and sessions|length > 0 %}
+                {% for s in sessions %}
+                <div class="class-row mb-3">
+                    <div class="class-info">
+                        <div class="info-group">
+                            <span><strong>Name:</strong> {{ s.session.course_code if s.session and s.session.course_code else 'Session ' ~ (s.session.session_id if s.session and s.session.session_id else '') }}</span>
+                            <span><strong>Date:</strong> {{ s.session.session_date if s.session and s.session.session_date else 'TBD' }}</span>
+                        </div>
+                        <div class="info-group">
+                            <span><strong>Venue:</strong> {{ s.session.venue_id if s.session and s.session.venue_id else 'TBD' }}</span>
+                            <span><strong>Present:</strong> {{ s.present_count }}</span>
+                        </div>
+                        <div class="info-group">
+                            <span><strong>Lecturer:</strong> {{ s.session.lecturer_id if s.session and s.session.lecturer_id else 'TBD' }}</span>
+                            <span><strong>Absent:</strong> {{ s.absent_count }}</span>
+                        </div>
+                    </div>
+                    <a class="btn-custom details-btn" href="{{ url_for('institution.attendance_class_details', class_id=(s.session.session_id if s.session and s.session.session_id else 0)) }}">Details</a>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="class-row mb-3">
+                    <div class="class-info">
+                        <div class="info-group">
+                            <span>No sessions found for today</span>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Pagination -->
+            <div class="pagination">
+                <span>Page 1 of 1</span>
+                <span class="pagination-arrow">›</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generate Reports Button -->
+    <div class="generate-reports-container">
+        <a class="btn-custom generate-reports-btn" href="{{ url_for('institution.attendance_reports') }}">Generate Reports</a>
+    </div>
+</div>
+
+<style>
+    /* Page Specific Styles */
+    .dashboard-admin {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        font-style: italic;
+        color: var(--text-dark);
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 1rem;
+    }
+
+    /* Class Row Styling */
+    .class-row {
+        background-color: var(--primary-light);
+        border-radius: 10px;
+        padding: 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border: 1px solid var(--border-color);
+    }
+
+    .class-info {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 2rem;
+        flex: 1;
+    }
+
+    .info-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .info-group span {
+        font-size: 0.9rem;
+        color: var(--text-dark);
+    }
+
+    .info-group strong {
+        color: var(--primary-dark);
+    }
+
+    .details-btn {
+        padding: 0.75rem 2.5rem;
+        border-radius: 25px;
+        font-size: 1rem;
+        background-color: var(--primary-dark);
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .details-btn:hover {
+        background-color: #1e293b;
+    }
+
+    /* Pagination */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-color);
+        margin-top: 1.5rem;
+    }
+
+    .pagination span {
+        font-size: 0.9rem;
+        color: var(--text-dark);
+    }
+
+    .pagination-arrow {
+        font-size: 1rem;
+        color: var(--primary-dark);
+        cursor: pointer;
+        padding: 0.25rem;
+    }
+
+    /* Generate Reports Button */
+    .generate-reports-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+
+    .generate-reports-btn {
+        padding: 1rem 4rem;
+        border-radius: 30px;
+        font-size: 1.25rem;
+        font-weight: 500;
+        background-color: var(--primary-dark);
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .generate-reports-btn:hover {
+        background-color: #1e293b;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        .class-info {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .class-row {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1rem;
+        }
+
+        .details-btn {
+            align-self: flex-end;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 1.75rem;
+        }
+
+        .class-info {
+            grid-template-columns: 1fr;
+        }
+
+        .generate-reports-btn {
+            padding: 0.75rem 2rem;
+            font-size: 1rem;
+        }
+    }
+</style>
+{% endblock %}

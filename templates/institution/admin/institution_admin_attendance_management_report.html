@@ -1,0 +1,378 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Attendance Report - Admin - AttendAI{% endblock %}
+
+{% block content %}
+<div class="dashboard-admin">
+    <h1 class="page-title mb-4">Attendance Report</h1>
+
+    <!-- Report Cards Grid -->
+    <div class="report-grid">
+        <!-- Daily Report Card -->
+        <div class="card-custom report-card">
+            <div class="card-header-custom">Daily Report</div>
+            <div class="card-body-custom">
+                <div class="chart-container mb-4">
+                    <div class="donut-chart daily">
+                        <div class="chart-center">
+                            <span class="chart-percentage">90%</span>
+                            <span class="chart-label">Present</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats mb-4">
+                    <div class="stat-row">
+                        <span class="stat-label">Present:</span>
+                        <span class="stat-value">90%</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Absent:</span>
+                        <span class="stat-value">10%</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Total Students:</span>
+                        <span class="stat-value">250</span>
+                    </div>
+                </div>
+
+                <div class="trending-section">
+                    <h3 class="section-title mb-3">Trending Absentees</h3>
+                    <div class="trending-content">
+                        {% for s in sessions|default([]) %}
+                        <div class="trending-item mb-2">
+                            <span class="student-name">Session {{ s.get('session', {}).get('session_id', '') }}</span>
+                            <span class="absent-count">{{ s.get('attendance_records')|length }} records</span>
+                        </div>
+                        {% endfor %}
+                        <div class="trending-item mb-2">
+                            <span class="student-name">Jane Doe</span>
+                            <span class="absent-count">2 days</span>
+                        </div>
+                        <div class="trending-item">
+                            <span class="student-name">Robert Johnson</span>
+                            <span class="absent-count">2 days</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weekly Report Card -->
+        <div class="card-custom report-card">
+            <div class="card-header-custom">Weekly Report</div>
+            <div class="card-body-custom">
+                <div class="chart-container mb-4">
+                    <div class="donut-chart weekly">
+                        <div class="chart-center">
+                            <span class="chart-percentage">85%</span>
+                            <span class="chart-label">Present</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats mb-4">
+                    <div class="stat-row">
+                        <span class="stat-label">Present:</span>
+                        <span class="stat-value">85%</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Absent:</span>
+                        <span class="stat-value">5%</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Total Classes:</span>
+                        <span class="stat-value">35</span>
+                    </div>
+                </div>
+
+                <div class="trending-section">
+                    <h3 class="section-title mb-3">Trending Absentees</h3>
+                    <div class="trending-content">
+                        <div class="trending-item mb-2">
+                            <span class="student-name">John Smith</span>
+                            <span class="absent-count">5 classes</span>
+                        </div>
+                        <div class="trending-item mb-2">
+                            <span class="student-name">Sarah Wilson</span>
+                            <span class="absent-count">4 classes</span>
+                        </div>
+                        <div class="trending-item">
+                            <span class="student-name">Michael Brown</span>
+                            <span class="absent-count">3 classes</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Report Card -->
+        <div class="card-custom report-card">
+            <div class="card-header-custom">Monthly Report</div>
+            <div class="card-body-custom">
+                <div class="chart-container mb-4">
+                    <div class="donut-chart monthly">
+                        <div class="chart-center">
+                            <span class="chart-percentage">85%</span>
+                            <span class="chart-label">Present</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats mb-4">
+                    <div class="stat-row">
+                        <span class="stat-label">Present:</span>
+                        <span class="stat-value">85%</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Absent:</span>
+                        <span class="stat-value">5%</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Total Sessions:</span>
+                        <span class="stat-value">150</span>
+                    </div>
+                </div>
+
+                <div class="trending-section">
+                    <h3 class="section-title mb-3">Trending Absentees</h3>
+                    <div class="trending-content">
+                        <div class="trending-item mb-2">
+                            <span class="student-name">John Smith</span>
+                            <span class="absent-count">12 sessions</span>
+                        </div>
+                        <div class="trending-item mb-2">
+                            <span class="student-name">Emily Davis</span>
+                            <span class="absent-count">8 sessions</span>
+                        </div>
+                        <div class="trending-item">
+                            <span class="student-name">David Lee</span>
+                            <span class="absent-count">7 sessions</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Page Specific Styles */
+    .dashboard-admin {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        font-style: italic;
+        color: var(--text-dark);
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 1rem;
+    }
+
+    /* Report Cards Grid */
+    .report-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+    }
+
+    .report-card {
+        min-height: 500px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .card-body-custom {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Donut Chart */
+    .chart-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .donut-chart {
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--primary-light);
+        border: 2px solid var(--border-color);
+    }
+
+    .donut-chart.daily {
+        background: conic-gradient(
+            #e63946 0deg 36deg,
+            var(--primary-dark) 36deg 360deg
+        );
+    }
+
+    .donut-chart.weekly {
+        background: conic-gradient(
+            #e63946 0deg 54deg,
+            var(--primary-dark) 54deg 360deg
+        );
+    }
+
+    .donut-chart.monthly {
+        background: conic-gradient(
+            #e63946 0deg 54deg,
+            var(--primary-dark) 54deg 360deg
+        );
+    }
+
+    .donut-chart::before {
+        content: '';
+        position: absolute;
+        width: 120px;
+        height: 120px;
+        background-color: white;
+        border-radius: 50%;
+    }
+
+    .chart-center {
+        position: relative;
+        z-index: 1;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .chart-percentage {
+        font-size: 1.75rem;
+        font-weight: bold;
+        color: var(--text-dark);
+    }
+
+    .chart-label {
+        font-size: 0.9rem;
+        color: var(--text-light);
+        margin-top: 0.25rem;
+    }
+
+    /* Stats */
+    .stats {
+        background-color: var(--primary-light);
+        border-radius: 10px;
+        padding: 1.25rem;
+        border: 1px solid var(--border-color);
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .stat-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .stat-label {
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+
+    .stat-value {
+        font-weight: normal;
+        color: var(--text-dark);
+    }
+
+    /* Section Title */
+    .section-title {
+        font-weight: 700;
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+        color: var(--text-dark);
+        text-decoration: underline;
+    }
+
+    /* Trending Section */
+    .trending-section {
+        flex: 1;
+    }
+
+    .trending-content {
+        background-color: var(--primary-light);
+        border-radius: 10px;
+        padding: 1rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .trending-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .trending-item:last-child {
+        border-bottom: none;
+    }
+
+    .student-name {
+        font-size: 0.9rem;
+        color: var(--text-dark);
+        font-weight: 500;
+    }
+
+    .absent-count {
+        font-size: 0.85rem;
+        color: #e63946;
+        font-weight: 600;
+        background-color: rgba(230, 57, 70, 0.1);
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+        .report-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 1.75rem;
+        }
+
+        .report-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .report-card {
+            min-height: auto;
+        }
+
+        .donut-chart {
+            width: 150px;
+            height: 150px;
+        }
+
+        .donut-chart::before {
+            width: 100px;
+            height: 100px;
+        }
+
+        .chart-percentage {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}

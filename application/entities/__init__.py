@@ -1,5 +1,5 @@
 from .base_entity import BaseEntity
-from .attendance import Attendance
+from .attendance_record import AttendanceRecord
 from .institution import Institution
 from .course import Course
 from .lecturer import Lecturer
@@ -16,7 +16,7 @@ from .timetable_slot import TimetableSlot
 
 __all__ = [
     'BaseEntity',
-    'Attendance',
+    'AttendanceRecord',
     'Institution',
     'Course',
     'Lecturer',

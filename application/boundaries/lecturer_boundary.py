@@ -23,7 +23,7 @@ def lecturer_dashboard():
     user_id = auth_result['user'].get('user_id')
     attendance_summary = {}
     if user_id:
-        attendance_result = AttendanceControl.get_user_attendance_summary(current_app, user_id, days=30)
+        attendance_result = AttendanceControl.get_student_attendance_summary(current_app, user_id, days=30)
         if attendance_result['success']:
             attendance_summary = attendance_result['summary']
 

@@ -1,0 +1,409 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Attendance Management - Class Details - AttendAI{% endblock %}
+
+{% block content %}
+<div class="dashboard-admin">
+    <h1 class="page-title mb-4">Attendance Management - Class Details</h1>
+
+    <!-- Class Card -->
+    <div class="card-custom mb-4">
+        <div class="card-header-custom">Class Details</div>
+        <div class="card-body-custom">
+            <h2 class="class-title mb-4">{{ session_info.course_code if session_info else 'Class' }} - {{ session_info.session_topic if session_info else '' }}</h2>
+            
+            <div class="class-info mb-4">
+                <div class="info-group">
+                    <span><strong>Date:</strong> XX/XX/XXXX XXXX</span>
+                    <span><strong>Venue:</strong> XXXXXXX</span>
+                </div>
+                <div class="info-group">
+                    <span><strong>Lecturer:</strong> Alan Ho</span>
+                    <span><strong>Class Size:</strong> 5</span>
+                </div>
+                <div class="info-group">
+                    <span><strong>Present:</strong> 3</span>
+                    <span><strong>Absent:</strong> 2</span>
+                </div>
+            </div>
+
+            <div class="records-section">
+                <h3 class="section-title mb-3">Records</h3>
+                
+                <!-- Search and Filter -->
+                <div class="search-filter-container mb-4">
+                    <div class="search-bar">
+                        <input type="text" class="search-input" placeholder="Search by name or ID">
+                        <input type="text" class="filter-input" placeholder="Filter by status">
+                        <button class="btn-custom search-btn">Search</button>
+                    </div>
+                </div>
+
+                <!-- Records Table -->
+                <div class="table-responsive">
+                    <table class="records-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>ID</th>
+                                <th>Attendance Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in records %}
+                            <tr class="row-{{ r.status }}">
+                                <td>{{ r.student_name or r.student_id }}</td>
+                                <td>{{ r.student_id }}</td>
+                                <td><span class="status-{{ r.status }}">{{ r.status|upper }}</span></td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-custom manage-btn">Manage</button>
+                                        {% if r.get('notes') %}<span class="appeal-badge">Has Notes</span>{% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            <tr class="row-vr">
+                                <td>Alex Tan</td>
+                                <td>8541200</td>
+                                <td><span class="status-vr">VR</span></td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-custom manage-btn">Manage</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="row-present">
+                                <td>James Teo</td>
+                                <td>8531254</td>
+                                <td><span class="status-present">PRESENT</span></td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-custom manage-btn">Manage</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="row-present">
+                                <td>XXXXXXXXX</td>
+                                <td>XXXXXXXX</td>
+                                <td><span class="status-present">PRESENT</span></td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-custom manage-btn">Manage</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="row-present">
+                                <td>XXXXXXXX</td>
+                                <td>XXXXXXXX</td>
+                                <td><span class="status-present">PRESENT</span></td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-custom manage-btn">Manage</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination mt-4">
+                    <span>Page 1 of 1</span>
+                    <span class="pagination-arrow">›</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generate Report Button -->
+    <div class="generate-container text-center mt-4">
+        <button class="btn-custom generate-btn">Generate Class Reports</button>
+    </div>
+</div>
+
+<style>
+    /* Page Specific Styles */
+    .dashboard-admin {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        font-style: italic;
+        color: var(--text-dark);
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 1rem;
+    }
+
+    /* Class Title */
+    .class-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--text-dark);
+        text-decoration: underline;
+    }
+
+    /* Class Info */
+    .class-info {
+        background-color: var(--primary-light);
+        border-radius: 10px;
+        padding: 1.5rem;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .info-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .info-group span {
+        font-size: 0.9rem;
+        color: var(--text-dark);
+    }
+
+    .info-group strong {
+        color: var(--primary-dark);
+    }
+
+    /* Section Title */
+    .section-title {
+        font-weight: 700;
+        margin-bottom: 1rem;
+        font-size: 1.25rem;
+        color: var(--text-dark);
+    }
+
+    /* Search and Filter */
+    .search-filter-container {
+        background-color: var(--primary-light);
+        border-radius: 10px;
+        padding: 1rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .search-bar {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .search-input,
+    .filter-input {
+        flex: 1;
+        max-width: 250px;
+        padding: 0.75rem 1.25rem;
+        border: 1px solid var(--border-color);
+        border-radius: 25px;
+        font-size: 0.9rem;
+        background-color: white;
+    }
+
+    .search-btn {
+        padding: 0.75rem 2rem;
+        border-radius: 25px;
+        font-size: 0.9rem;
+    }
+
+    /* Records Table */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .records-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+
+    .records-table thead {
+        background-color: var(--primary-dark);
+        color: white;
+    }
+
+    .records-table th {
+        padding: 1rem 1.25rem;
+        text-align: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .records-table th:first-child {
+        text-align: left;
+        border-radius: 8px 0 0 8px;
+    }
+
+    .records-table th:last-child {
+        border-radius: 0 8px 8px 0;
+    }
+
+    .records-table td {
+        padding: 1rem 1.25rem;
+        text-align: center;
+        font-size: 0.9rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .records-table td:first-child {
+        text-align: left;
+    }
+
+    /* Row colors based on status */
+    .row-absent {
+        background-color: #ffebee;
+    }
+
+    .row-vr {
+        background-color: #e3f2fd;
+    }
+
+    .row-present {
+        background-color: #e8f5e9;
+    }
+
+    /* Status text colors */
+    .status-absent {
+        color: #d32f2f;
+        font-weight: bold;
+    }
+
+    .status-vr {
+        color: #1976d2;
+        font-weight: 500;
+    }
+
+    .status-present {
+        color: #2e7d32;
+        font-weight: bold;
+    }
+
+    /* Action buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .manage-btn {
+        padding: 0.5rem 1.25rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        background-color: var(--primary-dark);
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+
+    .manage-btn:hover {
+        background-color: #1e293b;
+    }
+
+    .appeal-badge {
+        background-color: #ff5252;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    /* Pagination */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-color);
+        color: var(--text-dark);
+    }
+
+    .pagination span {
+        font-size: 0.9rem;
+    }
+
+    .pagination-arrow {
+        cursor: pointer;
+        font-weight: bold;
+        padding: 0.25rem;
+        color: var(--primary-dark);
+    }
+
+    /* Generate Button */
+    .generate-container {
+        margin-top: 2rem;
+    }
+
+    .generate-btn {
+        padding: 1rem 4rem;
+        border-radius: 30px;
+        font-size: 1.25rem;
+        font-weight: 500;
+        background-color: var(--primary-dark);
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+
+    .generate-btn:hover {
+        background-color: #1e293b;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        .class-info {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .search-bar {
+            flex-wrap: wrap;
+        }
+
+        .search-input,
+        .filter-input {
+            max-width: 100%;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 1.75rem;
+        }
+
+        .class-info {
+            grid-template-columns: 1fr;
+        }
+
+        .search-bar {
+            flex-direction: column;
+        }
+
+        .records-table {
+            font-size: 0.8rem;
+        }
+
+        .records-table th,
+        .records-table td {
+            padding: 0.75rem 0.5rem;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .generate-btn {
+            padding: 0.75rem 2rem;
+            font-size: 1rem;
+        }
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,435 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Student Attendance Management - AttendAI{% endblock %}
+
+{% block content %}
+<div class="dashboard-admin">
+    <h1 class="page-title mb-4">Attendance Management - Student Details</h1>
+
+    <!-- Student Info Card -->
+    <div class="card-custom mb-4">
+        <div class="card-header-custom">Student Information</div>
+        <div class="card-body-custom">
+            <h2 class="student-name mb-3">{{ student_info.full_name if student_info else 'Unknown Student' }}</h2>
+            <div class="student-info">
+                <div class="info-group">
+                    <span><strong>Student ID:</strong> {{ student_info.student_id if student_info else '' }}</span>
+                    <span><strong>Module:</strong> {% if records and records|length > 0 %}{{ records[0].get('course_code','') }} - {{ records[0].get('course_name','') }}{% else %}N/A{% endif %}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Records Section -->
+    <div class="card-custom">
+        <div class="card-header-custom">Attendance Records</div>
+        <div class="card-body-custom">
+            <h3 class="section-title mb-4">Records</h3>
+
+            <!-- Search and Filter -->
+            <div class="search-filter-row mb-4">
+                <div class="search-container">
+                    <input type="text" class="search-input" placeholder="Search">
+                    <input type="text" class="filter-input" placeholder="Filter">
+                    <button class="btn-custom search-btn">Search</button>
+                </div>
+                <div class="manage-buttons">
+                    <button class="btn-custom manage-btn-outline">Manage All</button>
+                    <button class="btn-custom manage-btn-outline">Export</button>
+                </div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Class Session</th>
+                            <th>Appeals</th>
+                            <th>Attendance Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in records %}
+                        <tr class="row-{{ r.status }}">
+                            <td>{{ r.session_topic or r.session_id }}</td>
+                            <td>{% if r.get('appeal') %}<a href="#" class="appeal-link">View Appeal</a>{% else %}<span class="appeal-nil">NIL</span>{% endif %}</td>
+                            <td><span class="status-{{ r.status|upper if r.status else 'present' }}">{{ r.status|upper }}</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-custom action-btn btn-present">Present</button>
+                                    <button class="btn-custom action-btn btn-vr">VR</button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="row-vr">
+                            <td>L05</td>
+                            <td><a href="#" class="appeal-link">View Appeal</a></td>
+                            <td><span class="status-vr">VR</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-custom action-btn btn-present">Present</button>
+                                    <button class="btn-custom action-btn btn-absent">Absent</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="row-present">
+                            <td>L04</td>
+                            <td><span class="appeal-nil">NIL</span></td>
+                            <td><span class="status-present">PRESENT</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-custom action-btn btn-absent">Absent</button>
+                                    <button class="btn-custom action-btn btn-vr">VR</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="row-present">
+                            <td>L03</td>
+                            <td><span class="appeal-nil">NIL</span></td>
+                            <td><span class="status-present">PRESENT</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-custom action-btn btn-absent">Absent</button>
+                                    <button class="btn-custom action-btn btn-vr">VR</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="row-present">
+                            <td>L02</td>
+                            <td><span class="appeal-nil">NIL</span></td>
+                            <td><span class="status-present">PRESENT</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-custom action-btn btn-absent">Absent</button>
+                                    <button class="btn-custom action-btn btn-vr">VR</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination mt-4">
+                <span>Page 1 of 1</span>
+                <span class="pagination-arrow">›</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Page Specific Styles */
+    .dashboard-admin {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        font-style: italic;
+        color: var(--text-dark);
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 1rem;
+    }
+
+    /* Student Name */
+    .student-name {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--text-dark);
+        text-decoration: underline;
+    }
+
+    /* Student Info */
+    .student-info {
+        background-color: var(--primary-light);
+        border-radius: 10px;
+        padding: 1.25rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .info-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .info-group span {
+        font-size: 0.9rem;
+        color: var(--text-dark);
+    }
+
+    .info-group strong {
+        color: var(--primary-dark);
+    }
+
+    /* Section Title */
+    .section-title {
+        font-weight: 700;
+        margin-bottom: 1rem;
+        font-size: 1.25rem;
+        color: var(--text-dark);
+    }
+
+    /* Search and Filter */
+    .search-filter-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .search-container {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        flex: 1;
+    }
+
+    .search-input,
+    .filter-input {
+        flex: 1;
+        max-width: 200px;
+        padding: 0.75rem 1.25rem;
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        font-size: 0.9rem;
+        background-color: white;
+    }
+
+    .search-btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+    }
+
+    .manage-buttons {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .manage-btn-outline {
+        background-color: white;
+        color: var(--primary-dark);
+        border: 2px solid var(--primary-dark);
+        padding: 0.75rem 1.5rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        cursor: pointer;
+    }
+
+    .manage-btn-outline:hover {
+        background-color: var(--primary-dark);
+        color: white;
+    }
+
+    /* Data Table */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+
+    .data-table thead {
+        background-color: var(--primary-dark);
+        color: white;
+    }
+
+    .data-table th {
+        padding: 1rem 1.25rem;
+        text-align: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .data-table th:first-child {
+        text-align: left;
+        border-radius: 8px 0 0 8px;
+    }
+
+    .data-table th:last-child {
+        border-radius: 0 8px 8px 0;
+    }
+
+    .data-table td {
+        padding: 1rem 1.25rem;
+        text-align: center;
+        font-size: 0.9rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .data-table td:first-child {
+        text-align: left;
+        font-weight: 500;
+    }
+
+    /* Row colors based on status */
+    .row-absent {
+        background-color: #ffebee;
+    }
+
+    .row-vr {
+        background-color: #e3f2fd;
+    }
+
+    .row-present {
+        background-color: #e8f5e9;
+    }
+
+    /* Status text colors */
+    .status-absent {
+        color: #d32f2f;
+        font-weight: 600;
+    }
+
+    .status-vr {
+        color: #1976d2;
+        font-weight: 600;
+    }
+
+    .status-present {
+        color: #388e3c;
+        font-weight: 600;
+    }
+
+    /* Appeals */
+    .appeal-link {
+        color: #d32f2f;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .appeal-link:hover {
+        text-decoration: underline;
+    }
+
+    .appeal-nil {
+        color: #1976d2;
+        font-weight: 500;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .action-btn {
+        padding: 0.5rem 1rem;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        border: none;
+        min-width: 70px;
+    }
+
+    .btn-present {
+        background-color: var(--primary-dark);
+        color: white;
+    }
+
+    .btn-vr {
+        background-color: #5a6a8a;
+        color: white;
+    }
+
+    .btn-absent {
+        background-color: var(--primary-dark);
+        color: white;
+    }
+
+    .action-btn:hover {
+        opacity: 0.9;
+    }
+
+    /* Pagination */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-color);
+        color: var(--text-dark);
+    }
+
+    .pagination span {
+        font-size: 0.9rem;
+    }
+
+    .pagination-arrow {
+        cursor: pointer;
+        font-weight: bold;
+        padding: 0.25rem;
+        color: var(--primary-dark);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        .search-container {
+            flex-wrap: wrap;
+        }
+
+        .search-input,
+        .filter-input {
+            max-width: 100%;
+            flex: 1 1 200px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 1.75rem;
+        }
+
+        .search-filter-row {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .search-container {
+            flex-direction: column;
+        }
+
+        .search-input,
+        .filter-input {
+            max-width: 100%;
+            width: 100%;
+        }
+
+        .manage-buttons {
+            width: 100%;
+            justify-content: flex-start;
+        }
+
+        .data-table {
+            font-size: 0.8rem;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem 0.5rem;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .action-btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}

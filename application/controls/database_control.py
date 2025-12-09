@@ -1,5 +1,5 @@
 from application.entities.base_entity import BaseEntity
-from application.entities.attendance import Attendance
+from application.entities.attendance_record import AttendanceRecord
 from application.entities.institution import Institution
 from application.entities.course import Course
 from application.entities.lecturer import Lecturer
@@ -32,7 +32,7 @@ class DatabaseControl:
                 Student,
                 Enrollment,
                 Session,
-                Attendance
+                AttendanceRecord
             ]
             
             for entity_class in tables:

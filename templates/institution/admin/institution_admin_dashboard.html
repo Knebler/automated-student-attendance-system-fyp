@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "layouts/base.html" %}
 
 {% block title %}Admin Dashboard - AttendAI{% endblock %}
 
@@ -27,11 +27,11 @@
                 <div class="card-header-custom">Quick Actions</div>
                 <div class="card-body-custom">
                     <div class="quick-actions">
-                        <a href="{{ url_for('dashboard.manage_users') }}" class="btn-custom action-btn text-center mb-2">Manage Users</a>
-                        <a href="{{ url_for('dashboard.manage_attendance') }}" class="btn-custom action-btn text-center mb-2">Manage Attendance</a>
-                        <a href="{{ url_for('dashboard.manage_classes') }}" class="btn-custom action-btn text-center mb-2">Manage Classes</a>
-                        <a href="{{ url_for('dashboard.institution_profile') }}" class="btn-custom action-btn text-center mb-2">Institution Profile</a>
-                        <a href="{{ url_for('dashboard.import_data') }}" class="btn-custom action-btn text-center">Data Importation</a>
+                        <a href="{{ url_for('institution.manage_users') }}" class="btn-custom action-btn text-center mb-2">Manage Users</a>
+                        <a href="{{ url_for('institution.manage_attendance') }}" class="btn-custom action-btn text-center mb-2">Manage Attendance</a>
+                        <a href="{{ url_for('institution.manage_classes') }}" class="btn-custom action-btn text-center mb-2">Manage Classes</a>
+                        <a href="{{ url_for('institution.institution_profile') }}" class="btn-custom action-btn text-center mb-2">Institution Profile</a>
+                        <a href="{{ url_for('institution.import_data') }}" class="btn-custom action-btn text-center">Data Importation</a>
                     </div>
                 </div>
             </div>

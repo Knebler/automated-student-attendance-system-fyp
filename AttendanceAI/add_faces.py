@@ -3,7 +3,8 @@ import pickle
 import numpy as np
 import os
 video=cv2.VideoCapture(0)
-facedetect=cv2.CascadeClassifier('data/haarcascade_frontalface_default.xml')
+haar_cascade_path = os.path.join(cv2.data.haarcascades, 'haarcascade_frontalface_default.xml')
+facedetect = cv2.CascadeClassifier(haar_cascade_path)
 
 faces_data=[]
 
@@ -34,23 +35,23 @@ faces_data=np.asarray(faces_data)
 faces_data=faces_data.reshape(100, -1)
 
 
-if 'names.pkl' not in os.listdir('data/'):
+if 'names.pkl' not in os.listdir('./AttendanceAI/data/'):
     names=[name]*100
-    with open('data/names.pkl', 'wb') as f:
+    with open('./AttendanceAI/data/names.pkl', 'wb') as f:
         pickle.dump(names, f)
 else:
-    with open('data/names.pkl', 'rb') as f:
+    with open('./AttendanceAI/data/names.pkl', 'rb') as f:
         names=pickle.load(f)
     names=names+[name]*100
-    with open('data/names.pkl', 'wb') as f:
+    with open('./AttendanceAI/data/names.pkl', 'wb') as f:
         pickle.dump(names, f)
 
-if 'faces_data.pkl' not in os.listdir('data/'):
-    with open('data/faces_data.pkl', 'wb') as f:
+if 'faces_data.pkl' not in os.listdir('./AttendanceAI/data/'):
+    with open('./AttendanceAI/data/faces_data.pkl', 'wb') as f:
         pickle.dump(faces_data, f)
 else:
-    with open('data/faces_data.pkl', 'rb') as f:
+    with open('./AttendanceAI/data/faces_data.pkl', 'rb') as f:
         faces=pickle.load(f)
     faces=np.append(faces, faces_data, axis=0)
-    with open('data/faces_data.pkl', 'wb') as f:
+    with open('./AttendanceAI/data/faces_data.pkl', 'wb') as f:
         pickle.dump(faces, f)

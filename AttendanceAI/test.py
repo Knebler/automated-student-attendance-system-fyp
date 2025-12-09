@@ -16,23 +16,34 @@ def speak(text):
 
 # ------------------ LOAD VIDEO + FACE CASCADE ------------------
 video = cv2.VideoCapture(0)
-facedetect = cv2.CascadeClassifier('data/haarcascade_frontalface_default.xml')
+facedetect = cv2.CascadeClassifier('./AttendanceAI/data/haarcascade_frontalface_default.xml')
+
+if facedetect.empty():
+    raise FileNotFoundError("Haar Cascade XML file not found. Please ensure 'haarcascade_frontalface_default.xml' exists in AttendanceAI/data/")
 
 # ------------------ LOAD TRAINED DATA ------------------
-with open('data/names.pkl', 'rb') as w:
+with open('./AttendanceAI/data/names.pkl', 'rb') as w:
     LABELS = pickle.load(w)
 
-with open('data/faces_data.pkl', 'rb') as f:
+with open('./AttendanceAI/data/faces_data.pkl', 'rb') as f:
     FACES = pickle.load(f)
 
 print("Faces shape:", FACES.shape)
+print("Labels shape:", len(LABELS))
+
+# ------------------ FIX MISMATCH ------------------
+min_samples = min(len(FACES), len(LABELS))
+FACES = FACES[:min_samples]
+LABELS = LABELS[:min_samples]
+
+print(f"Using {min_samples} samples for training")
 
 # ------------------ TRAIN KNN MODEL ------------------
 knn = KNeighborsClassifier(n_neighbors=5)
 knn.fit(FACES, LABELS)
 
 # ------------------ LOAD BACKGROUND ------------------
-imgBackground = cv2.imread("background.png")
+imgBackground = cv2.imread("./AttendanceAI/background.png")
 if imgBackground is None:
     raise FileNotFoundError("background.png not found. Place it beside test.py")
 
@@ -44,6 +55,10 @@ taken_today = set()
 # ------------------ MAIN LOOP ------------------
 while True:
     ret, frame = video.read()
+    if not ret:
+        print("Failed to grab frame")
+        break
+        
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     faces = facedetect.detectMultiScale(gray, 1.3, 5)
 
@@ -58,7 +73,9 @@ while True:
         timestamp = datetime.fromtimestamp(ts).strftime("%H:%M:%S")
 
         # CSV file location
-        csv_path = f"Attendance/Attendance_{date}.csv"
+        csv_path = f"./AttendanceAI/Attendance/Attendance_{date}.csv"
+    
+        
         file_exists = os.path.isfile(csv_path)
 
         # Draw box

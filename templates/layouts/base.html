@@ -285,48 +285,21 @@
 </head>
 <body>
     <!-- Custom Navigation -->
-    <nav class="navbar-custom">
-        <a class="navbar-brand-custom" href="{{ url_for('main.home') }}">AttendAI</a>
-        
-        <button class="navbar-toggler-custom" onclick="toggleMobileMenu()">
-            ☰
-        </button>
-        
-        <ul class="nav-links-custom" id="mobileMenu">
-            {% if session.user %}
-                <!-- Public links -->
-                <li><a class="nav-link-custom" href="{{ url_for('main.home') }}">Home</a></li>
-                <li><a class="nav-link-custom" href="{{ url_for('main.features') }}">Features</a></li>
-                <li><a class="nav-link-custom" href="{{ url_for('main.about') }}">About Us</a></li>
-                
-                <!-- User links -->
-                {# Choose dashboard route by role stored in session.user.user_type #}
-                {% set _role = session.user.user_type if session.user and session.user.user_type else None %}
-                {% if _role in ['platform_manager','platform','platmanager'] %}
-                    <li><a class="nav-link-custom" href="{{ url_for('platform.platform_dashboard') }}">Dashboard</a></li>
-                {% elif _role in ['institution_admin','admin'] %}
-                    <li><a class="nav-link-custom" href="{{ url_for('institution.institution_dashboard') }}">Dashboard</a></li>
-                {% elif _role in ['lecturer','teacher'] %}
-                    <li><a class="nav-link-custom" href="{{ url_for('institution_lecturer.lecturer_dashboard') }}">Dashboard</a></li>
-                {% else %}
-                    <li><a class="nav-link-custom" href="{{ url_for('dashboard.dashboard') }}">Dashboard</a></li>
-                {% endif %}
-                <li><a class="nav-link-custom" href="{{ url_for('dashboard.profile') }}">Profile</a></li>
-                <li><a class="nav-link-custom" href="{{ url_for('auth.logout') }}">Logout</a></li>
-            {% else %}
-                <!-- Public links -->
-                <li><a class="nav-link-custom" href="{{ url_for('main.features') }}">Features</a></li>
-                <li><a class="nav-link-custom" href="{{ url_for('main.about') }}">About</a></li>
-                <li><a class="nav-link-custom" href="{{ url_for('main.subscriptions') }}">Subcription</a></li>
-                <li><a class="nav-link-custom" href="{{ url_for('main.testimonials') }}">Testimonials</a></li>
-                <li><a class="nav-link-custom" href="{{ url_for('main.faq') }}">FAQ</a></li>
-                
-                <!-- Auth links -->
-                <li><a class="nav-link-custom" href="{{ url_for('auth.login') }}">Login</a></li>
-                <li><a class="nav-link-custom" href="{{ url_for('auth.register') }}">Register</a></li>
+    {% include 'layouts/navbar.html' %}
+    
+    <!-- Alert Messages -->
+    <div class="alert-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert-custom alert-{{ category }} mt-3">
+                        {{ message }}
+                        <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'" style="float: right; background: none; border: none; font-size: 1.2rem; cursor: pointer;">×</button>
+                    </div>
+                {% endfor %}
             {% endif %}
-        </ul>
-    </nav>
+        {% endwith %}
+    </div>
 
     <!-- Alert Messages -->
     <div class="alert-container">

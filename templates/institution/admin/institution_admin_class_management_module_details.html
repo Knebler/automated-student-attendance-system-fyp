@@ -1,0 +1,416 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Class Details - MGNT 110 - AttendAI{% endblock %}
+
+{% block content %}
+<div class="class-details-management">
+    <div class="page-header mb-4">
+        <h1 class="page-title">Class Management</h1>
+        <div class="breadcrumb">
+            <a href="{{ url_for('institution.manage_classes') }}">Classes</a> / 
+            <span>MGNT 110 - Introduction to Management</span>
+        </div>
+    </div>
+
+    <div class="card-custom mb-4">
+        <div class="card-header-custom">Course Information</div>
+        <div class="card-body-custom">
+            <div class="course-info">
+                <h2 class="course-title">MGNT 110 - Introduction to Management</h2>
+                <div class="course-meta">
+                    <span><strong>Lecturer:</strong> JASON HO</span>
+                    <span><strong>Status:</strong> <span class="status active">ACTIVE</span></span>
+                    <span><strong>Venue:</strong> A.117/A</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Completed Classes Section -->
+    <div class="card-custom mb-4">
+        <div class="card-header-custom d-flex justify-content-between align-items-center">
+            <div>Completed Classes</div>
+        </div>
+        <div class="card-body-custom">
+            <div class="table-responsive">
+                <table class="classes-table">
+                    <thead>
+                        <tr>
+                            <th>Class</th>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th>Venue</th>
+                            <th>Lecturer</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>L02</td>
+                            <td>xx/xx/xxxx xxxx</td>
+                            <td>xx/xx/xxxx xxxx</td>
+                            <td>A.117/A</td>
+                            <td>JASON HO</td>
+                            <td class="actions-cell">
+                                <button class="btn-custom btn-manage">Manage Class</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>L03</td>
+                            <td>xx/xx/xxxx xxxx</td>
+                            <td>xx/xx/xxxx xxxx</td>
+                            <td>A.117/A</td>
+                            <td>JASON HO</td>
+                            <td class="actions-cell">
+                                <button class="btn-custom btn-manage">Manage Class</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>L04</td>
+                            <td>xx/xx/xxxx xxxx</td>
+                            <td>xx/xx/xxxx xxxx</td>
+                            <td>A.117/A</td>
+                            <td>JASON HO</td>
+                            <td class="actions-cell">
+                                <button class="btn-custom btn-manage">Manage Class</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>L05</td>
+                            <td>xx/xx/xxxx xxxx</td>
+                            <td>xx/xx/xxxx xxxx</td>
+                            <td>A.117/A</td>
+                            <td>JASON HO</td>
+                            <td class="actions-cell">
+                                <button class="btn-custom btn-manage">Manage Class</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>L06</td>
+                            <td>xx/xx/xxxx xxxx</td>
+                            <td>xx/xx/xxxx xxxx</td>
+                            <td>A.117/A</td>
+                            <td>JASON HO</td>
+                            <td class="actions-cell">
+                                <button class="btn-custom btn-manage">Manage Class</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Classes Section -->
+    <div class="card-custom">
+        <div class="card-header-custom d-flex justify-content-between align-items-center">
+            <div>Upcoming Classes</div>
+            <button class="btn-custom btn-add">Add Classes</button>
+        </div>
+        <div class="card-body-custom">
+            <div class="table-responsive">
+                <table class="classes-table">
+                    <thead>
+                        <tr>
+                            <th>Class</th>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th>Venue</th>
+                            <th>Lecturer</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>L07</td>
+                            <td>xx/xx/xxxx xxxx</td>
+                            <td>xx/xx/xxxx xxxx</td>
+                            <td>A.117/A</td>
+                            <td>JASON HO</td>
+                            <td class="actions-cell">
+                                <button class="btn-custom btn-manage">Manage Class</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>L08</td>
+                            <td>xx/xx/xxxx xxxx</td>
+                            <td>xx/xx/xxxx xxxx</td>
+                            <td>A.117/A</td>
+                            <td>JASON HO</td>
+                            <td class="actions-cell">
+                                <button class="btn-custom btn-manage">Manage Class</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>L09</td>
+                            <td>xx/xx/xxxx xxxx</td>
+                            <td>xx/xx/xxxx xxxx</td>
+                            <td>A.117/A</td>
+                            <td>JASON HO</td>
+                            <td class="actions-cell">
+                                <button class="btn-custom btn-manage">Manage Class</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>L10</td>
+                            <td>xx/xx/xxxx xxxx</td>
+                            <td>xx/xx/xxxx xxxx</td>
+                            <td>A.117/A</td>
+                            <td>JASON HO</td>
+                            <td class="actions-cell">
+                                <button class="btn-custom btn-manage">Manage Class</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>L11</td>
+                            <td>xx/xx/xxxx xxxx</td>
+                            <td>xx/xx/xxxx xxxx</td>
+                            <td>A.117/A</td>
+                            <td>JASON HO</td>
+                            <td class="actions-cell">
+                                <button class="btn-custom btn-manage">Manage Class</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Class Details Management Specific Styles */
+    .class-details-management {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 1rem;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        font-style: italic;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .breadcrumb {
+        font-size: 0.9rem;
+        color: var(--text-light);
+    }
+
+    .breadcrumb a {
+        color: var(--primary-dark);
+        text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+
+    .breadcrumb span {
+        color: var(--text-dark);
+        font-weight: 500;
+    }
+
+    /* Course Information */
+    .course-info {
+        padding: 1rem 0;
+    }
+
+    .course-title {
+        color: var(--text-dark);
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    .course-meta {
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+        font-size: 0.9rem;
+    }
+
+    .course-meta span {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .course-meta strong {
+        font-weight: 600;
+    }
+
+    /* Table Styles */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .classes-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 0.5rem;
+    }
+
+    .classes-table thead {
+        background-color: var(--primary-dark);
+        color: white;
+    }
+
+    .classes-table th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.9rem;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .classes-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 0.9rem;
+        vertical-align: middle;
+    }
+
+    .classes-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .classes-table tbody tr:hover {
+        background-color: var(--primary-light);
+    }
+
+    /* Status Badges */
+    .status {
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        display: inline-block;
+    }
+
+    .status.active {
+        color: #059669;
+        background-color: #f0fdf4;
+        border: 1px solid #059669;
+    }
+
+    .status.inactive {
+        color: #dc2626;
+        background-color: #fef2f2;
+        border: 1px solid #dc2626;
+    }
+
+    /* Action Buttons */
+    .actions-cell {
+        text-align: center;
+    }
+
+    .btn-manage {
+        padding: 0.5rem 1.5rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        background-color: var(--primary-dark);
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-manage:hover {
+        background-color: #1e293b;
+    }
+
+    .btn-add {
+        padding: 0.5rem 1.5rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        background-color: var(--primary-dark);
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-add:hover {
+        background-color: #1e293b;
+    }
+
+    /* Header Alignment */
+    .d-flex {
+        display: flex;
+    }
+    
+    .justify-content-between {
+        justify-content: space-between;
+    }
+    
+    .align-items-center {
+        align-items: center;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 1.75rem;
+        }
+
+        .course-title {
+            font-size: 1.25rem;
+        }
+
+        .course-meta {
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .classes-table {
+            font-size: 0.8rem;
+        }
+
+        .classes-table th,
+        .classes-table td {
+            padding: 0.75rem 0.5rem;
+        }
+
+        .btn-manage,
+        .btn-add {
+            padding: 0.4rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .card-header-custom {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .card-header-custom .btn-add {
+            align-self: flex-end;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .classes-table th:nth-child(4),
+        .classes-table td:nth-child(4),
+        .classes-table th:nth-child(5),
+        .classes-table td:nth-child(5) {
+            display: none;
+        }
+
+        .status {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.5rem;
+        }
+
+        .breadcrumb {
+            font-size: 0.8rem;
+        }
+    }
+</style>
+{% endblock %}

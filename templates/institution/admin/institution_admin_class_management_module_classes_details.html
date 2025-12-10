@@ -1,0 +1,446 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Session Details - MGNT 110 L07 - AttendAI{% endblock %}
+
+{% block content %}
+<div class="session-details-management">
+    <div class="page-header mb-4">
+        <h1 class="page-title">Class Management</h1>
+        <div class="breadcrumb">
+            <a href="{{ url_for('institution.manage_classes') }}">Classes</a> / 
+            <a href="{{ url_for('institution.class_details', class_id='MGNT110') }}">MGNT 110 - Introduction to Management</a> / 
+            <span>L07 - Session Details</span>
+        </div>
+    </div>
+
+    <div class="card-custom mb-4">
+        <div class="card-header-custom">Session Information - MGNT 110 L07</div>
+        <div class="card-body-custom">
+            <div class="session-info-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="venue">Venue:</label>
+                        <select id="venue" class="form-control">
+                            <option selected>A1.17/A</option>
+                            <option>A1.18/A</option>
+                            <option>B2.01/B</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="lecturer">Lecturer:</label>
+                        <select id="lecturer" class="form-control">
+                            <option selected>Jason Ho</option>
+                            <option>Dr. Smith</option>
+                            <option>Prof. Johnson</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="start-date">Start Date/Time:</label>
+                        <input type="text" id="start-date" class="form-control" value="11/11/2025, 12:00">
+                    </div>
+                    <div class="form-group">
+                        <label for="end-date">End Date/Time:</label>
+                        <input type="text" id="end-date" class="form-control" value="11/11/2025, 15:00">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-custom">
+        <div class="card-header-custom">Class Roster</div>
+        <div class="card-body-custom">
+            <!-- Search and Filter Controls -->
+            <div class="roster-controls mb-4">
+                <div class="search-filters">
+                    <input type="text" class="search-input" placeholder="Search by name or ID...">
+                    <input type="text" class="filter-input" placeholder="Filter by status...">
+                    <button class="btn-custom btn-search">Search</button>
+                </div>
+            </div>
+
+            <!-- Add Student Section -->
+            <div class="add-student-section mb-4">
+                <div class="section-title mb-2">Add Student to Roster</div>
+                <div class="add-student-row">
+                    <input type="text" class="student-id-input" placeholder="Enter Student ID">
+                    <button class="btn-custom btn-add-student">Add Student</button>
+                </div>
+            </div>
+
+            <!-- Roster Table -->
+            <div class="table-responsive">
+                <table class="roster-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>ID</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>GOH CHING FONG</td>
+                            <td>8551200</td>
+                            <td><span class="status enrolled">ENROLLED</span></td>
+                            <td class="actions-cell">
+                                <button class="btn-custom btn-remove">Remove</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>ALEX TAN</td>
+                            <td>8541200</td>
+                            <td><span class="status enrolled">ENROLLED</span></td>
+                            <td class="actions-cell">
+                                <button class="btn-custom btn-remove">Remove</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>JAMES TEO</td>
+                            <td>8531254</td>
+                            <td><span class="status enrolled">ENROLLED</span></td>
+                            <td class="actions-cell">
+                                <button class="btn-custom btn-remove">Remove</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>XXXXXXXX</td>
+                            <td>XXXXXXXX</td>
+                            <td><span class="status enrolled">ENROLLED</span></td>
+                            <td class="actions-cell">
+                                <button class="btn-custom btn-remove">Remove</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>XXXXXXXX</td>
+                            <td>XXXXXXXX</td>
+                            <td><span class="status enrolled">ENROLLED</span></td>
+                            <td class="actions-cell">
+                                <button class="btn-custom btn-remove">Remove</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="button-group mt-4">
+                <button class="btn-custom btn-save">Save Changes</button>
+                <a href="{{ url_for('institution.class_details', class_id='MGNT110') }}" class="btn-custom btn-cancel">Cancel</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Session Details Management Specific Styles */
+    .session-details-management {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 1rem;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        font-style: italic;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .breadcrumb {
+        font-size: 0.9rem;
+        color: var(--text-light);
+    }
+
+    .breadcrumb a {
+        color: var(--primary-dark);
+        text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+
+    .breadcrumb span {
+        color: var(--text-dark);
+        font-weight: 500;
+    }
+
+    /* Session Information Form */
+    .session-info-form {
+        padding: 0.5rem 0;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        color: var(--text-dark);
+        font-size: 0.9rem;
+    }
+
+    .form-control {
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        font-size: 0.9rem;
+        background-color: white;
+        color: var(--text-dark);
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-dark);
+        box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1);
+    }
+
+    /* Roster Controls */
+    .roster-controls {
+        width: 100%;
+    }
+
+    .search-filters {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .search-input,
+    .filter-input,
+    .student-id-input {
+        flex: 1;
+        min-width: 200px;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        font-size: 0.9rem;
+        background-color: white;
+    }
+
+    .search-input::placeholder,
+    .filter-input::placeholder,
+    .student-id-input::placeholder {
+        color: var(--text-light);
+    }
+
+    .btn-search,
+    .btn-add-student {
+        padding: 0.75rem 2rem;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+
+    /* Add Student Section */
+    .add-student-section {
+        border-top: 1px solid var(--border-color);
+        padding-top: 1.5rem;
+    }
+
+    .section-title {
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        font-size: 1rem;
+        color: var(--text-dark);
+    }
+
+    .add-student-row {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    /* Table Styles */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .roster-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 0.5rem;
+    }
+
+    .roster-table thead {
+        background-color: var(--primary-dark);
+        color: white;
+    }
+
+    .roster-table th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.9rem;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .roster-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 0.9rem;
+        vertical-align: middle;
+    }
+
+    .roster-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .roster-table tbody tr:hover {
+        background-color: var(--primary-light);
+    }
+
+    /* Status Badges */
+    .status {
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        display: inline-block;
+    }
+
+    .status.enrolled {
+        color: #059669;
+        background-color: #f0fdf4;
+        border: 1px solid #059669;
+    }
+
+    /* Action Buttons */
+    .actions-cell {
+        text-align: center;
+    }
+
+    .btn-remove {
+        padding: 0.5rem 1.5rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        background-color: #dc2626;
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-remove:hover {
+        background-color: #b91c1c;
+    }
+
+    /* Button Group */
+    .button-group {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .btn-save {
+        padding: 0.75rem 2.5rem;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        background-color: var(--primary-dark);
+        color: white;
+    }
+
+    .btn-cancel {
+        padding: 0.75rem 2.5rem;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        background-color: #dc2626;
+        color: white;
+        text-decoration: none;
+        text-align: center;
+    }
+
+    .btn-cancel:hover {
+        background-color: #b91c1c;
+        color: white;
+        text-decoration: none;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 1.75rem;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .search-filters,
+        .add-student-row {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .search-input,
+        .filter-input,
+        .student-id-input {
+            min-width: 100%;
+        }
+
+        .btn-search,
+        .btn-add-student {
+            width: 100%;
+        }
+
+        .roster-table {
+            font-size: 0.8rem;
+        }
+
+        .roster-table th,
+        .roster-table td {
+            padding: 0.75rem 0.5rem;
+        }
+
+        .button-group {
+            flex-direction: column;
+        }
+
+        .btn-save,
+        .btn-cancel {
+            width: 100%;
+            text-align: center;
+        }
+
+        .breadcrumb {
+            font-size: 0.8rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .roster-table th:nth-child(2),
+        .roster-table td:nth-child(2) {
+            display: none;
+        }
+
+        .status {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.5rem;
+        }
+
+        .btn-remove {
+            padding: 0.4rem 1rem;
+            font-size: 0.8rem;
+        }
+    }
+</style>
+{% endblock %}

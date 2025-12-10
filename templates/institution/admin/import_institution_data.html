@@ -1,0 +1,462 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Import Data - AttendAI{% endblock %}
+
+{% block content %}
+<div class="import-data-page">
+    <div class="page-header mb-4">
+        <h1 class="page-title">Import Data</h1>
+        <div class="breadcrumb">
+            <a href="{{ url_for('institution.admin_dashboard') }}">Dashboard</a> / 
+            <span>Import Data</span>
+        </div>
+    </div>
+
+    <div class="card-custom">
+        <div class="card-header-custom">Data Import</div>
+        <div class="card-body-custom">
+            <!-- Import Type Selector -->
+            <div class="import-selector mb-5">
+                <div class="form-group">
+                    <label for="importType" class="form-label">Import For</label>
+                    <select id="importType" class="form-control">
+                        <option value="" disabled selected>Select data type to import</option>
+                        <option value="users">Users</option>
+                        <option value="classes">Classes</option>
+                        <option value="attendance">Attendance Records</option>
+                        <option value="students">Students</option>
+                    </select>
+                </div>
+                <p class="helper-text mt-2">Select the type of data you want to import from the dropdown above.</p>
+            </div>
+
+            <!-- Upload Area -->
+            <div class="upload-section">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                    </div>
+                    <p class="upload-text">Click here or drag files to upload</p>
+                    <p class="upload-subtext">Supports .csv, .xlsx, .xls files</p>
+                    <input type="file" id="fileInput" class="file-input" accept=".csv,.xlsx,.xls" multiple>
+                </div>
+
+                <div class="file-info mt-4" id="fileInfo">
+                    <div class="file-details">
+                        <div class="file-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                                <polyline points="13 2 13 9 20 9"></polyline>
+                            </svg>
+                        </div>
+                        <div class="file-text">
+                            <p class="file-name">No file selected</p>
+                            <p class="file-size">–</p>
+                        </div>
+                        <button class="btn-custom btn-clear" id="clearFile">Clear</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Import Actions -->
+            <div class="import-actions mt-5">
+                <button class="btn-custom btn-import" id="importButton" disabled>Start Import</button>
+                <a href="{{ url_for('institution.admin_dashboard') }}" class="btn-custom btn-outline-custom">Cancel</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Import Data Page Specific Styles */
+    .import-data-page {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 1rem;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        font-style: italic;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .breadcrumb {
+        font-size: 0.9rem;
+        color: var(--text-light);
+    }
+
+    .breadcrumb a {
+        color: var(--primary-dark);
+        text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+
+    .breadcrumb span {
+        color: var(--text-dark);
+        font-weight: 500;
+    }
+
+    /* Import Selector */
+    .import-selector {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .form-group {
+        margin-bottom: 0.5rem;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--text-dark);
+        font-size: 0.9rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: 30px;
+        font-size: 0.9rem;
+        color: var(--text-dark);
+        background-color: white;
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%230f172a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 20px center;
+        background-size: 20px;
+        padding-right: 50px;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-dark);
+        box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1);
+    }
+
+    .helper-text {
+        color: var(--text-light);
+        font-size: 0.85rem;
+        text-align: center;
+    }
+
+    /* Upload Area */
+    .upload-section {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .upload-area {
+        border: 3px dashed var(--border-color);
+        border-radius: 12px;
+        padding: 4rem 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background-color: var(--primary-light);
+    }
+
+    .upload-area:hover {
+        background-color: #f1f5f9;
+        border-color: var(--primary-dark);
+    }
+
+    .upload-area.dragover {
+        background-color: #e2e8f0;
+        border-color: var(--primary-dark);
+        transform: scale(1.01);
+    }
+
+    .upload-icon {
+        color: var(--text-light);
+        margin-bottom: 1.5rem;
+    }
+
+    .upload-text {
+        color: var(--text-dark);
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .upload-subtext {
+        color: var(--text-light);
+        font-size: 0.9rem;
+    }
+
+    .file-input {
+        display: none;
+    }
+
+    /* File Info */
+    .file-info {
+        display: none;
+    }
+
+    .file-info.visible {
+        display: block;
+    }
+
+    .file-details {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background-color: white;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+    }
+
+    .file-icon {
+        color: var(--primary-dark);
+        flex-shrink: 0;
+    }
+
+    .file-text {
+        flex: 1;
+    }
+
+    .file-name {
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-bottom: 0.25rem;
+    }
+
+    .file-size {
+        color: var(--text-light);
+        font-size: 0.85rem;
+    }
+
+    .btn-clear {
+        padding: 0.5rem 1.5rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        background-color: #dc2626;
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+    }
+
+    .btn-clear:hover {
+        background-color: #b91c1c;
+    }
+
+    /* Import Actions */
+    .import-actions {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        padding-top: 2rem;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .btn-import {
+        padding: 0.75rem 3rem;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        background-color: var(--primary-dark);
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-import:hover:not(:disabled) {
+        background-color: #1e293b;
+    }
+
+    .btn-import:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 1.75rem;
+        }
+
+        .upload-area {
+            padding: 3rem 1rem;
+        }
+
+        .upload-text {
+            font-size: 1.1rem;
+        }
+
+        .upload-subtext {
+            font-size: 0.85rem;
+        }
+
+        .file-details {
+            flex-direction: column;
+            text-align: center;
+            gap: 0.75rem;
+        }
+
+        .import-actions {
+            flex-direction: column;
+        }
+
+        .btn-import,
+        .btn-outline-custom {
+            width: 100%;
+            text-align: center;
+        }
+
+        .breadcrumb {
+            font-size: 0.8rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .upload-area {
+            padding: 2rem 1rem;
+        }
+
+        .upload-icon svg {
+            width: 36px;
+            height: 36px;
+        }
+
+        .form-control {
+            font-size: 0.85rem;
+            padding: 0.65rem 1rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.querySelector('.file-name');
+        const fileSize = document.querySelector('.file-size');
+        const clearFileBtn = document.getElementById('clearFile');
+        const importButton = document.getElementById('importButton');
+        const importType = document.getElementById('importType');
+
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Update file info display
+        function updateFileInfo(files) {
+            if (files.length > 0) {
+                const totalSize = Array.from(files).reduce((sum, file) => sum + file.size, 0);
+                const fileNames = Array.from(files).map(f => f.name).join(', ');
+                
+                fileName.textContent = files.length === 1 ? files[0].name : `${files.length} files selected`;
+                fileSize.textContent = formatFileSize(totalSize);
+                fileInfo.classList.add('visible');
+                importButton.disabled = false;
+            }
+        }
+
+        // Click to upload
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                updateFileInfo(e.target.files);
+            }
+        });
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                updateFileInfo(e.dataTransfer.files);
+            }
+        });
+
+        // Clear file
+        clearFileBtn.addEventListener('click', () => {
+            fileInput.value = '';
+            fileInfo.classList.remove('visible');
+            fileName.textContent = 'No file selected';
+            fileSize.textContent = '–';
+            importButton.disabled = true;
+        });
+
+        // Import button click
+        importButton.addEventListener('click', () => {
+            if (fileInput.files.length === 0) {
+                alert('Please select a file to import.');
+                return;
+            }
+
+            const importTypeValue = importType.value;
+            if (!importTypeValue) {
+                alert('Please select what type of data you want to import.');
+                return;
+            }
+
+            // Here you would typically submit the form via AJAX
+            // For now, show a success message
+            alert(`Starting import of ${fileInput.files.length} file(s) for ${importTypeValue}...`);
+            
+            // Simulate import process
+            importButton.textContent = 'Importing...';
+            importButton.disabled = true;
+            
+            setTimeout(() => {
+                alert('Import completed successfully!');
+                importButton.textContent = 'Start Import';
+                importButton.disabled = true;
+                fileInput.value = '';
+                fileInfo.classList.remove('visible');
+                fileName.textContent = 'No file selected';
+                fileSize.textContent = '–';
+            }, 2000);
+        });
+
+        // Enable import button when both file and import type are selected
+        importType.addEventListener('change', () => {
+            if (fileInput.files.length > 0 && importType.value) {
+                importButton.disabled = false;
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,263 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Class Management - AttendAI{% endblock %}
+
+{% block content %}
+<div class="class-management">
+    <h1 class="page-title mb-4">Class Management</h1>
+
+    <div class="card-custom mb-4">
+        <div class="card-header-custom">Search & Filter</div>
+        <div class="card-body-custom">
+            <div class="search-section">
+                <div class="search-filters mb-3">
+                    <input type="text" class="search-input" placeholder="Search by class name, ID, or lecturer...">
+                    <input type="text" class="filter-input" placeholder="Filter by status...">
+                    <button class="btn-custom btn-search">Search</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-custom">
+        <div class="card-header-custom">Class List</div>
+        <div class="card-body-custom">
+            <div class="table-responsive">
+                <table class="classes-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>ID</th>
+                            <th>Lecturer</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Introduction to Management</td>
+                            <td>MGNT 113</td>
+                            <td>JASON HO</td>
+                            <td><span class="status active">ACTIVE</span></td>
+                            <td class="actions-cell">
+                                <button class="btn-custom btn-manage">Manage</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Business Accounting</td>
+                            <td>ACCY 111</td>
+                            <td>JASON HO</td>
+                            <td><span class="status active">ACTIVE</span></td>
+                            <td class="actions-cell">
+                                <button class="btn-custom btn-manage">Manage</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Business Management</td>
+                            <td>MGNT 102</td>
+                            <td>JASON HO</td>
+                            <td><span class="status active">ACTIVE</span></td>
+                            <td class="actions-cell">
+                                <button class="btn-custom btn-manage">Manage</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Software Development Methodologies</td>
+                            <td>CSIT 314</td>
+                            <td>XXXXXX</td>
+                            <td><span class="status inactive">INACTIVE</span></td>
+                            <td class="actions-cell">
+                                <button class="btn-custom btn-manage">Manage</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Class Management Specific Styles */
+    .class-management {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        font-style: italic;
+        color: var(--text-dark);
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 1rem;
+    }
+
+    /* Search Section */
+    .search-section {
+        width: 100%;
+    }
+
+    .search-filters {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .search-input,
+    .filter-input {
+        flex: 1;
+        min-width: 200px;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        font-size: 0.9rem;
+        background-color: white;
+    }
+
+    .search-input::placeholder,
+    .filter-input::placeholder {
+        color: var(--text-light);
+    }
+
+    .btn-search {
+        padding: 0.75rem 2rem;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+
+    /* Table Styles */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .classes-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+
+    .classes-table thead {
+        background-color: var(--primary-dark);
+        color: white;
+    }
+
+    .classes-table th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.9rem;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .classes-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 0.9rem;
+        vertical-align: middle;
+    }
+
+    .classes-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .classes-table tbody tr:hover {
+        background-color: var(--primary-light);
+    }
+
+    /* Status Badges */
+    .status {
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        display: inline-block;
+    }
+
+    .status.active {
+        color: #059669;
+        background-color: #f0fdf4;
+        border: 1px solid #059669;
+    }
+
+    .status.inactive {
+        color: #dc2626;
+        background-color: #fef2f2;
+        border: 1px solid #dc2626;
+    }
+
+    /* Action Buttons */
+    .actions-cell {
+        text-align: center;
+    }
+
+    .btn-manage {
+        padding: 0.5rem 1.5rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        background-color: var(--primary-dark);
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-manage:hover {
+        background-color: #1e293b;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 1.75rem;
+        }
+
+        .search-filters {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .search-input,
+        .filter-input {
+            min-width: 100%;
+        }
+
+        .btn-search {
+            width: 100%;
+        }
+
+        .classes-table {
+            font-size: 0.8rem;
+        }
+
+        .classes-table th,
+        .classes-table td {
+            padding: 0.75rem 0.5rem;
+        }
+
+        .classes-table th:nth-child(3),
+        .classes-table td:nth-child(3) {
+            display: none;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .classes-table th:nth-child(2),
+        .classes-table td:nth-child(2) {
+            display: none;
+        }
+
+        .status {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.5rem;
+        }
+
+        .btn-manage {
+            padding: 0.4rem 1rem;
+            font-size: 0.8rem;
+        }
+    }
+</style>
+{% endblock %}

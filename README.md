@@ -8,133 +8,156 @@ This application showcases generative artificial intelligence capabilities with 
 
 ## Project Structure
 ```
-automated-student-attendance-system/
+automated-student-attendance-system-fyp/
 ├── README.md                           # Project documentation
 ├── requirements.txt                    # Python dependencies
 ├── config.py                           # Application configuration
 ├── app.py                             # Main Flask application entry point
-├── dummy_data_reference.csv           # CSV with all dummy data
-├── DUMMY_DATA_REFERENCE.md            # Markdown reference guide
 ├── .env.example                        # Environment variables template
 ├── .env                                # Environment variables (create from .env.example)
 ├── .db_initialized                     # Database initialization marker (auto-created)
 ├── .gitignore                          # Git ignore file
+├── LICENSE                             # Project license
+│
+├── .github/                            # GitHub-specific files
+│   └── copilot-instructions.md         # AI agent guidance for the repo
 │
 ├── database/                           # Database-related files
-│   ├── __init__.py
 │   └── schema.sql                      # Complete database schema
 │
 ├── helper/                             # Helper scripts and utilities
-│   ├── __init__.py
 │   └── db/                             # Database helpers
 │       ├── __init__.py
 │       ├── delete_database.py          # Database deletion utility
 │       ├── create_database.py          # Database creation utility
+│       ├── migrate_sqlalchemy.py       # SQLAlchemy migration helper
 │       └── populate_dummy_data.py      # Dummy data population
 │
 ├── application/                        # BCE Architecture Structure
-│   ├── __init__.py                     # Application package initializer
+│   ├── __init__.py                     # Application package initializer with blueprint registration
+│   ├── extensions.py                   # Flask extensions (if needed)
 │   │
 │   ├── entities/                       # Data Models (Entities)
 │   │   ├── __init__.py                 # Import all entities
 │   │   ├── base_entity.py              # Base entity class with common DB operations
-│   │   ├── user.py                     # Generic user entity (if needed)
-│   │   ├── attendance.py               # Attendance entity
-│   │   ├── institution.py              # Institution entity
+│   │   ├── attendance_record.py        # Attendance record entity
 │   │   ├── course.py                   # Course entity
-│   │   ├── lecturer.py                 # Lecturer entity
-│   │   ├── student.py                  # Student entity
 │   │   ├── enrollment.py               # Enrollment entity
-│   │   ├── session.py                  # Session entity
+│   │   ├── institution.py              # Institution entity
+│   │   ├── lecturer.py                 # Lecturer entity
 │   │   ├── platform_manager.py         # Platform Manager entity
-│   │   ├── subscription_plan.py        # Subscription Plan entity
+│   │   ├── session.py                  # Session entity
+│   │   ├── student.py                  # Student entity
 │   │   ├── subscription.py             # Subscription entity
-│   │   ├── venue.py                    # Venue entity
-│   │   └── timetable_slot.py           # Timetable Slot entity
+│   │   ├── subscription_plan.py        # Subscription Plan entity
+│   │   ├── timetable_slot.py           # Timetable Slot entity
+│   │   ├── user.py                     # User entity
+│   │   └── venue.py                    # Venue entity
 │   │
 │   ├── boundaries/                     # Interfaces/APIs (Boundaries)
 │   │   ├── __init__.py                 # Import all boundaries
-│   │   ├── main_boundary.py            # Main site routes (home, about, health)
-│   │   ├── auth_boundary.py            # Authentication routes (login, register, logout)
-│   │   ├── attendance_boundary.py      # Attendance-related routes
-│   │   ├── dashboard_boundary.py       # Dashboard routes for all user types
-│   │   ├── institution_boundary.py     # Institution management routes
 │   │   ├── admin_boundary.py           # Platform admin routes
-│   │   └── dev_boundary.py             # Developer route
+│   │   ├── attendance_boundary.py      # Attendance-related routes
+│   │   ├── auth_boundary.py            # Authentication routes (login, register, logout)
+│   │   ├── dashboard_boundary.py       # Dashboard routes for all user types
+│   │   ├── dev_actions.py              # Developer action registration
+│   │   ├── dev_boundary.py             # Developer routes
+│   │   ├── institution_admin_boundary.py # Institution admin routes
+│   │   ├── institution_boundary.py     # Institution management (compatibility wrapper)
+│   │   ├── lecturer_boundary.py        # Lecturer-specific routes
+│   │   ├── main_boundary.py            # Main site routes (home, about, health)
+│   │   ├── platform_boundary.py        # Platform manager routes
+│   │   └── student_boundary.py         # Student-specific routes
 │   │
 │   └── controls/                       # Business Logic (Controls)
 │       ├── __init__.py                 # Import all controls
-│       ├── auth_control.py             # Authentication business logic
 │       ├── attendance_control.py       # Attendance business logic
-│       ├── institution_control.py      # Institution management logic
-│       ├── user_control.py             # User management logic
-│       └── database_control.py         # Database initialization and maintenance
+│       ├── auth_control.py             # Authentication business logic
+│       ├── database_control.py         # Database initialization and maintenance
+│       └── institution_control.py      # Institution management logic
+│
+├── src/                                # AI/ML Model code
+│   └── ai_model.py                     # AI model integration (currently placeholder)
 │
 ├── static/                             # Static assets
 │   ├── css/                            # CSS files
-│   │   ├── bootstrap.min.css           # Bootstrap CSS
-│   │   └── custom.css                  # Custom CSS
+│   │   ├── bootstrap.css               # Bootstrap CSS
+│   │   ├── bootstrap.min.css           # Bootstrap CSS (minified)
+│   │   ├── bootstrap-grid.css          # Bootstrap grid CSS
+│   │   ├── bootstrap-grid.min.css      # Bootstrap grid CSS (minified)
+│   │   ├── bootstrap-reboot.css        # Bootstrap reboot CSS
+│   │   └── bootstrap-reboot.min.css    # Bootstrap reboot CSS (minified)
 │   │
 │   ├── js/                             # JavaScript files
-│   │   ├── bootstrap.min.js            # Bootstrap JS
-│   │   ├── jquery.min.js               # jQuery (if needed)
-│   │   ├── firebase-config.js          # Firebase client-side config
-│   │   └── custom.js                   # Custom JavaScript
+│   │   ├── bootstrap.js                # Bootstrap JS
+│   │   ├── bootstrap.min.js            # Bootstrap JS (minified)
+│   │   ├── bootstrap.bundle.js         # Bootstrap bundle JS
+│   │   └── bootstrap.bundle.min.js     # Bootstrap bundle JS (minified)
 │   │
-│   ├── img/                            # Images
-│   │
-│   └── uploads/                        # User uploads (attendance images, etc.)
-│       ├── attendance/
-│       └── profile/
+│   └── img/                            # Image assets
 │
 ├── templates/                          # HTML Templates (Jinja2)
 │   ├── layouts/                        # Base layouts
-│   │   └── base.html                   # Base template with navigation
+│   │   └── base.html                   # Base template with role-aware navigation
 │   │
 │   ├── auth/                           # Authentication templates
-│   │   ├── ...                  
+│   │   ├── login.html                  # Login page
+│   │   └── register.html               # Registration page
 │   │
-│   ├── dashboards/                     # Dashboard templates
-│   │   ├── ...
+│   ├── institution/                    # Institution management templates
+│   │   ├── admin/                      # Institution admin templates
+│   │   │   ├── institution_admin_dashboard.html
+│   │   │   ├── institution_admin_user_management.html
+│   │   │   ├── institution_admin_attendance_management.html
+│   │   │   ├── institution_admin_attendance_management_student_details.html
+│   │   │   ├── institution_admin_attendance_management_class_details.html
+│   │   │   ├── institution_admin_attendance_management_report.html
+│   │   │   ├── institution_admin_class_management.html
+│   │   │   ├── institution_admin_institute_profile.html
+│   │   │   └── import_institution_data.html
+│   │   ├── lecturer/                   # Lecturer templates
+│   │   │   └── lecturer_dashboard.html
+│   │   └── student/                    # Student templates
 │   │
-│   ├── attendance/                     # Attendance-related templates
-│   │   ├── ...
+│   ├── unregistered/                   # Unregistered user pages
+│   │   ├── aboutus.html
+│   │   ├── faq.html
+│   │   ├── features.html
+│   │   ├── subscriptionsummary.html
+│   │   └── testimonials.html
 │   │
-│   ├── institution/                    # Institution management
-│   │   ├── ...
-│   │
-│   ├── admin/                          # Platform admin templates
-│   │   ├── ...
+│   ├── platmanager/                    # Platform manager templates
+│   │   └── platform_dashboard.html
 │   │
 │   ├── errors/                         # Error pages
 │   │   ├── 404.html                    # 404 Not Found
 │   │   └── 500.html                    # 500 Internal Server Error
 │   │
 │   ├── components/                     # Reusable components
-│   │   ├── navbar.html                 # Navigation bar
-│   │   ├── footer.html                 # Footer
-│   │   ├── sidebar.html                # Sidebar for dashboards
-│   │   └── alerts.html                 # Alert messages
 │   │
 │   ├── dev/                            # Developer-only pages
 │   │   └── test_endpoint.html          # Endpoint testing page
 │   │
-│   └── index.html                      # Home page
+│   └── index.html                      # Home page with feature tabs
 │
 ├── instance/                           # Instance folder (for sensitive config)
-│   ├── config.py                       # Instance-specific config
-│   └── firebase_service_account.json   # Firebase service account (if using Admin SDK)
+│   ├── firebase_service_account.json   # Firebase service account (secrets)
 │
-├── venv/                               # Virtual environment (created locally)
+├── dummy_data/                         # Dummy data helpers
+│   ├── dummy_data_reference.csv        # Shorthand dummy data for reference
+│   └── load_dummy_data.py              # Standalone data loader script
 │
-|── logs/                               # Application logs
-|   ├── app.log                         # General application log
-|   ├── error.log                       # Error log
-|   └── access.log                      # Access log
-|
-|── dummy_data/
-|   ├── dummy_data_reference.csv        # Shorthand dummy data for reference
-|   ├── load_dummy_data.py              # Standalone data loader script
+├── AttendanceAI/                       # Facial Recognition AI module (separate)
+│   ├── app.py
+│   ├── add_faces.py
+│   ├── test.py
+│   ├── data/
+│   │   └── haarcascade_frontalface_default.xml
+│   └── Attendance/
+│
+├── .venv/                              # Python virtual environment (created locally)
+│
+└── .pytest_cache/                      # pytest cache directory
 ```
 
 ## Features

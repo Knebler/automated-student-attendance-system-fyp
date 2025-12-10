@@ -18,7 +18,7 @@ def lecturer_dashboard():
 
     if user_type not in ['lecturer', 'teacher']:
         flash('Access denied. Lecturer privileges required.', 'danger')
-        return redirect(url_for('dashboard.dashboard'))
+        return redirect(url_for('main.home'))
 
     user_id = auth_result['user'].get('user_id')
     attendance_summary = {}
@@ -40,3 +40,5 @@ def manage_appeals():
         return redirect(url_for('auth.login'))
 
     return render_template('institution/lecturer/lecturer_appeal_management.html', user=auth_result['user'])
+
+# TODO: Add more lecturer-specific routes and functionalities as needed

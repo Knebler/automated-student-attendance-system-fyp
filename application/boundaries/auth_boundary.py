@@ -22,7 +22,7 @@ def auth():
     # Get attendance summary
     attendance_summary = {}
     if user_id:
-        attendance_result = AttendanceControl.get_user_attendance_summary(current_app, user_id, days=30)
+        attendance_result = AttendanceControl.get_all_sessions_attendance(current_app, user_id, days=30)
         if attendance_result['success']:
             attendance_summary = attendance_result['summary']
     
@@ -80,7 +80,7 @@ def login():
                 return redirect(url_for('institution_lecturer.lecturer_dashboard'))
 
             # all other users (students, default) -> main dashboard
-            return redirect(url_for('dashboard.dashboard'))
+            return redirect(url_for('student.dashboard'))
 
         flash(auth_result.get('error', 'Login failed'), 'danger')
 
@@ -153,7 +153,7 @@ def attendance_history():
                              records=attendance_result['records'])
     else:
         flash('Failed to load attendance history', 'danger')
-        return redirect(url_for('dashboard.dashboard'))
+        return redirect(url_for('student.dashboard'))
 
 
 # Register dev actions for auth helpers

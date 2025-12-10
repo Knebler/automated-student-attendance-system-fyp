@@ -2,9 +2,9 @@ from flask import Blueprint, render_template, session, redirect, url_for, flash,
 from application.controls.auth_control import AuthControl
 from application.controls.attendance_control import AttendanceControl
 
-dashboard_bp = Blueprint('dashboard', __name__)
+student_bp = Blueprint('student', __name__)
 
-@dashboard_bp.route('/')
+@student_bp.route('/')
 def dashboard():
     """Main dashboard route"""
     # Check authentication
@@ -25,11 +25,11 @@ def dashboard():
         if attendance_result['success']:
             attendance_summary = attendance_result['summary']
     
-    return render_template('dashboard.html',
+    return render_template('student_dashboard.html',
                          user=user,
                          attendance_summary=attendance_summary)
 
-@dashboard_bp.route('/profile')
+@student_bp.route('/profile')
 def profile():
     """User profile route"""
     auth_result = AuthControl.verify_session(current_app, session)
@@ -38,9 +38,9 @@ def profile():
         flash('Please login to view profile', 'warning')
         return redirect(url_for('auth.login'))
     
-    return render_template('profile.html', user=auth_result['user'])
+    return render_template('student_profile_management.html', user=auth_result['user'])
 
-@dashboard_bp.route('/attendance-history')
+@student_bp.route('/attendance-history')
 def attendance_history():
     """Attendance history route"""
     auth_result = AuthControl.verify_session(current_app, session)
@@ -59,4 +59,6 @@ def attendance_history():
                              records=attendance_result['records'])
     else:
         flash('Failed to load attendance history', 'danger')
-        return redirect(url_for('dashboard.dashboard'))
+        return redirect(url_for('student.dashboard'))
+    
+# TODO: Add more student-specific routes and functionalities as needed

@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "layouts/base.html" %}
 
 {% block title %}Platform Manager Dashboard - AttendAI{% endblock %}
 
@@ -39,11 +39,12 @@
                 <div class="card-header-custom">Quick Actions</div>
                 <div class="card-body-custom">
                     <div class="quick-actions">
-                        <a href="{{ url_for('platform.view_subscription_requests') }}" class="btn-custom action-btn text-center mb-2">View Subscription Requests</a>
-                        <a href="{{ url_for('platform.create_institution_profile') }}" class="btn-custom action-btn text-center mb-2">Create Institution Profile</a>
-                        <a href="{{ url_for('platform.manage_admin_accounts') }}" class="btn-custom action-btn text-center mb-2">Manage Admin Accounts</a>
-                        <a href="{{ url_for('platform.view_user_profiles') }}" class="btn-custom action-btn text-center mb-2">View User Profiles</a>
-                        <a href="{{ url_for('platform.system_settings') }}" class="btn-custom action-btn text-center">Open System Settings</a>
+                        <!-- TODO: Implement proper routing for these subpages -->
+                        <a href="{{ url_for('platform.pending_registrations') }}" class="btn-custom action-btn text-center mb-2">View Subscription Requests</a>
+                        <a href="{{ url_for('platform.pending_registrations') }}" class="btn-custom action-btn text-center mb-2">Create Institution Profile</a>
+                        <a href="{{ url_for('platform.pending_registrations') }}" class="btn-custom action-btn text-center mb-2">Manage Admin Accounts</a>
+                        <a href="{{ url_for('platform.pending_registrations') }}" class="btn-custom action-btn text-center mb-2">View User Profiles</a>
+                        <a href="{{ url_for('platform.pending_registrations') }}" class="btn-custom action-btn text-center">Open System Settings</a>
                     </div>
                 </div>
             </div>

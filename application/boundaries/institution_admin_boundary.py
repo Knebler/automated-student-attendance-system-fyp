@@ -20,7 +20,7 @@ def institution_dashboard():
     # allow institution admins here
     if user_type not in ['institution_admin', 'admin']:
         flash('Access denied. Institution admin privileges required.', 'danger')
-        return redirect(url_for('dashboard.dashboard'))
+        return redirect(url_for('main.home'))
 
     institution_id = auth_result['user'].get('institution_id')
 

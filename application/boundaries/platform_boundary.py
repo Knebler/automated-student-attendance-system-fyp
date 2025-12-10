@@ -57,3 +57,5 @@ def approve_registration(unreg_user_id):
 
     flash(result.get('error') or 'Failed to approve request', 'danger')
     return redirect(url_for('platform.pending_registrations'))
+
+# TODO: Add more platform manager specific routes and functionalities as needed

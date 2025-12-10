@@ -7,7 +7,7 @@ def create_app(app):
     from application.boundaries.main_boundary import main_bp
     from application.boundaries.auth_boundary import auth_bp
     from application.boundaries.attendance_boundary import attendance_bp
-    from application.boundaries.dashboard_boundary import dashboard_bp
+    from application.boundaries.student_boundary import student_bp
     from application.boundaries.institution_admin_boundary import institution_bp
     from application.boundaries.lecturer_boundary import lecturer_bp
     from application.boundaries.admin_boundary import admin_bp
@@ -24,7 +24,7 @@ def create_app(app):
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(attendance_bp, url_prefix='/attendance')
-    app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
+    app.register_blueprint(student_bp, url_prefix='/student')
     app.register_blueprint(institution_bp, url_prefix='/institution')
     app.register_blueprint(lecturer_bp, url_prefix='/institution/lecturer')
     app.register_blueprint(admin_bp, url_prefix='/admin')

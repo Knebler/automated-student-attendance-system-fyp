@@ -1,0 +1,570 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Lecturer Dashboard - AttendAI{% endblock %}
+
+{% block content %}
+<div class="lecturer-dashboard">
+    <!-- Welcome Header -->
+    <div class="welcome-header mb-4">
+        <div class="header-content">
+            <h1 class="welcome-title">Welcome <span class="lecturer-name">Temp</span>!</h1>
+            <div class="datetime-display">
+                <span class="time">07:48AM</span>
+                <span class="separator">|</span>
+                <span class="date">25 November 2025</span>
+            </div>
+        </div>
+        <div class="notification-bell">
+            <span class="notification-icon">🔔</span>
+            <span class="notification-badge">3</span>
+        </div>
+    </div>
+
+    <!-- Dashboard Grid -->
+    <div class="dashboard-grid">
+        <!-- Today's Classes Card -->
+        <div class="card-custom">
+            <div class="card-header-custom">Today's Classes</div>
+            <div class="card-body-custom">
+                <div class="classes-list">
+                    <div class="class-item mb-3">
+                        <div class="class-header">
+                            <h3 class="class-code">CSCI251 - T01</h3>
+                            <h4 class="class-name">Advanced Programming</h4>
+                        </div>
+                        <div class="class-details">
+                            <div class="detail-item">
+                                <span class="detail-icon">🕐</span>
+                                <span class="detail-text">08:30AM - 11:30AM</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-icon">📍</span>
+                                <span class="detail-text">HQ BLK A | LAB A.5.17C</span>
+                            </div>
+                        </div>
+                        <div class="class-actions">
+                            <button class="btn-custom btn-attendance">Take Attendance</button>
+                            <button class="btn-custom btn-view">View Roster</button>
+                        </div>
+                    </div>
+
+                    <div class="class-item mb-3">
+                        <div class="class-header">
+                            <h3 class="class-code">CSCI251 - T02</h3>
+                            <h4 class="class-name">Advanced Programming</h4>
+                        </div>
+                        <div class="class-details">
+                            <div class="detail-item">
+                                <span class="detail-icon">🕐</span>
+                                <span class="detail-text">12:00PM - 03:00PM</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-icon">📍</span>
+                                <span class="detail-text">HQ BLK A | LAB A.5.17C</span>
+                            </div>
+                        </div>
+                        <div class="class-actions">
+                            <button class="btn-custom btn-attendance">Take Attendance</button>
+                            <button class="btn-custom btn-view">View Roster</button>
+                        </div>
+                    </div>
+
+                    <div class="class-item">
+                        <div class="class-header">
+                            <h3 class="class-code">CSCI251 - L02</h3>
+                            <h4 class="class-name">Advanced Programming</h4>
+                        </div>
+                        <div class="class-details">
+                            <div class="detail-item">
+                                <span class="detail-icon">🕐</span>
+                                <span class="detail-text">03:30PM - 06:30PM</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-icon">📍</span>
+                                <span class="detail-text">HQ BLK A | LT A.1.17</span>
+                            </div>
+                        </div>
+                        <div class="class-actions">
+                            <button class="btn-custom btn-attendance">Take Attendance</button>
+                            <button class="btn-custom btn-view">View Roster</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Appeals Card -->
+        <div class="card-custom">
+            <div class="card-header-custom">Appeals</div>
+            <div class="card-body-custom">
+                <div class="appeals-content">
+                    <div class="appeals-empty">
+                        <div class="empty-icon">📋</div>
+                        <h3 class="empty-title">No New Appeals</h3>
+                        <p class="empty-text">There are no pending appeals at this time.</p>
+                    </div>
+                    <div class="appeals-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Pending:</span>
+                            <span class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Resolved (Week):</span>
+                            <span class="stat-value">12</span>
+                        </div>
+                    </div>
+                    <div class="appeals-actions">
+                        <a href="{{ url_for('institution_lecturer.manage_appeals') }}" class="btn-custom btn-view-all">View All Appeals</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Announcements Card -->
+        <div class="card-custom">
+            <div class="card-header-custom">Institution Announcements</div>
+            <div class="card-body-custom">
+                <div class="announcements-list">
+                    <div class="announcement-item mb-3">
+                        <div class="announcement-header">
+                            <h3 class="announcement-title">Happy 105th Anniversary!</h3>
+                            <span class="announcement-date">Nov 24, 2025</span>
+                        </div>
+                        <div class="announcement-content">
+                            <p>Celebrate our institution's 105th anniversary with special events throughout the week. All staff are invited to the main hall for the anniversary celebration on Friday.</p>
+                        </div>
+                    </div>
+
+                    <div class="announcement-item mb-3">
+                        <div class="announcement-header">
+                            <h3 class="announcement-title">Update Regarding Enrollment</h3>
+                            <span class="announcement-date">Nov 22, 2025</span>
+                        </div>
+                        <div class="announcement-content">
+                            <p>Important updates to the enrollment process for next semester. Please review the new guidelines and ensure all student records are updated by December 15th.</p>
+                        </div>
+                    </div>
+
+                    <div class="announcement-item">
+                        <div class="announcement-header">
+                            <h3 class="announcement-title">System Maintenance</h3>
+                            <span class="announcement-date">Nov 20, 2025</span>
+                        </div>
+                        <div class="announcement-content">
+                            <p>Scheduled system maintenance will occur this Sunday from 2AM to 6AM. The attendance system will be temporarily unavailable during this period.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="announcements-actions mt-3">
+                    <a href="#" class="btn-custom btn-view-all">View All Announcements</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Lecturer Dashboard Specific Styles */
+    .lecturer-dashboard {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    /* Welcome Header */
+    .welcome-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid var(--border-color);
+        margin-bottom: 2rem;
+    }
+
+    .header-content {
+        flex: 1;
+    }
+
+    .welcome-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        font-style: italic;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .lecturer-name {
+        color: var(--primary-dark);
+    }
+
+    .datetime-display {
+        font-size: 1.1rem;
+        color: var(--text-light);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .time {
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+
+    .separator {
+        opacity: 0.5;
+    }
+
+    .date {
+        font-weight: 500;
+    }
+
+    /* Notification Bell */
+    .notification-bell {
+        position: relative;
+        cursor: pointer;
+        font-size: 1.5rem;
+        padding: 0.5rem;
+    }
+
+    .notification-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background-color: #dc2626;
+        color: white;
+        font-size: 0.75rem;
+        font-weight: bold;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Dashboard Grid */
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr 1fr;
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    /* Today's Classes */
+    .classes-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .class-item {
+        background-color: var(--primary-light);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 1.25rem;
+        transition: all 0.3s ease;
+    }
+
+    .class-item:hover {
+        background-color: #f1f5f9;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .class-header {
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+
+    .class-code {
+        font-size: 1.25rem;
+        font-weight: bold;
+        color: var(--primary-dark);
+        margin-bottom: 0.25rem;
+    }
+
+    .class-name {
+        font-size: 1rem;
+        color: var(--text-dark);
+        font-weight: 500;
+    }
+
+    .class-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .detail-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: var(--text-dark);
+    }
+
+    .detail-icon {
+        font-size: 1rem;
+        opacity: 0.8;
+    }
+
+    .class-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+    }
+
+    .btn-attendance,
+    .btn-view {
+        padding: 0.5rem 1.25rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+    }
+
+    .btn-attendance {
+        background-color: var(--primary-dark);
+        color: white;
+    }
+
+    .btn-view {
+        background-color: white;
+        color: var(--primary-dark);
+        border: 1px solid var(--primary-dark);
+    }
+
+    .btn-view:hover {
+        background-color: var(--primary-dark);
+        color: white;
+    }
+
+    /* Appeals */
+    .appeals-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 300px;
+        text-align: center;
+    }
+
+    .appeals-empty {
+        margin-bottom: 2rem;
+    }
+
+    .empty-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .empty-title {
+        font-size: 1.25rem;
+        font-weight: bold;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-text {
+        color: var(--text-light);
+        font-size: 0.9rem;
+    }
+
+    .appeals-stats {
+        display: flex;
+        gap: 2rem;
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background-color: var(--primary-light);
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+    }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        color: var(--text-light);
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--primary-dark);
+    }
+
+    .btn-view-all {
+        padding: 0.75rem 2rem;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        text-align: center;
+        display: inline-block;
+    }
+
+    /* Announcements */
+    .announcements-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .announcement-item {
+        background-color: var(--primary-light);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 1.25rem;
+        transition: all 0.3s ease;
+    }
+
+    .announcement-item:hover {
+        background-color: #f1f5f9;
+    }
+
+    .announcement-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+    }
+
+    .announcement-title {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: var(--primary-dark);
+        flex: 1;
+    }
+
+    .announcement-date {
+        font-size: 0.85rem;
+        color: var(--text-light);
+        margin-left: 1rem;
+        white-space: nowrap;
+    }
+
+    .announcement-content {
+        font-size: 0.9rem;
+        color: var(--text-dark);
+        line-height: 1.5;
+    }
+
+    .announcements-actions {
+        text-align: center;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .welcome-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .welcome-title {
+            font-size: 1.75rem;
+        }
+
+        .datetime-display {
+            font-size: 1rem;
+        }
+
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .class-actions {
+            flex-direction: column;
+        }
+
+        .btn-attendance,
+        .btn-view {
+            width: 100%;
+        }
+
+        .announcement-header {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .announcement-date {
+            margin-left: 0;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .welcome-title {
+            font-size: 1.5rem;
+        }
+
+        .class-header {
+            text-align: left;
+        }
+
+        .class-actions {
+            flex-direction: column;
+        }
+
+        .appeals-stats {
+            flex-direction: column;
+            gap: 1rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Update time and date dynamically
+        function updateDateTime() {
+            const now = new Date();
+            
+            // Format time
+            const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: true };
+            const time = now.toLocaleTimeString('en-US', timeOptions).toUpperCase();
+            
+            // Format date
+            const dateOptions = { day: 'numeric', month: 'long', year: 'numeric' };
+            const date = now.toLocaleDateString('en-US', dateOptions);
+            
+            // Update display
+            document.querySelector('.time').textContent = time;
+            document.querySelector('.date').textContent = date;
+        }
+
+        // Update immediately and then every minute
+        updateDateTime();
+        setInterval(updateDateTime, 60000);
+
+        // Notification bell click
+        document.querySelector('.notification-bell').addEventListener('click', function() {
+            alert('You have 3 new notifications');
+            // In a real app, this would show a notification dropdown
+        });
+
+        // Class action buttons
+        document.querySelectorAll('.btn-attendance').forEach(button => {
+            button.addEventListener('click', function() {
+                const classCode = this.closest('.class-item').querySelector('.class-code').textContent;
+                alert(`Starting attendance for ${classCode}`);
+                // In a real app, this would navigate to attendance page
+            });
+        });
+
+        document.querySelectorAll('.btn-view').forEach(button => {
+            button.addEventListener('click', function() {
+                const classCode = this.closest('.class-item').querySelector('.class-code').textContent;
+                alert(`Viewing roster for ${classCode}`);
+                // In a real app, this would navigate to roster page
+            });
+        });
+    });
+</script>
+{% endblock %}

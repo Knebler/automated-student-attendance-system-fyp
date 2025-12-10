@@ -30,3 +30,13 @@ def lecturer_dashboard():
     return render_template('institution/lecturer/lecturer_dashboard.html',
                          user=auth_result['user'],
                          attendance_summary=attendance_summary)
+
+@lecturer_bp.route('/manage_appeals')
+def manage_appeals():
+    """Render the lecturer appeal-management page"""
+    auth_result = AuthControl.verify_session(current_app, session)
+    if not auth_result['success'] or auth_result['user'].get('user_type') not in ['lecturer', 'teacher']:
+        flash('Access denied. Lecturer privileges required.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    return render_template('institution/lecturer/lecturer_appeal_management.html', user=auth_result['user'])

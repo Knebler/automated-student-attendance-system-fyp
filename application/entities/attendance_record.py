@@ -57,7 +57,10 @@ class AttendanceRecord(BaseEntity):
                 )
                 
                 # Relationships
-                session = db.relationship('Session', backref='attendance_records')
+                session = db.relationship(
+                    lambda: SessionModel,
+                    back_populates='attendance_records'
+                )
                 student = db.relationship('Student', backref='attendance_records')
                 lecturer = db.relationship('Lecturer', backref='marked_attendance')
                 

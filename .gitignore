@@ -68,3 +68,4 @@ firebase_credentials.json
 # Temporary files
 temp/
 tmp/
+tests/

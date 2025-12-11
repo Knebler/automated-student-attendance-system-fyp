@@ -24,16 +24,32 @@
                         <label for="password" class="form-label">Password</label>
                         <input type="password" class="form-control" id="password" name="password" required>
                     </div>
-                    <!-- Registration is restricted to Institution Admins only -->
-                    <input type="hidden" id="role" name="role" value="institution_admin">
-
                     <div class="mb-3">
+                        <label for="role" class="form-label">Register As</label>
+                        <select id="role" name="role" class="form-select">
+                            <option value="student">Student</option>
+                            <option value="lecturer">Lecturer</option>
+                            <option value="institution_admin">Institution Admin</option>
+                            <option value="platform_manager">Platform Manager</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3 d-none" id="inst-name-group">
                         <label for="institution_name" class="form-label">Educational Institute</label>
-                        <input type="text" class="form-control" id="institution_name" name="institution_name" required placeholder="Your institution name (e.g., Example University)">
-                        <small class="form-text text-muted">Only institution admins can register here — your request will be reviewed before an account is issued.</small>
+                        <input type="text" class="form-control" id="institution_name" name="institution_name" placeholder="Your institution name (e.g., Example University)">
+                        <small class="form-text text-muted" id="inst-note">Only institution admins can register here — your request will be reviewed before an account is issued.</small>
+                    </div>
+                    <div class="mb-3 d-none" id="inst-select-group">
+                        <label for="institution_id" class="form-label">Select your Institution</label>
+                        <select id="institution_id" name="institution_id" class="form-select">
+                            <option value="">-- Select Institution --</option>
+                            {% for inst in institutions %}
+                                <option value="{{ inst.institution_id }}">{{ inst.name }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                     <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary">Submit registration request</button>
+                        <button type="submit" class="btn btn-primary">Register</button>
                         <a href="{{ url_for('auth.login') }}" class="btn btn-link">Already have an account? Login</a>
                     </div>
                 </form>
@@ -41,4 +57,36 @@
         </div>
     </div>
 </div>
+<script>
+    // Toggle institution name requirement when role is Institution Admin
+    (function() {
+        const roleSelect = document.getElementById('role');
+        const instGroup = document.getElementById('inst-name-group');
+        const instInput = document.getElementById('institution_name');
+
+        function updateInstVisibility() {
+            const val = roleSelect.value;
+            if (val === 'institution_admin') {
+                instGroup.classList.remove('d-none');
+                instInput.setAttribute('required', 'required');
+                document.getElementById('inst-select-group').classList.add('d-none');
+                document.getElementById('institution_id').removeAttribute('required');
+            } else if (val === 'student' || val === 'lecturer') {
+                instGroup.classList.add('d-none');
+                instInput.removeAttribute('required');
+                document.getElementById('inst-select-group').classList.remove('d-none');
+                document.getElementById('institution_id').setAttribute('required', 'required');
+            } else {
+                instGroup.classList.add('d-none');
+                instInput.removeAttribute('required');
+                document.getElementById('inst-select-group').classList.add('d-none');
+                document.getElementById('institution_id').removeAttribute('required');
+            }
+        }
+
+        // Initial visibility based on default value
+        updateInstVisibility();
+        roleSelect.addEventListener('change', updateInstVisibility);
+    })();
+</script>
 {% endblock %}

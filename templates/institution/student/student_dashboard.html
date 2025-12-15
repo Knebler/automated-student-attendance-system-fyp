@@ -1,0 +1,796 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Student Dashboard - AttendAI{% endblock %}
+
+{% block content %}
+<div class="student-dashboard">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header mb-4">
+        <h1 class="page-title">Student Dashboard</h1>
+        <div class="datetime-display">
+            <span class="time">07:48AM</span>
+            <span class="separator">|</span>
+            <span class="date">25 November 2025</span>
+        </div>
+    </div>
+
+    <!-- Dashboard Grid -->
+    <div class="dashboard-grid">
+        <!-- Student Profile Card -->
+        <div class="card-custom profile-card">
+            <div class="card-header-custom">Student Profile</div>
+            <div class="card-body-custom">
+                <div class="profile-content">
+                    <div class="profile-image mb-3">
+                        <div class="avatar-placeholder">
+                            <span class="avatar-icon">👤</span>
+                        </div>
+                    </div>
+                    <div class="profile-info mb-3">
+                        <div class="info-item mb-2">
+                            <span class="info-label">Name:</span>
+                            <span class="info-value">{{Student Name}}</span>
+                        </div>
+                        <div class="info-item mb-2">
+                            <span class="info-label">Student ID:</span>
+                            <span class="info-value">S1234567</span>
+                        </div>
+                        <div class="info-item mb-2">
+                            <span class="info-label">Program:</span>
+                            <span class="info-value">Computer Science</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Year:</span>
+                            <span class="info-value">Year 2</span>
+                        </div>
+                    </div>
+                    <div class="attendance-stats mb-3">
+                        <div class="stat-item">
+                            <span class="stat-value">92%</span>
+                            <span class="stat-label">Attendance Rate</span>
+                        </div>
+                    </div>
+                    <div class="profile-actions">
+                        <button class="btn-custom btn-manage">Manage Profile</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Today's Classes Card -->
+        <div class="card-custom classes-card">
+            <div class="card-header-custom">Today's Classes</div>
+            <div class="card-body-custom">
+                <div class="classes-list">
+                    <div class="class-item mb-3">
+                        <div class="class-header">
+                            <h3 class="class-code">CSCI251 - T01</h3>
+                            <h4 class="class-name">Advanced Programming</h4>
+                        </div>
+                        <div class="class-details">
+                            <div class="detail-item">
+                                <span class="detail-icon">🕐</span>
+                                <span class="detail-text">08:30AM - 11:30AM</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-icon">📍</span>
+                                <span class="detail-text">HQ BLK A | LAB A.5.17C</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-icon">👨‍🏫</span>
+                                <span class="detail-text">Prof. Johnson</span>
+                            </div>
+                        </div>
+                        <div class="class-status">
+                            <span class="status upcoming">Upcoming</span>
+                        </div>
+                        <div class="class-actions">
+                            <button class="btn-custom btn-checkin">Check In</button>
+                            <button class="btn-custom btn-view">View Details</button>
+                        </div>
+                    </div>
+
+                    <div class="class-item mb-3">
+                        <div class="class-header">
+                            <h3 class="class-code">CSCI251 - T02</h3>
+                            <h4 class="class-name">Advanced Programming</h4>
+                        </div>
+                        <div class="class-details">
+                            <div class="detail-item">
+                                <span class="detail-icon">🕐</span>
+                                <span class="detail-text">12:00PM - 03:00PM</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-icon">📍</span>
+                                <span class="detail-text">HQ BLK A | LAB A.5.17C</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-icon">👨‍🏫</span>
+                                <span class="detail-text">Prof. Johnson</span>
+                            </div>
+                        </div>
+                        <div class="class-status">
+                            <span class="status upcoming">Upcoming</span>
+                        </div>
+                        <div class="class-actions">
+                            <button class="btn-custom btn-checkin">Check In</button>
+                            <button class="btn-custom btn-view">View Details</button>
+                        </div>
+                    </div>
+
+                    <div class="class-item">
+                        <div class="class-header">
+                            <h3 class="class-code">CSCI251 - L02</h3>
+                            <h4 class="class-name">Advanced Programming</h4>
+                        </div>
+                        <div class="class-details">
+                            <div class="detail-item">
+                                <span class="detail-icon">🕐</span>
+                                <span class="detail-text">03:30PM - 06:30PM</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-icon">📍</span>
+                                <span class="detail-text">HQ BLK A | LT A.1.17</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-icon">👨‍🏫</span>
+                                <span class="detail-text">Prof. Johnson</span>
+                            </div>
+                        </div>
+                        <div class="class-status">
+                            <span class="status completed">Completed</span>
+                        </div>
+                        <div class="class-actions">
+                            <button class="btn-custom btn-view-attendance">View Attendance</button>
+                            <button class="btn-custom btn-view">View Details</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- News & Notices Card -->
+        <div class="card-custom news-card">
+            <div class="card-header-custom">News & Notices</div>
+            <div class="card-body-custom">
+                <div class="notifications-bell mb-4">
+                    <div class="notification-header">
+                        <span class="notification-icon">🔔</span>
+                        <span class="notification-count">3 New</span>
+                    </div>
+                    <div class="notification-preview">
+                        You have new messages and updates
+                    </div>
+                    <a href="{{ url_for('student.inbox') }}" class="btn-custom btn-view-inbox">View Inbox</a>
+                </div>
+
+                <div class="news-list">
+                    <div class="news-item mb-3">
+                        <div class="news-header">
+                            <h3 class="news-title">105th Anniversary Celebration</h3>
+                            <span class="news-date">Nov 24, 2025</span>
+                        </div>
+                        <div class="news-content">
+                            <p>Join us for special events celebrating our institution's 105th anniversary throughout this week.</p>
+                        </div>
+                    </div>
+
+                    <div class="news-item mb-3">
+                        <div class="news-header">
+                            <h3 class="news-title">Exam Schedule Released</h3>
+                            <span class="news-date">Nov 22, 2025</span>
+                        </div>
+                        <div class="news-content">
+                            <p>Final exam schedules for Semester 2 are now available. Check your timetable for details.</p>
+                        </div>
+                    </div>
+
+                    <div class="news-item">
+                        <div class="news-header">
+                            <h3 class="news-title">Library Extended Hours</h3>
+                            <span class="news-date">Nov 20, 2025</span>
+                        </div>
+                        <div class="news-content">
+                            <p>The main library will have extended opening hours during exam period (8AM - 11PM).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="quick-links mt-4">
+                    <div class="links-title mb-2">Quick Access</div>
+                    <div class="links-grid">
+                        <a href="{{ url_for('student.attendance') }}" class="link-item">
+                            <span class="link-icon">📊</span>
+                            <span class="link-text">My Attendance</span>
+                        </a>
+                        <a href="{{ url_for('student.checkin') }}" class="link-item">
+                            <span class="link-icon">📱</span>
+                            <span class="link-text">Class Check-In</span>
+                        </a>
+                        <a href="{{ url_for('student.appeal') }}" class="link-item">
+                            <span class="link-icon">📝</span>
+                            <span class="link-text">Submit Appeal</span>
+                        </a>
+                        <a href="#" class="link-item">
+                            <span class="link-icon">📚</span>
+                            <span class="link-text">Study Materials</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Student Dashboard Specific Styles */
+    .student-dashboard {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    /* Dashboard Header */
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        font-style: italic;
+        color: var(--text-dark);
+    }
+
+    .datetime-display {
+        font-size: 1.1rem;
+        color: var(--text-light);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .time {
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+
+    .separator {
+        opacity: 0.5;
+    }
+
+    .date {
+        font-weight: 500;
+    }
+
+    /* Dashboard Grid */
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 350px 1fr 1fr;
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    /* Profile Card */
+    .profile-card {
+        height: fit-content;
+    }
+
+    .profile-content {
+        text-align: center;
+    }
+
+    .profile-image {
+        display: flex;
+        justify-content: center;
+    }
+
+    .avatar-placeholder {
+        width: 120px;
+        height: 120px;
+        background-color: var(--primary-light);
+        border: 2px solid var(--border-color);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .avatar-icon {
+        font-size: 3rem;
+        opacity: 0.7;
+    }
+
+    .profile-info {
+        background-color: var(--primary-light);
+        border-radius: 10px;
+        padding: 1rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.9rem;
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+
+    .info-value {
+        color: var(--text-dark);
+        font-weight: 500;
+    }
+
+    .attendance-stats {
+        background-color: var(--primary-light);
+        border-radius: 10px;
+        padding: 1rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .stat-item {
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: var(--primary-dark);
+        display: block;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        color: var(--text-light);
+        display: block;
+    }
+
+    .btn-manage {
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 25px;
+        font-size: 0.9rem;
+    }
+
+    /* Classes Card */
+    .classes-card {
+        grid-column: span 2;
+    }
+
+    .classes-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .class-item {
+        background-color: var(--primary-light);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 1.25rem;
+        transition: all 0.3s ease;
+    }
+
+    .class-item:hover {
+        background-color: #f1f5f9;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .class-header {
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+
+    .class-code {
+        font-size: 1.25rem;
+        font-weight: bold;
+        color: var(--primary-dark);
+        margin-bottom: 0.25rem;
+    }
+
+    .class-name {
+        font-size: 1rem;
+        color: var(--text-dark);
+        font-weight: 500;
+    }
+
+    .class-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .detail-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: var(--text-dark);
+    }
+
+    .detail-icon {
+        font-size: 1rem;
+        opacity: 0.8;
+        min-width: 20px;
+    }
+
+    .class-status {
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+
+    .status {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .status.upcoming {
+        background-color: #fef3c7;
+        color: #92400e;
+        border: 1px solid #f59e0b;
+    }
+
+    .status.completed {
+        background-color: #d1fae5;
+        color: #065f46;
+        border: 1px solid #10b981;
+    }
+
+    .class-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+    }
+
+    .btn-checkin,
+    .btn-view,
+    .btn-view-attendance {
+        padding: 0.5rem 1.25rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+    }
+
+    .btn-checkin {
+        background-color: var(--primary-dark);
+        color: white;
+    }
+
+    .btn-view-attendance {
+        background-color: #10b981;
+        color: white;
+        border: none;
+    }
+
+    .btn-view-attendance:hover {
+        background-color: #059669;
+    }
+
+    .btn-view {
+        background-color: white;
+        color: var(--primary-dark);
+        border: 1px solid var(--primary-dark);
+    }
+
+    .btn-view:hover {
+        background-color: var(--primary-dark);
+        color: white;
+    }
+
+    /* News & Notices Card */
+    .news-card {
+        height: fit-content;
+    }
+
+    .notifications-bell {
+        background-color: var(--primary-light);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 1.25rem;
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .notification-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .notification-icon {
+        font-size: 1.5rem;
+    }
+
+    .notification-count {
+        background-color: #dc2626;
+        color: white;
+        font-size: 0.85rem;
+        font-weight: bold;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+    }
+
+    .notification-preview {
+        color: var(--text-light);
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+
+    .btn-view-inbox {
+        padding: 0.5rem 1.5rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        background-color: var(--primary-dark);
+        color: white;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    /* News List */
+    .news-list {
+        margin-bottom: 1.5rem;
+    }
+
+    .news-item {
+        background-color: var(--primary-light);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .news-item:hover {
+        background-color: #f1f5f9;
+    }
+
+    .news-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.5rem;
+    }
+
+    .news-title {
+        font-size: 1rem;
+        font-weight: bold;
+        color: var(--primary-dark);
+        flex: 1;
+    }
+
+    .news-date {
+        font-size: 0.85rem;
+        color: var(--text-light);
+        margin-left: 1rem;
+        white-space: nowrap;
+    }
+
+    .news-content {
+        font-size: 0.9rem;
+        color: var(--text-dark);
+        line-height: 1.4;
+    }
+
+    /* Quick Links */
+    .quick-links {
+        border-top: 1px solid var(--border-color);
+        padding-top: 1.5rem;
+    }
+
+    .links-title {
+        font-weight: 600;
+        color: var(--text-dark);
+        font-size: 1rem;
+        text-align: center;
+    }
+
+    .links-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .link-item {
+        background-color: var(--primary-light);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 0.75rem;
+        text-decoration: none;
+        color: var(--text-dark);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .link-item:hover {
+        background-color: #f1f5f9;
+        transform: translateY(-2px);
+        text-decoration: none;
+        color: var(--text-dark);
+    }
+
+    .link-icon {
+        font-size: 1.5rem;
+    }
+
+    .link-text {
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-align: center;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+        .dashboard-grid {
+            grid-template-columns: 300px 1fr 1fr;
+        }
+    }
+
+    @media (max-width: 1024px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .classes-card {
+            grid-column: span 2;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+        }
+
+        .datetime-display {
+            font-size: 1rem;
+        }
+
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .classes-card {
+            grid-column: span 1;
+        }
+
+        .class-actions {
+            flex-direction: column;
+        }
+
+        .btn-checkin,
+        .btn-view,
+        .btn-view-attendance {
+            width: 100%;
+        }
+
+        .news-header {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .news-date {
+            margin-left: 0;
+        }
+
+        .links-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 480px) {
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .class-header {
+            text-align: left;
+        }
+
+        .class-actions {
+            flex-direction: column;
+        }
+
+        .links-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Update time and date dynamically
+        function updateDateTime() {
+            const now = new Date();
+            
+            // Format time
+            const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: true };
+            const time = now.toLocaleTimeString('en-US', timeOptions).toUpperCase();
+            
+            // Format date
+            const dateOptions = { day: 'numeric', month: 'long', year: 'numeric' };
+            const date = now.toLocaleDateString('en-US', dateOptions);
+            
+            // Update display
+            document.querySelector('.time').textContent = time;
+            document.querySelector('.date').textContent = date;
+        }
+
+        // Update immediately and then every minute
+        updateDateTime();
+        setInterval(updateDateTime, 60000);
+
+        // Check-in button functionality
+        document.querySelectorAll('.btn-checkin').forEach(button => {
+            button.addEventListener('click', function() {
+                const classCode = this.closest('.class-item').querySelector('.class-code').textContent;
+                alert(`Checking in for ${classCode}\n\nPlease ensure you are in the correct classroom.`);
+                
+                // Simulate check-in process
+                button.textContent = 'Checking In...';
+                button.disabled = true;
+                
+                setTimeout(() => {
+                    alert(`Successfully checked in for ${classCode}!`);
+                    button.textContent = 'Checked In';
+                    button.style.backgroundColor = '#10b981';
+                    
+                    // Update status
+                    const statusElement = this.closest('.class-item').querySelector('.status');
+                    statusElement.textContent = 'Checked In';
+                    statusElement.className = 'status completed';
+                }, 2000);
+            });
+        });
+
+        // View buttons
+        document.querySelectorAll('.btn-view').forEach(button => {
+            button.addEventListener('click', function() {
+                const classCode = this.closest('.class-item').querySelector('.class-code').textContent;
+                alert(`Viewing details for ${classCode}`);
+                // In a real app, this would navigate to class details page
+            });
+        });
+
+        // View attendance button
+        document.querySelectorAll('.btn-view-attendance').forEach(button => {
+            button.addEventListener('click', function() {
+                const classCode = this.closest('.class-item').querySelector('.class-code').textContent;
+                alert(`Viewing attendance record for ${classCode}`);
+                // In a real app, this would navigate to attendance page
+            });
+        });
+
+        // Manage profile button
+        document.querySelector('.btn-manage').addEventListener('click', function() {
+            alert('Navigating to profile management');
+            // In a real app, this would navigate to profile page
+        });
+
+        // Notification bell
+        document.querySelector('.notification-header').addEventListener('click', function() {
+            alert('You have 3 new notifications');
+            // In a real app, this would show notification dropdown
+        });
+    });
+</script>
+{% endblock %}

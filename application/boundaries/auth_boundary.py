@@ -45,7 +45,7 @@ def profile():
         flash('Please login to view profile', 'warning')
         return redirect(url_for('auth.login'))
     
-    return render_template('profile.html', user=auth_result['user'])
+    return render_template('components/profile.html', user=auth_result['user'])
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])

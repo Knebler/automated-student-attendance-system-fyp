@@ -1,0 +1,972 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}My Attendance - AttendAI{% endblock %}
+
+{% block content %}
+<div class="student-attendance-management">
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <h1 class="page-title">My Attendance</h1>
+        <div class="breadcrumb">
+            <a href="{{ url_for('student.dashboard') }}">Dashboard</a> / 
+            <span>My Attendance</span>
+        </div>
+    </div>
+
+    <!-- Attendance Grid -->
+    <div class="attendance-grid">
+        <!-- Left Column -->
+        <div class="left-column">
+            <!-- Term Information Card -->
+            <div class="card-custom mb-4">
+                <div class="card-header-custom">Term Information</div>
+                <div class="card-body-custom">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Institution:</span>
+                            <span class="info-value">University of Technology</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Program:</span>
+                            <span class="info-value">Computer Science</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Term:</span>
+                            <span class="info-value">2026 Q4</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Student ID:</span>
+                            <span class="info-value">S1234567</span>
+                        </div>
+                        <div class="info-item highlight">
+                            <span class="info-label">Minimum Requirement:</span>
+                            <span class="info-value">90%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View History Card -->
+            <div class="card-custom">
+                <div class="card-header-custom">Attendance History</div>
+                <div class="card-body-custom">
+                    <p class="history-description mb-3">View detailed attendance records for all your classes and terms.</p>
+                    <a href="{{ url_for('student.attendance_history') }}" class="btn-custom btn-history">View Attendance History</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Middle Column - Monthly Statistics -->
+        <div class="card-custom">
+            <div class="card-header-custom">Monthly Attendance</div>
+            <div class="card-body-custom">
+                <div class="months-grid">
+                    <div class="month-item">
+                        <div class="month-header">
+                            <h3 class="month-title">September 2026</h3>
+                            <span class="month-status good">On Track</span>
+                        </div>
+                        <div class="chart-container">
+                            <div class="chart" data-percent="90" data-absent="10"></div>
+                        </div>
+                        <div class="month-stats">
+                            <div class="stat">
+                                <span class="stat-label">Present:</span>
+                                <span class="stat-value present">90%</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Absent:</span>
+                                <span class="stat-value absent">10%</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Classes:</span>
+                                <span class="stat-value">20</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="month-item">
+                        <div class="month-header">
+                            <h3 class="month-title">October 2026</h3>
+                            <span class="month-status warning">At Risk</span>
+                        </div>
+                        <div class="chart-container">
+                            <div class="chart" data-percent="85" data-absent="15"></div>
+                        </div>
+                        <div class="month-stats">
+                            <div class="stat">
+                                <span class="stat-label">Present:</span>
+                                <span class="stat-value present">85%</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Absent:</span>
+                                <span class="stat-value absent">15%</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Classes:</span>
+                                <span class="stat-value">22</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="month-item">
+                        <div class="month-header">
+                            <h3 class="month-title">November 2026</h3>
+                            <span class="month-status good">On Track</span>
+                        </div>
+                        <div class="chart-container">
+                            <div class="chart" data-percent="92" data-absent="8"></div>
+                        </div>
+                        <div class="month-stats">
+                            <div class="stat">
+                                <span class="stat-label">Present:</span>
+                                <span class="stat-value present">92%</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Absent:</span>
+                                <span class="stat-value absent">8%</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Classes:</span>
+                                <span class="stat-value">18</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="month-item">
+                        <div class="month-header">
+                            <h3 class="month-title">December 2026</h3>
+                            <span class="month-status good">On Track</span>
+                        </div>
+                        <div class="chart-container">
+                            <div class="chart" data-percent="94" data-absent="6"></div>
+                        </div>
+                        <div class="month-stats">
+                            <div class="stat">
+                                <span class="stat-label">Present:</span>
+                                <span class="stat-value present">94%</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Absent:</span>
+                                <span class="stat-value absent">6%</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Classes:</span>
+                                <span class="stat-value">15</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Term Overview -->
+        <div class="card-custom">
+            <div class="card-header-custom">Term Overview</div>
+            <div class="card-body-custom">
+                <!-- Overall Attendance -->
+                <div class="term-overview">
+                    <div class="overall-stats">
+                        <div class="chart-container large">
+                            <div class="chart" data-percent="88.5" data-absent="11.5"></div>
+                        </div>
+                        <div class="overall-info">
+                            <h3 class="overall-title">Term Attendance</h3>
+                            <div class="overall-percentage">88.5%</div>
+                            <div class="status-badge">
+                                <span class="status-dot"></span>
+                                <span class="status-text">Meeting Requirement</span>
+                            </div>
+                            <div class="overall-details">
+                                <div class="detail">
+                                    <span class="detail-label">Present:</span>
+                                    <span class="detail-value">75/85 classes</span>
+                                </div>
+                                <div class="detail">
+                                    <span class="detail-label">Absent:</span>
+                                    <span class="detail-value">10/85 classes</span>
+                                </div>
+                                <div class="detail">
+                                    <span class="detail-label">Required:</span>
+                                    <span class="detail-value">≥90%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Absent Classes -->
+                    <div class="absent-section">
+                        <div class="section-header">
+                            <h3 class="section-title">Absent Classes</h3>
+                            <span class="section-count">10 classes</span>
+                        </div>
+
+                        <div class="absent-list">
+                            <div class="absent-item">
+                                <div class="absent-info">
+                                    <div class="absent-class">
+                                        <strong>CSCI251 - T01</strong>
+                                        <span>Advanced Programming</span>
+                                    </div>
+                                    <div class="absent-details">
+                                        <div class="detail">
+                                            <span class="detail-label">Date:</span>
+                                            <span class="detail-value">Nov 15, 2026 • 08:30-11:30</span>
+                                        </div>
+                                        <div class="detail">
+                                            <span class="detail-label">Venue:</span>
+                                            <span class="detail-value">LAB A.5.17C</span>
+                                        </div>
+                                        <div class="detail">
+                                            <span class="detail-label">Lecturer:</span>
+                                            <span class="detail-value">Prof. Johnson</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="absent-actions">
+                                    <a href="{{ url_for('student.appeal') }}?class=CSCI251-T01&date=2026-11-15" class="btn-custom btn-appeal">Appeal</a>
+                                </div>
+                            </div>
+
+                            <div class="absent-item">
+                                <div class="absent-info">
+                                    <div class="absent-class">
+                                        <strong>MATH202 - L03</strong>
+                                        <span>Calculus II</span>
+                                    </div>
+                                    <div class="absent-details">
+                                        <div class="detail">
+                                            <span class="detail-label">Date:</span>
+                                            <span class="detail-value">Nov 18, 2026 • 14:00-17:00</span>
+                                        </div>
+                                        <div class="detail">
+                                            <span class="detail-label">Venue:</span>
+                                            <span class="detail-value">LT B.2.01</span>
+                                        </div>
+                                        <div class="detail">
+                                            <span class="detail-label">Lecturer:</span>
+                                            <span class="detail-value">Dr. Smith</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="absent-actions">
+                                    <a href="{{ url_for('student.appeal') }}?class=MATH202-L03&date=2026-11-18" class="btn-custom btn-appeal">Appeal</a>
+                                </div>
+                            </div>
+
+                            <div class="absent-item">
+                                <div class="absent-info">
+                                    <div class="absent-class">
+                                        <strong>PHYS101 - T02</strong>
+                                        <span>Physics I</span>
+                                    </div>
+                                    <div class="absent-details">
+                                        <div class="detail">
+                                            <span class="detail-label">Date:</span>
+                                            <span class="detail-value">Nov 22, 2026 • 09:00-12:00</span>
+                                        </div>
+                                        <div class="detail">
+                                            <span class="detail-label">Venue:</span>
+                                            <span class="detail-value">SCI 301</span>
+                                        </div>
+                                        <div class="detail">
+                                            <span class="detail-label">Lecturer:</span>
+                                            <span class="detail-value">Dr. Brown</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="absent-actions">
+                                    <a href="{{ url_for('student.appeal') }}?class=PHYS101-T02&date=2026-11-22" class="btn-custom btn-appeal">Appeal</a>
+                                </div>
+                            </div>
+
+                            <div class="absent-item">
+                                <div class="absent-info">
+                                    <div class="absent-class">
+                                        <strong>CSCI251 - L02</strong>
+                                        <span>Advanced Programming</span>
+                                    </div>
+                                    <div class="absent-details">
+                                        <div class="detail">
+                                            <span class="detail-label">Date:</span>
+                                            <span class="detail-value">Nov 25, 2026 • 15:30-18:30</span>
+                                        </div>
+                                        <div class="detail">
+                                            <span class="detail-label">Venue:</span>
+                                            <span class="detail-value">LT A.1.17</span>
+                                        </div>
+                                        <div class="detail">
+                                            <span class="detail-label">Lecturer:</span>
+                                            <span class="detail-value">Prof. Johnson</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="absent-actions">
+                                    <a href="{{ url_for('student.appeal') }}?class=CSCI251-L02&date=2026-11-25" class="btn-custom btn-appeal">Appeal</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="view-all">
+                            <a href="{{ url_for('student.absent_records') }}" class="view-all-link">View All Absent Records →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Student Attendance Management Specific Styles */
+    .student-attendance-management {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 1rem;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        font-style: italic;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .breadcrumb {
+        font-size: 0.9rem;
+        color: var(--text-light);
+    }
+
+    .breadcrumb a {
+        color: var(--primary-dark);
+        text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+
+    .breadcrumb span {
+        color: var(--text-dark);
+        font-weight: 500;
+    }
+
+    /* Attendance Grid */
+    .attendance-grid {
+        display: grid;
+        grid-template-columns: 320px 1fr 1fr;
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    .left-column {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    /* Term Information */
+    .info-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .info-item:last-child {
+        border-bottom: none;
+    }
+
+    .info-item.highlight {
+        background-color: var(--primary-light);
+        padding: 0.75rem;
+        border-radius: 8px;
+        margin-top: 0.5rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: var(--text-dark);
+        font-size: 0.9rem;
+    }
+
+    .info-value {
+        color: var(--text-dark);
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+
+    .history-description {
+        color: var(--text-light);
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    .btn-history {
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        text-align: center;
+        background-color: var(--primary-dark);
+        color: white;
+        text-decoration: none;
+        display: block;
+    }
+
+    .btn-history:hover {
+        background-color: #1e293b;
+        color: white;
+        text-decoration: none;
+    }
+
+    /* Monthly Statistics */
+    .months-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+
+    .month-item {
+        background-color: var(--primary-light);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 1.25rem;
+        text-align: center;
+    }
+
+    .month-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .month-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+
+    .month-status {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.5rem;
+        border-radius: 20px;
+        display: inline-block;
+    }
+
+    .month-status.good {
+        background-color: #d1fae5;
+        color: #065f46;
+        border: 1px solid #10b981;
+    }
+
+    .month-status.warning {
+        background-color: #fef3c7;
+        color: #92400e;
+        border: 1px solid #f59e0b;
+    }
+
+    /* Charts */
+    .chart-container {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        margin: 0 auto 1rem;
+    }
+
+    .chart-container.large {
+        width: 150px;
+        height: 150px;
+    }
+
+    .chart {
+        width: 100%;
+        height: 100%;
+    }
+
+    .chart svg {
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg);
+    }
+
+    .chart-bg {
+        fill: none;
+        stroke: #e2e8f0;
+        stroke-width: 12;
+    }
+
+    .chart-present {
+        fill: none;
+        stroke: #059669;
+        stroke-width: 12;
+        stroke-linecap: round;
+        transition: stroke-dashoffset 1s ease;
+    }
+
+    .chart-absent {
+        fill: none;
+        stroke: #dc2626;
+        stroke-width: 12;
+        stroke-linecap: round;
+        transition: stroke-dashoffset 1s ease 0.3s;
+    }
+
+    /* Month Stats */
+    .month-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .stat {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.85rem;
+    }
+
+    .stat-label {
+        color: var(--text-light);
+    }
+
+    .stat-value {
+        font-weight: 600;
+    }
+
+    .stat-value.present {
+        color: #059669;
+    }
+
+    .stat-value.absent {
+        color: #dc2626;
+    }
+
+    /* Term Overview */
+    .term-overview {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .overall-stats {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        padding: 1.5rem;
+        background-color: var(--primary-light);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+    }
+
+    .overall-info {
+        flex: 1;
+    }
+
+    .overall-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .overall-percentage {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: var(--primary-dark);
+        margin-bottom: 0.75rem;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background-color: #d1fae5;
+        color: #065f46;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        border: 1px solid #10b981;
+    }
+
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        background-color: #059669;
+        border-radius: 50%;
+    }
+
+    .overall-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .detail {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.9rem;
+    }
+
+    .detail-label {
+        color: var(--text-light);
+    }
+
+    .detail-value {
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+
+    /* Absent Classes */
+    .absent-section {
+        margin-top: 1.5rem;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+
+    .section-count {
+        font-size: 0.9rem;
+        color: var(--text-light);
+        background-color: var(--primary-light);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+    }
+
+    .absent-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .absent-item {
+        background-color: var(--primary-light);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+
+    .absent-item:hover {
+        background-color: #f1f5f9;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .absent-info {
+        flex: 1;
+    }
+
+    .absent-class {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .absent-class strong {
+        color: var(--primary-dark);
+        font-size: 1rem;
+    }
+
+    .absent-class span {
+        color: var(--text-light);
+        font-size: 0.85rem;
+    }
+
+    .absent-details {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+    }
+
+    .absent-actions {
+        flex-shrink: 0;
+        margin-left: 1rem;
+    }
+
+    .btn-appeal {
+        padding: 0.5rem 1.5rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        background-color: var(--primary-dark);
+        color: white;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+    }
+
+    .btn-appeal:hover {
+        background-color: #1e293b;
+        color: white;
+        text-decoration: none;
+    }
+
+    .view-all {
+        text-align: center;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .view-all-link {
+        color: var(--primary-dark);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .view-all-link:hover {
+        text-decoration: underline;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+        .attendance-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .left-column {
+            grid-column: span 2;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 1.75rem;
+        }
+
+        .attendance-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .left-column {
+            grid-column: span 1;
+            grid-template-columns: 1fr;
+        }
+
+        .months-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .overall-stats {
+            flex-direction: column;
+            text-align: center;
+            gap: 1.5rem;
+        }
+
+        .absent-details {
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+        }
+
+        .absent-item {
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+        }
+
+        .absent-actions {
+            margin-left: 0;
+            width: 100%;
+        }
+
+        .btn-appeal {
+            width: 100%;
+        }
+
+        .breadcrumb {
+            font-size: 0.8rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .overall-percentage {
+            font-size: 2rem;
+        }
+
+        .chart-container {
+            width: 100px;
+            height: 100px;
+        }
+
+        .chart-container.large {
+            width: 120px;
+            height: 120px;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Function to create circular progress chart
+        function createProgressChart(container, presentPercent, absentPercent) {
+            const radius = 40;
+            const circumference = 2 * Math.PI * radius;
+            const presentOffset = circumference - (presentPercent / 100 * circumference);
+            const absentOffset = circumference - (absentPercent / 100 * circumference);
+            
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', '0 0 100 100');
+            svg.setAttribute('class', 'chart-svg');
+            
+            // Background circle
+            const bgCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            bgCircle.setAttribute('class', 'chart-bg');
+            bgCircle.setAttribute('cx', '50');
+            bgCircle.setAttribute('cy', '50');
+            bgCircle.setAttribute('r', radius.toString());
+            svg.appendChild(bgCircle);
+            
+            // Present circle (green)
+            const presentCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            presentCircle.setAttribute('class', 'chart-present');
+            presentCircle.setAttribute('cx', '50');
+            presentCircle.setAttribute('cy', '50');
+            presentCircle.setAttribute('r', radius.toString());
+            presentCircle.setAttribute('stroke-dasharray', circumference.toString());
+            presentCircle.setAttribute('stroke-dashoffset', presentOffset.toString());
+            svg.appendChild(presentCircle);
+            
+            // Absent circle (red) - layered on top
+            const absentCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            absentCircle.setAttribute('class', 'chart-absent');
+            absentCircle.setAttribute('cx', '50');
+            absentCircle.setAttribute('cy', '50');
+            absentCircle.setAttribute('r', radius.toString());
+            absentCircle.setAttribute('stroke-dasharray', circumference.toString());
+            absentCircle.setAttribute('stroke-dashoffset', absentOffset.toString());
+            svg.appendChild(absentCircle);
+            
+            // Clear container and add SVG
+            container.innerHTML = '';
+            container.appendChild(svg);
+            
+            // Add animation
+            setTimeout(() => {
+                presentCircle.style.strokeDashoffset = presentOffset;
+                absentCircle.style.strokeDashoffset = absentOffset;
+            }, 100);
+        }
+        
+        // Initialize all charts
+        document.querySelectorAll('.chart').forEach(chart => {
+            const container = chart.closest('.chart-container');
+            const presentPercent = parseFloat(chart.getAttribute('data-percent'));
+            const absentPercent = parseFloat(chart.getAttribute('data-absent'));
+            
+            if (container && !isNaN(presentPercent) && !isNaN(absentPercent)) {
+                createProgressChart(container, presentPercent, absentPercent);
+            }
+        });
+        
+        // Appeal button functionality
+        document.querySelectorAll('.btn-appeal').forEach(button => {
+            button.addEventListener('click', function(e) {
+                if (!this.getAttribute('href')) {
+                    e.preventDefault();
+                    const classInfo = this.closest('.absent-item').querySelector('.absent-class strong').textContent;
+                    alert(`Starting appeal process for: ${classInfo}\n\nYou will be redirected to the appeal form.`);
+                    
+                    // Simulate navigation
+                    setTimeout(() => {
+                        window.location.href = "{{ url_for('student.appeal') }}";
+                    }, 1000);
+                }
+            });
+        });
+        
+        // View history button
+        document.querySelector('.btn-history').addEventListener('click', function(e) {
+            if (!this.getAttribute('href')) {
+                e.preventDefault();
+                alert('Loading attendance history...');
+                
+                // Simulate loading
+                const originalText = this.textContent;
+                this.textContent = 'Loading...';
+                this.disabled = true;
+                
+                setTimeout(() => {
+                    this.textContent = originalText;
+                    this.disabled = false;
+                    window.location.href = "{{ url_for('student.attendance_history') }}";
+                }, 1500);
+            }
+        });
+        
+        // Update overall status based on attendance
+        function updateOverallStatus() {
+            const overallPercent = 88.5;
+            const requiredPercent = 90;
+            const statusBadge = document.querySelector('.status-badge');
+            
+            if (overallPercent >= requiredPercent) {
+                statusBadge.innerHTML = `
+                    <span class="status-dot"></span>
+                    <span class="status-text">Meeting Requirement</span>
+                `;
+                statusBadge.style.backgroundColor = '#d1fae5';
+                statusBadge.style.color = '#065f46';
+                statusBadge.style.borderColor = '#10b981';
+            } else {
+                statusBadge.innerHTML = `
+                    <span class="status-dot" style="background-color: #dc2626;"></span>
+                    <span class="status-text">Below Requirement</span>
+                `;
+                statusBadge.style.backgroundColor = '#fef2f2';
+                statusBadge.style.color = '#dc2626';
+                statusBadge.style.borderColor = '#dc2626';
+            }
+        }
+        
+        // Initialize
+        updateOverallStatus();
+    });
+</script>
+{% endblock %}

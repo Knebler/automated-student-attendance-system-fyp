@@ -1,0 +1,1022 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Class Check-In - AttendAI{% endblock %}
+
+{% block content %}
+<div class="student-class-checkin">
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <h1 class="page-title">Class Check-In</h1>
+        <div class="breadcrumb">
+            <a href="{{ url_for('student.dashboard') }}">Dashboard</a> / 
+            <span>Class Check-In</span>
+        </div>
+    </div>
+
+    <!-- Check-In Grid -->
+    <div class="checkin-grid">
+        <!-- Upcoming Classes -->
+        <div class="card-custom">
+            <div class="card-header-custom">Upcoming Classes</div>
+            <div class="card-body-custom">
+                <div class="class-list">
+                    <div class="class-item" data-class="CSCI251-T01">
+                        <div class="class-header">
+                            <span class="class-name">CSCI251 - Advanced Programming</span>
+                            <span class="class-time">08:30-11:30</span>
+                        </div>
+                        <div class="class-details">
+                            <div class="detail">
+                                <span class="detail-label">Date:</span>
+                                <span class="detail-value">Dec 02, 2026</span>
+                            </div>
+                            <div class="detail">
+                                <span class="detail-label">Venue:</span>
+                                <span class="detail-value">LAB A.5.17C</span>
+                            </div>
+                            <div class="detail">
+                                <span class="detail-label">Lecturer:</span>
+                                <span class="detail-value">Prof. Johnson</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="class-item" data-class="MATH202-L03">
+                        <div class="class-header">
+                            <span class="class-name">MATH202 - Calculus II</span>
+                            <span class="class-time">14:00-17:00</span>
+                        </div>
+                        <div class="class-details">
+                            <div class="detail">
+                                <span class="detail-label">Date:</span>
+                                <span class="detail-value">Dec 03, 2026</span>
+                            </div>
+                            <div class="detail">
+                                <span class="detail-label">Venue:</span>
+                                <span class="detail-value">LT B.2.01</span>
+                            </div>
+                            <div class="detail">
+                                <span class="detail-label">Lecturer:</span>
+                                <span class="detail-value">Dr. Smith</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="class-item" data-class="PHYS101-T02">
+                        <div class="class-header">
+                            <span class="class-name">PHYS101 - Physics I</span>
+                            <span class="class-time">09:00-12:00</span>
+                        </div>
+                        <div class="class-details">
+                            <div class="detail">
+                                <span class="detail-label">Date:</span>
+                                <span class="detail-value">Dec 04, 2026</span>
+                            </div>
+                            <div class="detail">
+                                <span class="detail-label">Venue:</span>
+                                <span class="detail-value">SCI 301</span>
+                            </div>
+                            <div class="detail">
+                                <span class="detail-label">Lecturer:</span>
+                                <span class="detail-value">Dr. Brown</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="class-item" data-class="CSCI251-L02">
+                        <div class="class-header">
+                            <span class="class-name">CSCI251 - Advanced Programming</span>
+                            <span class="class-time">15:30-18:30</span>
+                        </div>
+                        <div class="class-details">
+                            <div class="detail">
+                                <span class="detail-label">Date:</span>
+                                <span class="detail-value">Dec 05, 2026</span>
+                            </div>
+                            <div class="detail">
+                                <span class="detail-label">Venue:</span>
+                                <span class="detail-value">LT A.1.17</span>
+                            </div>
+                            <div class="detail">
+                                <span class="detail-label">Lecturer:</span>
+                                <span class="detail-value">Prof. Johnson</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="class-item" data-class="ENGL101-T01">
+                        <div class="class-header">
+                            <span class="class-name">ENGL101 - Academic Writing</span>
+                            <span class="class-time">10:00-13:00</span>
+                        </div>
+                        <div class="class-details">
+                            <div class="detail">
+                                <span class="detail-label">Date:</span>
+                                <span class="detail-value">Dec 06, 2026</span>
+                            </div>
+                            <div class="detail">
+                                <span class="detail-label">Venue:</span>
+                                <span class="detail-value">HUM 205</span>
+                            </div>
+                            <div class="detail">
+                                <span class="detail-label">Lecturer:</span>
+                                <span class="detail-value">Prof. Davis</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="view-more">
+                    <a href="#" class="view-more-link">View More Upcoming Classes →</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ongoing Class -->
+        <div class="card-custom">
+            <div class="card-header-custom">Ongoing Class</div>
+            <div class="card-body-custom ongoing-section">
+                <div class="ongoing-content" id="ongoingContent">
+                    <div class="no-class-selected">
+                        <div class="icon-placeholder">📚</div>
+                        <h3>Select a Class</h3>
+                        <p>Please select a class from the upcoming classes list to begin check-in.</p>
+                    </div>
+
+                    <div class="class-checkin-details" style="display: none;">
+                        <div class="selected-class-info">
+                            <div class="class-header">
+                                <h3 class="selected-class-name">CSCI251 - Advanced Programming</h3>
+                                <span class="class-status active">Active</span>
+                            </div>
+                            <div class="class-details-grid">
+                                <div class="detail-card">
+                                    <span class="detail-label">Date</span>
+                                    <span class="detail-value">Dec 02, 2026</span>
+                                </div>
+                                <div class="detail-card">
+                                    <span class="detail-label">Time</span>
+                                    <span class="detail-value">08:30-11:30</span>
+                                </div>
+                                <div class="detail-card">
+                                    <span class="detail-label">Venue</span>
+                                    <span class="detail-value">LAB A.5.17C</span>
+                                </div>
+                                <div class="detail-card">
+                                    <span class="detail-label">Lecturer</span>
+                                    <span class="detail-value">Prof. Johnson</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="checkin-status">
+                            <div class="status-header">
+                                <h4>Check-In Status</h4>
+                                <div class="grace-period-timer">
+                                    <span class="timer-icon">⏰</span>
+                                    <span class="timer-text">Grace Period: <span id="graceTimer">15:00</span></span>
+                                </div>
+                            </div>
+                            <div class="status-info">
+                                <div class="status-item">
+                                    <span class="status-label">Check-In Window:</span>
+                                    <span class="status-value">Class start ± 15 minutes</span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="status-label">Current Status:</span>
+                                    <span class="status-value pending">Pending Check-In</span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="status-label">Attendance Type:</span>
+                                    <span class="status-value">Face Recognition</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="checkin-actions">
+                            <button class="btn-custom btn-checkin" id="checkinButton">
+                                <span class="btn-icon">📱</span>
+                                Start Face Recognition Check-In
+                            </button>
+                            <p class="checkin-note">
+                                <small>Note: You must be within 50 meters of the classroom and have your face visible to the camera.</small>
+                            </p>
+                        </div>
+
+                        <div class="manual-checkin-option">
+                            <button class="btn-custom btn-outline-custom btn-manual" id="manualCheckinButton">
+                                Request Manual Check-In
+                            </button>
+                            <p class="manual-note">
+                                <small>Only available if face recognition fails. Requires lecturer approval.</small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Check-Ins -->
+    <div class="card-custom mt-4">
+        <div class="card-header-custom">Recent Check-Ins</div>
+        <div class="card-body-custom">
+            <div class="recent-checkins">
+                <div class="recent-item">
+                    <div class="recent-header">
+                        <span class="recent-class">CSCI251 - Advanced Programming</span>
+                        <span class="recent-status success">✓ Checked In</span>
+                    </div>
+                    <div class="recent-details">
+                        <span class="recent-date">Dec 01, 2026 • 08:30 AM</span>
+                        <span class="recent-method">Face Recognition</span>
+                    </div>
+                </div>
+
+                <div class="recent-item">
+                    <div class="recent-header">
+                        <span class="recent-class">MATH202 - Calculus II</span>
+                        <span class="recent-status success">✓ Checked In</span>
+                    </div>
+                    <div class="recent-details">
+                        <span class="recent-date">Nov 30, 2026 • 02:00 PM</span>
+                        <span class="recent-method">Face Recognition</span>
+                    </div>
+                </div>
+
+                <div class="recent-item">
+                    <div class="recent-header">
+                        <span class="recent-class">PHYS101 - Physics I</span>
+                        <span class="recent-status late">⚠ Late Check-In</span>
+                    </div>
+                    <div class="recent-details">
+                        <span class="recent-date">Nov 29, 2026 • 09:15 AM</span>
+                        <span class="recent-method">Manual (Approved)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Class Check-In Specific Styles */
+    .student-class-checkin {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 1rem;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        font-style: italic;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .breadcrumb {
+        font-size: 0.9rem;
+        color: var(--text-light);
+    }
+
+    .breadcrumb a {
+        color: var(--primary-dark);
+        text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+
+    .breadcrumb span {
+        color: var(--text-dark);
+        font-weight: 500;
+    }
+
+    /* Check-In Grid */
+    .checkin-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Class List */
+    .class-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .class-item {
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        padding: 1rem;
+        background-color: var(--primary-light);
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .class-item:hover {
+        background-color: #f1f5f9;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .class-item.selected {
+        background-color: #e0f2fe;
+        border-color: #0ea5e9;
+        box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);
+    }
+
+    .class-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+
+    .class-name {
+        font-weight: 600;
+        color: var(--primary-dark);
+        font-size: 0.95rem;
+    }
+
+    .class-time {
+        font-size: 0.85rem;
+        color: var(--text-dark);
+        background-color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        border: 1px solid var(--border-color);
+    }
+
+    .class-details {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+    }
+
+    .detail {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .detail-label {
+        font-size: 0.75rem;
+        color: var(--text-light);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .detail-value {
+        font-size: 0.85rem;
+        color: var(--text-dark);
+        font-weight: 500;
+    }
+
+    .view-more {
+        text-align: center;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .view-more-link {
+        color: var(--primary-dark);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .view-more-link:hover {
+        text-decoration: underline;
+    }
+
+    /* Ongoing Section */
+    .ongoing-section {
+        min-height: 400px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .ongoing-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .no-class-selected {
+        text-align: center;
+        padding: 3rem 2rem;
+    }
+
+    .icon-placeholder {
+        font-size: 4rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .no-class-selected h3 {
+        font-size: 1.5rem;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .no-class-selected p {
+        color: var(--text-light);
+        font-size: 0.95rem;
+        max-width: 300px;
+        margin: 0 auto;
+        line-height: 1.5;
+    }
+
+    /* Selected Class Info */
+    .selected-class-info {
+        background-color: var(--primary-light);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .selected-class-info .class-header {
+        margin-bottom: 1rem;
+    }
+
+    .selected-class-name {
+        font-size: 1.25rem;
+        color: var(--primary-dark);
+        margin: 0;
+    }
+
+    .class-status {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .class-status.active {
+        background-color: #d1fae5;
+        color: #065f46;
+        border: 1px solid #10b981;
+    }
+
+    .class-details-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    .detail-card {
+        background-color: white;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+    }
+
+    .detail-card .detail-label {
+        font-size: 0.8rem;
+        color: var(--text-light);
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .detail-card .detail-value {
+        font-size: 0.95rem;
+        color: var(--text-dark);
+        font-weight: 600;
+        display: block;
+    }
+
+    /* Check-In Status */
+    .checkin-status {
+        background-color: var(--primary-light);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .status-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .status-header h4 {
+        font-size: 1.1rem;
+        color: var(--text-dark);
+        margin: 0;
+    }
+
+    .grace-period-timer {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background-color: #fef3c7;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        border: 1px solid #f59e0b;
+    }
+
+    .timer-icon {
+        font-size: 1rem;
+    }
+
+    .timer-text {
+        font-size: 0.85rem;
+        color: #92400e;
+        font-weight: 600;
+    }
+
+    #graceTimer {
+        font-family: 'Courier New', monospace;
+        color: #dc2626;
+    }
+
+    .status-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .status-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .status-label {
+        font-size: 0.9rem;
+        color: var(--text-light);
+    }
+
+    .status-value {
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .status-value.pending {
+        color: #d97706;
+    }
+
+    /* Check-In Actions */
+    .checkin-actions {
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .btn-checkin {
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        font-size: 1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        margin: 0 auto 1rem auto;
+        background-color: #059669;
+        border-color: #059669;
+    }
+
+    .btn-checkin:hover {
+        background-color: #047857;
+        border-color: #047857;
+    }
+
+    .btn-icon {
+        font-size: 1.25rem;
+    }
+
+    .checkin-note {
+        color: var(--text-light);
+        font-size: 0.85rem;
+        max-width: 400px;
+        margin: 0 auto;
+        line-height: 1.4;
+    }
+
+    .manual-checkin-option {
+        text-align: center;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .btn-manual {
+        padding: 0.75rem 2rem;
+        border-radius: 50px;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .manual-note {
+        color: var(--text-light);
+        font-size: 0.8rem;
+        max-width: 300px;
+        margin: 0 auto;
+    }
+
+    /* Recent Check-Ins */
+    .recent-checkins {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .recent-item {
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 1rem;
+        background-color: var(--primary-light);
+    }
+
+    .recent-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .recent-class {
+        font-weight: 600;
+        color: var(--text-dark);
+        font-size: 0.95rem;
+    }
+
+    .recent-status {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .recent-status.success {
+        background-color: #d1fae5;
+        color: #065f46;
+        border: 1px solid #10b981;
+    }
+
+    .recent-status.late {
+        background-color: #fef3c7;
+        color: #92400e;
+        border: 1px solid #f59e0b;
+    }
+
+    .recent-details {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.85rem;
+    }
+
+    .recent-date {
+        color: var(--text-dark);
+    }
+
+    .recent-method {
+        color: var(--text-light);
+        background-color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        border: 1px solid var(--border-color);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 992px) {
+        .checkin-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .class-details-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 1.75rem;
+        }
+
+        .class-details {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+
+        .status-header {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .recent-details {
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: flex-start;
+        }
+
+        .breadcrumb {
+            font-size: 0.8rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .selected-class-name {
+            font-size: 1rem;
+        }
+
+        .btn-checkin {
+            padding: 0.75rem 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .btn-checkin .btn-icon {
+            display: none;
+        }
+
+        .class-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .class-time {
+            align-self: flex-start;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Class selection functionality
+        const classItems = document.querySelectorAll('.class-item');
+        const ongoingContent = document.querySelector('.ongoing-content');
+        const noClassSelected = ongoingContent.querySelector('.no-class-selected');
+        const classCheckinDetails = ongoingContent.querySelector('.class-checkin-details');
+        const selectedClassName = classCheckinDetails.querySelector('.selected-class-name');
+        const checkinButton = document.getElementById('checkinButton');
+        const manualCheckinButton = document.getElementById('manualCheckinButton');
+        const graceTimer = document.getElementById('graceTimer');
+
+        // Sample class data
+        const classData = {
+            'CSCI251-T01': {
+                name: 'CSCI251 - Advanced Programming',
+                date: 'Dec 02, 2026',
+                time: '08:30-11:30',
+                venue: 'LAB A.5.17C',
+                lecturer: 'Prof. Johnson',
+                status: 'Active'
+            },
+            'MATH202-L03': {
+                name: 'MATH202 - Calculus II',
+                date: 'Dec 03, 2026',
+                time: '14:00-17:00',
+                venue: 'LT B.2.01',
+                lecturer: 'Dr. Smith',
+                status: 'Active'
+            },
+            'PHYS101-T02': {
+                name: 'PHYS101 - Physics I',
+                date: 'Dec 04, 2026',
+                time: '09:00-12:00',
+                venue: 'SCI 301',
+                lecturer: 'Dr. Brown',
+                status: 'Active'
+            },
+            'CSCI251-L02': {
+                name: 'CSCI251 - Advanced Programming',
+                date: 'Dec 05, 2026',
+                time: '15:30-18:30',
+                venue: 'LT A.1.17',
+                lecturer: 'Prof. Johnson',
+                status: 'Active'
+            },
+            'ENGL101-T01': {
+                name: 'ENGL101 - Academic Writing',
+                date: 'Dec 06, 2026',
+                time: '10:00-13:00',
+                venue: 'HUM 205',
+                lecturer: 'Prof. Davis',
+                status: 'Active'
+            }
+        };
+
+        // Handle class selection
+        classItems.forEach(item => {
+            item.addEventListener('click', function() {
+                // Remove selected class from all items
+                classItems.forEach(i => i.classList.remove('selected'));
+                
+                // Add selected class to clicked item
+                this.classList.add('selected');
+                
+                // Get class data
+                const classId = this.getAttribute('data-class');
+                const data = classData[classId];
+                
+                if (data) {
+                    // Update displayed class info
+                    selectedClassName.textContent = data.name;
+                    classCheckinDetails.querySelector('.detail-card:nth-child(1) .detail-value').textContent = data.date;
+                    classCheckinDetails.querySelector('.detail-card:nth-child(2) .detail-value').textContent = data.time;
+                    classCheckinDetails.querySelector('.detail-card:nth-child(3) .detail-value').textContent = data.venue;
+                    classCheckinDetails.querySelector('.detail-card:nth-child(4) .detail-value').textContent = data.lecturer;
+                    
+                    // Show check-in details
+                    noClassSelected.style.display = 'none';
+                    classCheckinDetails.style.display = 'block';
+                    
+                    // Start grace period timer
+                    startGracePeriodTimer();
+                }
+            });
+        });
+
+        // Grace period timer
+        let timerInterval;
+        function startGracePeriodTimer() {
+            let timeLeft = 15 * 60; // 15 minutes in seconds
+            
+            // Clear existing timer
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            
+            // Update timer display
+            function updateTimer() {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                graceTimer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    graceTimer.textContent = '00:00';
+                    graceTimer.parentElement.style.backgroundColor = '#fef2f2';
+                    graceTimer.parentElement.style.borderColor = '#dc2626';
+                    graceTimer.style.color = '#dc2626';
+                    checkinButton.disabled = true;
+                    checkinButton.textContent = 'Check-In Expired';
+                    checkinButton.style.backgroundColor = '#9ca3af';
+                    checkinButton.style.borderColor = '#9ca3af';
+                    manualCheckinButton.disabled = true;
+                }
+                
+                timeLeft--;
+            }
+            
+            // Update immediately and then every second
+            updateTimer();
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        // Check-in button functionality
+        checkinButton.addEventListener('click', function() {
+            const selectedClass = document.querySelector('.class-item.selected');
+            if (!selectedClass) {
+                alert('Please select a class first.');
+                return;
+            }
+            
+            const className = selectedClass.querySelector('.class-name').textContent;
+            
+            // Simulate face recognition process
+            this.disabled = true;
+            this.innerHTML = '<span class="btn-icon">⏳</span> Processing...';
+            
+            setTimeout(() => {
+                // Simulate successful check-in
+                this.innerHTML = '<span class="btn-icon">✓</span> Check-In Successful!';
+                this.style.backgroundColor = '#059669';
+                
+                // Update recent check-ins
+                updateRecentCheckIns(className);
+                
+                // Reset button after 3 seconds
+                setTimeout(() => {
+                    this.disabled = false;
+                    this.innerHTML = '<span class="btn-icon">📱</span> Start Face Recognition Check-In';
+                    this.style.backgroundColor = '';
+                    
+                    // Show success message
+                    showAlert('Check-in successful! Your attendance has been recorded.', 'success');
+                }, 3000);
+            }, 2000);
+        });
+
+        // Manual check-in button
+        manualCheckinButton.addEventListener('click', function() {
+            const selectedClass = document.querySelector('.class-item.selected');
+            if (!selectedClass) {
+                alert('Please select a class first.');
+                return;
+            }
+            
+            const className = selectedClass.querySelector('.class-name').textContent;
+            
+            if (confirm(`Request manual check-in for ${className}?\n\nThis will notify the lecturer for approval.`)) {
+                this.disabled = true;
+                this.textContent = 'Request Sent...';
+                
+                setTimeout(() => {
+                    showAlert('Manual check-in request sent to lecturer. You will be notified once approved.', 'info');
+                    this.textContent = 'Request Manual Check-In';
+                    this.disabled = false;
+                }, 1500);
+            }
+        });
+
+        // Update recent check-ins (simulated)
+        function updateRecentCheckIns(className) {
+            const recentCheckins = document.querySelector('.recent-checkins');
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const dateString = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            
+            const newCheckin = document.createElement('div');
+            newCheckin.className = 'recent-item';
+            newCheckin.innerHTML = `
+                <div class="recent-header">
+                    <span class="recent-class">${className}</span>
+                    <span class="recent-status success">✓ Checked In</span>
+                </div>
+                <div class="recent-details">
+                    <span class="recent-date">${dateString} • ${timeString}</span>
+                    <span class="recent-method">Face Recognition</span>
+                </div>
+            `;
+            
+            // Add to top of list
+            recentCheckins.insertBefore(newCheckin, recentCheckins.firstChild);
+            
+            // Limit to 5 items
+            if (recentCheckins.children.length > 5) {
+                recentCheckins.removeChild(recentCheckins.lastChild);
+            }
+        }
+
+        // Show alert message
+        function showAlert(message, type) {
+            // Create alert element
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert-custom alert-${type} mt-3`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'" style="float: right; background: none; border: none; font-size: 1.2rem; cursor: pointer;">×</button>
+            `;
+            
+            // Find alert container or create one
+            let alertContainer = document.querySelector('.alert-container');
+            if (!alertContainer) {
+                alertContainer = document.createElement('div');
+                alertContainer.className = 'alert-container';
+                document.querySelector('.main-container').insertBefore(alertContainer, document.querySelector('.main-container').firstChild);
+            }
+            
+            // Add alert to container
+            alertContainer.appendChild(alertDiv);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentElement) {
+                    alertDiv.style.opacity = '0';
+                    alertDiv.style.transition = 'opacity 0.5s';
+                    setTimeout(() => {
+                        if (alertDiv.parentElement) {
+                            alertDiv.parentElement.removeChild(alertDiv);
+                        }
+                    }, 500);
+                }
+            }, 5000);
+        }
+
+        // Auto-select first class on page load
+        if (classItems.length > 0) {
+            classItems[0].click();
+        }
+    });
+</script>
+{% endblock %}

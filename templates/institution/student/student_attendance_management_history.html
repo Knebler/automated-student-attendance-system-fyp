@@ -1,0 +1,811 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Attendance History - AttendAI{% endblock %}
+
+{% block content %}
+<div class="student-attendance-history">
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <h1 class="page-title">Attendance History</h1>
+        <div class="breadcrumb">
+            <a href="{{ url_for('student.dashboard') }}">Dashboard</a> / 
+            <a href="{{ url_for('student.attendance') }}">My Attendance</a> / 
+            <span>Attendance History</span>
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="card-custom mb-4">
+        <div class="card-header-custom">Search & Filter</div>
+        <div class="card-body-custom">
+            <div class="search-filter-section">
+                <div class="search-box">
+                    <input type="text" placeholder="Search by class, lecturer, or venue..." class="search-input">
+                    <button class="btn-custom btn-search">Search</button>
+                </div>
+                <div class="filter-options">
+                    <select class="filter-select">
+                        <option value="">All Status</option>
+                        <option value="present">Present</option>
+                        <option value="absent">Absent</option>
+                        <option value="late">Late</option>
+                        <option value="excused">Excused</option>
+                    </select>
+                    <select class="filter-select">
+                        <option value="">All Months</option>
+                        <option value="2026-09">September 2026</option>
+                        <option value="2026-10">October 2026</option>
+                        <option value="2026-11">November 2026</option>
+                        <option value="2026-12">December 2026</option>
+                    </select>
+                    <button class="btn-custom btn-outline-custom btn-reset">Reset Filters</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Records Container -->
+    <div class="card-custom">
+        <div class="card-header-custom">
+            <div class="header-content">
+                <span>Attendance Records</span>
+                <span class="record-count">Showing 14 records</span>
+            </div>
+        </div>
+        <div class="card-body-custom">
+            <!-- Records Grid -->
+            <div class="records-grid">
+                <div class="record-item">
+                    <div class="record-header">
+                        <span class="record-status present">Present</span>
+                        <span class="record-date">Nov 30, 2026</span>
+                    </div>
+                    <div class="record-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Class:</span>
+                            <span class="detail-value">CSCI251 - Advanced Programming</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Time:</span>
+                            <span class="detail-value">08:30-11:30</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Venue:</span>
+                            <span class="detail-value">LAB A.5.17C</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Lecturer:</span>
+                            <span class="detail-value">Prof. Johnson</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="record-item">
+                    <div class="record-header">
+                        <span class="record-status present">Present</span>
+                        <span class="record-date">Nov 28, 2026</span>
+                    </div>
+                    <div class="record-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Class:</span>
+                            <span class="detail-value">MATH202 - Calculus II</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Time:</span>
+                            <span class="detail-value">14:00-17:00</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Venue:</span>
+                            <span class="detail-value">LT B.2.01</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Lecturer:</span>
+                            <span class="detail-value">Dr. Smith</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="record-item">
+                    <div class="record-header">
+                        <span class="record-status absent">Absent</span>
+                        <span class="record-date">Nov 25, 2026</span>
+                    </div>
+                    <div class="record-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Class:</span>
+                            <span class="detail-value">CSCI251 - Advanced Programming</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Time:</span>
+                            <span class="detail-value">15:30-18:30</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Venue:</span>
+                            <span class="detail-value">LT A.1.17</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Lecturer:</span>
+                            <span class="detail-value">Prof. Johnson</span>
+                        </div>
+                    </div>
+                    <div class="record-actions">
+                        <a href="{{ url_for('student.appeal') }}?class=CSCI251-L02&date=2026-11-25" class="btn-custom btn-appeal">Appeal</a>
+                    </div>
+                </div>
+
+                <div class="record-item">
+                    <div class="record-header">
+                        <span class="record-status present">Present</span>
+                        <span class="record-date">Nov 23, 2026</span>
+                    </div>
+                    <div class="record-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Class:</span>
+                            <span class="detail-value">PHYS101 - Physics I</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Time:</span>
+                            <span class="detail-value">09:00-12:00</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Venue:</span>
+                            <span class="detail-value">SCI 301</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Lecturer:</span>
+                            <span class="detail-value">Dr. Brown</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="record-item">
+                    <div class="record-header">
+                        <span class="record-status absent">Absent</span>
+                        <span class="record-date">Nov 22, 2026</span>
+                    </div>
+                    <div class="record-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Class:</span>
+                            <span class="detail-value">PHYS101 - Physics I</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Time:</span>
+                            <span class="detail-value">09:00-12:00</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Venue:</span>
+                            <span class="detail-value">SCI 301</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Lecturer:</span>
+                            <span class="detail-value">Dr. Brown</span>
+                        </div>
+                    </div>
+                    <div class="record-actions">
+                        <a href="{{ url_for('student.appeal') }}?class=PHYS101-T02&date=2026-11-22" class="btn-custom btn-appeal">Appeal</a>
+                    </div>
+                </div>
+
+                <div class="record-item">
+                    <div class="record-header">
+                        <span class="record-status present">Present</span>
+                        <span class="record-date">Nov 20, 2026</span>
+                    </div>
+                    <div class="record-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Class:</span>
+                            <span class="detail-value">CSCI251 - Advanced Programming</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Time:</span>
+                            <span class="detail-value">08:30-11:30</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Venue:</span>
+                            <span class="detail-value">LAB A.5.17C</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Lecturer:</span>
+                            <span class="detail-value">Prof. Johnson</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="record-item">
+                    <div class="record-header">
+                        <span class="record-status present">Present</span>
+                        <span class="record-date">Nov 18, 2026</span>
+                    </div>
+                    <div class="record-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Class:</span>
+                            <span class="detail-value">MATH202 - Calculus II</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Time:</span>
+                            <span class="detail-value">14:00-17:00</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Venue:</span>
+                            <span class="detail-value">LT B.2.01</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Lecturer:</span>
+                            <span class="detail-value">Dr. Smith</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="record-item">
+                    <div class="record-header">
+                        <span class="record-status absent">Absent</span>
+                        <span class="record-date">Nov 18, 2026</span>
+                    </div>
+                    <div class="record-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Class:</span>
+                            <span class="detail-value">MATH202 - Calculus II</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Time:</span>
+                            <span class="detail-value">14:00-17:00</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Venue:</span>
+                            <span class="detail-value">LT B.2.01</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Lecturer:</span>
+                            <span class="detail-value">Dr. Smith</span>
+                        </div>
+                    </div>
+                    <div class="record-actions">
+                        <a href="{{ url_for('student.appeal') }}?class=MATH202-L03&date=2026-11-18" class="btn-custom btn-appeal">Appeal</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination-section">
+                <div class="pagination-info">
+                    Showing 1-8 of 14 records
+                </div>
+                <div class="pagination-controls">
+                    <button class="btn-custom btn-outline-custom btn-prev" disabled>Previous</button>
+                    <span class="page-numbers">
+                        <span class="page-current">1</span>
+                        <a href="#" class="page-link">2</a>
+                    </span>
+                    <a href="#" class="btn-custom btn-outline-custom btn-next">Next</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Attendance History Specific Styles */
+    .student-attendance-history {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 1rem;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        font-style: italic;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .breadcrumb {
+        font-size: 0.9rem;
+        color: var(--text-light);
+    }
+
+    .breadcrumb a {
+        color: var(--primary-dark);
+        text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+
+    .breadcrumb span {
+        color: var(--text-dark);
+        font-weight: 500;
+    }
+
+    /* Search and Filter Section */
+    .search-filter-section {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .search-box {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .search-input {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: 50px;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.9rem;
+        background-color: var(--primary-light);
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: var(--primary-dark);
+        background-color: white;
+    }
+
+    .btn-search {
+        padding: 0.75rem 2rem;
+        border-radius: 50px;
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+
+    .filter-options {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .filter-select {
+        padding: 0.5rem 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: 25px;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.85rem;
+        background-color: var(--primary-light);
+        color: var(--text-dark);
+        cursor: pointer;
+        min-width: 150px;
+    }
+
+    .filter-select:focus {
+        outline: none;
+        border-color: var(--primary-dark);
+    }
+
+    .btn-reset {
+        padding: 0.5rem 1.5rem;
+        border-radius: 25px;
+        font-size: 0.85rem;
+        margin-left: auto;
+    }
+
+    /* Header with Record Count */
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+
+    .record-count {
+        font-size: 0.85rem;
+        color: var(--text-light);
+        background-color: var(--primary-light);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        border: 1px solid var(--border-color);
+    }
+
+    /* Records Grid */
+    .records-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .record-item {
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        padding: 1.25rem;
+        background-color: var(--primary-light);
+        transition: all 0.3s ease;
+    }
+
+    .record-item:hover {
+        background-color: #f1f5f9;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .record-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .record-status {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .record-status.present {
+        background-color: #d1fae5;
+        color: #065f46;
+        border: 1px solid #10b981;
+    }
+
+    .record-status.absent {
+        background-color: #fef2f2;
+        color: #dc2626;
+        border: 1px solid #dc2626;
+    }
+
+    .record-status.late {
+        background-color: #fef3c7;
+        color: #92400e;
+        border: 1px solid #f59e0b;
+    }
+
+    .record-status.excused {
+        background-color: #e0f2fe;
+        color: #075985;
+        border: 1px solid #0ea5e9;
+    }
+
+    .record-date {
+        font-size: 0.85rem;
+        color: var(--text-dark);
+        font-weight: 500;
+    }
+
+    .record-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .detail-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .detail-label {
+        color: var(--text-light);
+        font-weight: 500;
+        min-width: 70px;
+    }
+
+    .detail-value {
+        color: var(--text-dark);
+        flex: 1;
+    }
+
+    .record-actions {
+        margin-top: 1rem;
+        text-align: right;
+    }
+
+    .btn-appeal {
+        padding: 0.5rem 1.5rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        background-color: var(--primary-dark);
+        color: white;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-appeal:hover {
+        background-color: #1e293b;
+        color: white;
+        text-decoration: none;
+    }
+
+    /* Pagination */
+    .pagination-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .pagination-info {
+        font-size: 0.9rem;
+        color: var(--text-light);
+    }
+
+    .pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .btn-prev,
+    .btn-next {
+        padding: 0.5rem 1.5rem;
+        border-radius: 25px;
+        font-size: 0.85rem;
+        min-width: 100px;
+        text-align: center;
+    }
+
+    .btn-prev[disabled] {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .page-numbers {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .page-current {
+        font-weight: 600;
+        color: var(--primary-dark);
+        padding: 0.25rem 0.75rem;
+        background-color: var(--primary-light);
+        border-radius: 20px;
+        border: 1px solid var(--border-color);
+    }
+
+    .page-link {
+        color: var(--text-dark);
+        text-decoration: none;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .page-link:hover {
+        background-color: var(--primary-light);
+        text-decoration: none;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 1.75rem;
+        }
+
+        .search-filter-section {
+            gap: 1rem;
+        }
+
+        .search-box {
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .search-input {
+            width: 100%;
+        }
+
+        .btn-search {
+            width: 100%;
+        }
+
+        .filter-options {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .filter-select {
+            width: 100%;
+        }
+
+        .btn-reset {
+            margin-left: 0;
+            width: 100%;
+        }
+
+        .records-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .pagination-section {
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+        }
+
+        .pagination-controls {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .breadcrumb {
+            font-size: 0.8rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .record-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .detail-item {
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .detail-label {
+            min-width: auto;
+        }
+
+        .pagination-controls {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Search functionality
+        const searchInput = document.querySelector('.search-input');
+        const searchButton = document.querySelector('.btn-search');
+        const recordItems = document.querySelectorAll('.record-item');
+
+        function performSearch() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            
+            recordItems.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (searchTerm === '' || text.includes(searchTerm)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            updateRecordCount();
+        }
+
+        searchButton.addEventListener('click', performSearch);
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+
+        // Filter functionality
+        const statusFilter = document.querySelectorAll('.filter-select')[0];
+        const monthFilter = document.querySelectorAll('.filter-select')[1];
+
+        function applyFilters() {
+            const statusValue = statusFilter.value;
+            const monthValue = monthFilter.value;
+            
+            recordItems.forEach(item => {
+                const statusBadge = item.querySelector('.record-status');
+                const dateElement = item.querySelector('.record-date');
+                
+                let showItem = true;
+                
+                // Filter by status
+                if (statusValue && statusBadge) {
+                    const itemStatus = statusBadge.classList.contains('present') ? 'present' :
+                                      statusBadge.classList.contains('absent') ? 'absent' :
+                                      statusBadge.classList.contains('late') ? 'late' :
+                                      statusBadge.classList.contains('excused') ? 'excused' : '';
+                    
+                    if (statusValue !== itemStatus) {
+                        showItem = false;
+                    }
+                }
+                
+                // Filter by month
+                if (showItem && monthValue && dateElement) {
+                    const dateText = dateElement.textContent;
+                    // Simple month matching (you might want to implement more robust date parsing)
+                    if (!dateText.toLowerCase().includes(monthValue.substring(5, 7).toLowerCase())) {
+                        showItem = false;
+                    }
+                }
+                
+                item.style.display = showItem ? 'block' : 'none';
+            });
+            
+            updateRecordCount();
+        }
+
+        statusFilter.addEventListener('change', applyFilters);
+        monthFilter.addEventListener('change', applyFilters);
+
+        // Reset filters
+        document.querySelector('.btn-reset').addEventListener('click', function() {
+            searchInput.value = '';
+            statusFilter.value = '';
+            monthFilter.value = '';
+            
+            recordItems.forEach(item => {
+                item.style.display = 'block';
+            });
+            
+            updateRecordCount();
+        });
+
+        // Update record count
+        function updateRecordCount() {
+            const visibleItems = Array.from(recordItems).filter(item => 
+                item.style.display !== 'none'
+            ).length;
+            
+            const recordCountElement = document.querySelector('.record-count');
+            if (recordCountElement) {
+                recordCountElement.textContent = `Showing ${visibleItems} records`;
+            }
+            
+            // Update pagination info
+            const paginationInfo = document.querySelector('.pagination-info');
+            if (paginationInfo) {
+                paginationInfo.textContent = `Showing 1-${Math.min(8, visibleItems)} of ${visibleItems} records`;
+            }
+        }
+
+        // Pagination functionality
+        document.querySelector('.btn-next').addEventListener('click', function(e) {
+            e.preventDefault();
+            alert('Loading next page...');
+            // In a real application, this would load the next set of records
+        });
+
+        document.querySelector('.page-link').addEventListener('click', function(e) {
+            e.preventDefault();
+            alert('Loading page 2...');
+            // In a real application, this would load the second page
+        });
+
+        // Appeal button functionality
+        document.querySelectorAll('.btn-appeal').forEach(button => {
+            button.addEventListener('click', function(e) {
+                if (!this.getAttribute('href')) {
+                    e.preventDefault();
+                    const recordItem = this.closest('.record-item');
+                    const className = recordItem.querySelector('.detail-value').textContent;
+                    const date = recordItem.querySelector('.record-date').textContent;
+                    
+                    alert(`Starting appeal process for:\n${className}\nDate: ${date}\n\nYou will be redirected to the appeal form.`);
+                    
+                    // Simulate navigation
+                    setTimeout(() => {
+                        window.location.href = "{{ url_for('student.appeal') }}";
+                    }, 1000);
+                }
+            });
+        });
+
+        // Initialize
+        updateRecordCount();
+    });
+</script>
+{% endblock %}

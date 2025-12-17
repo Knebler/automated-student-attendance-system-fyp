@@ -21,11 +21,11 @@ def dashboard():
     # Get attendance summary
     attendance_summary = {}
     if user_id:
-        attendance_result = AttendanceControl.get_user_attendance_summary(current_app, user_id, days=30)
+        attendance_result = AttendanceControl.get_student_attendance_summary(current_app, user_id, days=30)
         if attendance_result['success']:
             attendance_summary = attendance_result['summary']
     
-    return render_template('student_dashboard.html',
+    return render_template('institution/student/student_dashboard.html',
                          user=user,
                          attendance_summary=attendance_summary)
 
@@ -38,7 +38,7 @@ def profile():
         flash('Please login to view profile', 'warning')
         return redirect(url_for('auth.login'))
     
-    return render_template('student_profile_management.html', user=auth_result['user'])
+    return render_template('institution/student/student_profile_management.html', user=auth_result['user'])
 
 @student_bp.route('/attendance-history')
 def attendance_history():

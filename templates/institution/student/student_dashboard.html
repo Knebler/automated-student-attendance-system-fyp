@@ -29,7 +29,7 @@
                     <div class="profile-info mb-3">
                         <div class="info-item mb-2">
                             <span class="info-label">Name:</span>
-                            <span class="info-value">{{Student Name}}</span>
+                            <span class="info-value">Temp</span>
                         </div>
                         <div class="info-item mb-2">
                             <span class="info-label">Student ID:</span>
@@ -161,7 +161,8 @@
                     <div class="notification-preview">
                         You have new messages and updates
                     </div>
-                    <a href="{{ url_for('student.inbox') }}" class="btn-custom btn-view-inbox">View Inbox</a>
+                    <!-- TODO: Implement notification system -->
+                    <a href="{{ url_for('student.dashboard') }}" class="btn-custom btn-view-inbox">View Inbox</a>
                 </div>
 
                 <div class="news-list">
@@ -199,15 +200,16 @@
                 <div class="quick-links mt-4">
                     <div class="links-title mb-2">Quick Access</div>
                     <div class="links-grid">
-                        <a href="{{ url_for('student.attendance') }}" class="link-item">
+                        <!-- TODO: Implement quick links -->
+                        <a href="{{ url_for('student.dashboard') }}" class="link-item">
                             <span class="link-icon">📊</span>
                             <span class="link-text">My Attendance</span>
                         </a>
-                        <a href="{{ url_for('student.checkin') }}" class="link-item">
+                        <a href="{{ url_for('student.dashboard') }}" class="link-item">
                             <span class="link-icon">📱</span>
                             <span class="link-text">Class Check-In</span>
                         </a>
-                        <a href="{{ url_for('student.appeal') }}" class="link-item">
+                        <a href="{{ url_for('student.dashboard') }}" class="link-item">
                             <span class="link-icon">📝</span>
                             <span class="link-text">Submit Appeal</span>
                         </a>

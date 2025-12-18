@@ -1,9 +1,11 @@
-from flask import Flask
+from flask import Flask, app
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import CSRFProtect
 import pyrebase
 from application import create_app
 import os
+
+from application.controls.facial_recognition_control import FacialRecognitionControl
 
 def create_flask_app(config_name='default'):
     """Factory function to create Flask application"""
@@ -60,6 +62,20 @@ def create_flask_app(config_name='default'):
             print("Database initialized successfully!")
         else:
             print("Failed to initialize database!")
+
+    # Add facial recognition config
+    app.config['FACIAL_DATA_DIR'] = './AttendanceAI/data/'
+    app.config['FACIAL_RECOGNITION_THRESHOLD'] = 70
+
+    # Initialize facial recognition control
+    from application.controls.facial_recognition_control import FacialRecognitionControl
+    fr_control = FacialRecognitionControl()
+    fr_control.initialize(app)  # Optional: initialize on startup
+    app.config['facial_recognition'] = fr_control
+
+    # Register the facial recognition blueprint
+    from application.boundaries.facial_recognition_boundary import facial_recognition_bp
+    app.register_blueprint(facial_recognition_bp, url_prefix='/api/facial-recognition')
     
     # Initialize application with BCE structure
     create_app(app)

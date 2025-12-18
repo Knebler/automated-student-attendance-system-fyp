@@ -1,0 +1,155 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Class Check-In - AttendAI{% endblock %}
+
+{% block content %}
+<div id="face-checkin-container">
+    <h3>Face Recognition Attendance</h3>
+    
+    <div class="video-container">
+        <video id="video" width="640" height="480" autoplay></video>
+        <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+    </div>
+    
+    <div class="controls">
+        <button id="capture-btn" class="btn btn-primary">Capture & Check In</button>
+        <button id="retry-btn" class="btn btn-secondary" style="display:none;">Retry</button>
+    </div>
+    
+    <div id="recognition-result"></div>
+</div>
+
+<script>
+let videoStream = null;
+let currentUserSession = "{{ user | tojson }}"; // set by Flask
+let sessionId = currentUserSession.id_token;
+let currentUserId = currentUserSession.user_id;  
+
+async function initCamera() {
+    try {
+        const video = document.getElementById('video');
+        videoStream = await navigator.mediaDevices.getUserMedia({ 
+            video: { width: 640, height: 480 } 
+        });
+        video.srcObject = videoStream;
+    } catch (err) {
+        console.error('Camera error:', err);
+        alert('Unable to access camera. Please check permissions.');
+    }
+}
+
+async function captureAndCheckIn() {
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
+    
+    // Draw video frame to canvas
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Convert to base64
+    const imageData = canvas.toDataURL('image/jpeg', 0.8);
+    
+    // Show loading
+    document.getElementById('recognition-result').innerHTML = 
+        '<div class="alert alert-info">Processing face recognition...</div>';
+    
+    try {
+        const response = await fetch('/api/facial-recognition/recognize', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                image: imageData,
+                session_id: sessionId
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            document.getElementById('recognition-result').innerHTML = 
+                `<div class="alert alert-success">
+                    <strong>Success!</strong> ${result.message}
+                    <br>Confidence: ${result.recognition.confidence}%
+                </div>`;
+            
+            // Disable capture button temporarily
+            document.getElementById('capture-btn').disabled = true;
+            
+            // Show retry button
+            document.getElementById('retry-btn').style.display = 'inline-block';
+            
+        } else {
+            if (result.requires_verification) {
+                // Show verification prompt
+                showVerificationPrompt(result);
+            } else {
+                document.getElementById('recognition-result').innerHTML = 
+                    `<div class="alert alert-warning">${result.error}</div>`;
+            }
+        }
+        
+    } catch (error) {
+        document.getElementById('recognition-result').innerHTML = 
+            `<div class="alert alert-danger">Error: ${error.message}</div>`;
+    }
+}
+
+function showVerificationPrompt(recognitionResult) {
+    const html = `
+        <div class="alert alert-warning">
+            <strong>Verification Required</strong>
+            <p>Is this you: <strong>${recognitionResult.suggested_name}</strong>?</p>
+            <p>Confidence: ${recognitionResult.confidence}%</p>
+            <div>
+                <button onclick="confirmIdentity('${recognitionResult.suggested_name}')" 
+                        class="btn btn-success btn-sm">Yes, it's me</button>
+                <button onclick="retryCapture()" 
+                        class="btn btn-danger btn-sm">No, retry</button>
+            </div>
+        </div>
+    `;
+    document.getElementById('recognition-result').innerHTML = html;
+}
+
+async function confirmIdentity(studentName) {
+    // Manually mark attendance
+    const response = await fetch('/api/attendance/mark', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            session_id: sessionId,
+            student_id: currentUserId, // injected from Flask
+            status: 'present',
+            marked_by: 'system',
+            notes: 'Face recognition with manual verification'
+        })
+    });
+    
+    const result = await response.json();
+    if (result.success) {
+        document.getElementById('recognition-result').innerHTML = 
+            `<div class="alert alert-success">Attendance manually verified and marked!</div>`;
+    }
+}
+
+function retryCapture() {
+    document.getElementById('recognition-result').innerHTML = '';
+    document.getElementById('retry-btn').style.display = 'none';
+    document.getElementById('capture-btn').disabled = false;
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initCamera();
+    
+    document.getElementById('capture-btn').addEventListener('click', captureAndCheckIn);
+    document.getElementById('retry-btn').addEventListener('click', function() {
+        retryCapture();
+        document.getElementById('retry-btn').style.display = 'none';
+        document.getElementById('capture-btn').disabled = false;
+    });
+});
+</script>
+{% endblock %}

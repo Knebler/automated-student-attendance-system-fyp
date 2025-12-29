@@ -18,11 +18,11 @@ def load_dummy_data():
     try:
         # Connect to MySQL
         conn = mysql.connector.connect(
-            host=os.getenv('MYSQL_HOST', 'localhost'),
-            user=os.getenv('MYSQL_USER', 'root'),
-            password=os.getenv('MYSQL_PASSWORD', ''),
-            port=int(os.getenv('MYSQL_PORT', '3306')),
-            database=os.getenv('MYSQL_DB', 'attendance_system')
+            host=os.getenv('DB_HOST', 'localhost'),
+            user=os.getenv('DB_USER', 'root'),
+            password=os.getenv('DB_PASSWORD', ''),
+            port=int(os.getenv('DB_PORT', '3306')),
+            database=os.getenv('DB_NAME', 'attendance_system')
         )
         
         cursor = conn.cursor()

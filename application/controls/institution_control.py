@@ -41,8 +41,8 @@ class InstitutionControl:
             # Count active students
             student_row = BaseEntity.execute_query(
                 app,
-                "SELECT COUNT(*) FROM Students WHERE institution_id = %s AND is_active = TRUE",
-                (institution_id,),
+                "SELECT COUNT(*) FROM Students WHERE institution_id = :institution_id AND is_active = TRUE",
+                {'institution_id': institution_id},
                 fetch_one=True
             )
             student_count = student_row[0] if student_row and student_row[0] is not None else 0
@@ -50,8 +50,8 @@ class InstitutionControl:
             # Count active lecturers
             lecturer_row = BaseEntity.execute_query(
                 app,
-                "SELECT COUNT(*) FROM Lecturers WHERE institution_id = %s AND is_active = TRUE",
-                (institution_id,),
+                "SELECT COUNT(*) FROM Lecturers WHERE institution_id = :institution_id AND is_active = TRUE",
+                {'institution_id': institution_id},
                 fetch_one=True
             )
             lecturer_count = lecturer_row[0] if lecturer_row and lecturer_row[0] is not None else 0
@@ -59,8 +59,8 @@ class InstitutionControl:
             # Count active courses
             course_row = BaseEntity.execute_query(
                 app,
-                "SELECT COUNT(*) FROM Courses WHERE institution_id = %s AND is_active = TRUE",
-                (institution_id,),
+                "SELECT COUNT(*) FROM Courses WHERE institution_id = :institution_id AND is_active = TRUE",
+                {'institution_id': institution_id},
                 fetch_one=True
             )
             course_count = course_row[0] if course_row and course_row[0] is not None else 0
@@ -96,6 +96,58 @@ class InstitutionControl:
                 }
             }
 
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e)
+            }
+    
+    @staticmethod
+    def get_institution_user_details(app, institution_id):
+        """Retrieve institution details by ID"""
+        try:
+            student_data = BaseEntity.execute_query(
+                app,
+                "SELECT full_name, student_id, is_active FROM students WHERE institution_id = :institution_id",
+                {'institution_id': institution_id},
+                fetch_all=True
+            )
+            print("Student data:", student_data)
+            lecturer_data = BaseEntity.execute_query(
+                app,
+                "SELECT full_name, lecturer_id, is_active FROM lecturers WHERE institution_id = :institution_id",
+                {'institution_id': institution_id},
+                fetch_all=True
+            )
+            admin_data = BaseEntity.execute_query(
+                app,
+                "SELECT full_name, inst_admin_id FROM institution_admins WHERE institution_id = :institution_id",
+                {'institution_id': institution_id},
+                fetch_all=True
+            )
+            return {
+                'success': True,
+                'users': [
+                    *[{
+                        'name': row[0],
+                        'id': row[1],
+                        'is_active': row[2],
+                        'role': 'student',
+                    } for row in student_data],
+                    *[{
+                        'name': row[0],
+                        'id': row[1],
+                        'is_active': row[2],
+                        'role': 'lecturer',
+                    } for row in lecturer_data],
+                    *[{
+                        'name': row[0],
+                        'id': row[1],
+                        'is_active': True,  # Admins are always active
+                        'role': 'admin',
+                    } for row in admin_data]
+                ]
+            }
         except Exception as e:
             return {
                 'success': False,

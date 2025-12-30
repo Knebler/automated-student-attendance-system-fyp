@@ -15,7 +15,7 @@
                 <div class="stat-row">
                     <div class="stat-item">
                         <span class="stat-label">Total Users:</span>
-                        <span class="stat-value">XXX</span>
+                        <span class="stat-value">{{ user_count }}</span>
                     </div>
                     <div class="stat-item alert">
                         <span class="stat-label">Active Suspensions:</span>
@@ -60,18 +60,28 @@
                         </tr>
                     </thead>
                     <tbody>
+                        {% for user in users %}
                         <tr>
-                            <td>GOH CHING FONG</td>
-                            <td>8551200</td>
-                            <td><span class="role-badge role-student">STUDENT</span></td>
-                            <td><span class="status-badge status-active">ACTIVE</span></td>
+                            <td>{{ user.name }}</td>
+                            <td>{{ user.id }}</td>
+                            <td><span class="role-badge role-{{ user.role|lower }}">{{ user.role }}</span></td>
+                            <td><span class="status-badge status-{{ 'active' if user.is_active else 'suspended' }}">{{ 'ACTIVE' if user.is_active else 'SUSPENDED' }}</span></td>
                             <td>
+                                {% if user.is_active %}
                                 <div class="actions">
                                     <button class="btn-custom btn-view">View</button>
                                     <button class="btn-custom btn-suspend">Suspend</button>
                                 </div>
+                                {% else %}
+                                <div class="actions">
+                                    <button class="btn-custom btn-view">View</button>
+                                    <button class="btn-custom btn-unsuspend">Unsuspend</button>
+                                    <button class="btn-custom btn-delete">Delete</button>
+                                </div>
+                                {% endif %}
                             </td>
                         </tr>
+                        {% endfor %}
                         <tr>
                             <td>ALEX TAN</td>
                             <td>8541200</td>

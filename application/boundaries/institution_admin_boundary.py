@@ -39,8 +39,15 @@ def manage_users():
     if not auth_result['success'] or auth_result['user'].get('user_type') not in ['institution_admin', 'admin']:
         flash('Access denied. Institution admin privileges required.', 'danger')
         return redirect(url_for('auth.login'))
+    
+    user_details_result = InstitutionControl.get_institution_user_details(current_app, auth_result['user'].get('institution_id'))
+    data_to_pass = {
+        'user': auth_result['user'],
+        'user_count': "123",
+        'users': user_details_result.get('users') if user_details_result['success'] else []
+    }
 
-    return render_template('institution/admin/institution_admin_user_management.html', user=auth_result['user'])
+    return render_template('institution/admin/institution_admin_user_management.html', **data_to_pass)
 
 
 @institution_bp.route('/manage_attendance')

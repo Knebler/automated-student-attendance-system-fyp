@@ -1,0 +1,1569 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Institutions & Subscriptions - Platform Manager{% endblock %}
+
+{% block content %}
+<div class="platform-manager-subscription-management">
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <h1 class="page-title">Institutions & Subscriptions</h1>
+        <div class="breadcrumb">
+            <a href="{{ url_for('platform.dashboard') }}">Dashboard</a> / 
+            <span>Institutions & Subscriptions</span>
+        </div>
+        <p class="page-subtitle">Manage institution profiles and handle subscription requests.</p>
+    </div>
+
+    <!-- Dashboard Grid -->
+    <div class="subscription-grid">
+        <!-- Left Column -->
+        <div class="left-column">
+            <!-- Overview Card -->
+            <div class="card-custom mb-4">
+                <div class="card-header-custom">Institutions & Subscription Overview</div>
+                <div class="card-body-custom">
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Total Institutions</div>
+                            <div class="stat-value">47</div>
+                            <div class="stat-change positive">+3 this quarter</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Active Institutions</div>
+                            <div class="stat-value">42</div>
+                            <div class="stat-change positive">+5% growth</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Suspended Subscriptions</div>
+                            <div class="stat-value">3</div>
+                            <div class="stat-change negative">-1 this month</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Pending Requests</div>
+                            <div class="stat-value">5</div>
+                            <div class="stat-change neutral">Awaiting review</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions Card -->
+            <div class="card-custom">
+                <div class="card-header-custom">Quick Actions</div>
+                <div class="card-body-custom">
+                    <div class="quick-actions">
+                        <button class="btn-custom btn-create-institution" id="createInstitutionBtn">
+                            <span class="btn-icon">🏛️</span>
+                            Create Institution Profile
+                        </button>
+                        <button class="btn-custom btn-view-pending" id="viewPendingBtn">
+                            <span class="btn-icon">📋</span>
+                            View Pending Subscription Requests
+                        </button>
+                        
+                        <div class="search-section mt-3">
+                            <div class="search-box">
+                                <input type="text" placeholder="Search by institution name, contact, or plan..." class="search-input">
+                                <button class="btn-custom btn-search">Search</button>
+                            </div>
+                        </div>
+
+                        <div class="filter-section mt-3">
+                            <select class="filter-select">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="suspended">Suspended</option>
+                                <option value="pending">Pending</option>
+                                <option value="expired">Expired</option>
+                            </select>
+                            <select class="filter-select">
+                                <option value="">All Plans</option>
+                                <option value="basic">Basic</option>
+                                <option value="pro">Professional</option>
+                                <option value="enterprise">Enterprise</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                            <button class="btn-custom btn-outline-custom btn-reset">Reset Filters</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="right-column">
+            <!-- Institution Profiles Card -->
+            <div class="card-custom mb-4">
+                <div class="card-header-custom">
+                    <div class="header-content">
+                        <span>Institution Profiles</span>
+                        <span class="institution-count">5 institutions</span>
+                    </div>
+                </div>
+                <div class="card-body-custom">
+                    <!-- Table Container -->
+                    <div class="table-container">
+                        <table class="institutions-table">
+                            <thead>
+                                <tr>
+                                    <th>Institution Name</th>
+                                    <th>Plan</th>
+                                    <th>Created On</th>
+                                    <th>Subscription Renewal</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="institution-info">
+                                            <div class="institution-avatar">UT</div>
+                                            <div class="institution-details">
+                                                <div class="institution-name">University of Technology</div>
+                                                <div class="institution-location">Singapore</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="plan-badge enterprise">Enterprise</span>
+                                    </td>
+                                    <td>Jan 15, 2026</td>
+                                    <td>Jan 15, 2027</td>
+                                    <td>
+                                        <span class="status-badge suspended">Suspended</span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-action btn-view" title="View Details">
+                                                <span class="action-icon">👁️</span>
+                                            </button>
+                                            <button class="btn-action btn-edit" title="Edit Institution">
+                                                <span class="action-icon">✏️</span>
+                                            </button>
+                                            <button class="btn-action btn-activate" title="Activate Subscription">
+                                                <span class="action-icon">✅</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="institution-info">
+                                            <div class="institution-avatar">CC</div>
+                                            <div class="institution-details">
+                                                <div class="institution-name">City College</div>
+                                                <div class="institution-location">Malaysia</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="plan-badge pro">Professional</span>
+                                    </td>
+                                    <td>Mar 22, 2026</td>
+                                    <td>Mar 22, 2027</td>
+                                    <td>
+                                        <span class="status-badge active">Active</span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-action btn-view" title="View Details">
+                                                <span class="action-icon">👁️</span>
+                                            </button>
+                                            <button class="btn-action btn-edit" title="Edit Institution">
+                                                <span class="action-icon">✏️</span>
+                                            </button>
+                                            <button class="btn-action btn-suspend" title="Suspend Subscription">
+                                                <span class="action-icon">⏸️</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="institution-info">
+                                            <div class="institution-avatar">TI</div>
+                                            <div class="institution-details">
+                                                <div class="institution-name">Tech Institute</div>
+                                                <div class="institution-location">Indonesia</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="plan-badge basic">Basic</span>
+                                    </td>
+                                    <td>Feb 10, 2026</td>
+                                    <td>Feb 10, 2027</td>
+                                    <td>
+                                        <span class="status-badge pending">Pending</span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-action btn-view" title="View Details">
+                                                <span class="action-icon">👁️</span>
+                                            </button>
+                                            <button class="btn-action btn-edit" title="Edit Institution">
+                                                <span class="action-icon">✏️</span>
+                                            </button>
+                                            <button class="btn-action btn-approve" title="Approve Subscription">
+                                                <span class="action-icon">✓</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="institution-info">
+                                            <div class="institution-avatar">SA</div>
+                                            <div class="institution-details">
+                                                <div class="institution-name">Science Academy</div>
+                                                <div class="institution-location">Thailand</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="plan-badge pro">Professional</span>
+                                    </td>
+                                    <td>Apr 05, 2026</td>
+                                    <td>Apr 05, 2027</td>
+                                    <td>
+                                        <span class="status-badge active">Active</span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-action btn-view" title="View Details">
+                                                <span class="action-icon">👁️</span>
+                                            </button>
+                                            <button class="btn-action btn-edit" title="Edit Institution">
+                                                <span class="action-icon">✏️</span>
+                                            </button>
+                                            <button class="btn-action btn-suspend" title="Suspend Subscription">
+                                                <span class="action-icon">⏸️</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="institution-info">
+                                            <div class="institution-avatar">BC</div>
+                                            <div class="institution-details">
+                                                <div class="institution-name">Business College</div>
+                                                <div class="institution-location">Vietnam</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="plan-badge custom">Custom</span>
+                                    </td>
+                                    <td>May 18, 2026</td>
+                                    <td>May 18, 2027</td>
+                                    <td>
+                                        <span class="status-badge active">Active</span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-action btn-view" title="View Details">
+                                                <span class="action-icon">👁️</span>
+                                            </button>
+                                            <button class="btn-action btn-edit" title="Edit Institution">
+                                                <span class="action-icon">✏️</span>
+                                            </button>
+                                            <button class="btn-action btn-suspend" title="Suspend Subscription">
+                                                <span class="action-icon">⏸️</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="pagination-section">
+                        <div class="pagination-info">
+                            Showing 1-5 of 47 institutions
+                        </div>
+                        <div class="pagination-controls">
+                            <button class="btn-custom btn-outline-custom btn-prev" disabled>Previous</button>
+                            <span class="page-numbers">
+                                <span class="page-current">1</span>
+                                <a href="#" class="page-link">2</a>
+                                <a href="#" class="page-link">3</a>
+                                <span class="page-ellipsis">...</span>
+                                <a href="#" class="page-link">10</a>
+                            </span>
+                            <a href="#" class="btn-custom btn-outline-custom btn-next">Next</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subscription Requests Card -->
+            <div class="card-custom">
+                <div class="card-header-custom">
+                    <div class="header-content">
+                        <span>Subscription Requests</span>
+                        <span class="request-count">5 pending requests</span>
+                    </div>
+                </div>
+                <div class="card-body-custom">
+                    <!-- Table Container -->
+                    <div class="table-container">
+                        <table class="subscriptions-table">
+                            <thead>
+                                <tr>
+                                    <th>Institution Name</th>
+                                    <th>Contact Person</th>
+                                    <th>Request Date</th>
+                                    <th>Plan Requested</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="institution-info">
+                                            <div class="institution-avatar">LC</div>
+                                            <div class="institution-details">
+                                                <div class="institution-name">Law College</div>
+                                                <div class="institution-location">Philippines</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="contact-info">
+                                            <div class="contact-name">Michael Chen</div>
+                                            <div class="contact-email">michael.chen@lawcollege.edu</div>
+                                        </div>
+                                    </td>
+                                    <td>Dec 01, 2026</td>
+                                    <td>
+                                        <span class="plan-badge pro">Professional</span>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge pending">Pending</span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-action btn-review" title="Review Request">
+                                                <span class="action-icon">📄</span>
+                                            </button>
+                                            <button class="btn-action btn-approve" title="Approve Request">
+                                                <span class="action-icon">✓</span>
+                                            </button>
+                                            <button class="btn-action btn-reject" title="Reject Request">
+                                                <span class="action-icon">✗</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="institution-info">
+                                            <div class="institution-avatar">AC</div>
+                                            <div class="institution-details">
+                                                <div class="institution-name">Arts College</div>
+                                                <div class="institution-location">Singapore</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="contact-info">
+                                            <div class="contact-name">Sarah Wong</div>
+                                            <div class="contact-email">sarah.wong@artscollege.edu</div>
+                                        </div>
+                                    </td>
+                                    <td>Dec 02, 2026</td>
+                                    <td>
+                                        <span class="plan-badge basic">Basic</span>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge pending">Pending</span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-action btn-review" title="Review Request">
+                                                <span class="action-icon">📄</span>
+                                            </button>
+                                            <button class="btn-action btn-approve" title="Approve Request">
+                                                <span class="action-icon">✓</span>
+                                            </button>
+                                            <button class="btn-action btn-reject" title="Reject Request">
+                                                <span class="action-icon">✗</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="institution-info">
+                                            <div class="institution-avatar">MC</div>
+                                            <div class="institution-details">
+                                                <div class="institution-name">Medical College</div>
+                                                <div class="institution-location">Malaysia</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="contact-info">
+                                            <div class="contact-name">Dr. Ahmad Hassan</div>
+                                            <div class="contact-email">ahmad.hassan@medicalcollege.edu</div>
+                                        </div>
+                                    </td>
+                                    <td>Dec 03, 2026</td>
+                                    <td>
+                                        <span class="plan-badge enterprise">Enterprise</span>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge pending">Pending</span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-action btn-review" title="Review Request">
+                                                <span class="action-icon">📄</span>
+                                            </button>
+                                            <button class="btn-action btn-approve" title="Approve Request">
+                                                <span class="action-icon">✓</span>
+                                            </button>
+                                            <button class="btn-action btn-reject" title="Reject Request">
+                                                <span class="action-icon">✗</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="institution-info">
+                                            <div class="institution-avatar">EC</div>
+                                            <div class="institution-details">
+                                                <div class="institution-name">Engineering College</div>
+                                                <div class="institution-location">Indonesia</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="contact-info">
+                                            <div class="contact-name">Robert Lee</div>
+                                            <div class="contact-email">robert.lee@engineeringcollege.edu</div>
+                                        </div>
+                                    </td>
+                                    <td>Dec 04, 2026</td>
+                                    <td>
+                                        <span class="plan-badge pro">Professional</span>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge pending">Pending</span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-action btn-review" title="Review Request">
+                                                <span class="action-icon">📄</span>
+                                            </button>
+                                            <button class="btn-action btn-approve" title="Approve Request">
+                                                <span class="action-icon">✓</span>
+                                            </button>
+                                            <button class="btn-action btn-reject" title="Reject Request">
+                                                <span class="action-icon">✗</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="institution-info">
+                                            <div class="institution-avatar">DC</div>
+                                            <div class="institution-details">
+                                                <div class="institution-name">Design College</div>
+                                                <div class="institution-location">Thailand</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="contact-info">
+                                            <div class="contact-name">Lisa Park</div>
+                                            <div class="contact-email">lisa.park@designcollege.edu</div>
+                                        </div>
+                                    </td>
+                                    <td>Dec 05, 2026</td>
+                                    <td>
+                                        <span class="plan-badge custom">Custom</span>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge pending">Pending</span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-action btn-review" title="Review Request">
+                                                <span class="action-icon">📄</span>
+                                            </button>
+                                            <button class="btn-action btn-approve" title="Approve Request">
+                                                <span class="action-icon">✓</span>
+                                            </button>
+                                            <button class="btn-action btn-reject" title="Reject Request">
+                                                <span class="action-icon">✗</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="pagination-section">
+                        <div class="pagination-info">
+                            Showing 1-5 of 5 pending requests
+                        </div>
+                        <div class="pagination-controls">
+                            <button class="btn-custom btn-outline-custom btn-prev" disabled>Previous</button>
+                            <span class="page-numbers">
+                                <span class="page-current">1</span>
+                            </span>
+                            <button class="btn-custom btn-outline-custom btn-next" disabled>Next</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Subscription Management Specific Styles */
+    .platform-manager-subscription-management {
+        max-width: 1600px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        font-style: italic;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .page-subtitle {
+        font-size: 1rem;
+        color: var(--text-light);
+        margin-top: 0.5rem;
+    }
+
+    .breadcrumb {
+        font-size: 0.9rem;
+        color: var(--text-light);
+    }
+
+    .breadcrumb a {
+        color: var(--primary-dark);
+        text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+
+    .breadcrumb span {
+        color: var(--text-dark);
+        font-weight: 500;
+    }
+
+    /* Subscription Grid */
+    .subscription-grid {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .stat-item {
+        background-color: var(--primary-light);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 1.25rem;
+        transition: all 0.3s ease;
+    }
+
+    .stat-item:hover {
+        background-color: #f1f5f9;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        color: var(--text-light);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: var(--primary-dark);
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-change {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        display: inline-block;
+    }
+
+    .stat-change.positive {
+        background-color: #d1fae5;
+        color: #065f46;
+        border: 1px solid #10b981;
+    }
+
+    .stat-change.negative {
+        background-color: #fef2f2;
+        color: #dc2626;
+        border: 1px solid #dc2626;
+    }
+
+    .stat-change.neutral {
+        background-color: #e0f2fe;
+        color: #075985;
+        border: 1px solid #0ea5e9;
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .btn-create-institution,
+    .btn-view-pending {
+        padding: 0.75rem 1.5rem;
+        border-radius: 50px;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        background-color: var(--primary-dark);
+        color: white;
+        text-align: center;
+    }
+
+    .btn-create-institution:hover,
+    .btn-view-pending:hover {
+        background-color: #1e293b;
+        color: white;
+    }
+
+    .btn-icon {
+        font-size: 1rem;
+    }
+
+    .search-section {
+        width: 100%;
+    }
+
+    .search-box {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .search-input {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: 50px;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.9rem;
+        background-color: var(--primary-light);
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: var(--primary-dark);
+        background-color: white;
+    }
+
+    .btn-search {
+        padding: 0.75rem 1.5rem;
+        border-radius: 50px;
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+
+    .filter-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .filter-select {
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: 25px;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.85rem;
+        background-color: var(--primary-light);
+        color: var(--text-dark);
+        cursor: pointer;
+    }
+
+    .filter-select:focus {
+        outline: none;
+        border-color: var(--primary-dark);
+    }
+
+    .btn-reset {
+        padding: 0.75rem 1.5rem;
+        border-radius: 25px;
+        font-size: 0.85rem;
+        background-color: white;
+        color: var(--primary-dark);
+        border: 2px solid var(--primary-dark);
+    }
+
+    .btn-reset:hover {
+        background-color: var(--primary-dark);
+        color: white;
+    }
+
+    /* Header Content */
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+
+    .institution-count,
+    .request-count {
+        font-size: 0.85rem;
+        color: var(--text-light);
+        background-color: var(--primary-light);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        border: 1px solid var(--border-color);
+    }
+
+    /* Table Container */
+    .table-container {
+        overflow-x: auto;
+        margin-bottom: 1.5rem;
+    }
+
+    .institutions-table,
+    .subscriptions-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 800px;
+    }
+
+    .institutions-table thead,
+    .subscriptions-table thead {
+        background-color: var(--primary-dark);
+    }
+
+    .institutions-table th,
+    .subscriptions-table th {
+        padding: 1rem 1.25rem;
+        text-align: left;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: white;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .institutions-table td,
+    .subscriptions-table td {
+        padding: 1.25rem;
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 0.9rem;
+        color: var(--text-dark);
+        vertical-align: middle;
+    }
+
+    .institutions-table tbody tr,
+    .subscriptions-table tbody tr {
+        transition: all 0.3s ease;
+    }
+
+    .institutions-table tbody tr:hover,
+    .subscriptions-table tbody tr:hover {
+        background-color: var(--primary-light);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Institution Info */
+    .institution-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .institution-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: var(--primary-dark);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+
+    .institution-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .institution-name {
+        font-weight: 600;
+        color: var(--text-dark);
+        font-size: 0.95rem;
+    }
+
+    .institution-location {
+        font-size: 0.8rem;
+        color: var(--text-light);
+    }
+
+    /* Contact Info */
+    .contact-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .contact-name {
+        font-weight: 600;
+        color: var(--text-dark);
+        font-size: 0.95rem;
+    }
+
+    .contact-email {
+        font-size: 0.8rem;
+        color: var(--text-light);
+    }
+
+    /* Plan Badges */
+    .plan-badge {
+        display: inline-block;
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        min-width: 80px;
+        text-align: center;
+    }
+
+    .plan-badge.basic {
+        background-color: #e0f2fe;
+        color: #075985;
+        border: 1px solid #0ea5e9;
+    }
+
+    .plan-badge.pro {
+        background-color: #fef3c7;
+        color: #92400e;
+        border: 1px solid #f59e0b;
+    }
+
+    .plan-badge.enterprise {
+        background-color: #d1fae5;
+        color: #065f46;
+        border: 1px solid #10b981;
+    }
+
+    .plan-badge.custom {
+        background-color: #ede9fe;
+        color: #5b21b6;
+        border: 1px solid #8b5cf6;
+    }
+
+    /* Status Badges */
+    .status-badge {
+        display: inline-block;
+        padding: 0.35rem 1rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        min-width: 80px;
+        text-align: center;
+    }
+
+    .status-badge.active {
+        background-color: #d1fae5;
+        color: #065f46;
+        border: 1px solid #10b981;
+    }
+
+    .status-badge.suspended {
+        background-color: #fef2f2;
+        color: #dc2626;
+        border: 1px solid #dc2626;
+    }
+
+    .status-badge.pending {
+        background-color: #fef3c7;
+        color: #92400e;
+        border: 1px solid #f59e0b;
+    }
+
+    .status-badge.expired {
+        background-color: #e5e7eb;
+        color: #374151;
+        border: 1px solid #9ca3af;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-start;
+    }
+
+    .btn-action {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: none;
+        background-color: var(--primary-light);
+        color: var(--text-dark);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-view:hover {
+        background-color: #e0f2fe;
+        color: #0ea5e9;
+    }
+
+    .btn-edit:hover {
+        background-color: #fef3c7;
+        color: #f59e0b;
+    }
+
+    .btn-activate:hover,
+    .btn-approve:hover {
+        background-color: #d1fae5;
+        color: #10b981;
+    }
+
+    .btn-suspend:hover {
+        background-color: #fef2f2;
+        color: #dc2626;
+    }
+
+    .btn-review:hover {
+        background-color: #ede9fe;
+        color: #8b5cf6;
+    }
+
+    .btn-reject:hover {
+        background-color: #fef2f2;
+        color: #dc2626;
+    }
+
+    .action-icon {
+        font-size: 1rem;
+    }
+
+    /* Pagination */
+    .pagination-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .pagination-info {
+        font-size: 0.9rem;
+        color: var(--text-light);
+    }
+
+    .pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .btn-prev,
+    .btn-next {
+        padding: 0.5rem 1.5rem;
+        border-radius: 25px;
+        font-size: 0.85rem;
+        min-width: 100px;
+        text-align: center;
+    }
+
+    .btn-prev[disabled],
+    .btn-next[disabled] {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .page-numbers {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .page-current {
+        font-weight: 600;
+        color: var(--primary-dark);
+        padding: 0.25rem 0.75rem;
+        background-color: var(--primary-light);
+        border-radius: 20px;
+        border: 1px solid var(--border-color);
+    }
+
+    .page-link {
+        color: var(--text-dark);
+        text-decoration: none;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .page-link:hover {
+        background-color: var(--primary-light);
+        text-decoration: none;
+    }
+
+    .page-ellipsis {
+        color: var(--text-light);
+        padding: 0 0.25rem;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+        .subscription-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .left-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 1.75rem;
+        }
+
+        .page-subtitle {
+            font-size: 0.9rem;
+        }
+
+        .left-column {
+            grid-template-columns: 1fr;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .stat-item {
+            padding: 1rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+        }
+
+        .search-box {
+            flex-direction: column;
+        }
+
+        .btn-search {
+            width: 100%;
+        }
+
+        .pagination-section {
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+        }
+
+        .pagination-controls {
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .breadcrumb {
+            font-size: 0.8rem;
+        }
+
+        .institution-info,
+        .contact-info {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .institution-avatar {
+            display: none;
+        }
+
+        .action-buttons {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .btn-action {
+            width: 32px;
+            height: 32px;
+        }
+
+        .action-icon {
+            font-size: 0.85rem;
+        }
+
+        .plan-badge,
+        .status-badge {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .btn-create-institution,
+        .btn-view-pending {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .btn-icon {
+            display: none;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Create Institution Button
+        const createInstitutionBtn = document.getElementById('createInstitutionBtn');
+        createInstitutionBtn.addEventListener('click', function() {
+            // Create modal for adding institution
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Create Institution Profile</h3>
+                        <button class="modal-close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="createInstitutionForm">
+                            <div class="form-group">
+                                <label for="institutionName">Institution Name</label>
+                                <input type="text" id="institutionName" placeholder="Enter institution name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="institutionLocation">Location</label>
+                                <input type="text" id="institutionLocation" placeholder="Enter city, country" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="institutionPlan">Subscription Plan</label>
+                                <select id="institutionPlan" required>
+                                    <option value="">Select Plan</option>
+                                    <option value="basic">Basic (100 users)</option>
+                                    <option value="pro">Professional (500 users)</option>
+                                    <option value="enterprise">Enterprise (Unlimited)</option>
+                                    <option value="custom">Custom</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="contactName">Contact Person</label>
+                                <input type="text" id="contactName" placeholder="Enter contact name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="contactEmail">Contact Email</label>
+                                <input type="email" id="contactEmail" placeholder="Enter contact email" required>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn-custom btn-outline-custom btn-cancel">Cancel</button>
+                        <button class="btn-custom btn-submit" type="submit" form="createInstitutionForm">Create Institution</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Close modal functionality
+            const closeModal = () => {
+                document.body.removeChild(modal);
+            };
+            
+            modal.querySelector('.modal-close').addEventListener('click', closeModal);
+            modal.querySelector('.btn-cancel').addEventListener('click', closeModal);
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) closeModal();
+            });
+            
+            // Form submission
+            modal.querySelector('#createInstitutionForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const name = document.getElementById('institutionName').value;
+                const plan = document.getElementById('institutionPlan').value;
+                
+                showAlert(`Institution profile for ${name} (${plan} plan) has been created successfully.`, 'success');
+                closeModal();
+            });
+        });
+
+        // View Pending Requests Button
+        const viewPendingBtn = document.getElementById('viewPendingBtn');
+        viewPendingBtn.addEventListener('click', function() {
+            // Scroll to subscription requests table
+            const requestsSection = document.querySelector('.subscriptions-table');
+            if (requestsSection) {
+                requestsSection.scrollIntoView({ behavior: 'smooth' });
+                
+                // Highlight the table
+                requestsSection.closest('.card-custom').style.boxShadow = '0 0 0 3px rgba(14, 165, 233, 0.3)';
+                setTimeout(() => {
+                    requestsSection.closest('.card-custom').style.boxShadow = '';
+                }, 2000);
+                
+                showAlert('Showing all pending subscription requests.', 'info');
+            }
+        });
+
+        // Search functionality
+        const searchInput = document.querySelector('.search-input');
+        const searchButton = document.querySelector('.btn-search');
+        const institutionRows = document.querySelectorAll('.institutions-table tbody tr');
+        const subscriptionRows = document.querySelectorAll('.subscriptions-table tbody tr');
+
+        function performSearch() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            
+            // Search in institution table
+            institutionRows.forEach(row => {
+                const rowText = row.textContent.toLowerCase();
+                if (searchTerm === '' || rowText.includes(searchTerm)) {
+                    row.style.display = 'table-row';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Search in subscription table
+            subscriptionRows.forEach(row => {
+                const rowText = row.textContent.toLowerCase();
+                if (searchTerm === '' || rowText.includes(searchTerm)) {
+                    row.style.display = 'table-row';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            updateCounts();
+        }
+
+        searchButton.addEventListener('click', performSearch);
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+
+        // Filter functionality
+        const statusFilter = document.querySelectorAll('.filter-select')[0];
+        const planFilter = document.querySelectorAll('.filter-select')[1];
+        const resetButton = document.querySelector('.btn-reset');
+
+        function applyFilters() {
+            const statusValue = statusFilter.value;
+            const planValue = planFilter.value;
+            
+            // Filter institution table
+            institutionRows.forEach(row => {
+                const statusBadge = row.querySelector('.status-badge');
+                const planBadge = row.querySelector('.plan-badge');
+                
+                let showRow = true;
+                
+                // Filter by status
+                if (statusValue && statusBadge) {
+                    const rowStatus = statusBadge.classList.contains('active') ? 'active' :
+                                    statusBadge.classList.contains('suspended') ? 'suspended' :
+                                    statusBadge.classList.contains('pending') ? 'pending' :
+                                    statusBadge.classList.contains('expired') ? 'expired' : '';
+                    
+                    if (statusValue !== rowStatus) {
+                        showRow = false;
+                    }
+                }
+                
+                // Filter by plan
+                if (showRow && planValue && planBadge) {
+                    const rowPlan = planBadge.classList.contains('basic') ? 'basic' :
+                                  planBadge.classList.contains('pro') ? 'pro' :
+                                  planBadge.classList.contains('enterprise') ? 'enterprise' :
+                                  planBadge.classList.contains('custom') ? 'custom' : '';
+                    
+                    if (planValue !== rowPlan) {
+                        showRow = false;
+                    }
+                }
+                
+                row.style.display = showRow ? 'table-row' : 'none';
+            });
+            
+            updateCounts();
+        }
+
+        statusFilter.addEventListener('change', applyFilters);
+        planFilter.addEventListener('change', applyFilters);
+
+        resetButton.addEventListener('click', function() {
+            searchInput.value = '';
+            statusFilter.value = '';
+            planFilter.value = '';
+            
+            institutionRows.forEach(row => {
+                row.style.display = 'table-row';
+            });
+            
+            subscriptionRows.forEach(row => {
+                row.style.display = 'table-row';
+            });
+            
+            updateCounts();
+        });
+
+        // Update counts
+        function updateCounts() {
+            const visibleInstitutions = Array.from(institutionRows).filter(row => 
+                row.style.display !== 'none'
+            ).length;
+            
+            const visibleSubscriptions = Array.from(subscriptionRows).filter(row => 
+                row.style.display !== 'none'
+            ).length;
+            
+            const institutionCount = document.querySelector('.institution-count');
+            if (institutionCount) {
+                institutionCount.textContent = `${visibleInstitutions} institutions`;
+            }
+            
+            const requestCount = document.querySelector('.request-count');
+            if (requestCount) {
+                requestCount.textContent = `${visibleSubscriptions} pending requests`;
+            }
+            
+            // Update pagination info
+            const paginationInfo = document.querySelector('.pagination-info');
+            if (paginationInfo) {
+                paginationInfo.textContent = `Showing 1-${Math.min(5, visibleInstitutions)} of ${visibleInstitutions} institutions`;
+            }
+        }
+
+        // Action buttons functionality
+        document.querySelectorAll('.btn-view').forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                const institutionName = row.querySelector('.institution-name')?.textContent;
+                
+                if (institutionName) {
+                    showAlert(`Viewing details for ${institutionName}`, 'info');
+                }
+            });
+        });
+
+        document.querySelectorAll('.btn-edit').forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                const institutionName = row.querySelector('.institution-name')?.textContent;
+                
+                if (institutionName) {
+                    showAlert(`Opening edit form for ${institutionName}`, 'warning');
+                }
+            });
+        });
+
+        document.querySelectorAll('.btn-activate').forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                const institutionName = row.querySelector('.institution-name')?.textContent;
+                const statusBadge = row.querySelector('.status-badge');
+                
+                if (institutionName && confirm(`Activate subscription for ${institutionName}?`)) {
+                    statusBadge.className = 'status-badge active';
+                    statusBadge.textContent = 'Active';
+                    this.innerHTML = '<span class="action-icon">⏸️</span>';
+                    this.title = 'Suspend Subscription';
+                    this.classList.remove('btn-activate');
+                    this.classList.add('btn-suspend');
+                    
+                    showAlert(`Subscription for ${institutionName} has been activated.`, 'success');
+                }
+            });
+        });
+
+        document.querySelectorAll('.btn-suspend').forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                const institutionName = row.querySelector('.institution-name')?.textContent;
+                const statusBadge = row.querySelector('.status-badge');
+                
+                if (institutionName && confirm(`Suspend subscription for ${institutionName}?`)) {
+                    statusBadge.className = 'status-badge suspended';
+                    statusBadge.textContent = 'Suspended';
+                    this.innerHTML = '<span class="action-icon">✅</span>';
+                    this.title = 'Activate Subscription';
+                    this.classList.remove('btn-suspend');
+                    this.classList.add('btn-activate');
+                    
+                    showAlert(`Subscription for ${institutionName} has been suspended.`, 'warning');
+                }
+            });
+        });
+
+        document.querySelectorAll('.btn-approve').forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                const institutionName = row.querySelector('.institution-name')?.textContent;
+                const statusBadge = row.querySelector('.status-badge');
+                
+                if (institutionName && confirm(`Approve subscription request for ${institutionName}?`)) {
+                    statusBadge.className = 'status-badge active';
+                    statusBadge.textContent = 'Active';
+                    this.closest('tr').style.opacity = '0.5';
+                    
+                    setTimeout(() => {
+                        row.remove();
+                        updateCounts();
+                    }, 500);
+                    
+                    showAlert(`Subscription for ${institutionName} has been approved.`, 'success');
+                }
+            });
+        });
+
+        document.querySelectorAll('.btn-reject').forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                const institutionName = row.querySelector('.institution-name')?.textContent;
+                
+                if (institutionName && confirm(`Reject subscription request for ${institutionName}?`)) {
+                    this.closest('tr').style.opacity = '0.5';
+                    
+                    setTimeout(() => {
+                        row.remove();
+                        updateCounts();
+                    }, 500);
+                    
+                    showAlert(`Subscription request for ${institutionName} has been rejected.`, 'error');
+                }
+            });
+        });
+
+        // Pagination functionality
+        document.querySelectorAll('.btn-next').forEach(button => {
+            if (!button.disabled) {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showAlert('Loading next page...', 'info');
+                });
+            }
+        });
+
+        document.querySelectorAll('.page-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const pageNum = this.textContent;
+                showAlert(`Loading page ${pageNum}...`, 'info');
+            });
+        });
+
+        // Show alert message
+        function showAlert(message, type) {
+            // Create alert element
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert-custom alert-${type} mt-3`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'" style="float: right; background: none; border: none; font-size: 1.2rem; cursor: pointer;">×</button>
+            `;
+            
+            // Find alert container or create one
+            let alertContainer = document.querySelector('.alert-container');
+            if (!alertContainer) {
+                alertContainer = document.createElement('div');
+                alertContainer.className = 'alert-container';
+                document.querySelector('.main-container').insertBefore(alertContainer, document.querySelector('.main-container').firstChild);
+            }
+            
+            // Add alert to container
+            alertContainer.appendChild(alertDiv);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentElement) {
+                    alertDiv.style.opacity = '0';
+                    alertDiv.style.transition = 'opacity 0.5s';
+                    setTimeout(() => {
+                        if (alertDiv.parentElement) {
+                            alertDiv.parentElement.removeChild(alertDiv);
+                        }
+                    }, 500);
+                }
+            }, 5000);
+        }
+
+        // Initialize
+        updateCounts();
+    });
+</script>
+{% endblock %}

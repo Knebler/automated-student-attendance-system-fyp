@@ -1,0 +1,1170 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}User Management - Platform Manager{% endblock %}
+
+{% block content %}
+<div class="platform-manager-user-management">
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <h1 class="page-title">User Management</h1>
+        <div class="breadcrumb">
+            <a href="{{ url_for('platform.platform_dashboard') }}">Dashboard</a> / 
+            <span>User Management</span>
+        </div>
+        <p class="page-subtitle">View all registered users and manage admin accounts.</p>
+    </div>
+
+    <!-- Dashboard Grid -->
+    <div class="dashboard-grid">
+        <!-- Left Column -->
+        <div class="left-column">
+            <!-- User Overview Card -->
+            <div class="card-custom mb-4">
+                <div class="card-header-custom">User Overview</div>
+                <div class="card-body-custom">
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Total Users</div>
+                            <div class="stat-value">2,847</div>
+                            <div class="stat-change positive">+12% this month</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Institution Admins</div>
+                            <div class="stat-value">42</div>
+                            <div class="stat-change positive">+2 this month</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Lecturers</div>
+                            <div class="stat-value">316</div>
+                            <div class="stat-change positive">+8% this month</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Students</div>
+                            <div class="stat-value">2,489</div>
+                            <div class="stat-change positive">+15% this month</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions Card -->
+            <div class="card-custom">
+                <div class="card-header-custom">Quick Actions</div>
+                <div class="card-body-custom">
+                    <div class="quick-actions">
+                        <button class="btn-custom btn-add-admin" id="addAdminBtn">
+                            <span class="btn-icon">➕</span>
+                            Add Admin Account
+                        </button>
+                        
+                        <div class="search-section mt-3">
+                            <div class="search-box">
+                                <input type="text" placeholder="Search by name, ID, or email..." class="search-input">
+                                <button class="btn-custom btn-search">Search</button>
+                            </div>
+                        </div>
+
+                        <div class="filter-section mt-3">
+                            <select class="filter-select">
+                                <option value="">All Roles</option>
+                                <option value="admin">Institution Admin</option>
+                                <option value="lecturer">Lecturer</option>
+                                <option value="student">Student</option>
+                            </select>
+                            <select class="filter-select">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="suspended">Suspended</option>
+                                <option value="pending">Pending</option>
+                            </select>
+                            <button class="btn-custom btn-outline-custom btn-reset">Reset Filters</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="right-column">
+            <div class="card-custom">
+                <div class="card-header-custom">
+                    <div class="header-content">
+                        <span>Users Information</span>
+                        <span class="user-count">Showing 5 of 2,847 users</span>
+                    </div>
+                </div>
+                <div class="card-body-custom">
+                    <!-- Table Container -->
+                    <div class="table-container">
+                        <table class="users-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>ID</th>
+                                    <th>Role</th>
+                                    <th>Institution</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="user-info">
+                                            <div class="user-avatar">GF</div>
+                                            <div class="user-details">
+                                                <div class="user-name">GOH CHING FONG</div>
+                                                <div class="user-email">goh.ching@university.edu</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>8551200</td>
+                                    <td>
+                                        <span class="role-badge institution-admin">Institution Admin</span>
+                                    </td>
+                                    <td>University of Technology</td>
+                                    <td>
+                                        <span class="status-badge suspended">Suspended</span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-action btn-view" title="View Details">
+                                                <span class="action-icon">👁️</span>
+                                            </button>
+                                            <button class="btn-action btn-edit" title="Edit User">
+                                                <span class="action-icon">✏️</span>
+                                            </button>
+                                            <button class="btn-action btn-activate" title="Activate User">
+                                                <span class="action-icon">✅</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="user-info">
+                                            <div class="user-avatar">AT</div>
+                                            <div class="user-details">
+                                                <div class="user-name">ALEX TAN</div>
+                                                <div class="user-email">alex.tan@university.edu</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>8541200</td>
+                                    <td>
+                                        <span class="role-badge lecturer">Lecturer</span>
+                                    </td>
+                                    <td>University of Technology</td>
+                                    <td>
+                                        <span class="status-badge active">Active</span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-action btn-view" title="View Details">
+                                                <span class="action-icon">👁️</span>
+                                            </button>
+                                            <button class="btn-action btn-edit" title="Edit User">
+                                                <span class="action-icon">✏️</span>
+                                            </button>
+                                            <button class="btn-action btn-suspend" title="Suspend User">
+                                                <span class="action-icon">⏸️</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="user-info">
+                                            <div class="user-avatar">JT</div>
+                                            <div class="user-details">
+                                                <div class="user-name">JAMES TEO</div>
+                                                <div class="user-email">james.teo@university.edu</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>8531254</td>
+                                    <td>
+                                        <span class="role-badge student">Student</span>
+                                    </td>
+                                    <td>University of Technology</td>
+                                    <td>
+                                        <span class="status-badge active">Active</span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-action btn-view" title="View Details">
+                                                <span class="action-icon">👁️</span>
+                                            </button>
+                                            <button class="btn-action btn-edit" title="Edit User">
+                                                <span class="action-icon">✏️</span>
+                                            </button>
+                                            <button class="btn-action btn-suspend" title="Suspend User">
+                                                <span class="action-icon">⏸️</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="user-info">
+                                            <div class="user-avatar">MS</div>
+                                            <div class="user-details">
+                                                <div class="user-name">MARY SMITH</div>
+                                                <div class="user-email">mary.smith@college.edu</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>8546393</td>
+                                    <td>
+                                        <span class="role-badge lecturer">Lecturer</span>
+                                    </td>
+                                    <td>City College</td>
+                                    <td>
+                                        <span class="status-badge active">Active</span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-action btn-view" title="View Details">
+                                                <span class="action-icon">👁️</span>
+                                            </button>
+                                            <button class="btn-action btn-edit" title="Edit User">
+                                                <span class="action-icon">✏️</span>
+                                            </button>
+                                            <button class="btn-action btn-suspend" title="Suspend User">
+                                                <span class="action-icon">⏸️</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="user-info">
+                                            <div class="user-avatar">JR</div>
+                                            <div class="user-details">
+                                                <div class="user-name">JOHN ROBERTS</div>
+                                                <div class="user-email">john.roberts@institute.edu</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>8566839</td>
+                                    <td>
+                                        <span class="role-badge institution-admin">Institution Admin</span>
+                                    </td>
+                                    <td>Tech Institute</td>
+                                    <td>
+                                        <span class="status-badge active">Active</span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-action btn-view" title="View Details">
+                                                <span class="action-icon">👁️</span>
+                                            </button>
+                                            <button class="btn-action btn-edit" title="Edit User">
+                                                <span class="action-icon">✏️</span>
+                                            </button>
+                                            <button class="btn-action btn-suspend" title="Suspend User">
+                                                <span class="action-icon">⏸️</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="pagination-section">
+                        <div class="pagination-info">
+                            Showing 1-5 of 2,847 users
+                        </div>
+                        <div class="pagination-controls">
+                            <button class="btn-custom btn-outline-custom btn-prev" disabled>Previous</button>
+                            <span class="page-numbers">
+                                <span class="page-current">1</span>
+                                <a href="#" class="page-link">2</a>
+                                <a href="#" class="page-link">3</a>
+                                <span class="page-ellipsis">...</span>
+                                <a href="#" class="page-link">285</a>
+                            </span>
+                            <a href="#" class="btn-custom btn-outline-custom btn-next">Next</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Platform Manager User Management Specific Styles */
+    .platform-manager-user-management {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        font-style: italic;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .page-subtitle {
+        font-size: 1rem;
+        color: var(--text-light);
+        margin-top: 0.5rem;
+    }
+
+    .breadcrumb {
+        font-size: 0.9rem;
+        color: var(--text-light);
+    }
+
+    .breadcrumb a {
+        color: var(--primary-dark);
+        text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+
+    .breadcrumb span {
+        color: var(--text-dark);
+        font-weight: 500;
+    }
+
+    /* Dashboard Grid */
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .stat-item {
+        background-color: var(--primary-light);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 1.25rem;
+        transition: all 0.3s ease;
+    }
+
+    .stat-item:hover {
+        background-color: #f1f5f9;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        color: var(--text-light);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: var(--primary-dark);
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-change {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        display: inline-block;
+    }
+
+    .stat-change.positive {
+        background-color: #d1fae5;
+        color: #065f46;
+        border: 1px solid #10b981;
+    }
+
+    .stat-change.negative {
+        background-color: #fef2f2;
+        color: #dc2626;
+        border: 1px solid #dc2626;
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .btn-add-admin {
+        padding: 0.75rem 1.5rem;
+        border-radius: 50px;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        background-color: var(--primary-dark);
+        color: white;
+    }
+
+    .btn-add-admin:hover {
+        background-color: #1e293b;
+        color: white;
+    }
+
+    .btn-icon {
+        font-size: 1rem;
+    }
+
+    .search-section {
+        width: 100%;
+    }
+
+    .search-box {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .search-input {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: 50px;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.9rem;
+        background-color: var(--primary-light);
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: var(--primary-dark);
+        background-color: white;
+    }
+
+    .btn-search {
+        padding: 0.75rem 1.5rem;
+        border-radius: 50px;
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+
+    .filter-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .filter-select {
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: 25px;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.85rem;
+        background-color: var(--primary-light);
+        color: var(--text-dark);
+        cursor: pointer;
+    }
+
+    .filter-select:focus {
+        outline: none;
+        border-color: var(--primary-dark);
+    }
+
+    .btn-reset {
+        padding: 0.75rem 1.5rem;
+        border-radius: 25px;
+        font-size: 0.85rem;
+        background-color: white;
+        color: var(--primary-dark);
+        border: 2px solid var(--primary-dark);
+    }
+
+    .btn-reset:hover {
+        background-color: var(--primary-dark);
+        color: white;
+    }
+
+    /* Table Header */
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+
+    .user-count {
+        font-size: 0.85rem;
+        color: var(--text-light);
+        background-color: var(--primary-light);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        border: 1px solid var(--border-color);
+    }
+
+    /* Table Container */
+    .table-container {
+        overflow-x: auto;
+        margin-bottom: 1.5rem;
+    }
+
+    .users-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 800px;
+    }
+
+    .users-table thead {
+        background-color: var(--primary-dark);
+    }
+
+    .users-table th {
+        padding: 1rem 1.25rem;
+        text-align: left;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: white;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .users-table td {
+        padding: 1.25rem;
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 0.9rem;
+        color: var(--text-dark);
+        vertical-align: middle;
+    }
+
+    .users-table tbody tr {
+        transition: all 0.3s ease;
+    }
+
+    .users-table tbody tr:hover {
+        background-color: var(--primary-light);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* User Info */
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: var(--primary-dark);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+
+    .user-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .user-name {
+        font-weight: 600;
+        color: var(--text-dark);
+        font-size: 0.95rem;
+    }
+
+    .user-email {
+        font-size: 0.8rem;
+        color: var(--text-light);
+    }
+
+    /* Role Badges */
+    .role-badge {
+        display: inline-block;
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .role-badge.institution-admin {
+        background-color: #e0f2fe;
+        color: #075985;
+        border: 1px solid #0ea5e9;
+    }
+
+    .role-badge.lecturer {
+        background-color: #fef3c7;
+        color: #92400e;
+        border: 1px solid #f59e0b;
+    }
+
+    .role-badge.student {
+        background-color: #d1fae5;
+        color: #065f46;
+        border: 1px solid #10b981;
+    }
+
+    /* Status Badges */
+    .status-badge {
+        display: inline-block;
+        padding: 0.35rem 1rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        min-width: 80px;
+        text-align: center;
+    }
+
+    .status-badge.active {
+        background-color: #d1fae5;
+        color: #065f46;
+        border: 1px solid #10b981;
+    }
+
+    .status-badge.suspended {
+        background-color: #fef2f2;
+        color: #dc2626;
+        border: 1px solid #dc2626;
+    }
+
+    .status-badge.pending {
+        background-color: #fef3c7;
+        color: #92400e;
+        border: 1px solid #f59e0b;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-start;
+    }
+
+    .btn-action {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: none;
+        background-color: var(--primary-light);
+        color: var(--text-dark);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-view:hover {
+        background-color: #e0f2fe;
+        color: #0ea5e9;
+    }
+
+    .btn-edit:hover {
+        background-color: #fef3c7;
+        color: #f59e0b;
+    }
+
+    .btn-activate:hover {
+        background-color: #d1fae5;
+        color: #10b981;
+    }
+
+    .btn-suspend:hover {
+        background-color: #fef2f2;
+        color: #dc2626;
+    }
+
+    .action-icon {
+        font-size: 1rem;
+    }
+
+    /* Pagination */
+    .pagination-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .pagination-info {
+        font-size: 0.9rem;
+        color: var(--text-light);
+    }
+
+    .pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .btn-prev,
+    .btn-next {
+        padding: 0.5rem 1.5rem;
+        border-radius: 25px;
+        font-size: 0.85rem;
+        min-width: 100px;
+        text-align: center;
+    }
+
+    .btn-prev[disabled] {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .page-numbers {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .page-current {
+        font-weight: 600;
+        color: var(--primary-dark);
+        padding: 0.25rem 0.75rem;
+        background-color: var(--primary-light);
+        border-radius: 20px;
+        border: 1px solid var(--border-color);
+    }
+
+    .page-link {
+        color: var(--text-dark);
+        text-decoration: none;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .page-link:hover {
+        background-color: var(--primary-light);
+        text-decoration: none;
+    }
+
+    .page-ellipsis {
+        color: var(--text-light);
+        padding: 0 0.25rem;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .left-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 1.75rem;
+        }
+
+        .page-subtitle {
+            font-size: 0.9rem;
+        }
+
+        .left-column {
+            grid-template-columns: 1fr;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .stat-item {
+            padding: 1rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+        }
+
+        .search-box {
+            flex-direction: column;
+        }
+
+        .btn-search {
+            width: 100%;
+        }
+
+        .pagination-section {
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+        }
+
+        .pagination-controls {
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .breadcrumb {
+            font-size: 0.8rem;
+        }
+
+        .user-info {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .user-avatar {
+            display: none;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .action-buttons {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn-action {
+            width: 32px;
+            height: 32px;
+        }
+
+        .action-icon {
+            font-size: 0.85rem;
+        }
+
+        .role-badge,
+        .status-badge {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add Admin Button
+        const addAdminBtn = document.getElementById('addAdminBtn');
+        addAdminBtn.addEventListener('click', function() {
+            // Create modal for adding admin
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Add Admin Account</h3>
+                        <button class="modal-close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="addAdminForm">
+                            <div class="form-group">
+                                <label for="adminName">Full Name</label>
+                                <input type="text" id="adminName" placeholder="Enter full name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="adminEmail">Email Address</label>
+                                <input type="email" id="adminEmail" placeholder="Enter email address" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="adminInstitution">Institution</label>
+                                <select id="adminInstitution" required>
+                                    <option value="">Select Institution</option>
+                                    <option value="university-tech">University of Technology</option>
+                                    <option value="city-college">City College</option>
+                                    <option value="tech-institute">Tech Institute</option>
+                                    <option value="science-academy">Science Academy</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="adminRole">Role Type</label>
+                                <select id="adminRole" required>
+                                    <option value="institution-admin">Institution Admin</option>
+                                    <option value="super-admin">Super Admin</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn-custom btn-outline-custom btn-cancel">Cancel</button>
+                        <button class="btn-custom btn-submit" type="submit" form="addAdminForm">Create Admin</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Close modal functionality
+            const closeModal = () => {
+                document.body.removeChild(modal);
+            };
+            
+            modal.querySelector('.modal-close').addEventListener('click', closeModal);
+            modal.querySelector('.btn-cancel').addEventListener('click', closeModal);
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) closeModal();
+            });
+            
+            // Form submission
+            modal.querySelector('#addAdminForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const name = document.getElementById('adminName').value;
+                const email = document.getElementById('adminEmail').value;
+                
+                showAlert(`Admin account for ${name} (${email}) has been created successfully.`, 'success');
+                closeModal();
+            });
+        });
+
+        // Search functionality
+        const searchInput = document.querySelector('.search-input');
+        const searchButton = document.querySelector('.btn-search');
+        const tableRows = document.querySelectorAll('.users-table tbody tr');
+
+        function performSearch() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            
+            tableRows.forEach(row => {
+                const rowText = row.textContent.toLowerCase();
+                if (searchTerm === '' || rowText.includes(searchTerm)) {
+                    row.style.display = 'table-row';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            updateUserCount();
+        }
+
+        searchButton.addEventListener('click', performSearch);
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+
+        // Filter functionality
+        const roleFilter = document.querySelectorAll('.filter-select')[0];
+        const statusFilter = document.querySelectorAll('.filter-select')[1];
+        const resetButton = document.querySelector('.btn-reset');
+
+        function applyFilters() {
+            const roleValue = roleFilter.value;
+            const statusValue = statusFilter.value;
+            
+            tableRows.forEach(row => {
+                const roleBadge = row.querySelector('.role-badge');
+                const statusBadge = row.querySelector('.status-badge');
+                
+                let showRow = true;
+                
+                // Filter by role
+                if (roleValue && roleBadge) {
+                    const rowRole = roleBadge.classList.contains('institution-admin') ? 'admin' :
+                                  roleBadge.classList.contains('lecturer') ? 'lecturer' :
+                                  roleBadge.classList.contains('student') ? 'student' : '';
+                    
+                    if (roleValue !== rowRole) {
+                        showRow = false;
+                    }
+                }
+                
+                // Filter by status
+                if (showRow && statusValue && statusBadge) {
+                    const rowStatus = statusBadge.classList.contains('active') ? 'active' :
+                                    statusBadge.classList.contains('suspended') ? 'suspended' :
+                                    statusBadge.classList.contains('pending') ? 'pending' : '';
+                    
+                    if (statusValue !== rowStatus) {
+                        showRow = false;
+                    }
+                }
+                
+                row.style.display = showRow ? 'table-row' : 'none';
+            });
+            
+            updateUserCount();
+        }
+
+        roleFilter.addEventListener('change', applyFilters);
+        statusFilter.addEventListener('change', applyFilters);
+
+        resetButton.addEventListener('click', function() {
+            searchInput.value = '';
+            roleFilter.value = '';
+            statusFilter.value = '';
+            
+            tableRows.forEach(row => {
+                row.style.display = 'table-row';
+            });
+            
+            updateUserCount();
+        });
+
+        // Update user count
+        function updateUserCount() {
+            const visibleRows = Array.from(tableRows).filter(row => 
+                row.style.display !== 'none'
+            ).length;
+            
+            const userCountElement = document.querySelector('.user-count');
+            if (userCountElement) {
+                userCountElement.textContent = `Showing ${visibleRows} of 2,847 users`;
+            }
+            
+            // Update pagination info
+            const paginationInfo = document.querySelector('.pagination-info');
+            if (paginationInfo) {
+                paginationInfo.textContent = `Showing 1-${Math.min(5, visibleRows)} of ${visibleRows} users`;
+            }
+        }
+
+        // Action buttons functionality
+        document.querySelectorAll('.btn-view').forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                const userName = row.querySelector('.user-name').textContent;
+                const userId = row.querySelector('td:nth-child(2)').textContent;
+                
+                showAlert(`Viewing details for ${userName} (ID: ${userId})`, 'info');
+            });
+        });
+
+        document.querySelectorAll('.btn-edit').forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                const userName = row.querySelector('.user-name').textContent;
+                
+                showAlert(`Opening edit form for ${userName}`, 'warning');
+            });
+        });
+
+        document.querySelectorAll('.btn-activate').forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                const userName = row.querySelector('.user-name').textContent;
+                const statusBadge = row.querySelector('.status-badge');
+                
+                if (confirm(`Activate user ${userName}?`)) {
+                    statusBadge.className = 'status-badge active';
+                    statusBadge.textContent = 'Active';
+                    this.innerHTML = '<span class="action-icon">⏸️</span>';
+                    this.title = 'Suspend User';
+                    this.classList.remove('btn-activate');
+                    this.classList.add('btn-suspend');
+                    
+                    showAlert(`User ${userName} has been activated.`, 'success');
+                }
+            });
+        });
+
+        document.querySelectorAll('.btn-suspend').forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                const userName = row.querySelector('.user-name').textContent;
+                const statusBadge = row.querySelector('.status-badge');
+                
+                if (confirm(`Suspend user ${userName}?`)) {
+                    statusBadge.className = 'status-badge suspended';
+                    statusBadge.textContent = 'Suspended';
+                    this.innerHTML = '<span class="action-icon">✅</span>';
+                    this.title = 'Activate User';
+                    this.classList.remove('btn-suspend');
+                    this.classList.add('btn-activate');
+                    
+                    showAlert(`User ${userName} has been suspended.`, 'warning');
+                }
+            });
+        });
+
+        // Pagination functionality
+        document.querySelector('.btn-next').addEventListener('click', function(e) {
+            e.preventDefault();
+            showAlert('Loading next page...', 'info');
+        });
+
+        document.querySelectorAll('.page-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const pageNum = this.textContent;
+                showAlert(`Loading page ${pageNum}...`, 'info');
+            });
+        });
+
+        // Show alert message
+        function showAlert(message, type) {
+            // Create alert element
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert-custom alert-${type} mt-3`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'" style="float: right; background: none; border: none; font-size: 1.2rem; cursor: pointer;">×</button>
+            `;
+            
+            // Find alert container or create one
+            let alertContainer = document.querySelector('.alert-container');
+            if (!alertContainer) {
+                alertContainer = document.createElement('div');
+                alertContainer.className = 'alert-container';
+                document.querySelector('.main-container').insertBefore(alertContainer, document.querySelector('.main-container').firstChild);
+            }
+            
+            // Add alert to container
+            alertContainer.appendChild(alertDiv);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentElement) {
+                    alertDiv.style.opacity = '0';
+                    alertDiv.style.transition = 'opacity 0.5s';
+                    setTimeout(() => {
+                        if (alertDiv.parentElement) {
+                            alertDiv.parentElement.removeChild(alertDiv);
+                        }
+                    }, 500);
+                }
+            }, 5000);
+        }
+
+        // Initialize
+        updateUserCount();
+    });
+</script>
+{% endblock %}

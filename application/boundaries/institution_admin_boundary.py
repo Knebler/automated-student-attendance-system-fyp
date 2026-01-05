@@ -40,10 +40,28 @@ def manage_users():
         flash('Access denied. Institution admin privileges required.', 'danger')
         return redirect(url_for('auth.login'))
     
-    user_details_result = InstitutionControl.get_institution_user_details(current_app, auth_result['user'].get('institution_id'))
+    institution_id = auth_result['user'].get('institution_id')
+    
+    # Get user details
+    user_details_result = InstitutionControl.get_institution_user_details(current_app, institution_id)
+    
+    # Get user counts
+    user_counts_result = InstitutionControl.get_user_counts(current_app, institution_id)
+    counts = user_counts_result.get('counts') if user_counts_result['success'] else {
+        'total_users': 0,
+        'students': 0,
+        'lecturers': 0,
+        'admins': 0,
+        'suspended': 0
+    }
+    
     data_to_pass = {
         'user': auth_result['user'],
-        'user_count': "123",
+        'user_count': counts['total_users'],
+        'student_count': counts['students'],
+        'lecturer_count': counts['lecturers'],
+        'admin_count': counts['admins'],
+        'suspended_count': counts['suspended'],
         'users': user_details_result.get('users') if user_details_result['success'] else []
     }
 

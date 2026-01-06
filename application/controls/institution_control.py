@@ -153,6 +153,68 @@ class InstitutionControl:
                 'success': False,
                 'error': str(e)
             }
+    
+    @staticmethod
+    def get_user_counts(app, institution_id):
+        """Get user counts by role for an institution"""
+        try:
+            # Count students
+            student_count_row = BaseEntity.execute_query(
+                app,
+                "SELECT COUNT(*) FROM Students WHERE institution_id = :institution_id",
+                {'institution_id': institution_id},
+                fetch_one=True
+            )
+            student_count = student_count_row[0] if student_count_row and student_count_row[0] is not None else 0
+
+            # Count lecturers
+            lecturer_count_row = BaseEntity.execute_query(
+                app,
+                "SELECT COUNT(*) FROM Lecturers WHERE institution_id = :institution_id",
+                {'institution_id': institution_id},
+                fetch_one=True
+            )
+            lecturer_count = lecturer_count_row[0] if lecturer_count_row and lecturer_count_row[0] is not None else 0
+
+            # Count admins
+            admin_count_row = BaseEntity.execute_query(
+                app,
+                "SELECT COUNT(*) FROM Institution_Admins WHERE institution_id = :institution_id",
+                {'institution_id': institution_id},
+                fetch_one=True
+            )
+            admin_count = admin_count_row[0] if admin_count_row and admin_count_row[0] is not None else 0
+
+            # Count active suspensions (inactive users)
+            suspended_count_row = BaseEntity.execute_query(
+                app,
+                """SELECT 
+                    (SELECT COUNT(*) FROM Students WHERE institution_id = :institution_id AND is_active = FALSE) +
+                    (SELECT COUNT(*) FROM Lecturers WHERE institution_id = :institution_id AND is_active = FALSE)
+                    as suspended_count""",
+                {'institution_id': institution_id},
+                fetch_one=True
+            )
+            suspended_count = suspended_count_row[0] if suspended_count_row and suspended_count_row[0] is not None else 0
+
+            total_count = student_count + lecturer_count + admin_count
+
+            return {
+                'success': True,
+                'counts': {
+                    'total_users': total_count,
+                    'students': student_count,
+                    'lecturers': lecturer_count,
+                    'admins': admin_count,
+                    'suspended': suspended_count
+                }
+            }
+
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e)
+            }
 
 
 # Expose useful dev actions for institution management

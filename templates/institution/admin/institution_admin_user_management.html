@@ -19,21 +19,21 @@
                     </div>
                     <div class="stat-item alert">
                         <span class="stat-label">Active Suspensions:</span>
-                        <span class="stat-value">XX</span>
+                        <span class="stat-value">{{ suspended_count }}</span>
                     </div>
                 </div>
                 <div class="stat-row">
                     <div class="stat-item">
                         <span class="stat-label">Students:</span>
-                        <span class="stat-value">XXX</span>
+                        <span class="stat-value">{{ student_count }}</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">Lecturers:</span>
-                        <span class="stat-value">XXX</span>
+                        <span class="stat-value">{{ lecturer_count }}</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">Admins:</span>
-                        <span class="stat-value">XXX</span>
+                        <span class="stat-value">{{ admin_count }}</span>
                     </div>
                 </div>
             </div>
@@ -82,66 +82,6 @@
                             </td>
                         </tr>
                         {% endfor %}
-                        <tr>
-                            <td>ALEX TAN</td>
-                            <td>8541200</td>
-                            <td><span class="role-badge role-student">STUDENT</span></td>
-                            <td><span class="status-badge status-active">ACTIVE</span></td>
-                            <td>
-                                <div class="actions">
-                                    <button class="btn-custom btn-view">View</button>
-                                    <button class="btn-custom btn-suspend">Suspend</button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>JAMES TEO</td>
-                            <td>8531254</td>
-                            <td><span class="role-badge role-student">STUDENT</span></td>
-                            <td><span class="status-badge status-active">ACTIVE</span></td>
-                            <td>
-                                <div class="actions">
-                                    <button class="btn-custom btn-view">View</button>
-                                    <button class="btn-custom btn-suspend">Suspend</button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>JUNYUAN TAN</td>
-                            <td>55012369</td>
-                            <td><span class="role-badge role-lecturer">LECTURER</span></td>
-                            <td><span class="status-badge status-active">ACTIVE</span></td>
-                            <td>
-                                <div class="actions">
-                                    <button class="btn-custom btn-view">View</button>
-                                    <button class="btn-custom btn-suspend">Suspend</button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>DISTOR ANGELA REILAN</td>
-                            <td>55214569</td>
-                            <td><span class="role-badge role-admin">ADMIN</span></td>
-                            <td><span class="status-badge status-active">ACTIVE</span></td>
-                            <td>
-                                <div class="actions">
-                                    <button class="btn-custom btn-view">View</button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr class="suspended">
-                            <td>JASON HO</td>
-                            <td>67695569</td>
-                            <td><span class="role-badge role-lecturer">LECTURER</span></td>
-                            <td><span class="status-badge status-suspended">SUSPENDED</span></td>
-                            <td>
-                                <div class="actions">
-                                    <button class="btn-custom btn-view">View</button>
-                                    <button class="btn-custom btn-unsuspend">Unsuspend</button>
-                                    <button class="btn-custom btn-delete">Delete</button>
-                                </div>
-                            </td>
-                        </tr>
                     </tbody>
                 </table>
             </div>

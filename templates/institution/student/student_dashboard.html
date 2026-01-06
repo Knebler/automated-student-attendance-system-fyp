@@ -225,6 +225,8 @@
 </div>
 
 <style>
+
+    
     /* Student Dashboard Specific Styles */
     .student-dashboard {
         max-width: 1400px;
@@ -271,11 +273,61 @@
     /* Dashboard Grid */
     .dashboard-grid {
         display: grid;
-        grid-template-columns: 350px 1fr 1fr;
+        grid-template-columns: 1fr 1fr 1fr; 
         gap: 1.5rem;
         align-items: start;
     }
 
+    
+    .classes-card {
+        grid-column: span 1;
+    }
+
+    
+    .profile-card,
+    .classes-card,
+    .news-card {
+        height: 100%;
+        min-height: 600px; 
+    }
+
+    
+    .classes-list {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+
+    .news-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    
+    @media (max-width: 1200px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+    }
+
+    @media (max-width: 1024px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+        
+        .news-card {
+            grid-column: span 2;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .news-card {
+            grid-column: span 1;
+        }
+    }
     /* Profile Card */
     .profile-card {
         height: fit-content;

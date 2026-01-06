@@ -123,7 +123,7 @@ def class_checkin_face():
                            user_id=user_id)
 
 
-@student_bp.route('/appeal', endpoint='appeal')
+@student_bp.route('/appeal')
 def appeal_management():
     """Student appeal management"""
     auth_result = AuthControl.verify_session(current_app, session)

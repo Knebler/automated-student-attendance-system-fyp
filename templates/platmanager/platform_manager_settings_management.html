@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Settings - Attendance Management System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        /* Navigation */
+        nav {
+            background-color: #001f54;
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .logo {
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+            margin-right: 2rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 0;
+            list-style: none;
+        }
+
+        .nav-links li {
+            border-left: 2px solid white;
+            padding: 0 1.5rem;
+        }
+
+        .nav-links li:last-child {
+            border-right: 2px solid white;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-size: 0.95rem;
+        }
+
+        .nav-links a.active {
+            text-decoration: underline;
+            font-weight: bold;
+        }
+
+        /* Main Content */
+        .container {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #001f54;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Settings Grid */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .settings-card {
+            background: white;
+            border: 3px solid #001f54;
+            border-radius: 20px;
+            padding: 2rem;
+        }
+
+        .settings-card h2 {
+            color: #001f54;
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .settings-content {
+            background: #e8e8e8;
+            padding: 1.5rem;
+            border-radius: 10px;
+            min-height: 300px;
+        }
+
+        .setting-item {
+            margin-bottom: 1rem;
+        }
+
+        .setting-item label {
+            display: block;
+            color: #001f54;
+            font-weight: bold;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        .setting-item .value {
+            color: #001f54;
+            font-size: 0.9rem;
+        }
+
+        /* Checkboxes */
+        .checkbox-group {
+            margin-top: 0.5rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 0.5rem;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .checkbox-item label {
+            font-weight: normal;
+            margin-bottom: 0;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .settings-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-links {
+                flex-wrap: wrap;
+            }
+        }
+
+        @media (max-width: 768px) {
+            nav {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .nav-links li {
+                border: none;
+                padding: 0.5rem 0;
+            }
+
+            .nav-links li:last-child {
+                border: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="logo">LOGO</div>
+        <ul class="nav-links">
+            <li><a href="platform-dashboard.html">Dashboard</a></li>
+            <li><a href="platform-users.html">Users</a></li>
+            <li><a href="platform-institutions.html">Institutions/Subscriptions</a></li>
+            <li><a href="platform-reports.html">Reports</a></li>
+            <li><a href="platform-performance.html">Performance</a></li>
+            <li><a href="platform-settings.html" class="active">Settings</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <h1>System Settings</h1>
+
+        <div class="settings-grid">
+            <!-- General Settings -->
+            <div class="settings-card">
+                <h2>General Settings</h2>
+                <div class="settings-content">
+                    <div class="setting-item">
+                        <label>System Name:</label>
+                        <span class="value">XXXXXX</span>
+                    </div>
+                    <div class="setting-item">
+                        <label>Default Language:</label>
+                        <span class="value">XXXXXX</span>
+                    </div>
+                    <div class="setting-item">
+                        <label>Default Time Zone:</label>
+                        <span class="value">XXXXXX</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notification Settings -->
+            <div class="settings-card">
+                <h2>Notification Settings</h2>
+                <div class="settings-content">
+                    <div class="setting-item">
+                        <label>Alert Email Address:</label>
+                        <span class="value">XXXXXX</span>
+                    </div>
+                    <div class="setting-item">
+                        <label>Email Triggers:</label>
+                        <div class="checkbox-group">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="trigger1" checked>
+                                <label for="trigger1">New institution subscription request</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="trigger2" checked>
+                                <label for="trigger2">System performance issue detected</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="trigger3">
+                                <label for="trigger3">New user report submitted</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="setting-item" style="margin-top: 1.5rem;">
+                        <label>Default Time Zone:</label>
+                        <span class="value">XXXXXX</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Settings -->
+            <div class="settings-card">
+                <h2>Security Settings</h2>
+                <div class="settings-content">
+                    <div class="setting-item">
+                        <label>Minimum Password length:</label>
+                        <span class="value">XXXXXX</span>
+                    </div>
+                    <div class="setting-item">
+                        <label>Session Timeout:</label>
+                        <span class="value">XXXXXX</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

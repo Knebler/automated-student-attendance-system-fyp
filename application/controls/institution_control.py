@@ -217,6 +217,38 @@ class InstitutionControl:
             }
 
 
+    @staticmethod
+    def suspend_user(app, user_id, institution_id, role):
+        try:
+            if role == 'student':
+                BaseEntity.execute_query(
+                    app,
+                    "UPDATE Students SET is_active = FALSE WHERE student_id = :user_id AND institution_id = :institution_id",
+                    {'user_id': user_id, 'institution_id': institution_id}
+                )
+            elif role == 'lecturer':
+                BaseEntity.execute_query(
+                    app,
+                    "UPDATE Lecturers SET is_active = FALSE WHERE lecturer_id = :user_id AND institution_id = :institution_id",
+                    {'user_id': user_id, 'institution_id': institution_id}
+                )
+            else:
+                return {
+                    'success': False,
+                    'error': 'Invalid role specified'
+                }
+            return {
+                'success': True,
+                'message': 'User suspended successfully'
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e)
+            }
+
+
+    
 # Expose useful dev actions for institution management
 try:
     from application.boundaries.dev_actions import register_action
@@ -239,3 +271,5 @@ try:
     )
 except Exception:
     pass
+
+    

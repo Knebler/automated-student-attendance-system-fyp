@@ -1,5 +1,5 @@
 {% extends "layouts/base.html" %}
-
+<meta name="csrf-token" content="{{ csrf_token() }}">
 {% block title %}User Management - AttendAI{% endblock %}
 
 {% block content %}
@@ -81,7 +81,11 @@
                                 {% if user.is_active %}
                                 <div class="actions">
                                     <button class="btn-custom btn-view">View</button>
-                                    <button class="btn-custom btn-suspend">Suspend</button>
+                                    <form action="/institution/manage_users/{{ user.id }}/suspend" method='POST'>
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="user_role" value="{{ user.role }}">
+                                        <button class="btn-custom btn-suspend" data-user-id="{{ user.id }}" data-role="{{ user.role }}">Suspend</button>
+                                    </form>
                                 </div>
                                 {% else %}
                                 <div class="actions">
@@ -99,7 +103,7 @@
         </div>
     </div>
 </div>
-
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const searchInput = document.getElementById('searchInput');
@@ -175,6 +179,7 @@
             }
         });
     });
+
 </script>
 
 {% endblock %}

@@ -1,8 +1,9 @@
 {% extends "layouts/base.html" %}
-
+<meta name="csrf-token" content="{{ csrf_token() }}">
 {% block title %}User Management - AttendAI{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/institution_admin_user_management.css') }}">
 <div class="dashboard-admin">
     <h1 class="page-title mb-4">User Management</h1>
 
@@ -41,9 +42,19 @@
             <!-- Search Section -->
             <div class="search-section mb-4">
                 <div class="search-container">
-                    <input type="text" class="search-input" placeholder="Search by name or ID">
-                    <input type="text" class="filter-input" placeholder="Filter by role or status">
-                    <button class="btn-custom search-btn">Search</button>
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search by name or ID">
+                    <select id="roleFilter" class="filter-select">
+                        <option value="">All Roles</option>
+                        <option value="student">Student</option>
+                        <option value="lecturer">Lecturer</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                    <select id="statusFilter" class="filter-select">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="suspended">Suspended</option>
+                    </select>
+                    <button id="clearFilters" class="btn-custom clear-btn">Clear Filters</button>
                 </div>
             </div>
 
@@ -59,9 +70,9 @@
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="userTableBody">
                         {% for user in users %}
-                        <tr>
+                        <tr data-name="{{ user.name|lower }}" data-id="{{ user.id }}" data-role="{{ user.role|lower }}" data-status="{{ 'active' if user.is_active else 'suspended' }}">
                             <td>{{ user.name }}</td>
                             <td>{{ user.id }}</td>
                             <td><span class="role-badge role-{{ user.role|lower }}">{{ user.role }}</span></td>
@@ -69,14 +80,45 @@
                             <td>
                                 {% if user.is_active %}
                                 <div class="actions">
+                                    <form action="/institution/manage_users/{{ user.id }}/view" method='GET'>
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button class="btn-custom btn-view">View</button>
+                                    </form>
+
+                                    <form action="/institution/manage_users/{{ user.id }}/suspend" method='POST'>
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="user_role" value="{{ user.role }}">
+                                        <button class="btn-custom btn-suspend" data-user-id="{{ user.id }}" data-role="{{ user.role }}">Suspend</button>
+                                    </form>
+                                </div>
+                                {% elif user.is_suspended %}
+                                <div class="actions">
+                                    <form action="/institution/manage_users/{{ user.id }}/view" method='GET'>
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button class="btn-custom btn-view">View</button>
+                                    </form>
+                                    
                                     <button class="btn-custom btn-view">View</button>
-                                    <button class="btn-custom btn-suspend">Suspend</button>
+                                    <form action="/institution/manage_users/{{ user.id }}/suspend" method='POST'>
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="user_role" value="{{ user.role }}">
+                                        <button class="btn-custom btn-suspend" data-user-id="{{ user.id }}" data-role="{{ user.role }}">Suspend</button>
+                                    </form>
                                 </div>
                                 {% else %}
                                 <div class="actions">
                                     <button class="btn-custom btn-view">View</button>
-                                    <button class="btn-custom btn-unsuspend">Unsuspend</button>
-                                    <button class="btn-custom btn-delete">Delete</button>
+                                    <form action="/institution/manage_users/{{ user.id }}/unsuspend" method='POST'>
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="user_role" value="{{ user.role }}">
+                                        <button class="btn-custom btn-unsuspend" data-user-id="{{ user.id }}" data-role="{{ user.role }}">Unsuspend</button>
+                                    </form>
+
+                                    <form action="/institution/manage_users/{{ user.id }}/delete" method='POST'>
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="user_role" value="{{ user.role }}">
+                                        <button class="btn-custom btn-delete">Delete</button>
+                                    </form>
                                 </div>
                                 {% endif %}
                             </td>
@@ -88,316 +130,83 @@
         </div>
     </div>
 </div>
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        const roleFilter = document.getElementById('roleFilter');
+        const statusFilter = document.getElementById('statusFilter');
+        const clearFiltersBtn = document.getElementById('clearFilters');
+        const tableBody = document.getElementById('userTableBody');
+        const rows = tableBody.getElementsByTagName('tr');
 
-<style>
-    /* Page Specific Styles */
-    .dashboard-admin {
-        max-width: 1400px;
-        margin: 0 auto;
-    }
+        // Function to filter table rows
+        function filterTable() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const selectedRole = roleFilter.value.toLowerCase();
+            const selectedStatus = statusFilter.value.toLowerCase();
+            
+            let visibleCount = 0;
 
-    .page-title {
-        font-size: 2.5rem;
-        font-weight: bold;
-        font-style: italic;
-        color: var(--text-dark);
-        border-bottom: 2px solid var(--border-color);
-        padding-bottom: 1rem;
-    }
+            for (let row of rows) {
+                const name = row.getAttribute('data-name') || '';
+                const id = row.getAttribute('data-id') || '';
+                const role = row.getAttribute('data-role') || '';
+                const status = row.getAttribute('data-status') || '';
+                
+                // Check if row matches search criteria
+                const matchesSearch = searchTerm === '' || 
+                    name.includes(searchTerm) || 
+                    id.includes(searchTerm);
+                
+                const matchesRole = selectedRole === '' || role === selectedRole;
+                const matchesStatus = selectedStatus === '' || status === selectedStatus;
+                
+                // Show row if all filters match
+                if (matchesSearch && matchesRole && matchesStatus) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            }
 
-    /* Stats Section */
-    .stats-section {
-        background-color: var(--primary-light);
-        border-radius: 10px;
-        padding: 1.25rem;
-        border: 1px solid var(--border-color);
-    }
+            // Show message if no results found
+            const existingMessage = document.getElementById('noResultsMessage');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
 
-    .stat-row {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-        margin-bottom: 1rem;
-    }
-
-    .stat-row:last-child {
-        margin-bottom: 0;
-    }
-
-    .stat-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.9rem;
-        padding: 0.5rem 0;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    }
-
-    .stat-item:last-child {
-        border-bottom: none;
-    }
-
-    .stat-label {
-        font-weight: 600;
-        color: var(--text-dark);
-    }
-
-    .stat-value {
-        font-weight: normal;
-        color: var(--text-dark);
-    }
-
-    .stat-item.alert .stat-value {
-        color: #dc2626;
-        font-weight: bold;
-    }
-
-    /* Search Section */
-    .search-section {
-        background-color: var(--primary-light);
-        border-radius: 10px;
-        padding: 1rem;
-        border: 1px solid var(--border-color);
-    }
-
-    .search-container {
-        display: flex;
-        gap: 1rem;
-        align-items: center;
-    }
-
-    .search-input,
-    .filter-input {
-        flex: 1;
-        max-width: 250px;
-        padding: 0.75rem 1.25rem;
-        border: 1px solid var(--border-color);
-        border-radius: 20px;
-        font-size: 0.9rem;
-        background-color: white;
-    }
-
-    .search-btn {
-        padding: 0.75rem 1.5rem;
-        border-radius: 20px;
-        font-size: 0.9rem;
-    }
-
-    /* Data Table */
-    .table-responsive {
-        overflow-x: auto;
-    }
-
-    .data-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 1rem;
-    }
-
-    .data-table thead {
-        background-color: var(--primary-dark);
-        color: white;
-    }
-
-    .data-table th {
-        padding: 1rem 1.25rem;
-        text-align: center;
-        font-weight: 600;
-        font-size: 0.9rem;
-    }
-
-    .data-table th:first-child {
-        text-align: left;
-        border-radius: 8px 0 0 8px;
-    }
-
-    .data-table th:last-child {
-        border-radius: 0 8px 8px 0;
-    }
-
-    .data-table td {
-        padding: 1rem 1.25rem;
-        text-align: center;
-        font-size: 0.9rem;
-        border-bottom: 1px solid var(--border-color);
-    }
-
-    .data-table td:first-child {
-        text-align: left;
-        font-weight: 500;
-    }
-
-    .data-table tbody tr:hover {
-        background-color: rgba(0, 0, 0, 0.02);
-    }
-
-    .data-table tbody tr.suspended {
-        background-color: #fecaca;
-    }
-
-    .data-table tbody tr.suspended:hover {
-        background-color: #fca5a5;
-    }
-
-    /* Role Badges */
-    .role-badge {
-        padding: 0.25rem 0.75rem;
-        border-radius: 12px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        text-transform: uppercase;
-    }
-
-    .role-student {
-        background-color: #dbeafe;
-        color: #1e40af;
-    }
-
-    .role-lecturer {
-        background-color: #f0f9ff;
-        color: #0369a1;
-    }
-
-    .role-admin {
-        background-color: #f3e8ff;
-        color: #7c3aed;
-    }
-
-    /* Status Badges */
-    .status-badge {
-        padding: 0.25rem 0.75rem;
-        border-radius: 12px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        text-transform: uppercase;
-    }
-
-    .status-active {
-        background-color: #d1fae5;
-        color: #065f46;
-    }
-
-    .status-suspended {
-        background-color: #fee2e2;
-        color: #991b1b;
-    }
-
-    /* Action Buttons */
-    .actions {
-        display: flex;
-        gap: 0.5rem;
-        justify-content: center;
-    }
-
-    .btn-view {
-        padding: 0.4rem 1rem;
-        border-radius: 15px;
-        font-size: 0.8rem;
-        background-color: var(--primary-dark);
-        color: white;
-        border: none;
-        cursor: pointer;
-    }
-
-    .btn-view:hover {
-        background-color: #1e293b;
-    }
-
-    .btn-suspend {
-        padding: 0.4rem 1rem;
-        border-radius: 15px;
-        font-size: 0.8rem;
-        background-color: #f97316;
-        color: white;
-        border: none;
-        cursor: pointer;
-    }
-
-    .btn-suspend:hover {
-        background-color: #ea580c;
-    }
-
-    .btn-unsuspend {
-        padding: 0.4rem 0.75rem;
-        border-radius: 15px;
-        font-size: 0.8rem;
-        background-color: #f59e0b;
-        color: white;
-        border: none;
-        cursor: pointer;
-    }
-
-    .btn-unsuspend:hover {
-        background-color: #d97706;
-    }
-
-    .btn-delete {
-        padding: 0.4rem 1rem;
-        border-radius: 15px;
-        font-size: 0.8rem;
-        background-color: #dc2626;
-        color: white;
-        border: none;
-        cursor: pointer;
-    }
-
-    .btn-delete:hover {
-        background-color: #b91c1c;
-    }
-
-    /* Responsive Design */
-    @media (max-width: 1024px) {
-        .search-container {
-            flex-wrap: wrap;
+            if (visibleCount === 0) {
+                const messageRow = document.createElement('tr');
+                messageRow.id = 'noResultsMessage';
+                messageRow.innerHTML = '<td colspan="5" style="text-align: center; padding: 2rem; color: #6b7280;">No users found matching your criteria.</td>';
+                tableBody.appendChild(messageRow);
+            }
         }
 
-        .search-input,
-        .filter-input {
-            max-width: 100%;
-            flex: 1 1 200px;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .page-title {
-            font-size: 1.75rem;
+        // Function to clear all filters
+        function clearFilters() {
+            searchInput.value = '';
+            roleFilter.value = '';
+            statusFilter.value = '';
+            filterTable();
         }
 
-        .stat-row {
-            grid-template-columns: 1fr;
-        }
+        // Event listeners
+        searchInput.addEventListener('input', filterTable);
+        roleFilter.addEventListener('change', filterTable);
+        statusFilter.addEventListener('change', filterTable);
+        clearFiltersBtn.addEventListener('click', clearFilters);
 
-        .search-container {
-            flex-direction: column;
-        }
+        // Allow Enter key to trigger search
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                filterTable();
+            }
+        });
+    });
 
-        .search-input,
-        .filter-input {
-            max-width: 100%;
-            width: 100%;
-        }
+</script>
 
-        .data-table {
-            font-size: 0.8rem;
-        }
-
-        .data-table th,
-        .data-table td {
-            padding: 0.75rem 0.5rem;
-        }
-
-        .actions {
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .btn-view,
-        .btn-suspend,
-        .btn-unsuspend,
-        .btn-delete {
-            width: 100%;
-            padding: 0.5rem;
-        }
-    }
-</style>
 {% endblock %}

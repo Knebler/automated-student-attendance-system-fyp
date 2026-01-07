@@ -41,9 +41,19 @@
             <!-- Search Section -->
             <div class="search-section mb-4">
                 <div class="search-container">
-                    <input type="text" class="search-input" placeholder="Search by name or ID">
-                    <input type="text" class="filter-input" placeholder="Filter by role or status">
-                    <button class="btn-custom search-btn">Search</button>
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search by name or ID">
+                    <select id="roleFilter" class="filter-select">
+                        <option value="">All Roles</option>
+                        <option value="student">Student</option>
+                        <option value="lecturer">Lecturer</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                    <select id="statusFilter" class="filter-select">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="suspended">Suspended</option>
+                    </select>
+                    <button id="clearFilters" class="btn-custom clear-btn">Clear Filters</button>
                 </div>
             </div>
 
@@ -59,9 +69,9 @@
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="userTableBody">
                         {% for user in users %}
-                        <tr>
+                        <tr data-name="{{ user.name|lower }}" data-id="{{ user.id }}" data-role="{{ user.role|lower }}" data-status="{{ 'active' if user.is_active else 'suspended' }}">
                             <td>{{ user.name }}</td>
                             <td>{{ user.id }}</td>
                             <td><span class="role-badge role-{{ user.role|lower }}">{{ user.role }}</span></td>
@@ -167,7 +177,7 @@
     }
 
     .search-input,
-    .filter-input {
+    .filter-select {
         flex: 1;
         max-width: 250px;
         padding: 0.75rem 1.25rem;
@@ -177,10 +187,19 @@
         background-color: white;
     }
 
-    .search-btn {
+    .filter-select {
+        cursor: pointer;
+    }
+
+    .clear-btn {
         padding: 0.75rem 1.5rem;
         border-radius: 20px;
         font-size: 0.9rem;
+        background-color: #6b7280;
+    }
+
+    .clear-btn:hover {
+        background-color: #4b5563;
     }
 
     /* Data Table */
@@ -352,7 +371,7 @@
         }
 
         .search-input,
-        .filter-input {
+        .filter-select {
             max-width: 100%;
             flex: 1 1 200px;
         }
@@ -372,7 +391,7 @@
         }
 
         .search-input,
-        .filter-input {
+        .filter-select {
             max-width: 100%;
             width: 100%;
         }
@@ -400,4 +419,82 @@
         }
     }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        const roleFilter = document.getElementById('roleFilter');
+        const statusFilter = document.getElementById('statusFilter');
+        const clearFiltersBtn = document.getElementById('clearFilters');
+        const tableBody = document.getElementById('userTableBody');
+        const rows = tableBody.getElementsByTagName('tr');
+
+        // Function to filter table rows
+        function filterTable() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const selectedRole = roleFilter.value.toLowerCase();
+            const selectedStatus = statusFilter.value.toLowerCase();
+            
+            let visibleCount = 0;
+
+            for (let row of rows) {
+                const name = row.getAttribute('data-name') || '';
+                const id = row.getAttribute('data-id') || '';
+                const role = row.getAttribute('data-role') || '';
+                const status = row.getAttribute('data-status') || '';
+                
+                // Check if row matches search criteria
+                const matchesSearch = searchTerm === '' || 
+                    name.includes(searchTerm) || 
+                    id.includes(searchTerm);
+                
+                const matchesRole = selectedRole === '' || role === selectedRole;
+                const matchesStatus = selectedStatus === '' || status === selectedStatus;
+                
+                // Show row if all filters match
+                if (matchesSearch && matchesRole && matchesStatus) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+
+            // Show message if no results found
+            const existingMessage = document.getElementById('noResultsMessage');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+
+            if (visibleCount === 0) {
+                const messageRow = document.createElement('tr');
+                messageRow.id = 'noResultsMessage';
+                messageRow.innerHTML = '<td colspan="5" style="text-align: center; padding: 2rem; color: #6b7280;">No users found matching your criteria.</td>';
+                tableBody.appendChild(messageRow);
+            }
+        }
+
+        // Function to clear all filters
+        function clearFilters() {
+            searchInput.value = '';
+            roleFilter.value = '';
+            statusFilter.value = '';
+            filterTable();
+        }
+
+        // Event listeners
+        searchInput.addEventListener('input', filterTable);
+        roleFilter.addEventListener('change', filterTable);
+        statusFilter.addEventListener('change', filterTable);
+        clearFiltersBtn.addEventListener('click', clearFilters);
+
+        // Allow Enter key to trigger search
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                filterTable();
+            }
+        });
+    });
+</script>
+
 {% endblock %}

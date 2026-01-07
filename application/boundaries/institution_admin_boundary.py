@@ -67,6 +67,16 @@ def manage_users():
 
     return render_template('institution/admin/institution_admin_user_management.html', **data_to_pass)
 
+@institution_bp.route('/manage_users/<int:user_id>/suspend', methods=['POST'])
+def suspend_user(user_id):
+    auth = AuthControl.verify_session(current_app, session)
+    if not auth['success'] or auth['user'].get('user_type') not in ['institution_admin', 'admin']:
+        flash('Access denied. Institution admin privileges required.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    result = InstitutionControl.suspend_user(current_app, user_id, institution_id=auth['user'].get('institution_id'), role=request.form.get('user_role'))
+    return redirect(url_for('institution.manage_users'))
+
 
 @institution_bp.route('/manage_attendance')
 def manage_attendance():
@@ -198,3 +208,7 @@ def attendance_reports():
         user=auth_result['user'],
         sessions=result.get('sessions')
     )
+    
+
+    
+        

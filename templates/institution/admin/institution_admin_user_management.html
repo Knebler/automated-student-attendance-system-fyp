@@ -80,6 +80,24 @@
                             <td>
                                 {% if user.is_active %}
                                 <div class="actions">
+                                    <form action="/institution/manage_users/{{ user.id }}/view" method='GET'>
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button class="btn-custom btn-view">View</button>
+                                    </form>
+
+                                    <form action="/institution/manage_users/{{ user.id }}/suspend" method='POST'>
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="user_role" value="{{ user.role }}">
+                                        <button class="btn-custom btn-suspend" data-user-id="{{ user.id }}" data-role="{{ user.role }}">Suspend</button>
+                                    </form>
+                                </div>
+                                {% elif user.is_suspended %}
+                                <div class="actions">
+                                    <form action="/institution/manage_users/{{ user.id }}/view" method='GET'>
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button class="btn-custom btn-view">View</button>
+                                    </form>
+                                    
                                     <button class="btn-custom btn-view">View</button>
                                     <form action="/institution/manage_users/{{ user.id }}/suspend" method='POST'>
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -90,8 +108,17 @@
                                 {% else %}
                                 <div class="actions">
                                     <button class="btn-custom btn-view">View</button>
-                                    <button class="btn-custom btn-unsuspend">Unsuspend</button>
-                                    <button class="btn-custom btn-delete">Delete</button>
+                                    <form action="/institution/manage_users/{{ user.id }}/unsuspend" method='POST'>
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="user_role" value="{{ user.role }}">
+                                        <button class="btn-custom btn-unsuspend" data-user-id="{{ user.id }}" data-role="{{ user.role }}">Unsuspend</button>
+                                    </form>
+
+                                    <form action="/institution/manage_users/{{ user.id }}/delete" method='POST'>
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="user_role" value="{{ user.role }}">
+                                        <button class="btn-custom btn-delete">Delete</button>
+                                    </form>
                                 </div>
                                 {% endif %}
                             </td>

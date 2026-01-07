@@ -246,6 +246,103 @@ class InstitutionControl:
                 'success': False,
                 'error': str(e)
             }
+    
+    @staticmethod
+    def unsuspend_user(app, user_id, institution_id, role):
+        try:
+            if role == 'student':
+                BaseEntity.execute_query(
+                    app,
+                    "UPDATE Students SET is_active = TRUE WHERE student_id = :user_id AND institution_id = :institution_id",
+                    {'user_id': user_id, 'institution_id': institution_id}
+                )
+            elif role == 'lecturer':
+                BaseEntity.execute_query(
+                    app,
+                    "UPDATE Lecturers SET is_active = TRUE WHERE lecturer_id = :user_id AND institution_id = :institution_id",
+                    {'user_id': user_id, 'institution_id': institution_id}
+                )
+            else:
+                return {
+                    'success': False,
+                    'error': 'Invalid role specified'
+                }
+            return {
+                'success': True,
+                'message': 'User unsuspended successfully'
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e)
+            }
+    
+    @staticmethod
+    def delete_user(app, user_id, institution_id, role):
+        try:
+            if role == 'student':
+                BaseEntity.execute_query(
+                    app,
+                    "DELETE FROM Students WHERE student_id = :user_id AND institution_id = :institution_id",
+                    {'user_id': user_id, 'institution_id': institution_id}
+                )
+            elif role == 'lecturer':
+                BaseEntity.execute_query(
+                    app,
+                    "DELETE FROM Lecturers WHERE lecturer_id = :user_id AND institution_id = :institution_id",
+                    {'user_id': user_id, 'institution_id': institution_id}
+                )
+            else:
+                return {
+                    'success': False,
+                    'error': 'Invalid role specified'
+                }
+            return {
+                'success': True,
+                'message': 'User deleted successfully'
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e)
+            }
+            
+    '''@staticmethod
+    def view_user(app, user_id, institution_id, role):
+        try:
+            if role == 'student':
+                user_row = BaseEntity.execute_query(
+                    app,
+                    "SELECT * FROM Students WHERE student_id = :user_id AND institution_id = :institution_id",
+                    {'user_id': user_id, 'institution_id': institution_id},
+                    fetch_one=True
+                )
+            elif role == 'lecturer':
+                user_row = BaseEntity.execute_query(
+                    app,
+                    "SELECT * FROM Lecturers WHERE lecturer_id = :user_id AND institution_id = :institution_id",
+                    {'user_id': user_id, 'institution_id': institution_id},
+                    fetch_one=True
+                )
+            else:
+                return {
+                    'success': False,
+                    'error': 'Invalid role specified'
+                }
+            if not user_row:
+                return {
+                    'success': False,
+                    'error': 'User not found'
+                }
+            return {
+                'success': True,
+                'user_details': dict(user_row)
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e)
+            }'''
 
 
     

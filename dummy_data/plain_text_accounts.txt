@@ -5,3 +5,5 @@ Institution Admin: admin@university.edu / password
 Lecturer: prof.smith@university.edu / password
 
 Student: student1@university.edu / password
+
+Microsoft Azure Admin: attendai_superuser / passwordComplicated557

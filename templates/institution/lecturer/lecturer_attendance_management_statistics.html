@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Statistics - Lecturer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        /* Navigation */
+        nav {
+            background-color: #001f3f;
+            padding: 20px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            color: white;
+            font-size: 48px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 0;
+            align-items: center;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 30px;
+            border-right: 2px solid rgba(255, 255, 255, 0.3);
+            font-size: 18px;
+            transition: background-color 0.3s;
+        }
+
+        .nav-links a:first-child {
+            border-left: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .nav-links a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-links a.active {
+            text-decoration: underline;
+            font-weight: bold;
+        }
+
+        .notification-icon {
+            color: white;
+            font-size: 32px;
+            cursor: pointer;
+            margin-left: 20px;
+        }
+
+        /* Main Content */
+        .container {
+            padding: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #001f3f;
+            font-size: 48px;
+            margin-bottom: 30px;
+        }
+
+        .stats-card {
+            background-color: white;
+            border: 3px solid #001f3f;
+            border-radius: 15px;
+            padding: 40px;
+        }
+
+        .controls-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 40px;
+        }
+
+        .dropdown {
+            background-color: #001f3f;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 300px;
+        }
+
+        .dropdown-content {
+            flex: 1;
+        }
+
+        .dropdown-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .dropdown-subtitle {
+            font-size: 16px;
+        }
+
+        .dropdown-arrow {
+            font-size: 24px;
+        }
+
+        .time-toggle {
+            display: flex;
+            border: 2px solid #001f3f;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .time-toggle button {
+            background-color: white;
+            color: #001f3f;
+            border: none;
+            padding: 12px 40px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .time-toggle button.active {
+            background-color: #001f3f;
+            color: white;
+        }
+
+        .time-toggle button:hover:not(.active) {
+            background-color: #f0f0f0;
+        }
+
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+        }
+
+        .chart-section h2 {
+            color: #001f3f;
+            font-size: 28px;
+            margin-bottom: 30px;
+        }
+
+        /* Line Chart */
+        .line-chart {
+            position: relative;
+            height: 400px;
+            border-left: 2px solid #ccc;
+            border-bottom: 2px solid #ccc;
+            padding: 20px 20px 40px 50px;
+        }
+
+        .chart-grid {
+            position: absolute;
+            top: 20px;
+            left: 50px;
+            right: 20px;
+            bottom: 40px;
+        }
+
+        .grid-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            border-top: 1px dashed #e0e0e0;
+        }
+
+        .y-label {
+            position: absolute;
+            left: -35px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .chart-line {
+            position: absolute;
+            top: 20px;
+            left: 50px;
+            right: 20px;
+            bottom: 40px;
+        }
+
+        .data-point {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: #4285f4;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+        }
+
+        .line-segment {
+            position: absolute;
+            height: 2px;
+            background-color: #4285f4;
+            transform-origin: left center;
+        }
+
+        .dashed-line {
+            position: absolute;
+            height: 2px;
+            border-top: 2px dashed #4285f4;
+            opacity: 0.5;
+        }
+
+        .x-labels {
+            position: absolute;
+            bottom: 10px;
+            left: 50px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .x-label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .chart-legend {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 30px;
+            font-size: 14px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-line {
+            width: 30px;
+            height: 2px;
+            background-color: #4285f4;
+        }
+
+        .legend-line.dashed {
+            border-top: 2px dashed #4285f4;
+            background: none;
+        }
+
+        /* Pie Chart */
+        .pie-chart-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+        }
+
+        .pie-chart {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: conic-gradient(
+                #2ecc71 0% 50%,
+                #4285f4 50% 90%,
+                #ff9800 90% 100%
+            );
+            margin-bottom: 40px;
+        }
+
+        .pie-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .pie-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 18px;
+        }
+
+        .pie-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+        }
+
+        .pie-color.green {
+            background-color: #2ecc71;
+        }
+
+        .pie-color.blue {
+            background-color: #4285f4;
+        }
+
+        .pie-color.orange {
+            background-color: #ff9800;
+        }
+
+        .pie-legend-text {
+            color: #001f3f;
+        }
+
+        .excellent {
+            color: #2ecc71;
+        }
+
+        .good {
+            color: #4285f4;
+        }
+
+        .average {
+            color: #ff9800;
+        }
+
+        @media (max-width: 1024px) {
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+
+            .controls-row {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .dropdown {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            nav {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .nav-links a {
+                width: 100%;
+                text-align: center;
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            }
+
+            h1 {
+                font-size: 32px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="logo">LOGO</div>
+        <div class="nav-links">
+            <a href="lecturer-dashboard.html">Dashboard</a>
+            <a href="lecturer-timetable.html">View Timetable</a>
+            <a href="lecturer-attendance.html" class="active">Manage Attendance</a>
+            <a href="#">Manage Classes/Rosters</a>
+            <a href="#">Manage Appeals</a>
+        </div>
+        <div class="notification-icon">🔔</div>
+    </nav>
+
+    <div class="container">
+        <h1>Attendance Statistics</h1>
+
+        <div class="stats-card">
+            <div class="controls-row">
+                <div class="dropdown">
+                    <div class="dropdown-content">
+                        <div class="dropdown-title">CSCI251</div>
+                        <div class="dropdown-subtitle">Advanced Programming</div>
+                    </div>
+                    <span class="dropdown-arrow">▼</span>
+                </div>
+
+                <div class="time-toggle">
+                    <button>Week</button>
+                    <button class="active">Month</button>
+                    <button>Semester</button>
+                </div>
+
+                <div class="dropdown">
+                    <div class="dropdown-content">
+                        <div class="dropdown-title">T01</div>
+                        <div class="dropdown-subtitle">Tutorial Group 01</div>
+                    </div>
+                    <span class="dropdown-arrow">▼</span>
+                </div>
+            </div>
+
+            <div class="charts-row">
+                <div class="chart-section">
+                    <h2>Attendance Trend</h2>
+                    <div class="line-chart">
+                        <div class="chart-grid">
+                            <div class="grid-line" style="top: 0%;">
+                                <span class="y-label">100</span>
+                            </div>
+                            <div class="grid-line" style="top: 25%;">
+                                <span class="y-label">75</span>
+                            </div>
+                            <div class="grid-line" style="top: 50%;">
+                                <span class="y-label">50</span>
+                            </div>
+                            <div class="grid-line" style="top: 75%;">
+                                <span class="y-label">25</span>
+                            </div>
+                            <div class="grid-line" style="top: 100%;">
+                                <span class="y-label">0</span>
+                            </div>
+                        </div>
+
+                        <div class="chart-line">
+                            <!-- Data points at approximately 90%, 88%, 87%, 91%, 89% -->
+                            <div class="data-point" style="left: 0%; top: 10%;"></div>
+                            <div class="data-point" style="left: 25%; top: 12%;"></div>
+                            <div class="data-point" style="left: 50%; top: 13%;"></div>
+                            <div class="data-point" style="left: 75%; top: 9%;"></div>
+                            <div class="data-point" style="left: 100%; top: 11%;"></div>
+
+                            <!-- Connecting lines -->
+                            <svg style="position: absolute; width: 100%; height: 100%; pointer-events: none;">
+                                <polyline 
+                                    points="0,10% 25%,12% 50%,13% 75%,9% 100%,11%" 
+                                    fill="none" 
+                                    stroke="#4285f4" 
+                                    stroke-width="2"
+                                    vector-effect="non-scaling-stroke" />
+                                <polyline 
+                                    points="0,15% 25%,15% 50%,15% 75%,15% 100%,15%" 
+                                    fill="none" 
+                                    stroke="#4285f4" 
+                                    stroke-width="2"
+                                    stroke-dasharray="5,5"
+                                    opacity="0.5"
+                                    vector-effect="non-scaling-stroke" />
+                            </svg>
+                        </div>
+
+                        <div class="x-labels">
+                            <span class="x-label">Jan</span>
+                            <span class="x-label">Feb</span>
+                            <span class="x-label">Mar</span>
+                            <span class="x-label">Apr</span>
+                            <span class="x-label">May</span>
+                        </div>
+
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <div class="legend-line"></div>
+                                <span>Attendance %</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-line dashed"></div>
+                                <span>Target %</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-section">
+                    <h2>Attendance Distribution</h2>
+                    <div class="pie-chart-container">
+                        <div class="pie-chart"></div>
+                        <div class="pie-legend">
+                            <div class="pie-legend-item">
+                                <div class="pie-color green"></div>
+                                <span class="pie-legend-text excellent">Excellent (≥90%): 50%</span>
+                            </div>
+                            <div class="pie-legend-item">
+                                <div class="pie-color blue"></div>
+                                <span class="pie-legend-text good">Good (80-89%): 40%</span>
+                            </div>
+                            <div class="pie-legend-item">
+                                <div class="pie-color orange"></div>
+                                <span class="pie-legend-text average">Average (70-79%): 10%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

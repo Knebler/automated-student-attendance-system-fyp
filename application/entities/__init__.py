@@ -13,6 +13,7 @@ from .subscription_plan import SubscriptionPlan
 from .subscription import Subscription
 from .venue import Venue
 from .timetable_slot import TimetableSlot
+from .report import Report
 
 __all__ = [
     'BaseEntity',
@@ -29,5 +30,6 @@ __all__ = [
     'SubscriptionPlan',
     'Subscription',
     'Venue',
-    'TimetableSlot'
+    'TimetableSlot',
+    'Report'
 ]

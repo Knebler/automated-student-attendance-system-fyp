@@ -237,6 +237,184 @@ CREATE TABLE Attendance_Records (
 );
 
 -- =============================================
+-- Group 5: Data Reporting & Analytics
+-- =============================================
+
+CREATE TABLE Reports (
+    -- Primary identifier
+    report_id INT PRIMARY KEY AUTO_INCREMENT,
+    
+    -- Report metadata
+    report_uuid VARCHAR(36) UNIQUE NOT NULL DEFAULT (UUID()),
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    report_type VARCHAR(50) NOT NULL,
+    
+    -- Who generated the report (reporter)
+    institution_id INT NOT NULL,
+    reporter_email VARCHAR(255) NOT NULL,
+    reporter_role ENUM('admin', 'lecturer', 'system') NOT NULL,
+    
+    -- Report content and parameters
+    report_data JSON NOT NULL,  -- Stores the actual report data (charts, tables, stats)
+    parameters JSON,            -- Stores filters/parameters used to generate report
+    format ENUM('pdf', 'csv', 'html', 'json', 'excel') DEFAULT 'html',
+    
+    -- Report status and metadata
+    status ENUM('generating', 'completed', 'failed', 'scheduled') DEFAULT 'generating',
+    generation_time INT,  -- Time taken to generate (in seconds)
+    file_size_bytes INT,  -- Size of generated file if applicable
+    
+    -- Storage locations
+    file_path VARCHAR(500),      -- Local file system path
+    storage_url VARCHAR(500),    -- Cloud storage URL (Azure Blob, S3, etc.)
+    preview_url VARCHAR(500),    -- URL for HTML preview
+    
+    -- Schedule information (for recurring reports)
+    schedule_type ENUM('once', 'daily', 'weekly', 'monthly', 'quarterly', 'yearly') DEFAULT 'once',
+    schedule_config JSON,        -- Cron-like configuration
+    next_scheduled_run DATETIME,
+    
+    -- Timestamps
+    generated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    expires_at DATETIME,         -- When report should be auto-deleted
+    viewed_at DATETIME,          -- When report was last viewed
+    deleted_at DATETIME,         -- Soft delete timestamp
+    
+    -- Access control
+    is_public BOOLEAN DEFAULT FALSE,
+    access_code VARCHAR(100),    -- For sharing with password
+    allowed_viewers JSON,        -- Specific users who can view
+    
+    -- Foreign keys
+    FOREIGN KEY (institution_id) REFERENCES Institutions(institution_id) ON DELETE CASCADE,
+    
+    -- Indexes for performance
+    INDEX idx_reports_institution (institution_id),
+    INDEX idx_reports_reporter (reporter_email),
+    INDEX idx_reports_type (report_type),
+    INDEX idx_reports_status (status),
+    INDEX idx_reports_generated (generated_at),
+    INDEX idx_reports_composite (institution_id, reporter_email, report_type)
+);
+
+CREATE TABLE Platform_Issues (
+    -- Primary identifier
+    issue_id INT PRIMARY KEY AUTO_INCREMENT,
+    issue_uuid VARCHAR(36) UNIQUE NOT NULL DEFAULT (UUID()),
+    
+    -- Reporter information (supports all user types)
+    reporter_type ENUM('student', 'lecturer', 'admin', 'platform_manager') NOT NULL,
+    reporter_id INT NOT NULL,  -- ID from respective table (student_id, lecturer_id, etc.)
+    reporter_email VARCHAR(255) NOT NULL,
+    institution_id INT NULL,  -- NULL for platform managers
+    
+    -- Issue details
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    
+    -- Categorization - FIXED: 'other' added to ENUM since it's the default
+    issue_type ENUM('bug', 'feature_request', 'ui_issue', 'performance', 'security', 'other') DEFAULT 'bug',
+    category ENUM('attendance', 'timetable', 'reports', 'authentication', 'api', 'mobile', 'web', 'database', 'integration', 'other') DEFAULT 'other',
+    priority ENUM('critical', 'high', 'medium', 'low') DEFAULT 'medium',
+    severity ENUM('blocker', 'major', 'minor', 'trivial') DEFAULT 'minor',
+    
+    -- Technical details
+    module VARCHAR(100),  -- e.g., "Facial Recognition", "Attendance Marking"
+    page_url VARCHAR(500),
+    browser_info JSON,    -- {browser: "Chrome", version: "120.0", os: "Windows 10"}
+    device_type ENUM('desktop', 'mobile', 'tablet'),
+    
+    -- Supporting files/evidence
+    screenshot_path VARCHAR(500),
+    log_file_path VARCHAR(500),
+    additional_files JSON,  -- Array of file paths
+    
+    -- Status tracking
+    status ENUM(
+        'new', 
+        'acknowledged', 
+        'investigating', 
+        'in_progress', 
+        'resolved', 
+        'closed', 
+        'reopened', 
+        'duplicate', 
+        'wont_fix'
+    ) DEFAULT 'new',
+    
+    -- Assignment and resolution
+    assigned_to INT NULL,  -- Platform manager ID
+    assigned_at DATETIME,
+    
+    resolution ENUM(
+        'fixed', 
+        'workaround', 
+        'cannot_reproduce', 
+        'obsolete', 
+        'as_designed',
+        'pending_release',
+        'duplicate'
+    ),
+    resolution_notes TEXT,
+    fix_version VARCHAR(50),  -- e.g., "v2.1.5"
+    
+    -- Time tracking
+    estimated_hours DECIMAL(5,2),
+    actual_hours DECIMAL(5,2),
+    due_date DATE,
+    
+    -- Timestamps
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    acknowledged_at DATETIME,
+    resolved_at DATETIME,
+    closed_at DATETIME,
+    
+    -- Feedback loop
+    reporter_notified BOOLEAN DEFAULT FALSE,
+    reporter_feedback TEXT,
+    reporter_rating TINYINT CHECK (reporter_rating BETWEEN 1 AND 5),
+    
+    -- Foreign key constraints
+    FOREIGN KEY (institution_id) REFERENCES Institutions(institution_id) ON DELETE SET NULL,
+    FOREIGN KEY (assigned_to) REFERENCES Platform_Managers(platform_mgr_id),
+    
+    -- Indexes for performance
+    INDEX idx_issues_reporter (reporter_type, reporter_id),
+    INDEX idx_issues_institution (institution_id),
+    INDEX idx_issues_status (status),
+    INDEX idx_issues_priority (priority),
+    INDEX idx_issues_type (issue_type),
+    INDEX idx_issues_assigned (assigned_to),
+    INDEX idx_issues_created (created_at),
+    INDEX idx_issues_composite (reporter_type, reporter_id, institution_id)
+);
+
+-- Create triggers for timestamps
+DELIMITER //
+CREATE TRIGGER before_platform_issues_update 
+BEFORE UPDATE ON Platform_Issues 
+FOR EACH ROW 
+BEGIN
+    SET NEW.updated_at = CURRENT_TIMESTAMP;
+    
+    -- Update status timestamps
+    IF NEW.status = 'acknowledged' AND OLD.status != 'acknowledged' THEN
+        SET NEW.acknowledged_at = CURRENT_TIMESTAMP;
+    END IF;
+    
+    IF NEW.status = 'resolved' AND OLD.status != 'resolved' THEN
+        SET NEW.resolved_at = CURRENT_TIMESTAMP;
+    END IF;
+    
+    IF NEW.status = 'closed' AND OLD.status != 'closed' THEN
+        SET NEW.closed_at = CURRENT_TIMESTAMP;
+    END IF;
+END//
+DELIMITER ;
+
+-- =============================================
 -- Sample Data for Testing
 -- =============================================
 
@@ -299,3 +477,152 @@ JOIN Venues v ON ses.venue_id = v.venue_id
 JOIN Lecturers l ON ses.lecturer_id = l.lecturer_id
 LEFT JOIN Attendance_Records ar ON ses.session_id = ar.session_id
 GROUP BY ses.session_id, c.course_code, c.course_name, ses.session_date, v.venue_name, l.full_name;
+
+-- Create a view for easier report lookup
+CREATE VIEW Report_Overview AS
+SELECT 
+    r.report_id,
+    r.report_uuid,
+    r.title,
+    r.description,
+    r.report_type,
+    r.institution_id,
+    r.reporter_email,
+    r.reporter_role,
+    r.status,
+    r.generated_at,
+    r.expires_at,
+    r.file_size_bytes,
+    r.format,
+    r.is_public,
+    i.name AS institution_name,
+    CASE 
+        WHEN r.reporter_role = 'admin' THEN ia.full_name
+        WHEN r.reporter_role = 'lecturer' THEN l.full_name
+        ELSE 'System Generated'
+    END AS reporter_name
+FROM Reports r
+JOIN Institutions i ON r.institution_id = i.institution_id
+LEFT JOIN Institution_Admins ia ON r.reporter_email = ia.email AND r.institution_id = ia.institution_id AND r.reporter_role = 'admin'
+LEFT JOIN Lecturers l ON r.reporter_email = l.email AND r.institution_id = l.institution_id AND r.reporter_role = 'lecturer';
+
+-- Create a comprehensive view for issue management
+CREATE VIEW Platform_Issues_Overview AS
+SELECT 
+    pi.issue_id,
+    pi.issue_uuid,
+    pi.title,
+    pi.description,
+    pi.issue_type,
+    pi.category,
+    pi.priority,
+    pi.severity,
+    pi.status,
+    
+    -- Reporter info
+    pi.reporter_type,
+    pi.reporter_id,
+    pi.reporter_email,
+    pi.institution_id,
+    
+    CASE 
+        WHEN pi.reporter_type = 'student' THEN s.full_name
+        WHEN pi.reporter_type = 'lecturer' THEN l.full_name
+        WHEN pi.reporter_type = 'admin' THEN ia.full_name
+        WHEN pi.reporter_type = 'platform_manager' THEN pm.full_name
+    END AS reporter_name,
+    
+    CASE 
+        WHEN pi.reporter_type = 'student' THEN s.student_code
+        WHEN pi.reporter_type = 'lecturer' THEN l.department
+        WHEN pi.reporter_type = 'admin' THEN ia.email
+        WHEN pi.reporter_type = 'platform_manager' THEN 'Platform Team'
+    END AS reporter_detail,
+    
+    -- Institution info
+    i.name AS institution_name,
+    
+    -- Assignment info
+    pi.assigned_to,
+    pm_assigned.full_name AS assigned_to_name,
+    pi.assigned_at,
+    
+    -- Resolution info
+    pi.resolution,
+    pi.resolution_notes,
+    pi.fix_version,
+    
+    -- Timestamps
+    pi.created_at,
+    pi.updated_at,
+    pi.acknowledged_at,
+    pi.resolved_at,
+    pi.closed_at,
+    
+    -- Technical info
+    pi.module,
+    pi.page_url,
+    pi.browser_info,
+    pi.device_type,
+    
+    -- Feedback
+    pi.reporter_rating,
+    pi.reporter_feedback,
+    
+    -- Age calculations
+    DATEDIFF(CURRENT_DATE(), pi.created_at) AS days_open,
+    CASE 
+        WHEN pi.status IN ('resolved', 'closed') 
+        THEN DATEDIFF(pi.resolved_at, pi.created_at)
+        ELSE DATEDIFF(CURRENT_DATE(), pi.created_at)
+    END AS days_to_resolution
+    
+FROM Platform_Issues pi
+LEFT JOIN Students s ON pi.reporter_type = 'student' 
+    AND pi.reporter_id = s.student_id 
+    AND pi.institution_id = s.institution_id
+LEFT JOIN Lecturers l ON pi.reporter_type = 'lecturer' 
+    AND pi.reporter_id = l.lecturer_id 
+    AND pi.institution_id = l.institution_id
+LEFT JOIN Institution_Admins ia ON pi.reporter_type = 'admin' 
+    AND pi.reporter_id = ia.inst_admin_id 
+    AND pi.institution_id = ia.institution_id
+LEFT JOIN Platform_Managers pm ON pi.reporter_type = 'platform_manager' 
+    AND pi.reporter_id = pm.platform_mgr_id
+LEFT JOIN Platform_Managers pm_assigned ON pi.assigned_to = pm_assigned.platform_mgr_id
+LEFT JOIN Institutions i ON pi.institution_id = i.institution_id;
+
+-- Create view for dashboard statistics
+CREATE VIEW Platform_Issues_Stats AS
+SELECT 
+    -- Overall stats
+    COUNT(*) as total_issues,
+    SUM(CASE WHEN status = 'new' THEN 1 ELSE 0 END) as new_issues,
+    SUM(CASE WHEN status IN ('acknowledged', 'investigating', 'in_progress') THEN 1 ELSE 0 END) as in_progress,
+    SUM(CASE WHEN status IN ('resolved', 'closed') THEN 1 ELSE 0 END) as resolved_issues,
+    
+    -- By type
+    SUM(CASE WHEN issue_type = 'bug' THEN 1 ELSE 0 END) as bugs,
+    SUM(CASE WHEN issue_type = 'feature_request' THEN 1 ELSE 0 END) as feature_requests,
+    SUM(CASE WHEN issue_type = 'ui_issue' THEN 1 ELSE 0 END) as ui_issues,
+    
+    -- By priority
+    SUM(CASE WHEN priority = 'critical' THEN 1 ELSE 0 END) as critical,
+    SUM(CASE WHEN priority = 'high' THEN 1 ELSE 0 END) as high,
+    SUM(CASE WHEN priority = 'medium' THEN 1 ELSE 0 END) as medium,
+    SUM(CASE WHEN priority = 'low' THEN 1 ELSE 0 END) as low,
+    
+    -- By reporter type
+    SUM(CASE WHEN reporter_type = 'student' THEN 1 ELSE 0 END) as student_reports,
+    SUM(CASE WHEN reporter_type = 'lecturer' THEN 1 ELSE 0 END) as lecturer_reports,
+    SUM(CASE WHEN reporter_type = 'admin' THEN 1 ELSE 0 END) as admin_reports,
+    SUM(CASE WHEN reporter_type = 'platform_manager' THEN 1 ELSE 0 END) as internal_reports,
+    
+    -- Average time to resolution (for resolved issues)
+    AVG(CASE WHEN status IN ('resolved', 'closed') 
+        THEN DATEDIFF(resolved_at, created_at) END) as avg_days_to_resolve,
+    
+    -- Unassigned issues
+    SUM(CASE WHEN assigned_to IS NULL AND status NOT IN ('resolved', 'closed') THEN 1 ELSE 0 END) as unassigned
+    
+FROM Platform_Issues;

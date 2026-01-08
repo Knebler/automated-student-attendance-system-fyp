@@ -4,27 +4,24 @@ from datetime import datetime
 class AttendanceRecord(BaseEntity):
     """Attendance Record entity as a SQLAlchemy model"""
     
-    # We need to get the db instance from the app
     @classmethod
     def _get_db(cls):
         """Helper method to get SQLAlchemy instance from app"""
         from flask import current_app
         return current_app.config.get('db')
     
-    # Define as SQLAlchemy model dynamically
     @classmethod
     def get_model(cls):
         """Return the SQLAlchemy model class"""
         db = cls._get_db()
         
-        # Define the model class (only once)
         if not hasattr(cls, '_model_class'):
             
             class AttendanceRecordModel(db.Model, BaseEntity):
                 """Actual SQLAlchemy model class matching Attendance_Records table"""
                 __tablename__ = "Attendance_Records"
                 
-                # Column definitions matching schema.sql
+                # Column definitions
                 attendance_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
                 session_id = db.Column(
                     db.Integer, 
@@ -56,10 +53,22 @@ class AttendanceRecord(BaseEntity):
                     default=db.func.current_timestamp()
                 )
                 
-                # Relationships
-                session = db.relationship('Session', backref='attendance_records')
-                student = db.relationship('Student', backref='attendance_records')
-                lecturer = db.relationship('Lecturer', backref='marked_attendance')
+                # ✅ FIX: Use string references for relationships
+                session = db.relationship(
+                    'Session',  # String reference instead of class
+                    backref=db.backref('attendance_records', lazy='dynamic'),
+                    foreign_keys=[session_id]
+                )
+                student = db.relationship(
+                    'Student',  # String reference
+                    backref=db.backref('attendance_records', lazy='dynamic'),
+                    foreign_keys=[student_id]
+                )
+                lecturer = db.relationship(
+                    'Lecturer',  # String reference
+                    backref=db.backref('marked_attendance', lazy='dynamic'),
+                    foreign_keys=[lecturer_id]
+                )
                 
                 # Unique constraints
                 __table_args__ = (
@@ -106,8 +115,15 @@ class AttendanceRecord(BaseEntity):
                 def get_by_session(cls, app, session_id):
                     """Get all attendance records for a session"""
                     try:
-                        filters = {'session_id': session_id}
-                        return BaseEntity.get_all(app, cls, filters=filters) or []
+                        from sqlalchemy.orm import joinedload
+                        
+                        session = BaseEntity.get_db_session(app)
+                        records = session.query(cls).options(
+                            joinedload(cls.student)  # Eager load student
+                        ).filter_by(
+                            session_id=session_id
+                        ).all()
+                        return records
                     except Exception as e:
                         app.logger.error(f"Error getting attendance by session: {e}")
                         return []
@@ -117,22 +133,32 @@ class AttendanceRecord(BaseEntity):
                     """Get attendance records for a student within date range"""
                     try:
                         from sqlalchemy import and_
+                        from sqlalchemy.orm import aliased
                         
+                        # ✅ FIX: Avoid using cls.session.has() - use explicit join instead
                         session = BaseEntity.get_db_session(app)
+                        
+                        # Import Session model here to avoid circular import
+                        from application.entities.session import Session as SessionModel
+                        
                         query = session.query(cls).join(
-                            'session'  # Join with Session table via relationship
+                            SessionModel,  # Use imported model class
+                            cls.session_id == SessionModel.session_id
                         ).filter(
                             cls.student_id == student_id
                         )
                         
+                        # Apply date filters
                         if start_date:
-                            query = query.filter(cls.session.has(session_date=start_date))
+                            query = query.filter(SessionModel.session_date >= start_date)
                         if end_date:
-                            query = query.filter(cls.session.has(session_date=end_date))
+                            query = query.filter(SessionModel.session_date <= end_date)
                         
                         return query.all()
                     except Exception as e:
                         app.logger.error(f"Error getting attendance by student: {e}")
+                        import traceback
+                        app.logger.error(traceback.format_exc())
                         return []
                 
                 @classmethod
@@ -158,33 +184,6 @@ class AttendanceRecord(BaseEntity):
             cls._model_class = AttendanceRecordModel
         
         return cls._model_class
-    
-    # Forward methods to the actual model
-    @classmethod
-    def get_by_session_and_student(cls, app, session_id, student_id):
-        """Get attendance record for specific session and student"""
-        return cls.get_model().get_by_session_and_student(app, session_id, student_id)
-    
-    @classmethod
-    def get_by_session(cls, app, session_id):
-        """Get all attendance records for a session"""
-        return cls.get_model().get_by_session(app, session_id)
-    
-    @classmethod
-    def get_by_student(cls, app, student_id, start_date=None, end_date=None):
-        """Get attendance records for a student within date range"""
-        return cls.get_model().get_by_student(app, student_id, start_date, end_date)
-    
-    @classmethod
-    def mark_attendance(cls, app, attendance_data):
-        """Mark attendance for a session and student"""
-        return cls.get_model().mark_attendance(app, attendance_data)
-    
-    @classmethod
-    def update_attendance(cls, app, attendance_id, update_data):
-        """Update attendance record"""
-        return cls.get_model().update_attendance(app, attendance_id, update_data)
-    
     @classmethod
     def get_by_id(cls, app, attendance_id):
         """Get attendance record by ID"""

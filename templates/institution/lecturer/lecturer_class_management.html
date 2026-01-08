@@ -1,0 +1,1151 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Class Management - AttendAI{% endblock %}
+
+{% block content %}
+<div class="class-management">
+    <h1 class="page-title mb-4">Class Management</h1>
+
+    <!-- Class Selection Dropdown -->
+    <div class="class-selector mb-4">
+        <div class="card-custom">
+            <div class="card-body-custom">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="section-title mb-2">Select Class</h3>
+                        <p class="text-muted">Choose a class to manage its roster and details</p>
+                    </div>
+                    <div class="class-dropdown">
+                        <select id="classSelector" class="form-select" onchange="loadClassDetails(this.value)">
+                            <option value="">Select a class...</option>
+                            {% for class in classes %}
+                            <option value="{{ class.id }}" {% if class.id == current_class.id %}selected{% endif %}>
+                                {{ class.course_code }} - {{ class.section }} ({{ class.name }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Class Details Card -->
+    {% if current_class %}
+    <div class="class-details-card mb-4">
+        <div class="card-custom">
+            <div class="card-header-custom d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">{{ current_class.course_code }} - {{ current_class.name }}</h2>
+                <div class="dropdown">
+                    <button class="btn-outline-custom dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        Actions
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="editClass()">Edit Class Details</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="duplicateClass()">Duplicate Class</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="exportRoster()">Export Roster</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="#" onclick="archiveClass()">Archive Class</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card-body-custom">
+                <!-- Class Details Grid -->
+                <div class="class-details-grid mb-4">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="detail-item">
+                                <label class="detail-label">Class Group:</label>
+                                <span class="detail-value">{{ current_class.section }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="detail-item">
+                                <label class="detail-label">Venue:</label>
+                                <span class="detail-value">{{ current_class.room }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="detail-item">
+                                <label class="detail-label">Start Date/Time:</label>
+                                <span class="detail-value">{{ current_class.start_datetime }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="detail-item">
+                                <label class="detail-label">End Date/Time:</label>
+                                <span class="detail-value">{{ current_class.end_datetime }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="detail-item">
+                                <label class="detail-label">Lecturer:</label>
+                                <span class="detail-value">{{ current_class.lecturer }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="detail-item">
+                                <label class="detail-label">Capacity:</label>
+                                <span class="detail-value">{{ current_class.capacity }} students</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Class Roster Section -->
+                <div class="class-roster-section">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="section-title mb-0">Class Roster</h3>
+                        <div class="roster-stats">
+                            <span class="badge bg-primary">{{ students|length }} Students</span>
+                            <span class="badge bg-success">{{ current_class.capacity - students|length }} Slots Available</span>
+                        </div>
+                    </div>
+
+                    <!-- Search and Filter -->
+                    <div class="search-filter-section mb-4">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="search-box">
+                                    <input type="text" 
+                                           id="searchStudents" 
+                                           placeholder="Search by name or ID..."
+                                           onkeyup="searchRoster()">
+                                    <span class="search-icon">🔍</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <select id="sortRoster" class="form-select" onchange="sortRoster()">
+                                    <option value="name_asc">Sort by Name (A-Z)</option>
+                                    <option value="name_desc">Sort by Name (Z-A)</option>
+                                    <option value="id_asc">Sort by ID (Ascending)</option>
+                                    <option value="id_desc">Sort by ID (Descending)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select id="filterStatus" class="form-select" onchange="filterRoster()">
+                                    <option value="all">All Students</option>
+                                    <option value="active">Active Only</option>
+                                    <option value="inactive">Inactive Only</option>
+                                    <option value="withdrawn">Withdrawn Only</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn-custom w-100" onclick="refreshRoster()">
+                                    <span class="btn-icon">🔄</span>
+                                    Refresh
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add Student Section -->
+                    <div class="add-student-section mb-4">
+                        <div class="card-custom">
+                            <div class="card-body-custom">
+                                <h4 class="mb-3">Add Student to Roster</h4>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <input type="text" 
+                                               id="studentIdInput" 
+                                               class="form-control" 
+                                               placeholder="Enter Student ID or Email">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button class="btn-custom w-100" onclick="addStudent()">
+                                            <span class="btn-icon">➕</span>
+                                            Add Student
+                                        </button>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button class="btn-outline-custom w-100" onclick="showBulkUpload()">
+                                            <span class="btn-icon">📄</span>
+                                            Bulk Upload
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Roster Table -->
+                    <div class="roster-table-section">
+                        <div class="table-responsive">
+                            <table class="roster-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Student ID</th>
+                                        <th>Email</th>
+                                        <th>Status</th>
+                                        <th>Enrollment Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rosterTableBody">
+                                    {% for student in students %}
+                                    <tr data-student-id="{{ student.id }}">
+                                        <td>
+                                            <div class="student-name">
+                                                <div class="student-avatar">
+                                                    {{ student.initials }}
+                                                </div>
+                                                <div>
+                                                    <strong>{{ student.name }}</strong>
+                                                    <div class="student-program">{{ student.program }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <code class="student-id">{{ student.id_number }}</code>
+                                        </td>
+                                        <td>
+                                            <a href="mailto:{{ student.email }}" class="student-email">
+                                                {{ student.email }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <span class="status-badge status-{{ student.status }}">
+                                                {{ student.status|capitalize }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {{ student.enrollment_date }}
+                                        </td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <button class="btn-action" onclick="viewStudentDetails('{{ student.id }}')" title="View Details">
+                                                    👁️
+                                                </button>
+                                                <button class="btn-action" onclick="editStudent('{{ student.id }}')" title="Edit">
+                                                    ✏️
+                                                </button>
+                                                <button class="btn-action btn-danger" onclick="removeStudent('{{ student.id }}')" title="Remove">
+                                                    🗑️
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {% if not students %}
+                        <div class="empty-roster card-custom">
+                            <div class="card-body-custom text-center">
+                                <div class="empty-state-icon mb-3">👥</div>
+                                <h4>No Students in Roster</h4>
+                                <p class="text-muted mb-4">Add students to this class using the form above.</p>
+                                <button class="btn-custom" onclick="showBulkUpload()">
+                                    <span class="btn-icon">📄</span>
+                                    Upload Student List
+                                </button>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Bulk Upload Modal (Hidden by default) -->
+                    <div id="bulkUploadModal" class="modal-overlay" style="display: none;">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h3>Bulk Upload Students</h3>
+                                <button class="btn-close" onclick="hideBulkUpload()">×</button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="text-muted mb-3">Upload a CSV file with student information. Required columns: Student ID, Name, Email</p>
+                                
+                                <div class="file-upload-area mb-3">
+                                    <input type="file" id="csvFile" accept=".csv" class="d-none">
+                                    <label for="csvFile" class="file-upload-label">
+                                        <div class="file-upload-content">
+                                            <span class="file-upload-icon">📁</span>
+                                            <span class="file-upload-text">Choose CSV file or drag here</span>
+                                            <span class="file-upload-hint">Max file size: 5MB</span>
+                                        </div>
+                                    </label>
+                                </div>
+                                
+                                <div class="upload-preview" id="uploadPreview" style="display: none;">
+                                    <h5>Upload Preview</h5>
+                                    <div class="table-responsive">
+                                        <table class="preview-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Student ID</th>
+                                                    <th>Name</th>
+                                                    <th>Email</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="previewTableBody">
+                                                <!-- Preview rows will be inserted here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn-outline-custom" onclick="hideBulkUpload()">Cancel</button>
+                                <button class="btn-custom" onclick="processBulkUpload()">Upload Students</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="card-footer-custom">
+                <div class="d-flex justify-content-end gap-3">
+                    <button class="btn-outline-custom" onclick="cancelChanges()">Cancel</button>
+                    <button class="btn-custom" onclick="saveChanges()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- No Class Selected -->
+    <div class="no-class-selected">
+        <div class="card-custom">
+            <div class="card-body-custom text-center">
+                <div class="empty-state-icon mb-3">🏫</div>
+                <h4>No Class Selected</h4>
+                <p class="text-muted mb-4">Please select a class from the dropdown above to manage its roster.</p>
+                <button class="btn-custom" onclick="createNewClass()">
+                    <span class="btn-icon">➕</span>
+                    Create New Class
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    /* Class Management Specific Styles */
+    .class-management {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        font-style: italic;
+        color: var(--text-dark);
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 1rem;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--text-dark);
+        margin-bottom: 1rem;
+    }
+
+    /* Class Selector */
+    .class-selector .form-select {
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        background-color: white;
+        font-size: 1rem;
+        color: var(--text-dark);
+        min-width: 300px;
+    }
+
+    /* Class Details Grid */
+    .class-details-grid {
+        background-color: var(--primary-light);
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .detail-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .detail-label {
+        font-weight: bold;
+        color: var(--text-dark);
+        min-width: 140px;
+    }
+
+    .detail-value {
+        color: var(--text-dark);
+        font-weight: 500;
+    }
+
+    /* Roster Stats */
+    .roster-stats {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .badge {
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    /* Search and Filter */
+    .search-filter-section .form-select {
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        padding: 0.75rem;
+    }
+
+    .search-box {
+        position: relative;
+    }
+
+    .search-box input {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 3rem;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        background-color: white;
+        font-size: 0.9rem;
+        color: var(--text-dark);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-light);
+    }
+
+    /* Roster Table */
+    .roster-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+    }
+
+    .roster-table thead {
+        background-color: var(--primary-dark);
+        color: white;
+    }
+
+    .roster-table th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .roster-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
+    }
+
+    .roster-table tbody tr {
+        transition: background-color 0.2s ease;
+    }
+
+    .roster-table tbody tr:hover {
+        background-color: var(--primary-light);
+    }
+
+    /* Student Name Cell */
+    .student-name {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .student-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: var(--primary-dark);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+
+    .student-program {
+        font-size: 0.8rem;
+        color: var(--text-light);
+    }
+
+    .student-id {
+        background-color: var(--primary-light);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 0.85rem;
+    }
+
+    .student-email {
+        color: var(--primary-dark);
+        text-decoration: none;
+    }
+
+    .student-email:hover {
+        text-decoration: underline;
+    }
+
+    /* Status Badges */
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .status-active {
+        background-color: #f0fdf4;
+        color: #059669;
+        border: 1px solid #059669;
+    }
+
+    .status-inactive {
+        background-color: #fef2f2;
+        color: #dc2626;
+        border: 1px solid #dc2626;
+    }
+
+    .status-withdrawn {
+        background-color: #f5f5f5;
+        color: #6b7280;
+        border: 1px solid #d1d5db;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-action {
+        background: none;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 0.5rem;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+
+    .btn-action:hover {
+        background-color: var(--primary-light);
+    }
+
+    .btn-action.btn-danger {
+        color: #dc2626;
+        border-color: #dc2626;
+    }
+
+    .btn-action.btn-danger:hover {
+        background-color: #fef2f2;
+    }
+
+    /* Empty States */
+    .empty-roster {
+        text-align: center;
+        padding: 3rem;
+    }
+
+    .empty-state-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: var(--text-light);
+    }
+
+    .no-class-selected {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .modal-content {
+        background-color: white;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: slideUp 0.3s ease;
+    }
+
+    .modal-header {
+        padding: 1.5rem;
+        border-bottom: 2px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        color: var(--text-dark);
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .modal-footer {
+        padding: 1.5rem;
+        border-top: 2px solid var(--border-color);
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+    }
+
+    /* File Upload */
+    .file-upload-area {
+        border: 2px dashed var(--border-color);
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .file-upload-area:hover {
+        border-color: var(--primary-dark);
+        background-color: var(--primary-light);
+    }
+
+    .file-upload-label {
+        display: block;
+        cursor: pointer;
+    }
+
+    .file-upload-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .file-upload-icon {
+        font-size: 2rem;
+        color: var(--text-light);
+    }
+
+    .file-upload-text {
+        color: var(--text-dark);
+        font-weight: 600;
+    }
+
+    .file-upload-hint {
+        font-size: 0.875rem;
+        color: var(--text-light);
+    }
+
+    /* Preview Table */
+    .preview-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8rem;
+    }
+
+    .preview-table th,
+    .preview-table td {
+        padding: 0.75rem;
+        border: 1px solid var(--border-color);
+        text-align: left;
+    }
+
+    .preview-table th {
+        background-color: var(--primary-light);
+        font-weight: 600;
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+        .class-details-grid .row {
+            flex-direction: column;
+        }
+        
+        .detail-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        
+        .detail-label {
+            min-width: auto;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 1.75rem;
+        }
+        
+        .section-title {
+            font-size: 1.25rem;
+        }
+        
+        .roster-stats {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .student-name {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        
+        .student-avatar {
+            width: 32px;
+            height: 32px;
+            font-size: 0.8rem;
+        }
+        
+        .modal-content {
+            width: 95%;
+            margin: 0 1rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .search-filter-section .row {
+            flex-direction: column;
+        }
+        
+        .class-selector .form-select {
+            min-width: 100%;
+        }
+        
+        .card-footer-custom .d-flex {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .card-footer-custom .btn-custom,
+        .card-footer-custom .btn-outline-custom {
+            width: 100%;
+        }
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+{% block scripts %}
+<script>
+    // Current class state
+    let currentClassId = "{{ current_class.id if current_class else '' }}";
+    let rosterChanges = {};
+    
+    function loadClassDetails(classId) {
+        if (!classId) {
+            window.location.href = "{{ url_for('lecturer.class_management') }}";
+            return;
+        }
+        
+        window.location.href = "{{ url_for('lecturer.class_management') }}?class_id=" + classId;
+    }
+    
+    function createNewClass() {
+        window.location.href = "{{ url_for('lecturer.create_class') }}";
+    }
+    
+    function editClass() {
+        window.location.href = "{{ url_for('lecturer.edit_class', class_id=current_class.id) if current_class else '#' }}";
+    }
+    
+    function duplicateClass() {
+        if (confirm('Duplicate this class with all its settings?')) {
+            // In a real app, this would make an API call
+            console.log('Duplicating class:', currentClassId);
+            showToast('Class duplication started', 'info');
+        }
+    }
+    
+    function exportRoster() {
+        // Generate CSV content
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Student ID,Name,Email,Status,Enrollment Date\n";
+        
+        document.querySelectorAll('#rosterTableBody tr').forEach(row => {
+            const cells = row.querySelectorAll('td');
+            const id = cells[1].querySelector('.student-id').textContent;
+            const name = cells[0].querySelector('strong').textContent;
+            const email = cells[2].querySelector('.student-email').textContent;
+            const status = cells[3].querySelector('.status-badge').textContent;
+            const enrollmentDate = cells[4].textContent.trim();
+            
+            csvContent += `"${id}","${name}","${email}","${status}","${enrollmentDate}"\n`;
+        });
+        
+        // Create download link
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `roster_${currentClassId}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showToast('Roster exported successfully', 'success');
+    }
+    
+    function archiveClass() {
+        if (confirm('Are you sure you want to archive this class? This action cannot be undone.')) {
+            // In a real app, this would make an API call
+            console.log('Archiving class:', currentClassId);
+            showToast('Class archived', 'info');
+            setTimeout(() => {
+                window.location.href = "{{ url_for('lecturer.class_management') }}";
+            }, 1500);
+        }
+    }
+    
+    function searchRoster() {
+        const searchTerm = document.getElementById('searchStudents').value.toLowerCase();
+        const rows = document.querySelectorAll('#rosterTableBody tr');
+        
+        rows.forEach(row => {
+            const name = row.querySelector('strong').textContent.toLowerCase();
+            const id = row.querySelector('.student-id').textContent.toLowerCase();
+            const email = row.querySelector('.student-email').textContent.toLowerCase();
+            
+            if (name.includes(searchTerm) || id.includes(searchTerm) || email.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+    
+    function sortRoster() {
+        const sortBy = document.getElementById('sortRoster').value;
+        const rows = Array.from(document.querySelectorAll('#rosterTableBody tr'));
+        
+        rows.sort((a, b) => {
+            let aValue, bValue;
+            
+            switch(sortBy) {
+                case 'name_asc':
+                    aValue = a.querySelector('strong').textContent.toLowerCase();
+                    bValue = b.querySelector('strong').textContent.toLowerCase();
+                    return aValue.localeCompare(bValue);
+                case 'name_desc':
+                    aValue = a.querySelector('strong').textContent.toLowerCase();
+                    bValue = b.querySelector('strong').textContent.toLowerCase();
+                    return bValue.localeCompare(aValue);
+                case 'id_asc':
+                    aValue = a.querySelector('.student-id').textContent;
+                    bValue = b.querySelector('.student-id').textContent;
+                    return aValue.localeCompare(bValue);
+                case 'id_desc':
+                    aValue = a.querySelector('.student-id').textContent;
+                    bValue = b.querySelector('.student-id').textContent;
+                    return bValue.localeCompare(aValue);
+                default:
+                    return 0;
+            }
+        });
+        
+        const tbody = document.getElementById('rosterTableBody');
+        tbody.innerHTML = '';
+        rows.forEach(row => tbody.appendChild(row));
+    }
+    
+    function filterRoster() {
+        const filterBy = document.getElementById('filterStatus').value;
+        const rows = document.querySelectorAll('#rosterTableBody tr');
+        
+        rows.forEach(row => {
+            const status = row.querySelector('.status-badge').textContent.toLowerCase();
+            
+            if (filterBy === 'all' || status === filterBy) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+    
+    function refreshRoster() {
+        // In a real app, this would fetch fresh data from the server
+        showToast('Roster refreshed', 'info');
+    }
+    
+    function addStudent() {
+        const studentId = document.getElementById('studentIdInput').value.trim();
+        if (!studentId) {
+            showToast('Please enter a Student ID or Email', 'warning');
+            return;
+        }
+        
+        // In a real app, this would make an API call
+        console.log('Adding student:', studentId);
+        showToast('Student added to roster', 'success');
+        document.getElementById('studentIdInput').value = '';
+    }
+    
+    function showBulkUpload() {
+        document.getElementById('bulkUploadModal').style.display = 'flex';
+    }
+    
+    function hideBulkUpload() {
+        document.getElementById('bulkUploadModal').style.display = 'none';
+    }
+    
+    function processBulkUpload() {
+        const fileInput = document.getElementById('csvFile');
+        if (!fileInput.files.length) {
+            showToast('Please select a CSV file', 'warning');
+            return;
+        }
+        
+        // In a real app, this would upload and process the file
+        showToast('CSV file uploaded and processing...', 'info');
+        hideBulkUpload();
+        
+        // Simulate processing
+        setTimeout(() => {
+            showToast('Bulk upload completed successfully', 'success');
+        }, 2000);
+    }
+    
+    function viewStudentDetails(studentId) {
+        window.location.href = "{{ url_for('lecturer.student_details') }}?student_id=" + studentId;
+    }
+    
+    function editStudent(studentId) {
+        // In a real app, this would open an edit modal
+        console.log('Editing student:', studentId);
+        showToast('Edit student functionality coming soon', 'info');
+    }
+    
+    function removeStudent(studentId) {
+        if (confirm('Remove this student from the class roster?')) {
+            // In a real app, this would make an API call
+            console.log('Removing student:', studentId);
+            
+            // Remove from UI
+            const row = document.querySelector(`tr[data-student-id="${studentId}"]`);
+            if (row) {
+                row.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => {
+                    row.remove();
+                    updateRosterStats();
+                }, 300);
+            }
+            
+            showToast('Student removed from roster', 'success');
+        }
+    }
+    
+    function updateRosterStats() {
+        const studentCount = document.querySelectorAll('#rosterTableBody tr').length;
+        const capacity = {{ current_class.capacity if current_class else 0 }};
+        
+        // Update badges
+        const studentBadge = document.querySelector('.roster-stats .badge:first-child');
+        const capacityBadge = document.querySelector('.roster-stats .badge:last-child');
+        
+        if (studentBadge) {
+            studentBadge.textContent = `${studentCount} Students`;
+        }
+        
+        if (capacityBadge) {
+            capacityBadge.textContent = `${capacity - studentCount} Slots Available`;
+        }
+    }
+    
+    function saveChanges() {
+        // In a real app, this would send all changes to the server
+        if (Object.keys(rosterChanges).length === 0) {
+            showToast('No changes to save', 'info');
+            return;
+        }
+        
+        console.log('Saving changes:', rosterChanges);
+        showToast('Changes saved successfully', 'success');
+        rosterChanges = {};
+    }
+    
+    function cancelChanges() {
+        if (Object.keys(rosterChanges).length > 0) {
+            if (confirm('You have unsaved changes. Are you sure you want to cancel?')) {
+                window.location.reload();
+            }
+        } else {
+            window.location.href = "{{ url_for('lecturer.dashboard') }}";
+        }
+    }
+    
+    function showToast(message, type = 'info') {
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${type === 'success' ? '#f0fdf4' : type === 'warning' ? '#fffbeb' : '#f0f9ff'};
+            color: ${type === 'success' ? '#059669' : type === 'warning' ? '#d97706' : '#0891b2'};
+            border: 2px solid ${type === 'success' ? '#059669' : type === 'warning' ? '#d97706' : '#0891b2'};
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Remove toast after 3 seconds
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set up CSV file upload preview
+        const fileInput = document.getElementById('csvFile');
+        fileInput.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = function(event) {
+                    const csvContent = event.target.result;
+                    const lines = csvContent.split('\n');
+                    const previewBody = document.getElementById('previewTableBody');
+                    previewBody.innerHTML = '';
+                    
+                    // Show first 5 rows as preview
+                    for (let i = 1; i < Math.min(6, lines.length); i++) {
+                        const cells = lines[i].split(',');
+                        if (cells.length >= 3) {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${cells[0]}</td>
+                                <td>${cells[1]}</td>
+                                <td>${cells[2]}</td>
+                                <td><span class="status-badge status-active">Active</span></td>
+                            `;
+                            previewBody.appendChild(row);
+                        }
+                    }
+                    
+                    document.getElementById('uploadPreview').style.display = 'block';
+                };
+                
+                reader.readAsText(file);
+            }
+        });
+        
+        // Set up drag and drop for file upload
+        const uploadArea = document.querySelector('.file-upload-area');
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.style.borderColor = 'var(--primary-dark)';
+            this.style.backgroundColor = 'var(--primary-light)';
+        });
+        
+        uploadArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.style.borderColor = 'var(--border-color)';
+            this.style.backgroundColor = 'transparent';
+        });
+        
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.style.borderColor = 'var(--border-color)';
+            this.style.backgroundColor = 'transparent';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        });
+    });
+    
+    // Add CSS for animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
+{% endblock %}
+{% endblock %}

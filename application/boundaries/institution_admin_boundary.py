@@ -99,19 +99,20 @@ def delete_user(user_id):
     return redirect(url_for('institution.manage_users'))
 
 
-'''@institution_bp.route('/manage_attendance/<int:user_id>/view', methods=['GET'])
+@institution_bp.route('/manage_users/<int:user_id>/view', methods=['POST'])
 def view_user_details(user_id):
     auth = AuthControl.verify_session(current_app, session)
     if not auth['success'] or auth['user'].get('user_type') not in ['institution_admin', 'admin']:
         flash('Access denied. Institution admin privileges required.', 'danger')
         return redirect(url_for('auth.login'))
 
-    result = InstitutionControl.view_user(current_app, user_id, institution_id=auth['user'].get('institution_id'))
+    result = InstitutionControl.view_user(current_app, user_id, institution_id=auth['user'].get('institution_id'), role=request.form.get('user_role'))
+    print(result)
     if not result.get('success'):
         flash(result.get('error') or 'Failed to load user details', 'danger')
         return redirect(url_for('institution.manage_users'))
 
-    return render_template('institution/admin/institution_admin_user_details.html', user=auth['user'], user_details=result.get('user_details'))'''
+    return render_template('institution/admin/institution_admin_user_details.html', user=auth['user'], user_details=result.get('user_details'))
 
 
 @institution_bp.route('/manage_attendance')

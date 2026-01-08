@@ -80,8 +80,10 @@
                             <td>
                                 {% if user.is_active %}
                                 <div class="actions">
-                                    <form action="/institution/manage_users/{{ user.id }}/view" method='GET'>
+
+                                    <form action="/institution/manage_users/{{ user.id }}/view" method='POST'>
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="user_role" value="{{ user.role }}">
                                         <button class="btn-custom btn-view">View</button>
                                     </form>
 

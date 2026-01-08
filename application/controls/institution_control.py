@@ -307,8 +307,9 @@ class InstitutionControl:
                 'error': str(e)
             }
             
-    '''@staticmethod
+    @staticmethod
     def view_user(app, user_id, institution_id, role):
+        print("Viewing user:", user_id, institution_id, role)
         try:
             if role == 'student':
                 user_row = BaseEntity.execute_query(
@@ -334,6 +335,7 @@ class InstitutionControl:
                     'success': False,
                     'error': 'User not found'
                 }
+            print("User row:", user_row)
             return {
                 'success': True,
                 'user_details': dict(user_row)
@@ -342,7 +344,7 @@ class InstitutionControl:
             return {
                 'success': False,
                 'error': str(e)
-            }'''
+            }
 
 
     

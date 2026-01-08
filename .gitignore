@@ -69,3 +69,4 @@ firebase_credentials.json
 temp/
 tmp/
 tests/
+test_connection.py

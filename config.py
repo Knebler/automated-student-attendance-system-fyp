@@ -39,44 +39,6 @@ class Config:
     UPLOAD_FOLDER = 'static/uploads'
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
 
-    @property
-    def SQLALCHEMY_DATABASE_URI(self):
-        """Generate SQLAlchemy connection string with SSL for Azure"""
-        # URL encode the password
-        encoded_password = quote_plus(self.MYSQL_PASSWORD)
-        
-        # Base connection string
-        connection_string = f"mysql+pymysql://{self.MYSQL_USER}:{encoded_password}@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DB}"
-        
-        # Add SSL parameters if enabled
-        if self.MYSQL_SSL_ENABLED:
-            # For Azure Database for MySQL
-            ssl_args = {
-                'ssl': {'ca': self.MYSQL_SSL_CA}
-            }
-            # Convert to query string
-            connection_string = f"{connection_string}?charset=utf8mb4"
-        
-        return connection_string
-    
-    @property
-    def SQLALCHEMY_ENGINE_OPTIONS(self):
-        """Return SQLAlchemy engine options with SSL"""
-        options = {
-            'pool_size': self.SQLALCHEMY_POOL_SIZE,
-            'max_overflow': self.SQLALCHEMY_MAX_OVERFLOW,
-            'pool_recycle': self.SQLALCHEMY_POOL_RECYCLE,
-            'pool_timeout': self.SQLALCHEMY_POOL_TIMEOUT,
-            'pool_pre_ping': True,
-        }
-        
-        if self.MYSQL_SSL_ENABLED and self.MYSQL_SSL_CA:
-            options['connect_args'] = {
-                'ssl': {'ca': self.MYSQL_SSL_CA}
-            }
-        
-        return options
-
 class DevelopmentConfig(Config):
     DEBUG = True
     # Uncomment below if using local MySQL for development

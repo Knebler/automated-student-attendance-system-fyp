@@ -164,23 +164,32 @@ def load_dummy_data():
 
 def populate_comprehensive_data(conn, cursor):
     """Populate database with comprehensive dummy data"""
+    from datetime import datetime, timedelta
+    import random
+    import bcrypt
     
     print("Populating Institutions and Users...")
-    from datetime import datetime
     now = datetime.now()
+    
+    # Hash password for all test accounts
+    test_password = "password"
+    password_hash = bcrypt.hashpw(test_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    
     # 1. Create unregistered users
     unregistered_users = [
         ('john.doe@university.edu', 'John Doe', 'University of Technology', '123 Campus Road', '1234567890', 
-         'Interested in Starter Plan', 1, 'approved', 1, now, 'Approved for trial'),
+         'Interested in Starter Plan', 1, 'approved', 1, now, 'Approved for trial', now),
         ('jane.smith@college.edu', 'Jane Smith', 'City College', '456 College Ave', '0987654321',
-         'Need Professional Plan for our campus', 2, 'approved', 1, now, 'Approved'),
+         'Need Professional Plan for our campus', 2, 'approved', 1, now, 'Approved', now),
+        ('admin@university.edu', 'University Admin', 'University Test', '789 Test Street', '5551234567',
+         'Test institution setup', 1, 'approved', 1, now, 'Test account approved', now),
     ]
     
     cursor.executemany("""
         INSERT INTO Unregistered_Users 
         (email, full_name, institution_name, institution_address, phone_number, message, selected_plan_id, 
          status, reviewed_by, reviewed_at, response_message, applied_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """, unregistered_users)
     conn.commit()
     
@@ -189,7 +198,8 @@ def populate_comprehensive_data(conn, cursor):
         INSERT INTO Subscriptions (unreg_user_id, plan_id, start_date, end_date, status)
         VALUES 
         (1, 1, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 1 YEAR), 'active'),
-        (2, 2, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 1 YEAR), 'active')
+        (2, 2, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 1 YEAR), 'active'),
+        (3, 1, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 1 YEAR), 'active')
     """)
     conn.commit()
     
@@ -197,14 +207,16 @@ def populate_comprehensive_data(conn, cursor):
     cursor.execute("""
         INSERT INTO Assignments (platform_mgr_id, unreg_user_id, subscription_id, notes)
         VALUES (1, 1, 1, 'Initial setup for University of Technology'),
-               (1, 2, 2, 'Professional setup for City College')
+               (1, 2, 2, 'Professional setup for City College'),
+               (1, 3, 3, 'Test institution setup')
     """)
     conn.commit()
     
     # 4. Create institutions
     institutions = [
         ('University of Technology', '123 Campus Road, Tech City', 'https://utech.edu', 1),
-        ('City College', '456 College Ave, Metro City', 'https://citycollege.edu', 2)
+        ('City College', '456 College Ave, Metro City', 'https://citycollege.edu', 2),
+        ('University Test', '789 Test Street, Test City', 'https://university.test.edu', 3)
     ]
     
     cursor.executemany("""
@@ -213,48 +225,44 @@ def populate_comprehensive_data(conn, cursor):
     """, institutions)
     conn.commit()
     
-    # 5. Create institution admins
+    # 5. Create institution admins - INCLUDING TESTER ACCOUNT
     cursor.execute("""
         INSERT INTO Institution_Admins (email, password_hash, full_name, institution_id)
         VALUES 
-        ('admin@utech.edu', '$2b$10$hashedpass1', 'Dr. Robert Chen', 1),
-        ('admin@citycollege.edu', '$2b$10$hashedpass2', 'Prof. Sarah Johnson', 2)
-    """)
+        ('admin@utech.edu', %s, 'Dr. Robert Chen', 1),
+        ('admin@citycollege.edu', %s, 'Prof. Sarah Johnson', 2),
+        ('admin@university.edu', %s, 'University Admin', 3)  -- TESTER ACCOUNT
+    """, (password_hash, password_hash, password_hash))
     conn.commit()
     
     print("Populating Academic Structure...")
     
-    # 6. Create venues for institution 1
-    venues_1 = [
+    # 6. Create venues for all institutions
+    venues_data = [
         (1, 'Lecture Hall A', 'Science Building', 200, '{"projector": true, "ac": true, "whiteboard": true}'),
         (1, 'Lab 101', 'Computer Building', 40, '{"computers": 40, "projector": true, "ac": true}'),
         (1, 'Seminar Room 3', 'Business Building', 50, '{"projector": true, "ac": true}'),
-    ]
-    
-    cursor.executemany("""
-        INSERT INTO Venues (institution_id, venue_name, building, capacity, facilities)
-        VALUES (%s, %s, %s, %s, %s)
-    """, venues_1)
-    
-    # Create venues for institution 2
-    venues_2 = [
         (2, 'Main Auditorium', 'Central Building', 300, '{"projector": true, "sound_system": true, "ac": true}'),
         (2, 'Computer Lab', 'IT Center', 60, '{"computers": 60, "projector": true}'),
+        (3, 'Main Hall', 'Test Building', 150, '{"projector": true, "ac": true, "whiteboard": true}'),  # Test institution
+        (3, 'Lab 201', 'Tech Building', 30, '{"computers": 30, "projector": true}'),  # Test institution
     ]
     
     cursor.executemany("""
         INSERT INTO Venues (institution_id, venue_name, building, capacity, facilities)
         VALUES (%s, %s, %s, %s, %s)
-    """, venues_2)
+    """, venues_data)
     conn.commit()
     
-    # 7. Create timetable slots
+    # 7. Create timetable slots for all institutions
     timetable_slots = [
         (1, 1, '09:00:00', '10:30:00', 'Morning Slot 1'),
         (1, 1, '11:00:00', '12:30:00', 'Morning Slot 2'),
         (1, 2, '14:00:00', '15:30:00', 'Afternoon Slot 1'),
         (2, 1, '10:00:00', '11:30:00', 'Morning Session'),
         (2, 2, '13:00:00', '14:30:00', 'Afternoon Session'),
+        (3, 1, '08:30:00', '10:00:00', 'Early Morning'),  # Test institution
+        (3, 1, '10:30:00', '12:00:00', 'Late Morning'),   # Test institution
     ]
     
     cursor.executemany("""
@@ -263,12 +271,14 @@ def populate_comprehensive_data(conn, cursor):
     """, timetable_slots)
     conn.commit()
     
-    # 8. Create lecturers
+    # 8. Create lecturers - INCLUDING TESTER ACCOUNT
     lecturers = [
-        (1, 'prof.zhang@utech.edu', '$2b$10$hash1', 'Professor Zhang Wei', 'Computer Science'),
-        (1, 'dr.lee@utech.edu', '$2b$10$hash2', 'Dr. Lee Min Ho', 'Mathematics'),
-        (2, 'mr.jones@citycollege.edu', '$2b$10$hash3', 'Mr. David Jones', 'Business Studies'),
-        (2, 'ms.garcia@citycollege.edu', '$2b$10$hash4', 'Ms. Maria Garcia', 'Information Technology'),
+        (1, 'prof.zhang@utech.edu', password_hash, 'Professor Zhang Wei', 'Computer Science'),
+        (1, 'dr.lee@utech.edu', password_hash, 'Dr. Lee Min Ho', 'Mathematics'),
+        (2, 'mr.jones@citycollege.edu', password_hash, 'Mr. David Jones', 'Business Studies'),
+        (2, 'ms.garcia@citycollege.edu', password_hash, 'Ms. Maria Garcia', 'Information Technology'),
+        (3, 'prof.smith@university.edu', password_hash, 'Professor John Smith', 'Computer Science'),  # TESTER ACCOUNT
+        (3, 'dr.jones@university.edu', password_hash, 'Dr. Emily Jones', 'Mathematics'),  # Test institution
     ]
     
     cursor.executemany("""
@@ -284,6 +294,8 @@ def populate_comprehensive_data(conn, cursor):
         (1, 'CS301', 'Database Systems', 'Relational database design and SQL', 3),
         (2, 'BUS101', 'Business Fundamentals', 'Introduction to business concepts', 3),
         (2, 'IT102', 'Web Development', 'HTML, CSS, and JavaScript fundamentals', 3),
+        (3, 'TEST101', 'Test Course 1', 'Introduction to Testing', 3),  # Test institution
+        (3, 'TEST201', 'Test Course 2', 'Advanced Testing Methods', 4),  # Test institution
     ]
     
     cursor.executemany("""
@@ -299,6 +311,8 @@ def populate_comprehensive_data(conn, cursor):
         (3, 1),  # CS301 -> Prof. Zhang
         (4, 3),  # BUS101 -> Mr. Jones
         (5, 4),  # IT102 -> Ms. Garcia
+        (6, 5),  # TEST101 -> Prof. Smith (TESTER)
+        (7, 6),  # TEST201 -> Dr. Jones
     ]
     
     cursor.executemany("""
@@ -309,42 +323,46 @@ def populate_comprehensive_data(conn, cursor):
     
     print("Populating Students and Enrollments...")
     
-    # 11. Create students for institution 1
-    students_1 = [
-        (1, 'S001', 'alice.wong@utech.edu', '$2b$10$hash5', 'Alice Wong', 2023),
-        (1, 'S002', 'bob.smith@utech.edu', '$2b$10$hash6', 'Bob Smith', 2023),
-        (1, 'S003', 'charlie.brown@utech.edu', '$2b$10$hash7', 'Charlie Brown', 2022),
-        (1, 'S004', 'diana.ross@utech.edu', '$2b$10$hash8', 'Diana Ross', 2022),
+    # 11. Create students for all institutions - INCLUDING TESTER ACCOUNT
+    students_data = [
+        # Institution 1
+        (1, 'S001', 'alice.wong@utech.edu', password_hash, 'Alice Wong', 2023),
+        (1, 'S002', 'bob.smith@utech.edu', password_hash, 'Bob Smith', 2023),
+        (1, 'S003', 'charlie.brown@utech.edu', password_hash, 'Charlie Brown', 2022),
+        (1, 'S004', 'diana.ross@utech.edu', password_hash, 'Diana Ross', 2022),
+        # Institution 2
+        (2, 'CC001', 'emma.johnson@citycollege.edu', password_hash, 'Emma Johnson', 2023),
+        (2, 'CC002', 'frank.miller@citycollege.edu', password_hash, 'Frank Miller', 2023),
+        (2, 'CC003', 'grace.williams@citycollege.edu', password_hash, 'Grace Williams', 2022),
+        # Institution 3 (Test) - INCLUDING TESTER ACCOUNT
+        (3, 'TEST001', 'student1@university.edu', password_hash, 'Test Student 1', 2023),  # TESTER ACCOUNT
+        (3, 'TEST002', 'student2@university.edu', password_hash, 'Test Student 2', 2023),
+        (3, 'TEST003', 'student3@university.edu', password_hash, 'Test Student 3', 2022),
     ]
     
     cursor.executemany("""
         INSERT INTO Students (institution_id, student_code, email, password_hash, full_name, enrollment_year)
         VALUES (%s, %s, %s, %s, %s, %s)
-    """, students_1)
-    
-    # Create students for institution 2
-    students_2 = [
-        (2, 'CC001', 'emma.johnson@citycollege.edu', '$2b$10$hash9', 'Emma Johnson', 2023),
-        (2, 'CC002', 'frank.miller@citycollege.edu', '$2b$10$hash10', 'Frank Miller', 2023),
-        (2, 'CC003', 'grace.williams@citycollege.edu', '$2b$10$hash11', 'Grace Williams', 2022),
-    ]
-    
-    cursor.executemany("""
-        INSERT INTO Students (institution_id, student_code, email, password_hash, full_name, enrollment_year)
-        VALUES (%s, %s, %s, %s, %s, %s)
-    """, students_2)
+    """, students_data)
     conn.commit()
     
     # 12. Create enrollments
     enrollments = [
+        # Institution 1
         (1, 1, '2023-2024', 'Fall', 'active'),   # Alice in CS101
         (1, 2, '2023-2024', 'Fall', 'active'),   # Alice in MATH201
         (2, 1, '2023-2024', 'Fall', 'active'),   # Bob in CS101
         (2, 3, '2023-2024', 'Fall', 'active'),   # Bob in CS301
         (3, 2, '2023-2024', 'Fall', 'active'),   # Charlie in MATH201
+        # Institution 2
         (5, 4, '2023-2024', 'Fall', 'active'),   # Emma in BUS101
         (6, 5, '2023-2024', 'Fall', 'active'),   # Frank in IT102
         (7, 5, '2023-2024', 'Fall', 'active'),   # Grace in IT102
+        # Institution 3 (Test) - TESTER STUDENT enrolled in TESTER LECTURER's course
+        (8, 6, '2023-2024', 'Fall', 'active'),   # Test Student 1 in TEST101 (Prof. Smith's course)
+        (8, 7, '2023-2024', 'Fall', 'active'),   # Test Student 1 in TEST201
+        (9, 6, '2023-2024', 'Fall', 'active'),   # Test Student 2 in TEST101
+        (10, 6, '2023-2024', 'Fall', 'active'),  # Test Student 3 in TEST101
     ]
     
     cursor.executemany("""
@@ -354,201 +372,231 @@ def populate_comprehensive_data(conn, cursor):
     conn.commit()
     
     print("Populating Sessions and Attendance...")
-
-    print("Populating Sessions and Attendance...")
-
-    # 13. Create sessions for the past week - simplified approach
-    from datetime import datetime, timedelta
-    import random
-
-    # Get dates for the last 14 days to have more date variety
+    
+    # 13. Create sessions for the past week
     today = datetime.now().date()
-    dates = [(today - timedelta(days=i)) for i in range(14)]
-
+    dates = [(today - timedelta(days=i)) for i in range(7)]
+    
     sessions = []
-
-    # Create sessions ensuring unique venue-date combinations
-    venue_date_used = set()
-
-    # Create sessions with staggered dates
-    date_index = 0
-    for course_id in [1, 2, 3, 4, 5]:
-        for i in range(3):  # Create 3 sessions per course
-            # Assign different dates to different courses
-            session_date = dates[date_index % len(dates)]
-            date_index += 1
+    # Track venue-date usage to avoid duplicates
+    venue_date_usage = set()
+    
+    # Create sessions for each course on different days
+    for course_id in range(1, 8):  # 7 courses total
+        institution_id = 1 if course_id <= 3 else (2 if course_id <= 5 else 3)
         
-            # Determine venue based on institution
-            if course_id <= 3:
-                # Institution 1 courses
-                venue_options = [1, 2, 3]  # Venues for institution 1
-            else:
-                # Institution 2 courses
-                venue_options = [4, 5]  # Venues for institution 2
+        # Get available venues for this institution
+        cursor.execute("SELECT venue_id FROM Venues WHERE institution_id = %s ORDER BY venue_id", (institution_id,))
+        available_venues = [row[0] for row in cursor.fetchall()]
         
-            # Try to find an available venue for this date
-            venue_id = None
-            for venue in venue_options:
-                if (venue, session_date) not in venue_date_used:
-                    venue_id = venue
-                    venue_date_used.add((venue, session_date))
+        for i, date in enumerate(dates[:2]):  # First 2 days for each course
+            # Try each venue until we find an available one
+            for venue_id in available_venues:
+                if (venue_id, date) not in venue_date_usage:
+                    venue_date_usage.add((venue_id, date))
+                    # Determine lecturer_id based on course_id
+                    if course_id == 1 or course_id == 3:
+                        lecturer_id = 1
+                    elif course_id == 2:
+                        lecturer_id = 2
+                    elif course_id == 4:
+                        lecturer_id = 3
+                    elif course_id == 5:
+                        lecturer_id = 4
+                    elif course_id == 6:
+                        lecturer_id = 5  # Prof. Smith (TESTER)
+                    elif course_id == 7:
+                        lecturer_id = 6
+                    
+                    # Get slot based on institution and day
+                    slot_id = 1 if i == 0 else 2
+                    # Adjust slot for different institutions
+                    if institution_id == 2:
+                        slot_id = 4 if i == 0 else 5  # Slots 4-5 for institution 2
+                    elif institution_id == 3:
+                        slot_id = 6 if i == 0 else 7  # Slots 6-7 for institution 3
+                    
+                    sessions.append((
+                        course_id, venue_id, slot_id, lecturer_id, date,
+                        f'Lecture {i+1}: Course Introduction' if i == 0 else f'Lecture {i+1}: Advanced Topics',
+                        'completed'
+                    ))
                     break
-        
-            if not venue_id:
-                # If all venues are booked, use the first available venue with different slot
-                venue_id = venue_options[0]
-                print(f"Warning: Venue {venue_id} double-booked on {session_date}")
-        
-            slot_id = 1 if i == 0 else (2 if i == 1 else 3)
-            lecturer_id = 1 if course_id == 1 else (2 if course_id == 2 else (1 if course_id == 3 else (3 if course_id == 4 else 4)))
-        
-            sessions.append((
-                course_id, venue_id, slot_id, lecturer_id, session_date,
-                f'Lecture {i+1}: Course Introduction' if i == 0 else f'Lecture {i+1}: Advanced Topics',
-                'completed'
-            ))
-
+    
     if sessions:
         cursor.executemany("""
-            INSERT IGNORE INTO Sessions (course_id, venue_id, slot_id, lecturer_id, session_date, session_topic, status)
+            INSERT INTO Sessions (course_id, venue_id, slot_id, lecturer_id, session_date, session_topic, status)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
         """, sessions)
         conn.commit()
         print(f"Created {len(sessions)} sessions")
-
-    # 14. Create attendance records
-    attendance_records = []
-
-    # First, get the actual session IDs that were inserted
-    cursor.execute("SELECT session_id, course_id FROM Sessions ORDER BY session_id")
-    all_sessions = cursor.fetchall()
-
-    # For each session, mark attendance for enrolled students
-    for session_id, course_id in all_sessions:
-        # Get students enrolled in this course
-        cursor.execute("SELECT student_id FROM Enrollments WHERE course_id = %s", (course_id,))
-        enrolled_students = [row[0] for row in cursor.fetchall()]
     
-    for student_id in enrolled_students:
-        # Random attendance status (80% present, 10% late, 5% absent, 5% excused)
-        import random
-        rand = random.random()
-        if rand < 0.80:
-            status = 'present'
-        elif rand < 0.90:
-            status = 'late'
-        elif rand < 0.95:
-            status = 'absent'
-        else:
-            status = 'excused'
+    # 14. Create attendance records
+    if sessions:
+        attendance_records = []
         
-        # Determine lecturer_id based on course_id
-        lecturer_id = 1 if course_id == 1 else (2 if course_id == 2 else (1 if course_id == 3 else (3 if course_id == 4 else 4)))
+        # Get all sessions
+        cursor.execute("SELECT session_id, course_id FROM Sessions ORDER BY session_id")
+        all_sessions = cursor.fetchall()
         
-        attendance_records.append((
-            session_id, student_id, status, 'system', lecturer_id,
-            None, '09:15:00' if status == 'present' else ('09:45:00' if status == 'late' else None),
-            'Auto-generated attendance'
-        ))
-
-    cursor.executemany("""
-        INSERT INTO Attendance_Records 
-        (session_id, student_id, status, marked_by, lecturer_id, captured_image_path, attendance_time, notes)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-    """, attendance_records)
-    conn.commit()
+        # For each session, mark attendance for enrolled students
+        for session_id, course_id in all_sessions:
+            # Get students enrolled in this course
+            cursor.execute("SELECT student_id FROM Enrollments WHERE course_id = %s", (course_id,))
+            enrolled_students = [row[0] for row in cursor.fetchall()]
+            
+            for student_id in enrolled_students:
+                # Random attendance status (80% present, 10% late, 5% absent, 5% excused)
+                rand = random.random()
+                if rand < 0.80:
+                    status = 'present'
+                elif rand < 0.90:
+                    status = 'late'
+                elif rand < 0.95:
+                    status = 'absent'
+                else:
+                    status = 'excused'
+                
+                # Determine lecturer_id based on course_id
+                lecturer_id_map = {
+                    1: 1, 2: 2, 3: 1, 4: 3, 5: 4, 6: 5, 7: 6
+                }
+                lecturer_id = lecturer_id_map.get(course_id, 1)
+                
+                # Generate attendance time based on status
+                attendance_time = None
+                if status == 'present':
+                    attendance_time = '09:15:00'
+                elif status == 'late':
+                    attendance_time = '09:45:00'
+                
+                attendance_records.append((
+                    session_id, student_id, status, 'system', lecturer_id,
+                    None, attendance_time,
+                    'Auto-generated attendance'
+                ))
+        
+        if attendance_records:
+            cursor.executemany("""
+                INSERT INTO Attendance_Records 
+                (session_id, student_id, status, marked_by, lecturer_id, captured_image_path, attendance_time, notes)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """, attendance_records)
+            conn.commit()
+            print(f"Created {len(attendance_records)} attendance records")
     
     print("Populating Reports and Platform Issues...")
     
-    # 15. Create sample reports
-    # Calculate dates in Python
-    import uuid
-
+    # Update the Platform_Managers table with tester account FIRST (before any other operations)
+    # This ensures the platform manager exists before being referenced
+    print("Updating Platform Manager tester account...")
+    
+    # First, check if the platform manager already exists
+    cursor.execute("SELECT COUNT(*) FROM Platform_Managers WHERE email = 'admin@attendanceplatform.com'")
+    if cursor.fetchone()[0] == 0:
+        # Insert the platform manager if not exists
+        cursor.execute("""
+            INSERT INTO Platform_Managers (email, password_hash, full_name)
+            VALUES ('admin@attendanceplatform.com', %s, 'System Administrator')
+        """, (password_hash,))
+        conn.commit()
+        print("Added platform manager tester account")
+    else:
+        # Update the password hash if exists
+        cursor.execute("""
+            UPDATE Platform_Managers 
+            SET password_hash = %s 
+            WHERE email = 'admin@attendanceplatform.com'
+        """, (password_hash,))
+        conn.commit()
+        print("Updated platform manager tester account password")
+    
+    # 15. Create sample reports (simplified - without UUID)
+    # Calculate dates
     seven_days_ago = datetime.now() - timedelta(days=7)
     thirty_days_ahead = datetime.now() + timedelta(days=30)
     seven_days_ahead = datetime.now() + timedelta(days=7)
     ninety_days_ahead = datetime.now() + timedelta(days=90)
     now = datetime.now()
+    
     reports = [
         (
-            str(uuid.uuid4()),  # report_uuid
-            'Attendance Summary Q1 2024',  # title - MOVED to 2nd position
-            'Quarterly attendance report for all courses',  # description - 3rd
-            'attendance_summary',  # report_type - 4th
-            1,                  # institution_id - 5th
-            'admin@utech.edu',  # reporter_email - 6th
-            'admin',            # reporter_role - 7th
-            '{"summary": {"total_sessions": 45, "attendance_rate": 85.5}, "details": []}',  # report_data - 8th
-            '{"date_range": "2024-01-01 to 2024-03-31"}',  # parameters - 9th
-            'pdf',              # format - 10th
-            'completed',        # status - 11th
-            120,                # generation_time - 12th
-            2048000,            # file_size_bytes - 13th
-            '/reports/attendance_q1.pdf',  # file_path - 14th
-            'https://storage.example.com/reports/attendance_q1.pdf',  # storage_url - 15th
-            'https://app.example.com/reports/preview/123',  # preview_url - 16th
-            'once',             # schedule_type - 17th
-            '{}',               # schedule_config - 18th
-            None,               # next_scheduled_run - 19th
-            seven_days_ago,     # generated_at - 20th
-            thirty_days_ahead,  # expires_at - 21st
-            None,               # viewed_at - 22nd
-            None,               # deleted_at - 23rd
-            False,              # is_public - 24th
-            None,               # access_code - 25th
-            '[]'                # allowed_viewers - 26th
+            'Attendance Summary Q1 2024',
+            'Quarterly attendance report for all courses',
+            'attendance_summary',
+            1,
+            'admin@utech.edu',
+            'admin',
+            '{"summary": {"total_sessions": 45, "attendance_rate": 85.5}, "details": []}',
+            '{"date_range": "2024-01-01 to 2024-03-31"}',
+            'pdf',
+            'completed',
+            120,
+            2048000,
+            '/reports/attendance_q1.pdf',
+            'https://storage.example.com/reports/attendance_q1.pdf',
+            'https://app.example.com/reports/preview/123',
+            'once',
+            '{}',
+            None,
+            seven_days_ago,
+            thirty_days_ahead,
+            None,
+            None,
+            False,
+            None,
+            '[]'
         ),
-    
+        
         (
-            str(uuid.uuid4()),  # report_uuid
-            'IT102 Weekly Report',  # title
-            'Weekly attendance for IT102 class',  # description
-            'course_attendance',  # report_type
-            2,                  # institution_id
-            'ms.garcia@citycollege.edu',  # reporter_email
-            'lecturer',         # reporter_role
-            '{"course": "IT102", "attendance_rate": 92.3, "students": []}',  # report_data
-            '{"course_id": 5, "week": 12}',  # parameters
-            'html',             # format
-            'completed',        # status
-            30,                 # generation_time
-            1024000,            # file_size_bytes
-            None,               # file_path
-            None,               # storage_url
-            'https://app.example.com/reports/preview/124',  # preview_url
-            'weekly',           # schedule_type
-            '{"day": "monday", "time": "08:00"}',  # schedule_config
-            seven_days_ahead,   # next_scheduled_run
-            now,                # generated_at
-            ninety_days_ahead,  # expires_at
-            now,                # viewed_at
-            None,               # deleted_at
-            True,               # is_public
-            'view123',          # access_code
-            '[]'                # allowed_viewers
+            'Test Institution Weekly Report',
+            'Weekly attendance for test courses',
+            'course_attendance',
+            3,
+            'admin@university.edu',  # TESTER ADMIN
+            'admin',
+            '{"courses": ["TEST101", "TEST201"], "attendance_rate": 95.5, "students": []}',
+            '{"week": 12}',
+            'html',
+            'completed',
+            45,
+            1024000,
+            None,
+            None,
+            'https://app.example.com/reports/preview/125',
+            'weekly',
+            '{"day": "monday", "time": "08:00"}',
+            seven_days_ahead,
+            now,
+            ninety_days_ahead,
+            now,
+            None,
+            True,
+            'test123',
+            '[]'
         ),
     ]
-
+    
     cursor.executemany("""
         INSERT INTO Reports 
-        (report_uuid, title, description, report_type, institution_id, reporter_email, reporter_role,
-        report_data, parameters, format, status, generation_time, file_size_bytes,
-        file_path, storage_url, preview_url, schedule_type, schedule_config, next_scheduled_run,
-        generated_at, expires_at, viewed_at, deleted_at, is_public, access_code, allowed_viewers)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        (title, description, report_type, institution_id, reporter_email, reporter_role,
+         report_data, parameters, format, status, generation_time, file_size_bytes,
+         file_path, storage_url, preview_url, schedule_type, schedule_config, next_scheduled_run,
+         generated_at, expires_at, viewed_at, deleted_at, is_public, access_code, allowed_viewers)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """, reports)
     conn.commit()
     
-   # 16. Create sample platform issues
-    # Pre-calculate common dates to keep the list clean
+    # 16. Create sample platform issues
+    print("Creating sample platform issues...")
     now = datetime.now()
     two_days_ago = now - timedelta(days=2)
     three_days_ago = now - timedelta(days=3)
     seven_days_ahead = now + timedelta(days=7)
-
+    
     platform_issues = [
         (
-            'student', 1, 'alice.wong@utech.edu', 1, 'Attendance not marked correctly',
+            'student', 1, 'student1@university.edu', 1, 'Attendance not marked correctly',
             'My attendance was marked as absent when I was present in class yesterday.',
             'bug', 'attendance', 'high', 'major', 'Attendance Marking', '/attendance/mark',
             '{"browser": "Chrome", "version": "120.0", "os": "Windows 11"}', 'desktop',
@@ -557,7 +605,7 @@ def populate_comprehensive_data(conn, cursor):
         ),
     
         (   
-            'lecturer', 1, 'prof.zhang@utech.edu', 1, 'Feature request: Bulk attendance marking',
+            'lecturer', 1, 'prof.smith@university.edu', 1, 'Feature request: Bulk attendance marking',
             'Can we have a feature to mark attendance for multiple students at once?',
             'feature_request', 'attendance', 'medium', 'minor', 'Attendance Interface',
             '/lecturer/attendance', '{"browser": "Firefox", "version": "121.0", "os": "macOS"}', 'desktop',
@@ -566,7 +614,7 @@ def populate_comprehensive_data(conn, cursor):
         ),
     
         (
-            'admin', 1, 'admin@utech.edu', 1, 'Report generation slow',
+            'admin', 1, 'admin@university.edu', 1, 'Report generation slow',
             'Generating monthly reports takes more than 5 minutes.',
             'performance', 'reports', 'high', 'major', 'Reporting Module', '/reports/generate',
             '{"browser": "Safari", "version": "17.0", "os": "macOS"}', 'desktop',
@@ -576,7 +624,7 @@ def populate_comprehensive_data(conn, cursor):
             'Looks like a database query optimization issue', None
         ),
     ]
-
+    
     cursor.executemany("""
         INSERT INTO Platform_Issues 
         (reporter_type, reporter_id, reporter_email, institution_id, title, description,
@@ -586,19 +634,25 @@ def populate_comprehensive_data(conn, cursor):
          created_at, acknowledged_at, resolved_at, closed_at,
          reporter_notified, reporter_feedback, reporter_rating)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """, platform_issues)
     conn.commit()
     
+    print("\nTester Accounts Created:")
+    print("  Platform Manager: admin@attendanceplatform.com / password")
+    print("  Institution Admin: admin@university.edu / password")
+    print("  Lecturer: prof.smith@university.edu / password")
+    print("  Student: student1@university.edu / password")
+    
     print("\nData Summary:")
-    print("  • 2 Institutions")
-    print("  • 2 Institution Admins")
-    print("  • 4 Lecturers")
-    print("  • 5 Courses")
-    print("  • 7 Students")
-    print("  • 8 Enrollments")
-    print("  • 15 Sessions")
-    print(f"  • {len(attendance_records)} Attendance Records")
+    print("  • 3 Institutions (including Test Institution)")
+    print("  • 3 Institution Admins")
+    print("  • 6 Lecturers (including Prof. Smith)")
+    print("  • 7 Courses")
+    print("  • 10 Students (including Test Student 1)")
+    print("  • 12 Enrollments")
+    print(f"  • {len(sessions) if sessions else 0} Sessions")
+    print(f"  • {len(attendance_records) if attendance_records else 0} Attendance Records")
     print("  • 2 Reports")
     print("  • 3 Platform Issues")
 

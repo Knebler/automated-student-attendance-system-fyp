@@ -1,5 +1,6 @@
 # application/entities/report.py
 from application.entities.base_entity import BaseEntity
+import uuid
 
 class Report(BaseEntity):
     """Report entity as a SQLAlchemy model"""

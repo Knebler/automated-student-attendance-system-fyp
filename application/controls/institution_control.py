@@ -307,23 +307,54 @@ class InstitutionControl:
                 'error': str(e)
             }
             
-    '''@staticmethod
+    @staticmethod
     def view_user(app, user_id, institution_id, role):
         try:
             if role == 'student':
+                to_pull = [
+                    "student_id",
+                    "institution_id",
+                    "student_code",
+                    # "age",
+                    # "gender",
+                    # "phone",
+                    "email",
+                    "full_name",
+                    "enrollment_year",
+                    "is_active",
+                    # "created_at",
+                ]
                 user_row = BaseEntity.execute_query(
                     app,
-                    "SELECT * FROM Students WHERE student_id = :user_id AND institution_id = :institution_id",
+                    f"SELECT {', '.join(to_pull)} FROM Students WHERE student_id = :user_id AND institution_id = :institution_id",
                     {'user_id': user_id, 'institution_id': institution_id},
                     fetch_one=True
                 )
+                user_details = {k: v for k, v in zip(to_pull, user_row)}
+                user_details['id'] = user_details.pop('student_id')
+                user_details['role'] = 'student'
             elif role == 'lecturer':
+                to_pull = [
+                    "lecturer_id",
+                    "institution_id",
+                    # "age",
+                    # "gender",
+                    # "phone",
+                    "email",
+                    "full_name",
+                    "department",
+                    "is_active",
+                    # "created_at",
+                ]
                 user_row = BaseEntity.execute_query(
                     app,
-                    "SELECT * FROM Lecturers WHERE lecturer_id = :user_id AND institution_id = :institution_id",
+                    f"SELECT {', '.join(to_pull)} FROM Lecturers WHERE lecturer_id = :user_id AND institution_id = :institution_id",
                     {'user_id': user_id, 'institution_id': institution_id},
                     fetch_one=True
                 )
+                user_details = {k: v for k, v in zip(to_pull, user_row)}
+                user_details['id'] = user_details.pop('lecturer_id')
+                user_details['role'] = 'lecturer'
             else:
                 return {
                     'success': False,
@@ -336,15 +367,13 @@ class InstitutionControl:
                 }
             return {
                 'success': True,
-                'user_details': dict(user_row)
+                'user_details': user_details,
             }
         except Exception as e:
             return {
                 'success': False,
                 'error': str(e)
-            }'''
-
-
+            }
     
 # Expose useful dev actions for institution management
 try:

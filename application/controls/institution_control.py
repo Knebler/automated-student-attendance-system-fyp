@@ -216,7 +216,6 @@ class InstitutionControl:
                 'error': str(e)
             }
 
-
     @staticmethod
     def suspend_user(app, user_id, institution_id, role):
         try:
@@ -312,17 +311,9 @@ class InstitutionControl:
         try:
             if role == 'student':
                 to_pull = [
-                    "student_id",
-                    "institution_id",
-                    "student_code",
-                    # "age",
-                    # "gender",
-                    # "phone",
-                    "email",
-                    "full_name",
-                    "enrollment_year",
-                    "is_active",
-                    # "created_at",
+                    "student_id", "institution_id", "student_code", "age",
+                    "gender", "phone_number", "email", "full_name",
+                    "enrollment_year", "is_active",
                 ]
                 user_row = BaseEntity.execute_query(
                     app,
@@ -333,18 +324,26 @@ class InstitutionControl:
                 user_details = {k: v for k, v in zip(to_pull, user_row)}
                 user_details['id'] = user_details.pop('student_id')
                 user_details['role'] = 'student'
+                user_details['created_year'] = user_details.pop('enrollment_year')
+
+                to_pull = [
+                    'course_name', 'course_code', 'start_date', 'end_date'
+                ]
+                course_rows = BaseEntity.execute_query(
+                    app,
+                    f"SELECT {', '.join(to_pull)} FROM Course_Students join Courses on Course_Students.course_id = Courses.course_id where student_id = :user_id",
+                    {'user_id': user_id},
+                    fetch_all=True
+                )
+                user_details['courses'] = [
+                    {k: v for k, v in zip(to_pull, course_row)}
+                    for course_row in course_rows
+                ]
             elif role == 'lecturer':
                 to_pull = [
-                    "lecturer_id",
-                    "institution_id",
-                    # "age",
-                    # "gender",
-                    # "phone",
-                    "email",
-                    "full_name",
-                    "department",
-                    "is_active",
-                    # "created_at",
+                    "lecturer_id", "institution_id", "age", "gender",
+                    "phone_number", "email", "full_name", "department",
+                    "is_active", "year_joined",
                 ]
                 user_row = BaseEntity.execute_query(
                     app,
@@ -355,6 +354,21 @@ class InstitutionControl:
                 user_details = {k: v for k, v in zip(to_pull, user_row)}
                 user_details['id'] = user_details.pop('lecturer_id')
                 user_details['role'] = 'lecturer'
+                user_details['created_year'] = user_details.pop('year_joined')
+
+                to_pull = [
+                    'course_name', 'course_code', 'start_date', 'end_date'
+                ]
+                course_rows = BaseEntity.execute_query(
+                    app,
+                    f"SELECT {', '.join(to_pull)} FROM Course_Lecturers join Courses on Course_Lecturers.course_id = Courses.course_id where lecturer_id = :user_id",
+                    {'user_id': user_id},
+                    fetch_all=True
+                )
+                user_details['courses'] = [
+                    {k: v for k, v in zip(to_pull, course_row)}
+                    for course_row in course_rows
+                ]
             else:
                 return {
                     'success': False,

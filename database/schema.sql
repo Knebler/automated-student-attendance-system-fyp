@@ -127,11 +127,15 @@ CREATE TABLE Timetable_Slots (
 CREATE TABLE Lecturers (
     lecturer_id INT PRIMARY KEY AUTO_INCREMENT,
     institution_id INT NOT NULL,
+    age INT,
+    gender ENUM('male', 'female', 'other'),
+    phone_number VARCHAR(20),
     email VARCHAR(255) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     full_name VARCHAR(100) NOT NULL,
     department VARCHAR(100),
     is_active BOOLEAN DEFAULT TRUE,
+    year_joined INT,
     FOREIGN KEY (institution_id) REFERENCES Institutions(institution_id) ON DELETE CASCADE,
     UNIQUE KEY unique_lecturer_email (institution_id, email),
     INDEX idx_lecturer_institution (institution_id)
@@ -142,6 +146,8 @@ CREATE TABLE Courses (
     institution_id INT NOT NULL,
     course_code VARCHAR(50) NOT NULL,
     course_name VARCHAR(255) NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
     description TEXT,
     credits INT,
     is_active BOOLEAN DEFAULT TRUE,
@@ -163,6 +169,9 @@ CREATE TABLE Students (
     student_id INT PRIMARY KEY AUTO_INCREMENT,
     institution_id INT NOT NULL,
     student_code VARCHAR(50) NOT NULL,
+    age INT,
+    gender ENUM('male', 'female', 'other'),
+    phone_number VARCHAR(20),
     email VARCHAR(255) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     full_name VARCHAR(100) NOT NULL,
@@ -172,6 +181,15 @@ CREATE TABLE Students (
     UNIQUE KEY unique_student_code (institution_id, student_code),
     UNIQUE KEY unique_student_email (institution_id, email),
     INDEX idx_student_institution (institution_id)
+);
+
+CREATE TABLE Course_Students (
+    course_id INT NOT NULL,
+    student_id INT NOT NULL,
+    PRIMARY KEY (course_id, student_id),
+    FOREIGN KEY (course_id) REFERENCES Courses(course_id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES Students(student_id) ON DELETE CASCADE,
+    INDEX idx_course_student (student_id)
 );
 
 CREATE TABLE Enrollments (

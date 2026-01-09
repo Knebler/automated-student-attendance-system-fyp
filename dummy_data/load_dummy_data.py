@@ -37,11 +37,11 @@ def load_dummy_data():
         
         # Connect to Azure MySQL with SSL
         conn = mysql.connector.connect(
-            host=os.getenv('DB_HOST', 'attendai-fyp-project.mysql.database.azure.com'),
-            user=os.getenv('DB_USER', 'attendai_superuser'),
-            password=os.getenv('DB_PASSWORD', 'passwordComplicated557'),
-            port=int(os.getenv('DB_PORT', '3306')),
-            database=os.getenv('DB_NAME', 'attendance_system'),
+            host=os.getenv('DB_HOST'),
+            user=os.getenv('DB_USER'),
+            password=os.getenv('DB_PASSWORD'),
+            port=int(os.getenv('DB_PORT')),
+            database=os.getenv('DB_NAME'),
             ssl_ca=ssl_cert_path,
             ssl_verify_cert=True,
             ssl_disabled=False

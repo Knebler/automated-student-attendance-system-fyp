@@ -11,12 +11,11 @@ def migrate_schema():
     same DB credentials the app uses. It is intended for development and
     CI scenarios where the schema needs to be created through SQLAlchemy.
     """
-    user = os.getenv('MYSQL_USER', 'root')
-    password = os.getenv('MYSQL_PASSWORD', '')
-    host = os.getenv('MYSQL_HOST', 'localhost')
-    port = os.getenv('MYSQL_PORT', '3306')
-    db_name = os.getenv('MYSQL_DB', 'attendance_system')
-
+    user = os.getenv('DB_USER')
+    password = os.getenv('DB_PASSWORD')
+    host = os.getenv('DB_HOST')
+    port = os.getenv('DB_PORT')
+    db_name = os.getenv('DB_NAME')
     uri = f"mysql+pymysql://{user}:{password}@{host}:{port}/{db_name}"
 
     engine = create_engine(uri)

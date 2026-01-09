@@ -9,10 +9,11 @@ def create_db():
     try:
         # Connect to MySQL without specifying a database
         conn = mysql.connector.connect(
-            host=os.getenv('DB_HOST', 'localhost'),
-            user=os.getenv('DB_USERNAME', 'root'),
-            password=os.getenv('DB_PASSWORD', ''),
-            port=int(os.getenv('DB_PORT', '3306'))
+            host=os.getenv('DB_HOST'),
+            user=os.getenv('DB_USER'),
+            password=os.getenv('DB_PASSWORD'),
+            port=int(os.getenv('DB_PORT')),
+            ssl_ca='../../combined-ca-certificates.pem',
         )
         
         cursor = conn.cursor()
@@ -62,3 +63,6 @@ def create_db():
     except Exception as e:
         print(f"Error creating database: {e}")
         return False
+    
+if __name__ == "__main__":
+    create_db()

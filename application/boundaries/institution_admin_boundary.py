@@ -75,6 +75,10 @@ def suspend_user(user_id):
         return redirect(url_for('auth.login'))
 
     result = InstitutionControl.suspend_user(current_app, user_id, institution_id=auth['user'].get('institution_id'), role=request.form.get('user_role'))
+    redirect_path = request.form.get("redirect")
+    print("Redirecting to:", redirect_path)
+    if redirect_path:
+        return redirect(redirect_path)
     return redirect(url_for('institution.manage_users'))
 
 
@@ -86,6 +90,10 @@ def unsuspend_user(user_id):
         return redirect(url_for('auth.login'))
 
     result = InstitutionControl.unsuspend_user(current_app, user_id, institution_id=auth['user'].get('institution_id'), role=request.form.get('user_role'))
+    redirect_path = request.form.get("redirect")
+    print("Redirecting to:", redirect_path)
+    if redirect_path:
+        return redirect(redirect_path)
     return redirect(url_for('institution.manage_users'))
 
 @institution_bp.route('/manage_users/<int:user_id>/delete', methods=['POST'])
@@ -99,20 +107,23 @@ def delete_user(user_id):
     return redirect(url_for('institution.manage_users'))
 
 
-'''@institution_bp.route('/manage_attendance/<int:user_id>/view', methods=['GET'])
+@institution_bp.route('/manage_users/<int:user_id>/view', methods=['GET'])
 def view_user_details(user_id):
     auth = AuthControl.verify_session(current_app, session)
     if not auth['success'] or auth['user'].get('user_type') not in ['institution_admin', 'admin']:
         flash('Access denied. Institution admin privileges required.', 'danger')
         return redirect(url_for('auth.login'))
 
-    result = InstitutionControl.view_user(current_app, user_id, institution_id=auth['user'].get('institution_id'))
+    result = InstitutionControl.view_user(current_app, user_id, institution_id=auth['user'].get('institution_id'), role=request.args.get('role'))
     if not result.get('success'):
         flash(result.get('error') or 'Failed to load user details', 'danger')
         return redirect(url_for('institution.manage_users'))
-
-    return render_template('institution/admin/institution_admin_user_details.html', user=auth['user'], user_details=result.get('user_details'))'''
-
+    return render_template(
+        'institution/admin/institution_admin_user_management_user_details.html',
+        user=auth['user'],
+        user_details=result.get('user_details'),
+        redirect_path=f"{request.path}?role={request.args.get('role')}",
+    )
 
 @institution_bp.route('/manage_attendance')
 def manage_attendance():

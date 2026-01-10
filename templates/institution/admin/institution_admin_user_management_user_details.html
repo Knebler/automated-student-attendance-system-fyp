@@ -109,8 +109,8 @@
                     <table class="classes-table">
                         <thead>
                             <tr>
-                                <th>Class Name</th>
                                 <th>Code</th>
+                                <th>Class Name</th>
                                 <th>Date Start</th>
                                 <th>Date End</th>
                                 <th>Actions</th>
@@ -119,23 +119,50 @@
                         <tbody>
                             {% for course in user_details.courses %}
                             <tr>
-                                <td>{{ course.course_name }}</td>
                                 <td>{{ course.course_code }}</td>
+                                <td>{{ course.course_name }}</td>
                                 <td>{{ course.start_date.strftime('%d %b %Y') }}</td>
                                 <td>{{ course.end_date.strftime('%d %b %Y') }}</td>
                                 <td>
                                     <div class="table-actions">
                                         <button class="btn-custom btn-view">View</button>
-                                        <button class="btn-custom btn-remove">Remove</button>
+                                        <form action="/institution/manage_users/{{ user_details.id }}/remove_course" method='POST'>
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="redirect" value="{{ redirect_path }}">
+                                            <input type="hidden" name="user_role" value="{{ user_details.role }}">
+                                            <input type="hidden" name="course_id" value="{{ course.course_id }}">
+                                            <button class="btn-custom btn-remove">Remove</button>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>
                             {% endfor %}
+                            <tr>
+                                <td>
+                                    <select class="select-courses" id="courses">
+                                        <option value="">Select a class</option>
+                                        {% for course in user_details.possible_courses %}
+                                        <option value="{{ course.course_code }}">{{ course.course_code }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td id="courses-name"></td>
+                                <td id="courses-start"></td>
+                                <td id="courses-end"></td>
+                                <td>
+                                    <div class="table-actions">
+                                        <form action="/institution/manage_users/{{ user_details.id }}/add_course" method='POST'>
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="redirect" value="{{ redirect_path }}">
+                                            <input type="hidden" name="user_role" value="{{ user_details.role }}">
+                                            <input type="hidden" name="course_id" id="course-id">
+                                            <button class="btn-custom btn-add">Add class</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
-                </div>
-                <div class="add-class mt-3">
-                    <button class="btn-custom btn-outline-custom">+ Assign New Class</button>
                 </div>
             </div>
 
@@ -148,6 +175,33 @@
         </div>
     </div>
 </div>
+
+<script id="course-data" type="application/json">
+    {{ user_details.possible_courses|tojson }}
+</script>
+<script>
+const courseMap = JSON.parse(document.getElementById('course-data').textContent);
+const options = { day: '2-digit', month: 'short', year: 'numeric' };
+function formatDate(date) {
+    return new Date(date).toLocaleDateString('en-GB', options);
+}
+function updateSelectedCourse(course_id, course_name, start_date_str, end_date_str) {
+    document.getElementById('course-id').value = course_id;
+    document.getElementById('courses-name').innerText = course_name;
+    document.getElementById('courses-start').innerText = start_date_str;
+    document.getElementById('courses-end').innerText = end_date_str;
+}
+document.getElementById('courses').addEventListener('change', function() {
+    const courseCode = this.value;
+    const selectedCourse = courseMap.filter(course => course.course_code == courseCode);
+    if (selectedCourse.length == 0) {
+        updateSelectedCourse('', '', '', '');
+    } else {
+        const course = selectedCourse[0];
+        updateSelectedCourse(course.course_id, course.course_name, formatDate(course.start_date), formatDate(course.end_date));
+    }
+});
+</script>
 
 <style>
     /* Page Specific Styles */

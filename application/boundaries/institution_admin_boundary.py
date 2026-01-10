@@ -74,9 +74,8 @@ def suspend_user(user_id):
         flash('Access denied. Institution admin privileges required.', 'danger')
         return redirect(url_for('auth.login'))
 
-    result = InstitutionControl.suspend_user(current_app, user_id, institution_id=auth['user'].get('institution_id'), role=request.form.get('user_role'))
+    InstitutionControl.suspend_user(current_app, user_id, institution_id=auth['user'].get('institution_id'), role=request.form.get('user_role'))
     redirect_path = request.form.get("redirect")
-    print("Redirecting to:", redirect_path)
     if redirect_path:
         return redirect(redirect_path)
     return redirect(url_for('institution.manage_users'))
@@ -91,7 +90,6 @@ def unsuspend_user(user_id):
 
     result = InstitutionControl.unsuspend_user(current_app, user_id, institution_id=auth['user'].get('institution_id'), role=request.form.get('user_role'))
     redirect_path = request.form.get("redirect")
-    print("Redirecting to:", redirect_path)
     if redirect_path:
         return redirect(redirect_path)
     return redirect(url_for('institution.manage_users'))
@@ -124,6 +122,32 @@ def view_user_details(user_id):
         user_details=result.get('user_details'),
         redirect_path=f"{request.path}?role={request.args.get('role')}",
     )
+
+@institution_bp.route('/manage_users/<int:user_id>/add_course', methods=['POST'])
+def add_user_to_course(user_id):
+    auth = AuthControl.verify_session(current_app, session)
+    if not auth['success'] or auth['user'].get('user_type') not in ['institution_admin', 'admin']:
+        flash('Access denied. Institution admin privileges required.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    InstitutionControl.add_user_to_course(current_app, user_id, course_id=request.form.get('course_id'), role=request.form.get('user_role'))
+    redirect_path = request.form.get("redirect")
+    if redirect_path:
+        return redirect(redirect_path)
+    return redirect(url_for('institution.manage_users'))
+
+@institution_bp.route('/manage_users/<int:user_id>/remove_course', methods=['POST'])
+def remove_user_from_course(user_id):
+    auth = AuthControl.verify_session(current_app, session)
+    if not auth['success'] or auth['user'].get('user_type') not in ['institution_admin', 'admin']:
+        flash('Access denied. Institution admin privileges required.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    InstitutionControl.remove_user_from_course(current_app, user_id, course_id=request.form.get('course_id'), role=request.form.get('user_role'))
+    redirect_path = request.form.get("redirect")
+    if redirect_path:
+        return redirect(redirect_path)
+    return redirect(url_for('institution.manage_users'))
 
 @institution_bp.route('/manage_attendance')
 def manage_attendance():

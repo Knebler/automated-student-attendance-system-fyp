@@ -53,19 +53,19 @@ class AttendanceRecord(BaseEntity):
                     default=db.func.current_timestamp()
                 )
                 
-                # ✅ FIX: Use string references for relationships
+                # ✅ FIX: Use correct model class names for relationships
                 session = db.relationship(
-                    'Session',  # String reference instead of class
+                    'SessionModel',  # Changed from 'Session' to 'SessionModel'
                     backref=db.backref('attendance_records', lazy='dynamic'),
                     foreign_keys=[session_id]
                 )
                 student = db.relationship(
-                    'Student',  # String reference
+                    'StudentModel',  # Changed from 'Student' to 'StudentModel'
                     backref=db.backref('attendance_records', lazy='dynamic'),
                     foreign_keys=[student_id]
                 )
                 lecturer = db.relationship(
-                    'Lecturer',  # String reference
+                    'LecturerModel',  # Changed from 'Lecturer' to 'LecturerModel'
                     backref=db.backref('marked_attendance', lazy='dynamic'),
                     foreign_keys=[lecturer_id]
                 )

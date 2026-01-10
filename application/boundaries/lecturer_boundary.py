@@ -61,6 +61,27 @@ def manage_attendance():
                            sessions=sessions)
 
 
+@lecturer_bp.route('/manage_attendance/statistics')
+def attendance_statistics():
+    """Render the lecturer attendance statistics page"""
+    auth_result = AuthControl.verify_session(current_app, session)
+    if not auth_result['success'] or auth_result['user'].get('user_type') not in ['lecturer', 'teacher']:
+        flash('Access denied. Lecturer privileges required.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    user_id = auth_result['user'].get('user_id')
+    attendance_summary = {}
+    if user_id:
+        # Optionally fetch attendance summary for this lecturer
+        result = AttendanceControl.get_student_attendance_summary(current_app, user_id, days=30)
+        if result.get('success'):
+            attendance_summary = result.get('summary')
+
+    return render_template('institution/lecturer/lecturer_attendance_management_statistics.html',
+                           user=auth_result['user'],
+                           attendance_summary=attendance_summary)
+
+
 @lecturer_bp.route('/manage_classes')
 def manage_classes():
     """Render the lecturer class-management page"""

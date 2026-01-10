@@ -4,7 +4,21 @@
 
 {% block content %}
 <div class="class-management">
-    <h1 class="page-title mb-4">Class Management</h1>
+    <!-- Welcome Header (following the same pattern as other pages) -->
+    <div class="welcome-header mb-4">
+        <div class="header-content">
+            <h1 class="welcome-title">Class Management</h1>
+            <div class="datetime-display">
+                <span class="time">07:48AM</span>
+                <span class="separator">|</span>
+                <span class="date">25 November 2025</span>
+            </div>
+        </div>
+        <div class="notification-bell">
+            <span class="notification-icon">🔔</span>
+            <span class="notification-badge">3</span>
+        </div>
+    </div>
 
     <!-- Class Selection Dropdown -->
     <div class="class-selector mb-4">
@@ -215,7 +229,10 @@
                                         </td>
                                         <td>
                                             <div class="action-buttons">
-                                                <button class="btn-action" onclick="viewStudentDetails('{{ student.id }}')" title="View Details">
+                                                <!-- Updated to use popup modal -->
+                                                <button class="btn-action" 
+                                                        onclick="openStudentModal('{{ student.id }}', '{{ student.name }}', '{{ student.id_number }}', '{{ student.email }}', '{{ student.program }}', '{{ student.status }}', '{{ student.year }}')" 
+                                                        title="View Details">
                                                     👁️
                                                 </button>
                                                 <button class="btn-action" onclick="editStudent('{{ student.id }}')" title="Edit">
@@ -323,6 +340,116 @@
     {% endif %}
 </div>
 
+<!-- Student Details Modal (Adapted from lecturer_class_management_with_student_detail_popup.html) -->
+<div id="studentModal" class="student-modal-overlay" onclick="closeStudentModal(event)">
+    <div class="student-modal-content" onclick="event.stopPropagation()">
+        <!-- Modal Header -->
+        <div class="student-modal-header">
+            <h2>Student Details</h2>
+            <button onclick="closeStudentModal()" class="student-modal-close">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Modal Content -->
+        <div class="student-modal-body">
+            <!-- Student Header -->
+            <div class="student-modal-header-info">
+                <div class="student-avatar-large">
+                    <span id="studentInitials">JT</span>
+                </div>
+                <div class="student-info-header">
+                    <h3 id="studentName">James Teo</h3>
+                    <p id="studentDegree">Bachelor in Computer Science<br>(Big Data)</p>
+                </div>
+            </div>
+
+            <!-- Student Information Grid -->
+            <div class="student-info-grid">
+                <!-- Email -->
+                <div class="student-info-item">
+                    <div class="student-info-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <div class="student-info-content">
+                        <p class="student-info-label">Email</p>
+                        <p id="studentEmail" class="student-info-value">XXXX123@uowmail.edu.au</p>
+                    </div>
+                </div>
+
+                <!-- Year -->
+                <div class="student-info-item">
+                    <div class="student-info-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <div class="student-info-content">
+                        <p class="student-info-label">Year</p>
+                        <p id="studentYear" class="student-info-value">Year 3</p>
+                    </div>
+                </div>
+
+                <!-- University ID -->
+                <div class="student-info-item">
+                    <div class="student-info-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <div class="student-info-content">
+                        <p class="student-info-label">University ID</p>
+                        <p id="studentId" class="student-info-value">8531254</p>
+                    </div>
+                </div>
+
+                <!-- Status -->
+                <div class="student-info-item">
+                    <div class="student-info-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="student-info-content">
+                        <p class="student-info-label">Status</p>
+                        <p id="studentStatus" class="student-info-value">Active</p>
+                    </div>
+                </div>
+
+                <!-- Enrollment Date -->
+                <div class="student-info-item">
+                    <div class="student-info-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <div class="student-info-content">
+                        <p class="student-info-label">Enrollment Date</p>
+                        <p id="studentEnrollmentDate" class="student-info-value">15/08/2024</p>
+                    </div>
+                </div>
+
+                <!-- Attendance Rate -->
+                <div class="student-info-item">
+                    <div class="student-info-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                    </div>
+                    <div class="student-info-content">
+                        <p class="student-info-label">Attendance Rate</p>
+                        <p id="studentAttendance" class="student-info-value attendance-good">92%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
     /* Class Management Specific Styles */
     .class-management {
@@ -330,13 +457,71 @@
         margin: 0 auto;
     }
 
-    .page-title {
+    /* Welcome Header */
+    .welcome-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid var(--border-color);
+        margin-bottom: 2rem;
+    }
+
+    .header-content {
+        flex: 1;
+    }
+
+    .welcome-title {
         font-size: 2.5rem;
         font-weight: bold;
         font-style: italic;
         color: var(--text-dark);
-        border-bottom: 2px solid var(--border-color);
-        padding-bottom: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .datetime-display {
+        font-size: 1.1rem;
+        color: var(--text-light);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .time {
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+
+    .separator {
+        opacity: 0.5;
+    }
+
+    .date {
+        font-weight: 500;
+    }
+
+    /* Notification Bell */
+    .notification-bell {
+        position: relative;
+        cursor: pointer;
+        font-size: 1.5rem;
+        padding: 0.5rem;
+    }
+
+    .notification-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background-color: #dc2626;
+        color: white;
+        font-size: 0.75rem;
+        font-weight: bold;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .section-title {
@@ -571,7 +756,7 @@
         margin: 0 auto;
     }
 
-    /* Modal Styles */
+    /* Bulk Upload Modal Styles */
     .modal-overlay {
         position: fixed;
         top: 0;
@@ -619,6 +804,186 @@
         display: flex;
         justify-content: flex-end;
         gap: 1rem;
+    }
+
+    /* Student Modal Styles (Adapted from popup version) */
+    .student-modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        z-index: 1050;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .student-modal-overlay.active {
+        display: flex;
+    }
+
+    .student-modal-content {
+        background-color: white;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 800px;
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: slideUp 0.3s ease;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .student-modal-header {
+        background-color: var(--primary-dark);
+        color: white;
+        padding: 1.5rem 2rem;
+        border-radius: 16px 16px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .student-modal-header h2 {
+        margin: 0;
+        font-size: 1.75rem;
+        font-weight: bold;
+    }
+
+    .student-modal-close {
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 6px;
+        transition: background-color 0.2s ease;
+    }
+
+    .student-modal-close:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .student-modal-close svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .student-modal-body {
+        padding: 2rem;
+    }
+
+    .student-modal-header-info {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .student-avatar-large {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background-color: var(--primary-dark);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        font-weight: bold;
+        flex-shrink: 0;
+        border: 4px solid var(--border-color);
+    }
+
+    .student-info-header {
+        flex: 1;
+    }
+
+    .student-info-header h3 {
+        font-size: 2rem;
+        font-weight: bold;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .student-info-header p {
+        font-size: 1.1rem;
+        color: var(--text-light);
+        line-height: 1.4;
+    }
+
+    .student-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .student-info-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1.25rem;
+        background-color: var(--primary-light);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        transition: all 0.2s ease;
+    }
+
+    .student-info-item:hover {
+        background-color: #f1f5f9;
+        transform: translateY(-2px);
+    }
+
+    .student-info-icon {
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        background-color: white;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border-color);
+    }
+
+    .student-info-icon svg {
+        width: 20px;
+        height: 20px;
+        color: var(--primary-dark);
+    }
+
+    .student-info-content {
+        flex: 1;
+    }
+
+    .student-info-label {
+        font-size: 0.85rem;
+        color: var(--text-light);
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .student-info-value {
+        font-size: 1.1rem;
+        color: var(--text-dark);
+        font-weight: 500;
+    }
+
+    .attendance-good {
+        color: #059669;
+        font-weight: bold;
+    }
+
+    .attendance-average {
+        color: #d97706;
+        font-weight: bold;
+    }
+
+    .attendance-poor {
+        color: #dc2626;
+        font-weight: bold;
     }
 
     /* File Upload */
@@ -697,10 +1062,20 @@
         .detail-label {
             min-width: auto;
         }
+        
+        .student-info-grid {
+            grid-template-columns: 1fr;
+        }
     }
 
     @media (max-width: 768px) {
-        .page-title {
+        .welcome-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .welcome-title {
             font-size: 1.75rem;
         }
         
@@ -729,9 +1104,25 @@
             font-size: 0.8rem;
         }
         
-        .modal-content {
+        .modal-content,
+        .student-modal-content {
             width: 95%;
             margin: 0 1rem;
+        }
+        
+        .student-modal-header-info {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .student-avatar-large {
+            width: 100px;
+            height: 100px;
+            font-size: 2rem;
+        }
+        
+        .student-info-header h3 {
+            font-size: 1.5rem;
         }
     }
 
@@ -752,6 +1143,22 @@
         .card-footer-custom .btn-custom,
         .card-footer-custom .btn-outline-custom {
             width: 100%;
+        }
+        
+        .student-info-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        
+        .student-info-icon {
+            width: 32px;
+            height: 32px;
+        }
+        
+        .student-info-icon svg {
+            width: 16px;
+            height: 16px;
         }
     }
 
@@ -952,8 +1359,66 @@
         }, 2000);
     }
     
-    function viewStudentDetails(studentId) {
-        window.location.href = "{{ url_for('lecturer.student_details') }}?student_id=" + studentId;
+    // Student Modal Functions (adapted from popup version)
+    function openStudentModal(studentId, studentName, studentNumber, studentEmail, studentProgram, studentStatus, studentYear) {
+        // Get initials for avatar
+        const names = studentName.split(' ');
+        const initials = names.map(name => name.charAt(0)).join('').toUpperCase();
+        
+        // Update modal content
+        document.getElementById('studentInitials').textContent = initials;
+        document.getElementById('studentName').textContent = studentName;
+        document.getElementById('studentDegree').innerHTML = studentProgram.replace('(', '<br>(');
+        document.getElementById('studentEmail').textContent = studentEmail;
+        document.getElementById('studentYear').textContent = studentYear || 'Year 3';
+        document.getElementById('studentId').textContent = studentNumber;
+        document.getElementById('studentStatus').textContent = studentStatus.charAt(0).toUpperCase() + studentStatus.slice(1);
+        
+        // Format status display
+        const statusElement = document.getElementById('studentStatus');
+        statusElement.className = 'student-info-value';
+        if (studentStatus === 'active') {
+            statusElement.classList.add('attendance-good');
+        } else if (studentStatus === 'inactive') {
+            statusElement.classList.add('attendance-poor');
+        } else {
+            statusElement.classList.add('attendance-average');
+        }
+        
+        // Get enrollment date from table row (if available)
+        const row = document.querySelector(`tr[data-student-id="${studentId}"]`);
+        if (row) {
+            const enrollmentDateCell = row.querySelectorAll('td')[4];
+            if (enrollmentDateCell) {
+                document.getElementById('studentEnrollmentDate').textContent = enrollmentDateCell.textContent.trim();
+            }
+        }
+        
+        // Calculate attendance rate (simulated for demo)
+        const attendanceRate = Math.floor(Math.random() * 20) + 80; // Random between 80-100%
+        document.getElementById('studentAttendance').textContent = `${attendanceRate}%`;
+        
+        // Set attendance color
+        const attendanceElement = document.getElementById('studentAttendance');
+        attendanceElement.className = 'student-info-value';
+        if (attendanceRate >= 90) {
+            attendanceElement.classList.add('attendance-good');
+        } else if (attendanceRate >= 75) {
+            attendanceElement.classList.add('attendance-average');
+        } else {
+            attendanceElement.classList.add('attendance-poor');
+        }
+        
+        // Show modal
+        document.getElementById('studentModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeStudentModal(event) {
+        if (!event || event.target.classList.contains('student-modal-overlay')) {
+            document.getElementById('studentModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
     }
     
     function editStudent(studentId) {
@@ -1049,6 +1514,32 @@
     
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
+        // Update time and date dynamically
+        function updateDateTime() {
+            const now = new Date();
+            
+            // Format time
+            const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: true };
+            const time = now.toLocaleTimeString('en-US', timeOptions).toUpperCase();
+            
+            // Format date
+            const dateOptions = { day: 'numeric', month: 'long', year: 'numeric' };
+            const date = now.toLocaleDateString('en-US', dateOptions);
+            
+            // Update display
+            document.querySelector('.time').textContent = time;
+            document.querySelector('.date').textContent = date;
+        }
+        
+        // Update immediately and then every minute
+        updateDateTime();
+        setInterval(updateDateTime, 60000);
+        
+        // Notification bell click
+        document.querySelector('.notification-bell').addEventListener('click', function() {
+            alert('You have 3 new notifications');
+        });
+        
         // Set up CSV file upload preview
         const fileInput = document.getElementById('csvFile');
         fileInput.addEventListener('change', function(e) {
@@ -1107,6 +1598,13 @@
             if (files.length > 0) {
                 fileInput.files = files;
                 fileInput.dispatchEvent(new Event('change'));
+            }
+        });
+        
+        // Close student modal on Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeStudentModal();
             }
         });
     });

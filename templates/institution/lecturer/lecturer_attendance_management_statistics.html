@@ -1,399 +1,32 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Statistics - Lecturer</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+{% extends "layouts/base.html" %}
 
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
-        }
+{% block title %}Attendance Statistics - AttendAI{% endblock %}
 
-        /* Navigation */
-        nav {
-            background-color: #001f3f;
-            padding: 20px 40px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .logo {
-            color: white;
-            font-size: 48px;
-            font-weight: bold;
-            letter-spacing: 2px;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 0;
-            align-items: center;
-            flex: 1;
-            justify-content: center;
-        }
-
-        .nav-links a {
-            color: white;
-            text-decoration: none;
-            padding: 10px 30px;
-            border-right: 2px solid rgba(255, 255, 255, 0.3);
-            font-size: 18px;
-            transition: background-color 0.3s;
-        }
-
-        .nav-links a:first-child {
-            border-left: 2px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .nav-links a:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .nav-links a.active {
-            text-decoration: underline;
-            font-weight: bold;
-        }
-
-        .notification-icon {
-            color: white;
-            font-size: 32px;
-            cursor: pointer;
-            margin-left: 20px;
-        }
-
-        /* Main Content */
-        .container {
-            padding: 40px;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        h1 {
-            color: #001f3f;
-            font-size: 48px;
-            margin-bottom: 30px;
-        }
-
-        .stats-card {
-            background-color: white;
-            border: 3px solid #001f3f;
-            border-radius: 15px;
-            padding: 40px;
-        }
-
-        .controls-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 40px;
-        }
-
-        .dropdown {
-            background-color: #001f3f;
-            color: white;
-            padding: 15px 30px;
-            border-radius: 10px;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            min-width: 300px;
-        }
-
-        .dropdown-content {
-            flex: 1;
-        }
-
-        .dropdown-title {
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .dropdown-subtitle {
-            font-size: 16px;
-        }
-
-        .dropdown-arrow {
-            font-size: 24px;
-        }
-
-        .time-toggle {
-            display: flex;
-            border: 2px solid #001f3f;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        .time-toggle button {
-            background-color: white;
-            color: #001f3f;
-            border: none;
-            padding: 12px 40px;
-            font-size: 18px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .time-toggle button.active {
-            background-color: #001f3f;
-            color: white;
-        }
-
-        .time-toggle button:hover:not(.active) {
-            background-color: #f0f0f0;
-        }
-
-        .charts-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 60px;
-        }
-
-        .chart-section h2 {
-            color: #001f3f;
-            font-size: 28px;
-            margin-bottom: 30px;
-        }
-
-        /* Line Chart */
-        .line-chart {
-            position: relative;
-            height: 400px;
-            border-left: 2px solid #ccc;
-            border-bottom: 2px solid #ccc;
-            padding: 20px 20px 40px 50px;
-        }
-
-        .chart-grid {
-            position: absolute;
-            top: 20px;
-            left: 50px;
-            right: 20px;
-            bottom: 40px;
-        }
-
-        .grid-line {
-            position: absolute;
-            left: 0;
-            right: 0;
-            border-top: 1px dashed #e0e0e0;
-        }
-
-        .y-label {
-            position: absolute;
-            left: -35px;
-            font-size: 14px;
-            color: #666;
-        }
-
-        .chart-line {
-            position: absolute;
-            top: 20px;
-            left: 50px;
-            right: 20px;
-            bottom: 40px;
-        }
-
-        .data-point {
-            position: absolute;
-            width: 12px;
-            height: 12px;
-            background-color: #4285f4;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 2;
-        }
-
-        .line-segment {
-            position: absolute;
-            height: 2px;
-            background-color: #4285f4;
-            transform-origin: left center;
-        }
-
-        .dashed-line {
-            position: absolute;
-            height: 2px;
-            border-top: 2px dashed #4285f4;
-            opacity: 0.5;
-        }
-
-        .x-labels {
-            position: absolute;
-            bottom: 10px;
-            left: 50px;
-            right: 20px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .x-label {
-            font-size: 14px;
-            color: #666;
-        }
-
-        .chart-legend {
-            position: absolute;
-            bottom: -30px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 30px;
-            font-size: 14px;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .legend-line {
-            width: 30px;
-            height: 2px;
-            background-color: #4285f4;
-        }
-
-        .legend-line.dashed {
-            border-top: 2px dashed #4285f4;
-            background: none;
-        }
-
-        /* Pie Chart */
-        .pie-chart-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding-top: 20px;
-        }
-
-        .pie-chart {
-            width: 300px;
-            height: 300px;
-            border-radius: 50%;
-            background: conic-gradient(
-                #2ecc71 0% 50%,
-                #4285f4 50% 90%,
-                #ff9800 90% 100%
-            );
-            margin-bottom: 40px;
-        }
-
-        .pie-legend {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            width: 100%;
-        }
-
-        .pie-legend-item {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            font-size: 18px;
-        }
-
-        .pie-color {
-            width: 30px;
-            height: 30px;
-            border-radius: 5px;
-        }
-
-        .pie-color.green {
-            background-color: #2ecc71;
-        }
-
-        .pie-color.blue {
-            background-color: #4285f4;
-        }
-
-        .pie-color.orange {
-            background-color: #ff9800;
-        }
-
-        .pie-legend-text {
-            color: #001f3f;
-        }
-
-        .excellent {
-            color: #2ecc71;
-        }
-
-        .good {
-            color: #4285f4;
-        }
-
-        .average {
-            color: #ff9800;
-        }
-
-        @media (max-width: 1024px) {
-            .charts-row {
-                grid-template-columns: 1fr;
-            }
-
-            .controls-row {
-                flex-direction: column;
-                gap: 20px;
-            }
-
-            .dropdown {
-                width: 100%;
-            }
-        }
-
-        @media (max-width: 768px) {
-            nav {
-                flex-direction: column;
-                gap: 20px;
-            }
-
-            .nav-links {
-                flex-direction: column;
-                width: 100%;
-            }
-
-            .nav-links a {
-                width: 100%;
-                text-align: center;
-                border-right: none;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-            }
-
-            h1 {
-                font-size: 32px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <nav>
-        <div class="logo">LOGO</div>
-        <div class="nav-links">
-            <a href="lecturer-dashboard.html">Dashboard</a>
-            <a href="lecturer-timetable.html">View Timetable</a>
-            <a href="lecturer-attendance.html" class="active">Manage Attendance</a>
-            <a href="#">Manage Classes/Rosters</a>
-            <a href="#">Manage Appeals</a>
+{% block content %}
+<div class="attendance-statistics">
+    <!-- Welcome Header -->
+    <div class="welcome-header mb-4">
+        <div class="header-content">
+            <h1 class="welcome-title">Attendance Statistics</h1>
+            <div class="datetime-display">
+                <span class="time">07:48AM</span>
+                <span class="separator">|</span>
+                <span class="date">25 November 2025</span>
+            </div>
         </div>
-        <div class="notification-icon">🔔</div>
-    </nav>
+        <div class="notification-bell">
+            <span class="notification-icon">🔔</span>
+            <span class="notification-badge">3</span>
+        </div>
+    </div>
 
-    <div class="container">
-        <h1>Attendance Statistics</h1>
-
-        <div class="stats-card">
-            <div class="controls-row">
-                <div class="dropdown">
+    <!-- Statistics Card -->
+    <div class="card-custom">
+        <div class="card-header-custom">Attendance Analytics</div>
+        <div class="card-body-custom">
+            <!-- Controls Row -->
+            <div class="controls-row mb-4">
+                <div class="dropdown-control">
                     <div class="dropdown-content">
                         <div class="dropdown-title">CSCI251</div>
                         <div class="dropdown-subtitle">Advanced Programming</div>
@@ -402,12 +35,12 @@
                 </div>
 
                 <div class="time-toggle">
-                    <button>Week</button>
-                    <button class="active">Month</button>
-                    <button>Semester</button>
+                    <button class="time-btn">Week</button>
+                    <button class="time-btn active">Month</button>
+                    <button class="time-btn">Semester</button>
                 </div>
 
-                <div class="dropdown">
+                <div class="dropdown-control">
                     <div class="dropdown-content">
                         <div class="dropdown-title">T01</div>
                         <div class="dropdown-subtitle">Tutorial Group 01</div>
@@ -416,9 +49,11 @@
                 </div>
             </div>
 
+            <!-- Charts Row -->
             <div class="charts-row">
-                <div class="chart-section">
-                    <h2>Attendance Trend</h2>
+                <!-- Attendance Trend Chart -->
+                <div class="chart-section mb-4">
+                    <h2 class="chart-title">Attendance Trend</h2>
                     <div class="line-chart">
                         <div class="chart-grid">
                             <div class="grid-line" style="top: 0%;">
@@ -486,8 +121,9 @@
                     </div>
                 </div>
 
+                <!-- Attendance Distribution Chart -->
                 <div class="chart-section">
-                    <h2>Attendance Distribution</h2>
+                    <h2 class="chart-title">Attendance Distribution</h2>
                     <div class="pie-chart-container">
                         <div class="pie-chart"></div>
                         <div class="pie-legend">
@@ -509,5 +145,460 @@
             </div>
         </div>
     </div>
-</body>
-</html>
+</div>
+
+<style>
+    /* Attendance Statistics Specific Styles */
+    .attendance-statistics {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    /* Welcome Header */
+    .welcome-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid var(--border-color);
+        margin-bottom: 2rem;
+    }
+
+    .header-content {
+        flex: 1;
+    }
+
+    .welcome-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        font-style: italic;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .datetime-display {
+        font-size: 1.1rem;
+        color: var(--text-light);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .time {
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+
+    .separator {
+        opacity: 0.5;
+    }
+
+    .date {
+        font-weight: 500;
+    }
+
+    /* Notification Bell */
+    .notification-bell {
+        position: relative;
+        cursor: pointer;
+        font-size: 1.5rem;
+        padding: 0.5rem;
+    }
+
+    .notification-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background-color: #dc2626;
+        color: white;
+        font-size: 0.75rem;
+        font-weight: bold;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Controls Row */
+    .controls-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 2.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .dropdown-control {
+        background-color: var(--primary-dark);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-width: 250px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .dropdown-control:hover {
+        background-color: #1e293b;
+    }
+
+    .dropdown-content {
+        flex: 1;
+    }
+
+    .dropdown-title {
+        font-size: 1.1rem;
+        font-weight: bold;
+        margin-bottom: 0.25rem;
+    }
+
+    .dropdown-subtitle {
+        font-size: 0.9rem;
+        opacity: 0.8;
+    }
+
+    .dropdown-arrow {
+        font-size: 1.2rem;
+        margin-left: 1rem;
+    }
+
+    .time-toggle {
+        display: flex;
+        border: 2px solid var(--primary-dark);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .time-btn {
+        background-color: white;
+        color: var(--primary-dark);
+        border: none;
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .time-btn.active {
+        background-color: var(--primary-dark);
+        color: white;
+    }
+
+    .time-btn:hover:not(.active) {
+        background-color: var(--primary-light);
+    }
+
+    /* Charts Row */
+    .charts-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+    }
+
+    .chart-section h2 {
+        color: var(--primary-dark);
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+
+    /* Line Chart */
+    .line-chart {
+        position: relative;
+        height: 300px;
+        border-left: 2px solid #ccc;
+        border-bottom: 2px solid #ccc;
+        padding: 20px 20px 40px 40px;
+        background-color: white;
+    }
+
+    .chart-grid {
+        position: absolute;
+        top: 20px;
+        left: 40px;
+        right: 20px;
+        bottom: 40px;
+    }
+
+    .grid-line {
+        position: absolute;
+        left: 0;
+        right: 0;
+        border-top: 1px dashed #e0e0e0;
+    }
+
+    .y-label {
+        position: absolute;
+        left: -35px;
+        font-size: 0.85rem;
+        color: var(--text-light);
+    }
+
+    .chart-line {
+        position: absolute;
+        top: 20px;
+        left: 40px;
+        right: 20px;
+        bottom: 40px;
+    }
+
+    .data-point {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background-color: #4285f4;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 2;
+    }
+
+    .x-labels {
+        position: absolute;
+        bottom: 10px;
+        left: 40px;
+        right: 20px;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .x-label {
+        font-size: 0.85rem;
+        color: var(--text-light);
+    }
+
+    .chart-legend {
+        position: absolute;
+        bottom: -25px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 1.5rem;
+        font-size: 0.85rem;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .legend-line {
+        width: 25px;
+        height: 2px;
+        background-color: #4285f4;
+    }
+
+    .legend-line.dashed {
+        border-top: 2px dashed #4285f4;
+        background: none;
+    }
+
+    /* Pie Chart */
+    .pie-chart-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-top: 1rem;
+    }
+
+    .pie-chart {
+        width: 250px;
+        height: 250px;
+        border-radius: 50%;
+        background: conic-gradient(
+            #2ecc71 0% 50%,
+            #4285f4 50% 90%,
+            #ff9800 90% 100%
+        );
+        margin-bottom: 2rem;
+    }
+
+    .pie-legend {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        width: 100%;
+    }
+
+    .pie-legend-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        font-size: 1rem;
+    }
+
+    .pie-color {
+        width: 25px;
+        height: 25px;
+        border-radius: 5px;
+    }
+
+    .pie-color.green {
+        background-color: #2ecc71;
+    }
+
+    .pie-color.blue {
+        background-color: #4285f4;
+    }
+
+    .pie-color.orange {
+        background-color: #ff9800;
+    }
+
+    .pie-legend-text {
+        color: var(--text-dark);
+        font-weight: 500;
+    }
+
+    .excellent {
+        color: #2ecc71;
+    }
+
+    .good {
+        color: #4285f4;
+    }
+
+    .average {
+        color: #ff9800;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        .charts-row {
+            grid-template-columns: 1fr;
+        }
+
+        .controls-row {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .dropdown-control {
+            width: 100%;
+        }
+
+        .time-toggle {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .time-btn {
+            flex: 1;
+            text-align: center;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .welcome-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .welcome-title {
+            font-size: 1.75rem;
+        }
+
+        .datetime-display {
+            font-size: 1rem;
+        }
+
+        .line-chart {
+            height: 250px;
+            padding: 15px 15px 30px 30px;
+        }
+
+        .pie-chart {
+            width: 200px;
+            height: 200px;
+        }
+
+        .chart-legend {
+            flex-direction: column;
+            gap: 0.5rem;
+            bottom: -50px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .welcome-title {
+            font-size: 1.5rem;
+        }
+
+        .time-toggle {
+            flex-direction: column;
+        }
+
+        .time-btn {
+            width: 100%;
+        }
+
+        .pie-legend-item {
+            font-size: 0.9rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Update time and date dynamically
+        function updateDateTime() {
+            const now = new Date();
+            
+            // Format time
+            const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: true };
+            const time = now.toLocaleTimeString('en-US', timeOptions).toUpperCase();
+            
+            // Format date
+            const dateOptions = { day: 'numeric', month: 'long', year: 'numeric' };
+            const date = now.toLocaleDateString('en-US', dateOptions);
+            
+            // Update display
+            document.querySelector('.time').textContent = time;
+            document.querySelector('.date').textContent = date;
+        }
+
+        // Update immediately and then every minute
+        updateDateTime();
+        setInterval(updateDateTime, 60000);
+
+        // Notification bell click
+        document.querySelector('.notification-bell').addEventListener('click', function() {
+            alert('You have 3 new notifications');
+            // In a real app, this would show a notification dropdown
+        });
+
+        // Time toggle buttons
+        document.querySelectorAll('.time-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                // Remove active class from all buttons
+                document.querySelectorAll('.time-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                // Add active class to clicked button
+                this.classList.add('active');
+                
+                // In a real app, this would update the chart data
+                alert(`Showing ${this.textContent} view`);
+            });
+        });
+
+        // Dropdown controls
+        document.querySelectorAll('.dropdown-control').forEach(dropdown => {
+            dropdown.addEventListener('click', function() {
+                // In a real app, this would show a dropdown menu
+                alert('Dropdown menu would open here');
+            });
+        });
+    });
+</script>
+{% endblock %}

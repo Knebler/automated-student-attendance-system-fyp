@@ -3,6 +3,7 @@
 {% block title %}User Profile - AttendAI{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/institution_admin_user_management.css') }}">
 <div class="dashboard-admin">
     <h1 class="page-title mb-4">User Management - User Profile</h1>
 
@@ -13,12 +14,34 @@
             <!-- User Header -->
             <div class="user-header mb-4">
                 <div>
-                    <h2 class="user-name mb-1">JASON HO</h2>
-                    <div class="user-status">Status: <span class="status-suspended">SUSPENDED</span></div>
+                    <h2 class="user-name mb-1">{{ user_details.full_name }}</h2>
+                    {%if user_details.is_active %}
+                        <div class="user-status">Status: <span class="status-active">ACTIVE</span></div>
+                    {% else %}
+                        <div class="user-status">Status: <span class="status-suspended">SUSPENDED</span></div>
+                    {% endif %}
                 </div>
                 <div class="header-actions">
-                    <button class="btn-custom btn-unsuspend">Unsuspend User</button>
-                    <button class="btn-custom btn-delete">Delete User</button>
+                    {%if user_details.is_active %}
+                    <form action="/institution/manage_users/{{ user_details.id }}/suspend" method='POST'>
+                        <input type="hidden" name="redirect" value="{{ redirect_path }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="user_role" value="{{ user_details.role }}">
+                        <button class="btn-custom btn-suspend">Suspend User</button>
+                    </form>
+                    {% else %}
+                    <form action="/institution/manage_users/{{ user_details.id }}/unsuspend" method='POST'>
+                        <input type="hidden" name="redirect" value="{{ redirect_path }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="user_role" value="{{ user_details.role }}">
+                        <button class="btn-custom btn-unsuspend">Unsuspend User</button>
+                    </form>
+                    {% endif %}
+                    <form action="/institution/manage_users/{{ user_details.id }}/delete" method='POST'>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="user_role" value="{{ user_details.role }}">
+                        <button class="btn-custom btn-delete">Delete User</button>
+                    </form>
                 </div>
             </div>
 
@@ -29,19 +52,19 @@
                     <div class="info-grid">
                         <div class="info-item">
                             <span class="info-label">Age:</span>
-                            <span class="info-value">54</span>
+                            <span class="info-value">{{ user_details.age }}</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">Gender:</span>
-                            <span class="info-value">Male</span>
+                            <span class="info-value">{{ user_details.gender|capitalize }}</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">Email:</span>
-                            <span class="info-value">haolian@uow.edu.au</span>
+                            <span class="info-value">{{ user_details.email }}</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">Phone:</span>
-                            <span class="info-value">+61 4XX XXX XXX</span>
+                            <span class="info-value">{{ user_details.phone_number }}</span>
                         </div>
                     </div>
                     <button class="btn-custom btn-update">Update Profile</button>
@@ -55,19 +78,25 @@
                     <div class="account-info">
                         <div class="info-item">
                             <span class="info-label">Full Name:</span>
-                            <span class="info-value">Kai Joo Jason</span>
+                            <span class="info-value">{{ user_details.full_name }}</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">User ID:</span>
-                            <span class="info-value">67695569</span>
+                            <span class="info-value">{{ user_details.id }}</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">Role:</span>
-                            <span class="role-badge role-lecturer">Lecturer</span>
+                            <span class="role-badge role-{{ user_details.role|lower }}">{{ user_details.role }}</span>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">Account Created:</span>
-                            <span class="info-value">15/03/2023</span>
+                            <span class="info-label">
+                                {%if user_details.role == 'student' %}
+                                Enrollment Year:
+                                {% else %}
+                                Joined Year:
+                                {% endif %}
+                            </span>
+                            <span class="info-value">{{ user_details.created_year }}</span>
                         </div>
                     </div>
                 </div>
@@ -88,11 +117,12 @@
                             </tr>
                         </thead>
                         <tbody>
+                            {% for course in user_details.courses %}
                             <tr>
-                                <td>Introduction to Management</td>
-                                <td>MGNT 113</td>
-                                <td>01/03/2024</td>
-                                <td>30/06/2024</td>
+                                <td>{{ course.course_name }}</td>
+                                <td>{{ course.course_code }}</td>
+                                <td>{{ course.start_date.strftime('%d %b %Y') }}</td>
+                                <td>{{ course.end_date.strftime('%d %b %Y') }}</td>
                                 <td>
                                     <div class="table-actions">
                                         <button class="btn-custom btn-view">View</button>
@@ -100,30 +130,7 @@
                                     </div>
                                 </td>
                             </tr>
-                            <tr>
-                                <td>Business Accounting</td>
-                                <td>ACCY 111</td>
-                                <td>01/03/2024</td>
-                                <td>30/06/2024</td>
-                                <td>
-                                    <div class="table-actions">
-                                        <button class="btn-custom btn-view">View</button>
-                                        <button class="btn-custom btn-remove">Remove</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Business Management</td>
-                                <td>MGNT 102</td>
-                                <td>01/03/2024</td>
-                                <td>30/06/2024</td>
-                                <td>
-                                    <div class="table-actions">
-                                        <button class="btn-custom btn-view">View</button>
-                                        <button class="btn-custom btn-remove">Remove</button>
-                                    </div>
-                                </td>
-                            </tr>
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>
@@ -135,8 +142,7 @@
             <!-- Bottom Actions -->
             <div class="bottom-actions mt-4">
                 <div class="action-buttons">
-                    <button class="btn-custom btn-secondary">Back to Users</button>
-                    <button class="btn-custom btn-update">Save Changes</button>
+                    <a href="/institution/manage_users" class="btn-custom btn-secondary">Back to Users</a>
                 </div>
             </div>
         </div>
@@ -179,6 +185,14 @@
         color: var(--text-dark);
     }
 
+    .status-active {
+        color: #16a34a;
+        font-weight: bold;
+        background-color: rgba(22, 163, 74, 0.1);
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+    }
+
     .status-suspended {
         color: #dc2626;
         font-weight: bold;
@@ -190,34 +204,6 @@
     .header-actions {
         display: flex;
         gap: 0.75rem;
-    }
-
-    .btn-unsuspend {
-        background-color: #f59e0b;
-        color: white;
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-size: 0.9rem;
-        cursor: pointer;
-    }
-
-    .btn-unsuspend:hover {
-        background-color: #d97706;
-    }
-
-    .btn-delete {
-        background-color: #dc2626;
-        color: white;
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-size: 0.9rem;
-        cursor: pointer;
-    }
-
-    .btn-delete:hover {
-        background-color: #b91c1c;
     }
 
     /* Section Container */

@@ -37,7 +37,7 @@ def create_flask_app(config_name='default'):
     # Configure SSL for SQLAlchemy
     connect_args = {}
     if ssl_enabled:
-        print(f"🔐 Configuring SSL with certificate: {ssl_ca_path}")
+        print(f"Configuring SSL with certificate: {ssl_ca_path}")
         
         if os.path.exists(ssl_ca_path):
             # Method 1: Use SSL context (most reliable)
@@ -46,7 +46,7 @@ def create_flask_app(config_name='default'):
             connect_args = {
                 'ssl': ssl_context
             }
-            print("✅ Using SSL context with certificate verification")
+            print("Using SSL context with certificate verification")
         else:
             # Method 2: Use dictionary SSL parameters
             connect_args = {
@@ -56,9 +56,9 @@ def create_flask_app(config_name='default'):
                     'verify_mode': ssl.CERT_REQUIRED
                 }
             }
-            print("⚠️ Certificate not found, using dictionary SSL config")
+            print("Certificate not found, using dictionary SSL config")
     else:
-        print("🔓 SSL disabled")
+        print("SSL disabled")
     
     # Configure SQLAlchemy engine with SSL
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
@@ -179,22 +179,23 @@ def create_flask_app(config_name='default'):
     app.config['firebase_app'] = firebase
     
     # Create database and tables on first run
-    if not os.path.exists('.db_initialized'):
-        print("Initializing database for first run...")
-        from helper.db.delete_database import delete_db
-        from helper.db.create_database import create_db
+    # Dangerous operation - uncomment only if you want auto DB creation
+    # if not os.path.exists('.db_initialized'):
+    #     print("Initializing database for first run...")
+    #     from helper.db.delete_database import delete_db
+    #     from helper.db.create_database import create_db
         
-        # Delete existing database if needed
-        delete_db()
+    #     # Delete existing database if needed
+    #     delete_db()
         
-        # Create database and tables
-        if create_db():
-            # Create marker file to indicate DB was initialized
-            with open('.db_initialized', 'w') as f:
-                f.write('1')
-            print("Database initialized successfully!")
-        else:
-            print("Failed to initialize database!")
+    #     # Create database and tables
+    #     if create_db():
+    #         # Create marker file to indicate DB was initialized
+    #         with open('.db_initialized', 'w') as f:
+    #             f.write('1')
+    #         print("Database initialized successfully!")
+    #     else:
+    #         print("Failed to initialize database!")
 
     # Add facial recognition config
     app.config['FACIAL_DATA_DIR'] = './AttendanceAI/data/'

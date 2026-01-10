@@ -224,7 +224,7 @@
                                     </div>
                                 </div>
                                 <div class="absent-actions">
-                                    <a href="{{ url_for('student.appeal') }}?class=CSCI251-T01&date=2026-11-15" class="btn-custom btn-appeal">Appeal</a>
+                                    <a href="{{ url_for('student.appeal_management') }}?class=CSCI251-T01&date=2026-11-15" class="btn-custom btn-appeal">Appeal</a>
                                 </div>
                             </div>
 
@@ -250,7 +250,7 @@
                                     </div>
                                 </div>
                                 <div class="absent-actions">
-                                    <a href="{{ url_for('student.appeal') }}?class=MATH202-L03&date=2026-11-18" class="btn-custom btn-appeal">Appeal</a>
+                                    <a href="{{ url_for('student.appeal_management') }}?class=MATH202-L03&date=2026-11-18" class="btn-custom btn-appeal">Appeal</a>
                                 </div>
                             </div>
 
@@ -276,7 +276,7 @@
                                     </div>
                                 </div>
                                 <div class="absent-actions">
-                                    <a href="{{ url_for('student.appeal') }}?class=PHYS101-T02&date=2026-11-22" class="btn-custom btn-appeal">Appeal</a>
+                                    <a href="{{ url_for('student.appeal_management') }}?class=PHYS101-T02&date=2026-11-22" class="btn-custom btn-appeal">Appeal</a>
                                 </div>
                             </div>
 
@@ -302,13 +302,13 @@
                                     </div>
                                 </div>
                                 <div class="absent-actions">
-                                    <a href="{{ url_for('student.appeal') }}?class=CSCI251-L02&date=2026-11-25" class="btn-custom btn-appeal">Appeal</a>
+                                    <a href="{{ url_for('student.appeal_management') }}?class=CSCI251-L02&date=2026-11-25" class="btn-custom btn-appeal">Appeal</a>
                                 </div>
                             </div>
                         </div>
 
                         <div class="view-all">
-                            <a href="{{ url_for('student.absent_records') }}" class="view-all-link">View All Absent Records →</a>
+                            <a href="{{ url_for('student.appeal_management') }}" class="view-all-link">View All Absent Records →</a>
                         </div>
                     </div>
                 </div>
@@ -915,7 +915,7 @@
                     
                     // Simulate navigation
                     setTimeout(() => {
-                        window.location.href = "{{ url_for('student.appeal') }}";
+                        window.location.href = "{{ url_for('student.appeal_management') }}";
                     }, 1000);
                 }
             });

@@ -5,14 +5,13 @@ Updated for Azure MySQL with SSL support.
 Run this separately from your Flask app.
 """
 
-import sys
+import ssl
 import os
+import mysql.connector
+import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-import mysql.connector
 from dotenv import load_dotenv
-import ssl
-
 load_dotenv()
 
 def get_ssl_context():
@@ -118,6 +117,9 @@ def load_dummy_data():
             
             # Insert basic subscription plans if none exist
             if plan_count == 0:
+                cols = [
+                    'plan_name', 'description', 'price_per_cycle', 'billing_cycle', 'max_students', 'max_courses', 'max_lecturers', 'features',
+                ]
                 subscription_plans = [
                     ('Starter Plan', 'Perfect for small institutions', 99.99, 'monthly', 500, 50, 20, 
                      '{"facial_recognition": true, "basic_reporting": true, "email_support": true}'),
@@ -127,10 +129,10 @@ def load_dummy_data():
                      '{"facial_recognition": true, "custom_reporting": true, "24/7_support": true, "api_access": true, "custom_integrations": true}')
                 ]
                 
-                cursor.executemany("""
-                    INSERT INTO Subscription_Plans 
-                    (plan_name, description, price_per_cycle, billing_cycle, max_students, max_courses, max_lecturers, features)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                cursor.executemany(f"""
+                    INSERT INTO Subscription_Plans
+                    ({", ".join(cols)})
+                    VALUES ({", ".join(['%s'] * len(cols))})
                 """, subscription_plans)
                 print(f"Added {len(subscription_plans)} subscription plans")
             
@@ -164,7 +166,7 @@ def load_dummy_data():
 
 def populate_comprehensive_data(conn, cursor):
     """Populate database with comprehensive dummy data"""
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, date
     import random
     import bcrypt
     
@@ -176,6 +178,11 @@ def populate_comprehensive_data(conn, cursor):
     password_hash = bcrypt.hashpw(test_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     
     # 1. Create unregistered users
+    cols = [
+        'email', 'full_name', 'institution_name', 'institution_address',
+        'phone_number', 'message', 'selected_plan_id', 'status',
+        'reviewed_by', 'reviewed_at', 'response_message', 'applied_at',
+    ]
     unregistered_users = [
         ('john.doe@university.edu', 'John Doe', 'University of Technology', '123 Campus Road', '1234567890', 
          'Interested in Starter Plan', 1, 'approved', 1, now, 'Approved for trial', now),
@@ -185,13 +192,13 @@ def populate_comprehensive_data(conn, cursor):
          'Test institution setup', 1, 'approved', 1, now, 'Test account approved', now),
     ]
     
-    cursor.executemany("""
+    cursor.executemany(f"""
         INSERT INTO Unregistered_Users 
-        (email, full_name, institution_name, institution_address, phone_number, message, selected_plan_id, 
-         status, reviewed_by, reviewed_at, response_message, applied_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ({", ".join(cols)})
+        VALUES ({", ".join(['%s'] * len(cols))})
     """, unregistered_users)
     conn.commit()
+    print(f"Added {len(unregistered_users)} unregistered users")
     
     # 2. Create subscriptions
     cursor.execute("""
@@ -202,6 +209,7 @@ def populate_comprehensive_data(conn, cursor):
         (3, 1, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 1 YEAR), 'active')
     """)
     conn.commit()
+    print("Added subscriptions")
     
     # 3. Create assignments
     cursor.execute("""
@@ -211,19 +219,22 @@ def populate_comprehensive_data(conn, cursor):
                (1, 3, 3, 'Test institution setup')
     """)
     conn.commit()
+    print("Added assignments")
     
     # 4. Create institutions
+    cols = ['name', 'address', 'website', 'subscription_id']
     institutions = [
         ('University of Technology', '123 Campus Road, Tech City', 'https://utech.edu', 1),
         ('City College', '456 College Ave, Metro City', 'https://citycollege.edu', 2),
         ('University Test', '789 Test Street, Test City', 'https://university.test.edu', 3)
     ]
     
-    cursor.executemany("""
-        INSERT INTO Institutions (name, address, website, subscription_id)
-        VALUES (%s, %s, %s, %s)
+    cursor.executemany(f"""
+        INSERT INTO Institutions ({", ".join(cols)})
+        VALUES ({", ".join(['%s'] * len(cols))})
     """, institutions)
     conn.commit()
+    print(f"Added {len(institutions)} institutions")
     
     # 5. Create institution admins - INCLUDING TESTER ACCOUNT
     cursor.execute("""
@@ -234,10 +245,12 @@ def populate_comprehensive_data(conn, cursor):
         ('admin@university.edu', %s, 'University Admin', 3)  -- TESTER ACCOUNT
     """, (password_hash, password_hash, password_hash))
     conn.commit()
+    print("Added institution admins")
     
     print("Populating Academic Structure...")
-    
+
     # 6. Create venues for all institutions
+    cols = ['institution_id', 'venue_name', 'building', 'capacity', 'facilities']
     venues_data = [
         (1, 'Lecture Hall A', 'Science Building', 200, '{"projector": true, "ac": true, "whiteboard": true}'),
         (1, 'Lab 101', 'Computer Building', 40, '{"computers": 40, "projector": true, "ac": true}'),
@@ -248,13 +261,15 @@ def populate_comprehensive_data(conn, cursor):
         (3, 'Lab 201', 'Tech Building', 30, '{"computers": 30, "projector": true}'),  # Test institution
     ]
     
-    cursor.executemany("""
-        INSERT INTO Venues (institution_id, venue_name, building, capacity, facilities)
-        VALUES (%s, %s, %s, %s, %s)
+    cursor.executemany(f"""
+        INSERT INTO Venues ({", ".join(cols)})
+        VALUES ({", ".join(['%s'] * len(cols))})
     """, venues_data)
     conn.commit()
+    print(f"Added {len(venues_data)} venues")
     
     # 7. Create timetable slots for all institutions
+    cols = ['institution_id', 'day_of_week', 'start_time', 'end_time', 'slot_name']
     timetable_slots = [
         (1, 1, '09:00:00', '10:30:00', 'Morning Slot 1'),
         (1, 1, '11:00:00', '12:30:00', 'Morning Slot 2'),
@@ -265,88 +280,108 @@ def populate_comprehensive_data(conn, cursor):
         (3, 1, '10:30:00', '12:00:00', 'Late Morning'),   # Test institution
     ]
     
-    cursor.executemany("""
-        INSERT INTO Timetable_Slots (institution_id, day_of_week, start_time, end_time, slot_name)
-        VALUES (%s, %s, %s, %s, %s)
+    cursor.executemany(f"""
+        INSERT INTO Timetable_Slots ({", ".join(cols)})
+        VALUES ({", ".join(['%s'] * len(cols))})
     """, timetable_slots)
     conn.commit()
+    print(f"Added {len(timetable_slots)} timetable slots")
     
     # 8. Create lecturers - INCLUDING TESTER ACCOUNT
+    cols = ['institution_id', 'age', 'gender', 'phone_number',
+            'email', 'password_hash', 'full_name', 'department', 'year_joined',]
     lecturers = [
-        (1, 'prof.zhang@utech.edu', password_hash, 'Professor Zhang Wei', 'Computer Science'),
-        (1, 'dr.lee@utech.edu', password_hash, 'Dr. Lee Min Ho', 'Mathematics'),
-        (2, 'mr.jones@citycollege.edu', password_hash, 'Mr. David Jones', 'Business Studies'),
-        (2, 'ms.garcia@citycollege.edu', password_hash, 'Ms. Maria Garcia', 'Information Technology'),
-        (3, 'prof.smith@university.edu', password_hash, 'Professor John Smith', 'Computer Science'),  # TESTER ACCOUNT
-        (3, 'dr.jones@university.edu', password_hash, 'Dr. Emily Jones', 'Mathematics'),  # Test institution
+        (1, 30, 'Male', '1234567890', 'prof.zhang@utech.edu', password_hash, 'Professor Zhang Wei', 'Computer Science', 2022),
+        (1, 25, 'Female', '9876543210', 'dr.lee@utech.edu', password_hash, 'Dr. Lee Min Ho', 'Mathematics', 2021),
+        (2, 28, 'Male', '5555555555', 'mr.jones@citycollege.edu', password_hash, 'Mr. David Jones', 'Business Studies', 2020),
+        (2, 31, 'Female', '1111111111', 'ms.garcia@citycollege.edu', password_hash, 'Ms. Maria Garcia', 'Information Technology', 2010),
+        (3, 32, 'Male', '9999999999', 'prof.smith@university.edu', password_hash, 'Professor John Smith', 'Computer Science', 2023),  # TESTER ACCOUNT
+        (3, 27, 'Female', '8888888888', 'dr.jones@university.edu', password_hash, 'Dr. Emily Jones', 'Mathematics', 2025),  # Test institution
     ]
     
-    cursor.executemany("""
-        INSERT INTO Lecturers (institution_id, email, password_hash, full_name, department)
-        VALUES (%s, %s, %s, %s, %s)
+    cursor.executemany(f"""
+        INSERT INTO Lecturers ({", ".join(cols)})
+        VALUES ({", ".join(['%s'] * len(cols))})
     """, lecturers)
     conn.commit()
+    print(f"Added {len(lecturers)} lecturers")
     
     # 9. Create courses
+    cols = ['institution_id', 'course_code', 'course_name', 'description', 'credits', 'start_date', 'end_date']
     courses = [
-        (1, 'CS101', 'Introduction to Programming', 'Basic programming concepts using Python', 3),
-        (1, 'MATH201', 'Calculus I', 'Differential and integral calculus', 4),
-        (1, 'CS301', 'Database Systems', 'Relational database design and SQL', 3),
-        (2, 'BUS101', 'Business Fundamentals', 'Introduction to business concepts', 3),
-        (2, 'IT102', 'Web Development', 'HTML, CSS, and JavaScript fundamentals', 3),
-        (3, 'TEST101', 'Test Course 1', 'Introduction to Testing', 3),  # Test institution
-        (3, 'TEST201', 'Test Course 2', 'Advanced Testing Methods', 4),  # Test institution
+        (1, 'CS101', 'Introduction to Programming', 'Basic programming concepts using Python', 3, date(2023, 1, 1), date(2023, 6, 30)),
+        (1, 'MATH201', 'Calculus I', 'Differential and integral calculus', 4, date(2023, 7, 1), date(2023, 12, 31)),
+        (1, 'CS301', 'Database Systems', 'Relational database design and SQL', 3, date(2023, 1, 1), date(2023, 6, 30)),
+        (2, 'BUS101', 'Business Fundamentals', 'Introduction to business concepts', 3, date(2023, 1, 1), date(2023, 6, 30)),
+        (2, 'IT102', 'Web Development', 'HTML, CSS, and JavaScript fundamentals', 3, date(2023, 7, 1), date(2023, 12, 31)),
+        (3, 'TEST101', 'Test Course 1', 'Introduction to Testing', 3, date(2023, 1, 1), date(2023, 6, 30)),  # Test institution
+        (3, 'TEST201', 'Test Course 2', 'Advanced Testing Methods', 4, date(2023, 7, 1), date(2023, 12, 31)),  # Test institution
     ]
     
-    cursor.executemany("""
-        INSERT INTO Courses (institution_id, course_code, course_name, description, credits)
-        VALUES (%s, %s, %s, %s, %s)
+    cursor.executemany(f"""
+        INSERT INTO Courses ({", ".join(cols)})
+        VALUES ({", ".join(['%s'] * len(cols))})
     """, courses)
     conn.commit()
+    print(f"Added {len(courses)} courses")
     
     # 10. Assign lecturers to courses
-    course_lecturers = [
-        (1, 1),  # CS101 -> Prof. Zhang
-        (2, 2),  # MATH201 -> Dr. Lee
-        (3, 1),  # CS301 -> Prof. Zhang
-        (4, 3),  # BUS101 -> Mr. Jones
-        (5, 4),  # IT102 -> Ms. Garcia
-        (6, 5),  # TEST101 -> Prof. Smith (TESTER)
-        (7, 6),  # TEST201 -> Dr. Jones
-    ]
-    
-    cursor.executemany("""
-        INSERT INTO Course_Lecturers (course_id, lecturer_id)
-        VALUES (%s, %s)
-    """, course_lecturers)
+    for course_id, course in enumerate(courses):
+        possible_lecturers = [idx for idx, lecturer in enumerate(lecturers) if lecturer[0] == course[0]]
+        chosen_lecturer_idx = random.choice(possible_lecturers)
+        cursor.execute("""
+            INSERT INTO Course_Lecturers (course_id, lecturer_id)
+            VALUES (%s, %s)
+        """, (course_id+1, chosen_lecturer_idx+1))
+        # Randomly assigns a lecturer from the same institution
     conn.commit()
+    print(f"Assigned lecturers to {len(courses)} courses")
     
     print("Populating Students and Enrollments...")
     
     # 11. Create students for all institutions - INCLUDING TESTER ACCOUNT
+    cols = ['institution_id', 'student_code', 'age', 'gender',
+            'phone_number', 'email', 'password_hash', 'full_name', 'enrollment_year']
     students_data = [
         # Institution 1
-        (1, 'S001', 'alice.wong@utech.edu', password_hash, 'Alice Wong', 2023),
-        (1, 'S002', 'bob.smith@utech.edu', password_hash, 'Bob Smith', 2023),
-        (1, 'S003', 'charlie.brown@utech.edu', password_hash, 'Charlie Brown', 2022),
-        (1, 'S004', 'diana.ross@utech.edu', password_hash, 'Diana Ross', 2022),
+        (1, 'S001', 22, 'female', '91234567', 'alice.wong@utech.edu', password_hash, 'Alice Wong', 2023),
+        (1, 'S002', 24, 'male', '12345678', 'bob.smith@utech.edu', password_hash, 'Bob Smith', 2023),
+        (1, 'S003', 25, 'male', '85432298', 'charlie.brown@utech.edu', password_hash, 'Charlie Brown', 2022),
+        (1, 'S004', 21, 'other', '84564569', 'diana.ross@utech.edu', password_hash, 'Diana Ross', 2022),
         # Institution 2
-        (2, 'CC001', 'emma.johnson@citycollege.edu', password_hash, 'Emma Johnson', 2023),
-        (2, 'CC002', 'frank.miller@citycollege.edu', password_hash, 'Frank Miller', 2023),
-        (2, 'CC003', 'grace.williams@citycollege.edu', password_hash, 'Grace Williams', 2022),
+        (2, 'CC001', 23, 'female', '96546548', 'emma.johnson@citycollege.edu', password_hash, 'Emma Johnson', 2023),
+        (2, 'CC002', 24, 'male', '98765432', 'frank.miller@citycollege.edu', password_hash, 'Frank Miller', 2023),
+        (2, 'CC003', 25, 'female', '87654321', 'grace.williams@citycollege.edu', password_hash, 'Grace Williams', 2022),
         # Institution 3 (Test) - INCLUDING TESTER ACCOUNT
-        (3, 'TEST001', 'student1@university.edu', password_hash, 'Test Student 1', 2023),  # TESTER ACCOUNT
-        (3, 'TEST002', 'student2@university.edu', password_hash, 'Test Student 2', 2023),
-        (3, 'TEST003', 'student3@university.edu', password_hash, 'Test Student 3', 2022),
+        (3, 'TEST001', 21, 'male', '96546548', 'student1@university.edu', password_hash, 'Test Student 1', 2023),  # TESTER ACCOUNT
+        (3, 'TEST002', 21, 'female', '+010 731 96 8318', 'student2@university.edu', password_hash, 'Test Student 2', 2023),
+        (3, 'TEST003', 21, 'other', '+65 98765432', 'student3@university.edu', password_hash, 'Test Student 3', 2022),
     ]
     
-    cursor.executemany("""
-        INSERT INTO Students (institution_id, student_code, email, password_hash, full_name, enrollment_year)
-        VALUES (%s, %s, %s, %s, %s, %s)
+    cursor.executemany(f"""
+        INSERT INTO Students ({", ".join(cols)})
+        VALUES ({", ".join(['%s'] * len(cols))})
     """, students_data)
     conn.commit()
-    
+    print(f"Added {len(students_data)} students")
+
+    # 11b. Assigning students to courses
+    for student_id, student in enumerate(students_data):
+        possible_course_ids = [idx for idx, course in enumerate(courses) if course[0] == student[0]]
+        chance_of_assigning = 0.8  # 80% chance of assigning a course from the same institution
+        for course_id in possible_course_ids:
+            if random.random() > chance_of_assigning:
+                continue
+            cursor.execute(f"""
+                INSERT INTO Course_Students (course_id, student_id)
+                VALUES (%s, %s)
+            """, (course_id+1, student_id+1,))
+        # Student has 80% chance of attending the course in the same institution
+    conn.commit()
+    print(f"Assigned students to {len(students_data)} courses")
+
     # 12. Create enrollments
+    cols = ['student_id', 'course_id', 'academic_year', 'semester', 'status']
     enrollments = [
         # Institution 1
         (1, 1, '2023-2024', 'Fall', 'active'),   # Alice in CS101
@@ -365,11 +400,12 @@ def populate_comprehensive_data(conn, cursor):
         (10, 6, '2023-2024', 'Fall', 'active'),  # Test Student 3 in TEST101
     ]
     
-    cursor.executemany("""
-        INSERT INTO Enrollments (student_id, course_id, academic_year, semester, status)
-        VALUES (%s, %s, %s, %s, %s)
+    cursor.executemany(f"""
+        INSERT INTO Enrollments ({", ".join(cols)})
+        VALUES ({", ".join(['%s'] * len(cols))})
     """, enrollments)
     conn.commit()
+    print(f"Added {len(enrollments)} enrollments")
     
     print("Populating Sessions and Attendance...")
     

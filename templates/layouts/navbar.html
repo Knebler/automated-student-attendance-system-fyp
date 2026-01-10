@@ -19,11 +19,11 @@
             {% if user_role in ['platform_manager','platform','platmanager'] %}
                 <!-- TODO: Implement proper routing for these sub pages -->
                 <li><a class="nav-link-custom" href="{{ url_for('platform.platform_dashboard') }}">Dashboard</a></li>
-                <li><a class="nav-link-custom" href="{{ url_for('platform.platform_dashboard') }}">Users</a></li>
-                <li><a class="nav-link-custom" href="{{ url_for('platform.platform_dashboard') }}">Institutions/Subscriptions</a></li>
-                <li><a class="nav-link-custom" href="{{ url_for('platform.platform_dashboard') }}">Reports</a></li>
-                <li><a class="nav-link-custom" href="{{ url_for('platform.platform_dashboard') }}">Performance</a></li>
-                <li><a class="nav-link-custom" href="{{ url_for('platform.platform_dashboard') }}">Settings</a></li>
+                <li><a class="nav-link-custom" href="{{ url_for('platform.user_management') }}">Users</a></li>
+                <li><a class="nav-link-custom" href="{{ url_for('platform.subscription_management') }}">Institutions/Subscriptions</a></li>
+                <li><a class="nav-link-custom" href="{{ url_for('platform.report_management') }}">Reports</a></li>
+                <li><a class="nav-link-custom" href="{{ url_for('platform.performance_management') }}">Performance</a></li>
+                <li><a class="nav-link-custom" href="{{ url_for('platform.settings_management') }}">Settings</a></li>
             {% elif user_role in ['institution_admin','admin'] %}
                 <li><a class="nav-link-custom" href="{{ url_for('institution.institution_dashboard') }}">Dashboard</a></li>
                 <li><a class="nav-link-custom" href="{{ url_for('institution.manage_attendance') }}">Manage Attendance</a></li>
@@ -33,17 +33,17 @@
             {% elif user_role in ['lecturer','teacher'] %}
                 <!-- TODO: Implement proper routing for these sub pages -->
                 <li><a class="nav-link-custom" href="{{ url_for('institution_lecturer.lecturer_dashboard') }}">Dashboard</a></li>
-                <li><a class="nav-link-custom" href="{{ url_for('institution_lecturer.lecturer_dashboard') }}">View Timetable</a></li>
-                <li><a class="nav-link-custom" href="{{ url_for('institution_lecturer.lecturer_dashboard') }}">Manage Attendance</a></li>
-                <li><a class="nav-link-custom" href="{{ url_for('institution_lecturer.lecturer_dashboard') }}">Manage Classes/Rosters</a></li>
+                <li><a class="nav-link-custom" href="{{ url_for('institution_lecturer.timetable') }}">View Timetable</a></li>
+                <li><a class="nav-link-custom" href="{{ url_for('institution_lecturer.manage_attendance') }}">Manage Attendance</a></li>
+                <li><a class="nav-link-custom" href="{{ url_for('institution_lecturer.manage_classes') }}">Manage Classes/Rosters</a></li>
                 <li><a class="nav-link-custom" href="{{ url_for('institution_lecturer.manage_appeals') }}">Manage Appeals</a></li>
             {% else %} <!-- Student Routing -->
                 <!-- TODO: Implement proper routing for these sub pages -->
                 <li><a class="nav-link-custom" href="{{ url_for('student.dashboard') }}">Dashboard</a></li>
-                <li><a class="nav-link-custom" href="{{ url_for('student.dashboard') }}">View My Attendance</a></li>
-                <li><a class="nav-link-custom" href="{{ url_for('student.dashboard') }}">Class Check-In</a></li>
+                <li><a class="nav-link-custom" href="{{ url_for('student.attendance') }}">View My Attendance</a></li>
+                <li><a class="nav-link-custom" href="{{ url_for('student.class_checkin') }}">Class Check-In</a></li>
                 <li><a class="nav-link-custom" href="{{ url_for('student.dashboard') }}">View Inbox</a></li>
-                <li><a class="nav-link-custom" href="{{ url_for('student.dashboard') }}">Attendance Appeal</a></li>
+                <li><a class="nav-link-custom" href="{{ url_for('student.appeal_management') }}">Attendance Appeal</a></li>
             {% endif %}
             
             <li><a class="nav-link-custom" href="{{ url_for('auth.profile') }}">Profile</a></li>

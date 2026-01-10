@@ -25,7 +25,7 @@ class AttendanceControl:
             }
             
             # Check if attendance already exists
-            existing_record = AttendanceRecord.get_by_session_and_student(app, session_id, student_id)
+            existing_record = AttendanceRecord.get_model().get_by_session_and_student(app, session_id, student_id)
             
             if existing_record:
                 # Update existing record
@@ -68,7 +68,7 @@ class AttendanceControl:
                 return {'success': False, 'error': 'Session not found'}
             
             # Get attendance records using AttendanceRecord model
-            attendance_records = AttendanceRecord.get_by_session(app, session_id)
+            attendance_records = AttendanceRecord.get_model().get_by_session(app, session_id)
             
             # Prepare attendance records data
             formatted_records = []

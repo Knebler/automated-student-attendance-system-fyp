@@ -577,112 +577,50 @@ CREATE TABLE Face_Samples (
     INDEX idx_samples_timestamp (capture_timestamp)
 );
 
--- Create a view for easier testimonial lookup with aggregated author info
-CREATE VIEW Testimonials_Display_View AS
-SELECT 
-    t.testimonial_id,
-    t.testimonial_uuid,
+-- Create audit table for facial recognition events
+CREATE TABLE Facial_Recognition_Events (
+    event_id INT PRIMARY KEY AUTO_INCREMENT,
+    event_uuid VARCHAR(36) UNIQUE NOT NULL DEFAULT (UUID()),
     
-    -- Author display information
-    CASE 
-        WHEN t.is_anonymous = TRUE THEN 'Anonymous'
-        ELSE t.author_full_name
-    END AS display_name,
+    -- Recognition event
+    session_id INT NOT NULL,
+    student_id INT NOT NULL,
+    facial_data_id INT NOT NULL,
     
-    CASE 
-        WHEN t.is_anonymous = TRUE THEN 'User'
-        ELSE t.author_type
-    END AS display_role,
+    -- Recognition results
+    recognition_confidence DECIMAL(5,4) NOT NULL,
+    matched_name VARCHAR(100) NOT NULL,
+    expected_name VARCHAR(100),              -- For verification
     
-    -- Author details (only shown if not anonymous)
-    t.author_type,
-    t.author_full_name,
-    t.author_email,
-    t.author_department,
-    t.author_year,
-    t.author_student_code,
-    t.is_anonymous,
+    -- Match quality
+    distance_metric DECIMAL(10,4),           -- KNN distance
+    is_correct_match BOOLEAN,                -- Manual verification result
     
-    -- Institution info
-    t.institution_id,
-    t.institution_name,
+    -- Image data (optional)
+    captured_image BLOB,                     -- The frame where recognition happened
+    crop_coordinates JSON,                   -- {"x": 100, "y": 150, "w": 200, "h": 200}
     
-    -- Testimonial content
-    t.title,
-    t.content,
-    t.rating,
+    -- Technical info
+    processing_time_ms INT,                  -- Time taken to process
+    model_version VARCHAR(20),
     
-    -- Display properties
-    t.is_featured,
-    t.is_approved,
-    t.display_order,
+    -- Event metadata
+    event_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    device_id VARCHAR(100),                  -- Which device/camera
+    location VARCHAR(255),                   -- Physical location if known
     
-    -- Media
-    t.profile_image_path,
-    t.additional_media,
+    -- Foreign keys
+    FOREIGN KEY (session_id) REFERENCES Sessions(session_id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES Students(student_id) ON DELETE CASCADE,
+    FOREIGN KEY (facial_data_id) REFERENCES Student_Facial_Data(facial_data_id),
     
-    -- Timestamps
-    t.created_at,
-    t.updated_at,
-    t.approved_at,
-    
-    -- Approver info
-    t.approved_by,
-    pm.full_name AS approved_by_name,
-    
-    -- Additional calculated fields
-    CASE 
-        WHEN t.rating = 5 THEN 'Excellent'
-        WHEN t.rating = 4 THEN 'Very Good'
-        WHEN t.rating = 3 THEN 'Good'
-        WHEN t.rating = 2 THEN 'Fair'
-        ELSE 'Poor'
-    END AS rating_label,
-    
-    -- Time since creation
-    CONCAT(FLOOR(DATEDIFF(CURRENT_DATE(), t.created_at) / 30), ' months ago') AS time_since_creation
-    
-FROM Testimonials t
-LEFT JOIN Platform_Managers pm ON t.approved_by = pm.platform_mgr_id
-WHERE t.is_approved = TRUE AND t.deleted_at IS NULL
-ORDER BY 
-    t.is_featured DESC,
-    t.display_order ASC,
-    t.created_at DESC;
-
--- Create a view for testimonial statistics
-CREATE VIEW Testimonials_Stats AS
-SELECT 
-    -- Overall stats
-    COUNT(*) as total_testimonials,
-    SUM(CASE WHEN is_approved = TRUE THEN 1 ELSE 0 END) as approved_count,
-    SUM(CASE WHEN is_featured = TRUE THEN 1 ELSE 0 END) as featured_count,
-    
-    -- Rating distribution
-    AVG(rating) as average_rating,
-    SUM(CASE WHEN rating = 5 THEN 1 ELSE 0 END) as five_star,
-    SUM(CASE WHEN rating = 4 THEN 1 ELSE 0 END) as four_star,
-    SUM(CASE WHEN rating = 3 THEN 1 ELSE 0 END) as three_star,
-    SUM(CASE WHEN rating = 2 THEN 1 ELSE 0 END) as two_star,
-    SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) as one_star,
-    
-    -- By author type
-    SUM(CASE WHEN author_type = 'student' THEN 1 ELSE 0 END) as student_testimonials,
-    SUM(CASE WHEN author_type = 'lecturer' THEN 1 ELSE 0 END) as lecturer_testimonials,
-    SUM(CASE WHEN author_type = 'institution_admin' THEN 1 ELSE 0 END) as admin_testimonials,
-    
-    -- By institution
-    COUNT(DISTINCT institution_id) as institutions_with_testimonials,
-    
-    -- Time-based
-    SUM(CASE WHEN created_at >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) as last_30_days,
-    SUM(CASE WHEN created_at >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) as last_7_days,
-    
-    -- Anonymous stats
-    SUM(CASE WHEN is_anonymous = TRUE THEN 1 ELSE 0 END) as anonymous_count
-    
-FROM Testimonials
-WHERE deleted_at IS NULL;
+    -- Indexes
+    INDEX idx_events_session (session_id),
+    INDEX idx_events_student (student_id),
+    INDEX idx_events_timestamp (event_timestamp),
+    INDEX idx_events_confidence (recognition_confidence),
+    INDEX idx_events_composite (session_id, student_id, event_timestamp)
+);
 
 -- Create triggers for timestamps
 DELIMITER //
@@ -968,6 +906,113 @@ WHERE t.is_approved = FALSE
     AND t.deleted_at IS NULL
 ORDER BY t.created_at ASC;
 
+-- Create a view for easier testimonial lookup with aggregated author info
+CREATE VIEW Testimonials_Display_View AS
+SELECT 
+    t.testimonial_id,
+    t.testimonial_uuid,
+    
+    -- Author display information
+    CASE 
+        WHEN t.is_anonymous = TRUE THEN 'Anonymous'
+        ELSE t.author_full_name
+    END AS display_name,
+    
+    CASE 
+        WHEN t.is_anonymous = TRUE THEN 'User'
+        ELSE t.author_type
+    END AS display_role,
+    
+    -- Author details (only shown if not anonymous)
+    t.author_type,
+    t.author_full_name,
+    t.author_email,
+    t.author_department,
+    t.author_year,
+    t.author_student_code,
+    t.is_anonymous,
+    
+    -- Institution info
+    t.institution_id,
+    t.institution_name,
+    
+    -- Testimonial content
+    t.title,
+    t.content,
+    t.rating,
+    
+    -- Display properties
+    t.is_featured,
+    t.is_approved,
+    t.display_order,
+    
+    -- Media
+    t.profile_image_path,
+    t.additional_media,
+    
+    -- Timestamps
+    t.created_at,
+    t.updated_at,
+    t.approved_at,
+    
+    -- Approver info
+    t.approved_by,
+    pm.full_name AS approved_by_name,
+    
+    -- Additional calculated fields
+    CASE 
+        WHEN t.rating = 5 THEN 'Excellent'
+        WHEN t.rating = 4 THEN 'Very Good'
+        WHEN t.rating = 3 THEN 'Good'
+        WHEN t.rating = 2 THEN 'Fair'
+        ELSE 'Poor'
+    END AS rating_label,
+    
+    -- Time since creation
+    CONCAT(FLOOR(DATEDIFF(CURRENT_DATE(), t.created_at) / 30), ' months ago') AS time_since_creation
+    
+FROM Testimonials t
+LEFT JOIN Platform_Managers pm ON t.approved_by = pm.platform_mgr_id
+WHERE t.is_approved = TRUE AND t.deleted_at IS NULL
+ORDER BY 
+    t.is_featured DESC,
+    t.display_order ASC,
+    t.created_at DESC;
+
+-- Create a view for testimonial statistics
+CREATE VIEW Testimonials_Stats AS
+SELECT 
+    -- Overall stats
+    COUNT(*) as total_testimonials,
+    SUM(CASE WHEN is_approved = TRUE THEN 1 ELSE 0 END) as approved_count,
+    SUM(CASE WHEN is_featured = TRUE THEN 1 ELSE 0 END) as featured_count,
+    
+    -- Rating distribution
+    AVG(rating) as average_rating,
+    SUM(CASE WHEN rating = 5 THEN 1 ELSE 0 END) as five_star,
+    SUM(CASE WHEN rating = 4 THEN 1 ELSE 0 END) as four_star,
+    SUM(CASE WHEN rating = 3 THEN 1 ELSE 0 END) as three_star,
+    SUM(CASE WHEN rating = 2 THEN 1 ELSE 0 END) as two_star,
+    SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) as one_star,
+    
+    -- By author type
+    SUM(CASE WHEN author_type = 'student' THEN 1 ELSE 0 END) as student_testimonials,
+    SUM(CASE WHEN author_type = 'lecturer' THEN 1 ELSE 0 END) as lecturer_testimonials,
+    SUM(CASE WHEN author_type = 'institution_admin' THEN 1 ELSE 0 END) as admin_testimonials,
+    
+    -- By institution
+    COUNT(DISTINCT institution_id) as institutions_with_testimonials,
+    
+    -- Time-based
+    SUM(CASE WHEN created_at >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) as last_30_days,
+    SUM(CASE WHEN created_at >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) as last_7_days,
+    
+    -- Anonymous stats
+    SUM(CASE WHEN is_anonymous = TRUE THEN 1 ELSE 0 END) as anonymous_count
+    
+FROM Testimonials
+WHERE deleted_at IS NULL;
+
 -- Create view for facial data with student info
 CREATE VIEW Student_Facial_Profiles AS
 SELECT 
@@ -1003,48 +1048,3 @@ SELECT
 FROM Student_Facial_Data sfd
 JOIN Students s ON sfd.student_id = s.student_id
 JOIN Institutions i ON s.institution_id = i.institution_id;
-
--- Create audit table for facial recognition events
-CREATE TABLE Facial_Recognition_Events (
-    event_id INT PRIMARY KEY AUTO_INCREMENT,
-    event_uuid VARCHAR(36) UNIQUE NOT NULL DEFAULT (UUID()),
-    
-    -- Recognition event
-    session_id INT NOT NULL,
-    student_id INT NOT NULL,
-    facial_data_id INT NOT NULL,
-    
-    -- Recognition results
-    recognition_confidence DECIMAL(5,4) NOT NULL,
-    matched_name VARCHAR(100) NOT NULL,
-    expected_name VARCHAR(100),              -- For verification
-    
-    -- Match quality
-    distance_metric DECIMAL(10,4),           -- KNN distance
-    is_correct_match BOOLEAN,                -- Manual verification result
-    
-    -- Image data (optional)
-    captured_image BLOB,                     -- The frame where recognition happened
-    crop_coordinates JSON,                   -- {"x": 100, "y": 150, "w": 200, "h": 200}
-    
-    -- Technical info
-    processing_time_ms INT,                  -- Time taken to process
-    model_version VARCHAR(20),
-    
-    -- Event metadata
-    event_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-    device_id VARCHAR(100),                  -- Which device/camera
-    location VARCHAR(255),                   -- Physical location if known
-    
-    -- Foreign keys
-    FOREIGN KEY (session_id) REFERENCES Sessions(session_id) ON DELETE CASCADE,
-    FOREIGN KEY (student_id) REFERENCES Students(student_id) ON DELETE CASCADE,
-    FOREIGN KEY (facial_data_id) REFERENCES Student_Facial_Data(facial_data_id),
-    
-    -- Indexes
-    INDEX idx_events_session (session_id),
-    INDEX idx_events_student (student_id),
-    INDEX idx_events_timestamp (event_timestamp),
-    INDEX idx_events_confidence (recognition_confidence),
-    INDEX idx_events_composite (session_id, student_id, event_timestamp)
-);

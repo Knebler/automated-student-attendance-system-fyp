@@ -409,6 +409,281 @@ CREATE TABLE Platform_Issues (
     INDEX idx_issues_composite (reporter_type, reporter_id, institution_id)
 );
 
+-- =============================================
+-- Group 6: Testimonials & User Feedback
+-- =============================================
+
+CREATE TABLE Testimonials (
+    testimonial_id INT PRIMARY KEY AUTO_INCREMENT,
+    testimonial_uuid VARCHAR(36) UNIQUE NOT NULL DEFAULT (UUID()),
+    
+    -- Author information (supports institution_admins, lecturers, and students)
+    author_type ENUM('institution_admin', 'lecturer', 'student') NOT NULL,
+    author_id INT NOT NULL,  -- ID from respective table (inst_admin_id, lecturer_id, student_id)
+    author_email VARCHAR(255) NOT NULL,
+    author_full_name VARCHAR(100) NOT NULL,
+    author_department VARCHAR(100),  -- For lecturers/admins
+    author_year INT,  -- For students (enrollment_year)
+    author_student_code VARCHAR(50),  -- For students
+    
+    -- Institution context
+    institution_id INT NOT NULL,
+    institution_name VARCHAR(255) NOT NULL,
+    
+    -- Testimonial content
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    
+    -- Rating
+    rating TINYINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    
+    -- Display preferences
+    is_featured BOOLEAN DEFAULT FALSE,
+    is_approved BOOLEAN DEFAULT FALSE,
+    display_order INT DEFAULT 0,
+    is_anonymous BOOLEAN DEFAULT FALSE,
+    
+    -- Media support
+    profile_image_path VARCHAR(500),
+    additional_media JSON,  -- Array of image/video paths
+    
+    -- Metadata
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    approved_by INT NULL,  -- Platform manager who approved
+    approved_at DATETIME NULL,
+    
+    -- For soft delete
+    deleted_at DATETIME NULL,
+    
+    -- Foreign key constraints
+    FOREIGN KEY (institution_id) REFERENCES Institutions(institution_id) ON DELETE CASCADE,
+    FOREIGN KEY (approved_by) REFERENCES Platform_Managers(platform_mgr_id),
+    
+    -- Indexes for performance
+    INDEX idx_testimonials_author (author_type, author_id),
+    INDEX idx_testimonials_institution (institution_id),
+    INDEX idx_testimonials_rating (rating),
+    INDEX idx_testimonials_approved (is_approved),
+    INDEX idx_testimonials_featured (is_featured),
+    INDEX idx_testimonials_created (created_at),
+    INDEX idx_testimonials_author_email (author_email),
+    INDEX idx_testimonials_composite (institution_id, is_approved, is_featured)
+);
+
+-- Trigger to update timestamps
+DELIMITER //
+CREATE TRIGGER before_testimonials_update
+BEFORE UPDATE ON Testimonials
+FOR EACH ROW
+BEGIN
+    SET NEW.updated_at = CURRENT_TIMESTAMP;
+    
+    -- Update approved_at when is_approved changes from false to true
+    IF NEW.is_approved = TRUE AND OLD.is_approved = FALSE THEN
+        SET NEW.approved_at = CURRENT_TIMESTAMP;
+    END IF;
+END//
+DELIMITER ;
+
+-- =============================================
+-- Group 7: Facial Recognition & Biometric Data
+-- =============================================
+
+CREATE TABLE Student_Facial_Data (
+    -- Primary identifier
+    facial_data_id INT PRIMARY KEY AUTO_INCREMENT,
+    facial_data_uuid VARCHAR(36) UNIQUE NOT NULL DEFAULT (UUID()),
+    
+    -- Student reference
+    student_id INT NOT NULL,
+    institution_id INT NOT NULL,
+    
+    -- Facial data storage
+    facial_encodings BLOB NOT NULL,  -- Serialized facial encoding data
+    encoding_type ENUM('knn_pickle', 'dlib_128d', 'facenet_512d', 'openface_128d') DEFAULT 'knn_pickle',
+    encoding_version VARCHAR(20),     -- e.g., "v1.0", "model_v2"
+    
+    -- Metadata about the data collection
+    samples_count INT NOT NULL DEFAULT 0,     -- Number of face samples (e.g., 100)
+    image_dimensions JSON,                    -- {"width": 50, "height": 50, "channels": 3}
+    collection_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    collection_method ENUM('manual', 'auto_capture', 'batch_import', 'api') DEFAULT 'manual',
+    
+    -- Quality metrics
+    confidence_score DECIMAL(5,4),            -- Model confidence on these encodings
+    quality_score DECIMAL(5,4),               -- Image quality metric
+    variance_score DECIMAL(10,4),             -- Variance across samples
+    
+    -- Status and validation
+    is_active BOOLEAN DEFAULT TRUE,
+    is_verified BOOLEAN DEFAULT FALSE,        -- Manually verified by admin
+    verification_date DATETIME,
+    verified_by INT,                          -- Platform manager or admin
+    
+    -- Storage location (for file-based fallback)
+    pickle_file_path VARCHAR(500),            -- Path to .pkl file if stored separately
+    backup_location VARCHAR(500),             -- Cloud/backup location
+    
+    -- Timestamps
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    expires_at DATETIME,                      -- When encodings should be refreshed
+    
+    -- Foreign key constraints
+    FOREIGN KEY (student_id) REFERENCES Students(student_id) ON DELETE CASCADE,
+    FOREIGN KEY (institution_id) REFERENCES Institutions(institution_id) ON DELETE CASCADE,
+    FOREIGN KEY (verified_by) REFERENCES Platform_Managers(platform_mgr_id),
+    
+    -- Indexes for performance
+    UNIQUE KEY unique_active_face (student_id, is_active),
+    INDEX idx_facial_student (student_id),
+    INDEX idx_facial_institution (institution_id),
+    INDEX idx_facial_active (is_active),
+    INDEX idx_facial_encoding_type (encoding_type),
+    INDEX idx_facial_created (created_at)
+);
+
+-- Create a more specific table for face samples (if you need individual samples)
+CREATE TABLE Face_Samples (
+    sample_id INT PRIMARY KEY AUTO_INCREMENT,
+    sample_uuid VARCHAR(36) UNIQUE NOT NULL DEFAULT (UUID()),
+    facial_data_id INT NOT NULL,
+    student_id INT NOT NULL,
+    
+    -- Sample image/encoding
+    face_image BLOB,                         -- Optional: store actual image
+    face_encoding BLOB,                      -- Individual face encoding
+    sample_metadata JSON,                    -- {"crop_coords": {"x": 10, "y": 20, "w": 50, "h": 50}}
+    
+    -- Quality metrics per sample
+    brightness DECIMAL(6,2),
+    contrast DECIMAL(6,2),
+    sharpness DECIMAL(6,2),
+    face_confidence DECIMAL(5,4),            -- Face detection confidence
+    
+    -- Capture info
+    capture_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    capture_device VARCHAR(100),             -- "webcam", "mobile", "ip_camera"
+    device_info JSON,                        -- {"camera_model": "Logitech C920", "resolution": "640x480"}
+    
+    -- Foreign keys
+    FOREIGN KEY (facial_data_id) REFERENCES Student_Facial_Data(facial_data_id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES Students(student_id) ON DELETE CASCADE,
+    
+    -- Indexes
+    INDEX idx_samples_facial_data (facial_data_id),
+    INDEX idx_samples_student (student_id),
+    INDEX idx_samples_timestamp (capture_timestamp)
+);
+
+-- Create a view for easier testimonial lookup with aggregated author info
+CREATE VIEW Testimonials_Display_View AS
+SELECT 
+    t.testimonial_id,
+    t.testimonial_uuid,
+    
+    -- Author display information
+    CASE 
+        WHEN t.is_anonymous = TRUE THEN 'Anonymous'
+        ELSE t.author_full_name
+    END AS display_name,
+    
+    CASE 
+        WHEN t.is_anonymous = TRUE THEN 'User'
+        ELSE t.author_type
+    END AS display_role,
+    
+    -- Author details (only shown if not anonymous)
+    t.author_type,
+    t.author_full_name,
+    t.author_email,
+    t.author_department,
+    t.author_year,
+    t.author_student_code,
+    t.is_anonymous,
+    
+    -- Institution info
+    t.institution_id,
+    t.institution_name,
+    
+    -- Testimonial content
+    t.title,
+    t.content,
+    t.rating,
+    
+    -- Display properties
+    t.is_featured,
+    t.is_approved,
+    t.display_order,
+    
+    -- Media
+    t.profile_image_path,
+    t.additional_media,
+    
+    -- Timestamps
+    t.created_at,
+    t.updated_at,
+    t.approved_at,
+    
+    -- Approver info
+    t.approved_by,
+    pm.full_name AS approved_by_name,
+    
+    -- Additional calculated fields
+    CASE 
+        WHEN t.rating = 5 THEN 'Excellent'
+        WHEN t.rating = 4 THEN 'Very Good'
+        WHEN t.rating = 3 THEN 'Good'
+        WHEN t.rating = 2 THEN 'Fair'
+        ELSE 'Poor'
+    END AS rating_label,
+    
+    -- Time since creation
+    CONCAT(FLOOR(DATEDIFF(CURRENT_DATE(), t.created_at) / 30), ' months ago') AS time_since_creation
+    
+FROM Testimonials t
+LEFT JOIN Platform_Managers pm ON t.approved_by = pm.platform_mgr_id
+WHERE t.is_approved = TRUE AND t.deleted_at IS NULL
+ORDER BY 
+    t.is_featured DESC,
+    t.display_order ASC,
+    t.created_at DESC;
+
+-- Create a view for testimonial statistics
+CREATE VIEW Testimonials_Stats AS
+SELECT 
+    -- Overall stats
+    COUNT(*) as total_testimonials,
+    SUM(CASE WHEN is_approved = TRUE THEN 1 ELSE 0 END) as approved_count,
+    SUM(CASE WHEN is_featured = TRUE THEN 1 ELSE 0 END) as featured_count,
+    
+    -- Rating distribution
+    AVG(rating) as average_rating,
+    SUM(CASE WHEN rating = 5 THEN 1 ELSE 0 END) as five_star,
+    SUM(CASE WHEN rating = 4 THEN 1 ELSE 0 END) as four_star,
+    SUM(CASE WHEN rating = 3 THEN 1 ELSE 0 END) as three_star,
+    SUM(CASE WHEN rating = 2 THEN 1 ELSE 0 END) as two_star,
+    SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) as one_star,
+    
+    -- By author type
+    SUM(CASE WHEN author_type = 'student' THEN 1 ELSE 0 END) as student_testimonials,
+    SUM(CASE WHEN author_type = 'lecturer' THEN 1 ELSE 0 END) as lecturer_testimonials,
+    SUM(CASE WHEN author_type = 'institution_admin' THEN 1 ELSE 0 END) as admin_testimonials,
+    
+    -- By institution
+    COUNT(DISTINCT institution_id) as institutions_with_testimonials,
+    
+    -- Time-based
+    SUM(CASE WHEN created_at >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) as last_30_days,
+    SUM(CASE WHEN created_at >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) as last_7_days,
+    
+    -- Anonymous stats
+    SUM(CASE WHEN is_anonymous = TRUE THEN 1 ELSE 0 END) as anonymous_count
+    
+FROM Testimonials
+WHERE deleted_at IS NULL;
+
 -- Create triggers for timestamps
 DELIMITER //
 CREATE TRIGGER before_platform_issues_update 
@@ -644,3 +919,132 @@ SELECT
     SUM(CASE WHEN assigned_to IS NULL AND status NOT IN ('resolved', 'closed') THEN 1 ELSE 0 END) as unassigned
     
 FROM Platform_Issues;
+
+-- Create a view for platform managers to review testimonials
+CREATE VIEW Testimonials_For_Review AS
+SELECT 
+    t.testimonial_id,
+    t.testimonial_uuid,
+    t.author_type,
+    t.author_full_name,
+    t.author_email,
+    t.author_department,
+    t.author_year,
+    t.institution_name,
+    t.title,
+    SUBSTRING(t.content, 1, 100) AS content_preview,
+    t.rating,
+    t.created_at,
+    t.is_anonymous,
+    t.profile_image_path,
+    
+    -- Additional author verification info
+    CASE t.author_type
+        WHEN 'student' THEN s.student_code
+        WHEN 'lecturer' THEN l.department
+        WHEN 'institution_admin' THEN ia.email
+    END AS author_identifier,
+    
+    CASE t.author_type
+        WHEN 'student' THEN 'Student'
+        WHEN 'lecturer' THEN CONCAT('Lecturer - ', l.department)
+        WHEN 'institution_admin' THEN 'Institution Admin'
+    END AS author_role_display
+    
+FROM Testimonials t
+LEFT JOIN Students s ON t.author_type = 'student' 
+    AND t.author_id = s.student_id 
+    AND t.institution_id = s.institution_id
+    AND t.author_email = s.email
+LEFT JOIN Lecturers l ON t.author_type = 'lecturer' 
+    AND t.author_id = l.lecturer_id 
+    AND t.institution_id = l.institution_id
+    AND t.author_email = l.email
+LEFT JOIN Institution_Admins ia ON t.author_type = 'institution_admin' 
+    AND t.author_id = ia.inst_admin_id 
+    AND t.institution_id = ia.institution_id
+    AND t.author_email = ia.email
+WHERE t.is_approved = FALSE 
+    AND t.deleted_at IS NULL
+ORDER BY t.created_at ASC;
+
+-- Create view for facial data with student info
+CREATE VIEW Student_Facial_Profiles AS
+SELECT 
+    sfd.facial_data_id,
+    sfd.facial_data_uuid,
+    sfd.student_id,
+    s.student_code,
+    s.full_name,
+    s.email,
+    s.institution_id,
+    i.name AS institution_name,
+    
+    -- Facial data info
+    sfd.encoding_type,
+    sfd.samples_count,
+    sfd.confidence_score,
+    sfd.quality_score,
+    sfd.is_active,
+    sfd.is_verified,
+    
+    -- Storage info
+    LENGTH(sfd.facial_encodings) AS encoding_size_bytes,
+    sfd.pickle_file_path,
+    
+    -- Timestamps
+    sfd.created_at,
+    sfd.updated_at,
+    sfd.expires_at,
+    
+    -- Student status
+    s.is_active AS student_active
+    
+FROM Student_Facial_Data sfd
+JOIN Students s ON sfd.student_id = s.student_id
+JOIN Institutions i ON s.institution_id = i.institution_id;
+
+-- Create audit table for facial recognition events
+CREATE TABLE Facial_Recognition_Events (
+    event_id INT PRIMARY KEY AUTO_INCREMENT,
+    event_uuid VARCHAR(36) UNIQUE NOT NULL DEFAULT (UUID()),
+    
+    -- Recognition event
+    session_id INT NOT NULL,
+    student_id INT NOT NULL,
+    facial_data_id INT NOT NULL,
+    
+    -- Recognition results
+    recognition_confidence DECIMAL(5,4) NOT NULL,
+    matched_name VARCHAR(100) NOT NULL,
+    expected_name VARCHAR(100),              -- For verification
+    
+    -- Match quality
+    distance_metric DECIMAL(10,4),           -- KNN distance
+    is_correct_match BOOLEAN,                -- Manual verification result
+    
+    -- Image data (optional)
+    captured_image BLOB,                     -- The frame where recognition happened
+    crop_coordinates JSON,                   -- {"x": 100, "y": 150, "w": 200, "h": 200}
+    
+    -- Technical info
+    processing_time_ms INT,                  -- Time taken to process
+    model_version VARCHAR(20),
+    
+    -- Event metadata
+    event_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    device_id VARCHAR(100),                  -- Which device/camera
+    location VARCHAR(255),                   -- Physical location if known
+    
+    -- Foreign keys
+    FOREIGN KEY (session_id) REFERENCES Sessions(session_id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES Students(student_id) ON DELETE CASCADE,
+    FOREIGN KEY (facial_data_id) REFERENCES Student_Facial_Data(facial_data_id),
+    
+    -- Indexes
+    INDEX idx_events_session (session_id),
+    INDEX idx_events_student (student_id),
+    INDEX idx_events_timestamp (event_timestamp),
+    INDEX idx_events_confidence (recognition_confidence),
+    INDEX idx_events_composite (session_id, student_id, event_timestamp)
+);

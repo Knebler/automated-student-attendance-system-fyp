@@ -112,7 +112,6 @@ class InstitutionControl:
                 {'institution_id': institution_id},
                 fetch_all=True
             )
-            print("Student data:", student_data)
             lecturer_data = BaseEntity.execute_query(
                 app,
                 "SELECT full_name, lecturer_id, is_active FROM lecturers WHERE institution_id = :institution_id",
@@ -327,15 +326,36 @@ class InstitutionControl:
                 user_details['created_year'] = user_details.pop('enrollment_year')
 
                 to_pull = [
-                    'course_name', 'course_code', 'start_date', 'end_date'
+                    'course_id', 'course_name', 'course_code', 'start_date', 'end_date'
                 ]
                 course_rows = BaseEntity.execute_query(
                     app,
-                    f"SELECT {', '.join(to_pull)} FROM Course_Students join Courses on Course_Students.course_id = Courses.course_id where student_id = :user_id",
+                    f"SELECT {', '.join(to_pull)} FROM Course_Students JOIN Courses USING (course_id) WHERE student_id = :user_id",
                     {'user_id': user_id},
                     fetch_all=True
                 )
                 user_details['courses'] = [
+                    {k: v for k, v in zip(to_pull, course_row)}
+                    for course_row in course_rows
+                ]
+                course_rows = BaseEntity.execute_query(
+                    app,
+                    f"""
+                    SELECT {', '.join(to_pull)}
+                    FROM Courses c
+                    WHERE c.institution_id = :institution_id
+                    AND c.is_active = TRUE
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM Course_Students cl
+                        WHERE cl.course_id = c.course_id
+                            AND cl.student_id = :user_id
+                    );
+                    """,
+                    {'institution_id': institution_id, 'user_id': user_id},
+                    fetch_all=True
+                )
+                user_details['possible_courses'] = [
                     {k: v for k, v in zip(to_pull, course_row)}
                     for course_row in course_rows
                 ]
@@ -357,15 +377,36 @@ class InstitutionControl:
                 user_details['created_year'] = user_details.pop('year_joined')
 
                 to_pull = [
-                    'course_name', 'course_code', 'start_date', 'end_date'
+                    'course_id', 'course_name', 'course_code', 'start_date', 'end_date'
                 ]
                 course_rows = BaseEntity.execute_query(
                     app,
-                    f"SELECT {', '.join(to_pull)} FROM Course_Lecturers join Courses on Course_Lecturers.course_id = Courses.course_id where lecturer_id = :user_id",
+                    f"SELECT {', '.join(to_pull)} FROM Course_Lecturers JOIN Courses USING (course_id) WHERE lecturer_id = :user_id",
                     {'user_id': user_id},
                     fetch_all=True
                 )
                 user_details['courses'] = [
+                    {k: v for k, v in zip(to_pull, course_row)}
+                    for course_row in course_rows
+                ]
+                course_rows = BaseEntity.execute_query(
+                    app,
+                    f"""
+                    SELECT {', '.join(to_pull)}
+                    FROM Courses c
+                    WHERE c.institution_id = :institution_id
+                    AND c.is_active = TRUE
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM Course_Lecturers cl
+                        WHERE cl.course_id = c.course_id
+                            AND cl.lecturer_id = :user_id
+                    );
+                    """,
+                    {'institution_id': institution_id, 'user_id': user_id},
+                    fetch_all=True
+                )
+                user_details['possible_courses'] = [
                     {k: v for k, v in zip(to_pull, course_row)}
                     for course_row in course_rows
                 ]
@@ -389,6 +430,67 @@ class InstitutionControl:
                 'error': str(e)
             }
     
+    @staticmethod
+    def remove_user_from_course(app, user_id, course_id, role):
+        try:
+            if role == 'student':
+                BaseEntity.execute_query(
+                    app,
+                    "DELETE FROM Course_Students WHERE student_id = :user_id AND course_id = :course_id",
+                    {'user_id': user_id, 'course_id': course_id}
+                )
+            elif role == 'lecturer':
+                print(user_id, course_id)
+                BaseEntity.execute_query(
+                    app,
+                    "DELETE FROM Course_Lecturers WHERE lecturer_id = :user_id AND course_id = :course_id",
+                    {'user_id': user_id, 'course_id': course_id}
+                )
+            else:
+                return {
+                    'success': False,
+                    'error': 'Invalid role specified'
+                }
+            return {
+                'success': True,
+                'message': 'User removed from course successfully'
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e)
+            }
+
+    @staticmethod
+    def add_user_to_course(app, user_id, course_id, role):
+        try:
+            if role == 'student':
+                BaseEntity.execute_query(
+                    app,
+                    "INSERT INTO Course_Students (student_id, course_id) VALUES (:user_id, :course_id)",
+                    {'user_id': user_id, 'course_id': course_id}
+                )
+            elif role == 'lecturer':
+                BaseEntity.execute_query(
+                    app,
+                    "INSERT INTO Course_Lecturers (lecturer_id, course_id) VALUES (:user_id, :course_id)",
+                    {'user_id': user_id, 'course_id': course_id}
+                )
+            else:
+                return {
+                    'success': False,
+                    'error': 'Invalid role specified'
+                }
+            return {
+                'success': True,
+                'message': 'User added to course successfully'
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e)
+            }
+        
 # Expose useful dev actions for institution management
 try:
     from application.boundaries.dev_actions import register_action

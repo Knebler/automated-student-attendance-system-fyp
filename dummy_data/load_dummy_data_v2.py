@@ -77,6 +77,7 @@ def load_dummy_data():
                 'Sessions',
                 'Enrollments',
                 'Course_Lecturers',
+                'Course_Students', # New table
                 'Students',
                 'Lecturers',
                 'Courses',

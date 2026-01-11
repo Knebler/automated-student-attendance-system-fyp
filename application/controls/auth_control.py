@@ -1,4 +1,5 @@
 # auth_control.py (updated with ORM)
+from application.entities2.user import UserModel
 from application.entities.base_entity import BaseEntity
 from application.entities.platform_manager import PlatformManager
 from application.entities.student import Student
@@ -8,68 +9,51 @@ from application.entities.unregistered_user import UnregisteredUser
 from application.entities.subscription import Subscription
 from application.controls.institution_control import InstitutionControl
 from datetime import datetime, timedelta
-import traceback
 import bcrypt
 import secrets
+from functools import wraps
+from flask import flash, redirect, url_for, session
+
+from database.base import get_session
+
+def requires_roles(roles):
+    """
+    Decorator to require specific role from session
+    Important to put it after the route in order to detect the session variable
+    Usage: @requires_roles(['admin', 'student'])
+        or @requires_roles('admin')
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            # Check if user is logged in
+            if 'role' not in session or session.get('role') not in roles:
+                flash('Access denied.', 'danger')
+                return redirect(url_for('auth.login'))
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
 
 class AuthControl:
     """Control class for authentication business logic with multi-role support"""
     
     @staticmethod
-    def authenticate_user(app, email, password, user_type='student'):
+    def authenticate_user(email, password):
         """Authenticate user based on their role/type using ORM"""
-        try:
-            # Firebase authentication (if configured)
-            firebase_auth = app.config.get('firebase_auth')
-            if not firebase_auth:
+        with get_session() as session:
+            user_model = UserModel(session)
+            user = user_model.get_by_email(email)
+            if bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
                 return {
-                    'success': False,
-                    'error': 'Authentication disabled - Firebase not configured',
-                    'error_type': 'FIREBASE_DISABLED'
+                    'success': True,
+                    'user_id': user.user_id,
+                    'role': user.role,
                 }
-
-            # Firebase authentication
-            user_firebase = firebase_auth.sign_in_with_email_and_password(email, password)
-            
-            # Get user info using ORM
-            user_info = AuthControl.get_user_by_email_and_type(app, email, user_type)
-            
-            if not user_info:
-                return {
-                    'success': False,
-                    'error': f'{user_type.capitalize()} not found in system'
-                }
-            
-            return {
-                'success': True,
-                'user': user_info,
-                'user_type': user_type,
-                'firebase_uid': user_firebase['localId'],
-                'id_token': user_firebase['idToken'],
-                'refresh_token': user_firebase['refreshToken']
-            }
-            
-        except Exception as e:
-            error_message = str(e)
-            app.logger.error(f"Authentication error: {error_message}")
-            
-            # Map Firebase errors to friendly messages
-            err_type = 'UNKNOWN'
-            lower = error_message.lower()
-            if 'invalid_password' in lower or 'invalid password' in lower:
-                err_type = 'INVALID_CREDENTIALS'
-                friendly = 'Incorrect password. Please try again.'
-            elif 'email_not_found' in lower or 'email not found' in lower:
-                err_type = 'INVALID_CREDENTIALS'
-                friendly = 'No account found for this email.'
-            else:
-                friendly = 'Authentication failed. Please try again.'
-            
-            return {
-                'success': False,
-                'error': friendly,
-                'error_type': err_type
-            }
+        return {'success': False, 'error': 'Invalid email or password'}
+        
+    @staticmethod
+    def get_user_by_email(app, email):
+        return AuthControl.get_user_by_email_and_type(app, email, 'student')
 
     @staticmethod
     def get_user_by_email_and_type(app, email, user_type):

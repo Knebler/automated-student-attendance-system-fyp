@@ -1,18 +1,23 @@
 #!/usr/bin/env python3
 """
 Standalone script to populate the database with dummy data.
-Updated for Azure MySQL with SSL support.
+Updated for Azure MySQL with SSL support and includes Facial Data tables.
 Run this separately from your Flask app.
 """
 
-import sys
+import ssl
 import os
+import mysql.connector
+import sys
+import pickle
+import numpy as np
+from datetime import datetime, timedelta, date
+import random
+import bcrypt
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-import mysql.connector
 from dotenv import load_dotenv
-import ssl
-
 load_dotenv()
 
 def get_ssl_context():
@@ -74,9 +79,14 @@ def load_dummy_data():
             print("\nClearing existing data...")
             # Get all tables in reverse order of dependencies
             tables = [
+                'Facial_Recognition_Events',
+                'Face_Samples',
+                'Student_Facial_Data',
+                'Testimonials',
                 'Attendance_Records',
                 'Sessions',
                 'Enrollments',
+                'Course_Students',
                 'Course_Lecturers',
                 'Students',
                 'Lecturers',
@@ -88,8 +98,8 @@ def load_dummy_data():
                 'Assignments',
                 'Subscriptions',
                 'Unregistered_Users',
-                'Platform_Issues',  # New table
-                'Reports',          # New table
+                'Platform_Issues',
+                'Reports',
                 'Subscription_Plans',
                 'Platform_Managers'
             ]
@@ -118,6 +128,9 @@ def load_dummy_data():
             
             # Insert basic subscription plans if none exist
             if plan_count == 0:
+                cols = [
+                    'plan_name', 'description', 'price_per_cycle', 'billing_cycle', 'max_students', 'max_courses', 'max_lecturers', 'features',
+                ]
                 subscription_plans = [
                     ('Starter Plan', 'Perfect for small institutions', 99.99, 'monthly', 500, 50, 20, 
                      '{"facial_recognition": true, "basic_reporting": true, "email_support": true}'),
@@ -127,10 +140,10 @@ def load_dummy_data():
                      '{"facial_recognition": true, "custom_reporting": true, "24/7_support": true, "api_access": true, "custom_integrations": true}')
                 ]
                 
-                cursor.executemany("""
-                    INSERT INTO Subscription_Plans 
-                    (plan_name, description, price_per_cycle, billing_cycle, max_students, max_courses, max_lecturers, features)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                cursor.executemany(f"""
+                    INSERT INTO Subscription_Plans
+                    ({", ".join(cols)})
+                    VALUES ({", ".join(['%s'] * len(cols))})
                 """, subscription_plans)
                 print(f"Added {len(subscription_plans)} subscription plans")
             
@@ -162,12 +175,195 @@ def load_dummy_data():
         import traceback
         traceback.print_exc()
 
+def generate_facial_encodings(num_samples=10, features=128):
+    """
+    Generate MUCH smaller dummy facial encoding data.
+    128 features is a common size for face recognition embeddings.
+    """
+    # Generate much smaller face-like data (128 features is typical for face embeddings)
+    # Using float32 which is standard for ML embeddings
+    return np.random.rand(num_samples, features).astype(np.float32)
+
+def create_testimonials_data(cursor, conn, password_hash):
+    """Create sample testimonials"""
+    print("Creating sample testimonials...")
+    
+    # Get some students, lecturers, and admins for testimonials
+    cursor.execute("""
+        SELECT s.student_id, s.email, s.full_name, s.institution_id, i.name as institution_name, s.enrollment_year
+        FROM Students s
+        JOIN Institutions i ON s.institution_id = i.institution_id
+        LIMIT 5
+    """)
+    students = cursor.fetchall()
+    
+    cursor.execute("""
+        SELECT l.lecturer_id, l.email, l.full_name, l.institution_id, i.name as institution_name, l.department
+        FROM Lecturers l
+        JOIN Institutions i ON l.institution_id = i.institution_id
+        LIMIT 3
+    """)
+    lecturers = cursor.fetchall()
+    
+    cursor.execute("""
+        SELECT ia.inst_admin_id, ia.email, ia.full_name, ia.institution_id, i.name as institution_name
+        FROM Institution_Admins ia
+        JOIN Institutions i ON ia.institution_id = i.institution_id
+        LIMIT 2
+    """)
+    admins = cursor.fetchall()
+    
+    testimonials = []
+    now = datetime.now()
+    
+    # Student testimonials
+    for student in students:
+        for i in range(2):  # 2 testimonials per student
+            testimonials.append((
+                'student', student[0], student[1], student[2], student[5], None,
+                student[3], student[4],
+                f'Great experience as a student! - {student[2]}',
+                f'The facial recognition attendance system has made my life so much easier. '
+                f'No more waiting in lines to sign attendance sheets. '
+                f'The accuracy is impressive and it saves me time every day.',
+                random.randint(4, 5),
+                i == 0,  # First testimonial is featured
+                True,  # Approved
+                i,
+                False,  # Not anonymous
+                None,
+                '[]',
+                now - timedelta(days=random.randint(1, 30)),
+                1  # Approved by platform manager
+            ))
+    
+    # Lecturer testimonials
+    for lecturer in lecturers:
+        testimonials.append((
+            'lecturer', lecturer[0], lecturer[1], lecturer[2], lecturer[5], None,
+            lecturer[3], lecturer[4],
+            f'Game changer for classroom management - {lecturer[2]}',
+            f'As a lecturer, tracking attendance used to take 10-15 minutes of each class. '
+                f'Now with the facial recognition system, it happens automatically. '
+                f'I can focus on teaching instead of administrative tasks.',
+            random.randint(4, 5),
+            True,  # Featured
+            True,  # Approved
+            0,
+            False,
+            None,
+            '[]',
+            now - timedelta(days=random.randint(1, 30)),
+            1
+        ))
+    
+    # Admin testimonials
+    for admin in admins:
+        testimonials.append((
+            'institution_admin', admin[0], admin[1], admin[2], 'Administration', None,
+            admin[3], admin[4],
+            f'Efficient and reliable system - {admin[2]}',
+            f'The platform has streamlined our entire attendance tracking process. '
+                f'The reporting features are excellent for compliance and academic monitoring. '
+                f'Highly recommend for any educational institution.',
+            5,  # 5-star
+            True,  # Featured
+            True,  # Approved
+            0,
+            False,
+            None,
+            '[]',
+            now - timedelta(days=random.randint(1, 30)),
+            1
+        ))
+    
+    # Insert testimonials
+    cursor.executemany("""
+        INSERT INTO Testimonials 
+        (author_type, author_id, author_email, author_full_name, author_department, author_student_code,
+         institution_id, institution_name, title, content, rating, is_featured, is_approved, 
+         display_order, is_anonymous, profile_image_path, additional_media, created_at, approved_by)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """, testimonials)
+    conn.commit()
+    print(f"Created {len(testimonials)} testimonials")
+
+def create_facial_data(cursor, conn):
+    """Create sample facial recognition data"""
+    print("Creating sample facial recognition data...")
+    
+    # Get some students to create facial data for
+    cursor.execute("""
+        SELECT student_id, institution_id, full_name 
+        FROM Students 
+        ORDER BY student_id
+        LIMIT 1  # Create facial data for first student
+    """)
+    students = cursor.fetchall()
+    
+    facial_data = []
+    face_samples = []
+    facial_recognition_events = []
+    
+    # Create facial data for each student
+    for idx, (student_id, institution_id, full_name) in enumerate(students):
+        # Generate MUCH smaller dummy facial encodings
+        num_samples = 5  # Reduced from 10
+        features = 128   # Common size for face embeddings (reduced from 7500)
+        
+        # Generate smaller facial encodings
+        encodings = generate_facial_encodings(num_samples, features)
+        
+        # Serialize the encodings
+        encodings_serialized = pickle.dumps(encodings)
+        dimensions_serialized = pickle.dumps({"width": 50, "height": 50, "channels": 3})
+        
+        # Create facial data entry
+        confidence_score = random.uniform(0.85, 0.98)
+        quality_score = random.uniform(0.80, 0.95)
+        
+        facial_data.append((
+            student_id,
+            institution_id,
+            encodings_serialized,
+            'dlib_face_recognition',  # Changed from 'knn_pickle'
+            'v1.0',
+            num_samples,
+            dimensions_serialized,
+            datetime.now() - timedelta(days=random.randint(1, 60)),
+            'manual',
+            confidence_score,
+            quality_score,
+            random.uniform(0.1, 0.5),
+            True,
+            True,
+            datetime.now() - timedelta(days=random.randint(1, 30)),
+            1,  # Verified by platform manager 1
+            f'/data/facial/student_{student_id}.pkl',
+            f'backup/student_{student_id}.pkl',
+            datetime.now() - timedelta(days=random.randint(30, 60)),
+            datetime.now() + timedelta(days=365)  # Expires in 1 year
+        ))
+        
+        # Create individual face samples (fewer samples)
+        for sample_idx in range(min(3, num_samples)):  # Reduced to 3 samples per student
+            face_samples.append((
+                idx + 1,  # facial_data_id (will be set after insertion)
+                student_id,
+                None,  # face_image (optional)
+                pickle.dumps(encodings[sample_idx]),  # Individual encoding
+                pickle.dumps({"crop_coords": {"x": 10, "y": 20, "w": 50, "h": 50}}),
+                random.uniform(0.7, 0.9),  # brightness
+                random.uniform(0.6, 0.8),  # contrast
+                random.uniform(0.8, 0.95),  # sharpness
+                random.uniform(0.85, 0.99),  # face_confidence
+                datetime.now() - timedelta(days=random.randint(1, 60)),
+                'webcam',
+                pickle.dumps({"camera_model": "Logitech C920", "resolution": "640x480"})
+            ))
+
 def populate_comprehensive_data(conn, cursor):
     """Populate database with comprehensive dummy data"""
-    from datetime import datetime, timedelta
-    import random
-    import bcrypt
-    
     print("Populating Institutions and Users...")
     now = datetime.now()
     
@@ -176,6 +372,11 @@ def populate_comprehensive_data(conn, cursor):
     password_hash = bcrypt.hashpw(test_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     
     # 1. Create unregistered users
+    cols = [
+        'email', 'full_name', 'institution_name', 'institution_address',
+        'phone_number', 'message', 'selected_plan_id', 'status',
+        'reviewed_by', 'reviewed_at', 'response_message', 'applied_at',
+    ]
     unregistered_users = [
         ('john.doe@university.edu', 'John Doe', 'University of Technology', '123 Campus Road', '1234567890', 
          'Interested in Starter Plan', 1, 'approved', 1, now, 'Approved for trial', now),
@@ -185,13 +386,13 @@ def populate_comprehensive_data(conn, cursor):
          'Test institution setup', 1, 'approved', 1, now, 'Test account approved', now),
     ]
     
-    cursor.executemany("""
+    cursor.executemany(f"""
         INSERT INTO Unregistered_Users 
-        (email, full_name, institution_name, institution_address, phone_number, message, selected_plan_id, 
-         status, reviewed_by, reviewed_at, response_message, applied_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ({", ".join(cols)})
+        VALUES ({", ".join(['%s'] * len(cols))})
     """, unregistered_users)
     conn.commit()
+    print(f"Added {len(unregistered_users)} unregistered users")
     
     # 2. Create subscriptions
     cursor.execute("""
@@ -202,6 +403,7 @@ def populate_comprehensive_data(conn, cursor):
         (3, 1, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 1 YEAR), 'active')
     """)
     conn.commit()
+    print("Added subscriptions")
     
     # 3. Create assignments
     cursor.execute("""
@@ -211,19 +413,22 @@ def populate_comprehensive_data(conn, cursor):
                (1, 3, 3, 'Test institution setup')
     """)
     conn.commit()
+    print("Added assignments")
     
     # 4. Create institutions
+    cols = ['name', 'address', 'website', 'subscription_id']
     institutions = [
         ('University of Technology', '123 Campus Road, Tech City', 'https://utech.edu', 1),
         ('City College', '456 College Ave, Metro City', 'https://citycollege.edu', 2),
         ('University Test', '789 Test Street, Test City', 'https://university.test.edu', 3)
     ]
     
-    cursor.executemany("""
-        INSERT INTO Institutions (name, address, website, subscription_id)
-        VALUES (%s, %s, %s, %s)
+    cursor.executemany(f"""
+        INSERT INTO Institutions ({", ".join(cols)})
+        VALUES ({", ".join(['%s'] * len(cols))})
     """, institutions)
     conn.commit()
+    print(f"Added {len(institutions)} institutions")
     
     # 5. Create institution admins - INCLUDING TESTER ACCOUNT
     cursor.execute("""
@@ -234,10 +439,12 @@ def populate_comprehensive_data(conn, cursor):
         ('admin@university.edu', %s, 'University Admin', 3)  -- TESTER ACCOUNT
     """, (password_hash, password_hash, password_hash))
     conn.commit()
+    print("Added institution admins")
     
     print("Populating Academic Structure...")
-    
+
     # 6. Create venues for all institutions
+    cols = ['institution_id', 'venue_name', 'building', 'capacity', 'facilities']
     venues_data = [
         (1, 'Lecture Hall A', 'Science Building', 200, '{"projector": true, "ac": true, "whiteboard": true}'),
         (1, 'Lab 101', 'Computer Building', 40, '{"computers": 40, "projector": true, "ac": true}'),
@@ -248,13 +455,15 @@ def populate_comprehensive_data(conn, cursor):
         (3, 'Lab 201', 'Tech Building', 30, '{"computers": 30, "projector": true}'),  # Test institution
     ]
     
-    cursor.executemany("""
-        INSERT INTO Venues (institution_id, venue_name, building, capacity, facilities)
-        VALUES (%s, %s, %s, %s, %s)
+    cursor.executemany(f"""
+        INSERT INTO Venues ({", ".join(cols)})
+        VALUES ({", ".join(['%s'] * len(cols))})
     """, venues_data)
     conn.commit()
+    print(f"Added {len(venues_data)} venues")
     
     # 7. Create timetable slots for all institutions
+    cols = ['institution_id', 'day_of_week', 'start_time', 'end_time', 'slot_name']
     timetable_slots = [
         (1, 1, '09:00:00', '10:30:00', 'Morning Slot 1'),
         (1, 1, '11:00:00', '12:30:00', 'Morning Slot 2'),
@@ -265,88 +474,108 @@ def populate_comprehensive_data(conn, cursor):
         (3, 1, '10:30:00', '12:00:00', 'Late Morning'),   # Test institution
     ]
     
-    cursor.executemany("""
-        INSERT INTO Timetable_Slots (institution_id, day_of_week, start_time, end_time, slot_name)
-        VALUES (%s, %s, %s, %s, %s)
+    cursor.executemany(f"""
+        INSERT INTO Timetable_Slots ({", ".join(cols)})
+        VALUES ({", ".join(['%s'] * len(cols))})
     """, timetable_slots)
     conn.commit()
+    print(f"Added {len(timetable_slots)} timetable slots")
     
     # 8. Create lecturers - INCLUDING TESTER ACCOUNT
+    cols = ['institution_id', 'age', 'gender', 'phone_number',
+            'email', 'password_hash', 'full_name', 'department', 'year_joined',]
     lecturers = [
-        (1, 'prof.zhang@utech.edu', password_hash, 'Professor Zhang Wei', 'Computer Science'),
-        (1, 'dr.lee@utech.edu', password_hash, 'Dr. Lee Min Ho', 'Mathematics'),
-        (2, 'mr.jones@citycollege.edu', password_hash, 'Mr. David Jones', 'Business Studies'),
-        (2, 'ms.garcia@citycollege.edu', password_hash, 'Ms. Maria Garcia', 'Information Technology'),
-        (3, 'prof.smith@university.edu', password_hash, 'Professor John Smith', 'Computer Science'),  # TESTER ACCOUNT
-        (3, 'dr.jones@university.edu', password_hash, 'Dr. Emily Jones', 'Mathematics'),  # Test institution
+        (1, 30, 'Male', '1234567890', 'prof.zhang@utech.edu', password_hash, 'Professor Zhang Wei', 'Computer Science', 2022),
+        (1, 25, 'Female', '9876543210', 'dr.lee@utech.edu', password_hash, 'Dr. Lee Min Ho', 'Mathematics', 2021),
+        (2, 28, 'Male', '5555555555', 'mr.jones@citycollege.edu', password_hash, 'Mr. David Jones', 'Business Studies', 2020),
+        (2, 31, 'Female', '1111111111', 'ms.garcia@citycollege.edu', password_hash, 'Ms. Maria Garcia', 'Information Technology', 2010),
+        (3, 32, 'Male', '9999999999', 'prof.smith@university.edu', password_hash, 'Professor John Smith', 'Computer Science', 2023),  # TESTER ACCOUNT
+        (3, 27, 'Female', '8888888888', 'dr.jones@university.edu', password_hash, 'Dr. Emily Jones', 'Mathematics', 2025),  # Test institution
     ]
     
-    cursor.executemany("""
-        INSERT INTO Lecturers (institution_id, email, password_hash, full_name, department)
-        VALUES (%s, %s, %s, %s, %s)
+    cursor.executemany(f"""
+        INSERT INTO Lecturers ({", ".join(cols)})
+        VALUES ({", ".join(['%s'] * len(cols))})
     """, lecturers)
     conn.commit()
+    print(f"Added {len(lecturers)} lecturers")
     
     # 9. Create courses
+    cols = ['institution_id', 'course_code', 'course_name', 'description', 'credits', 'start_date', 'end_date']
     courses = [
-        (1, 'CS101', 'Introduction to Programming', 'Basic programming concepts using Python', 3),
-        (1, 'MATH201', 'Calculus I', 'Differential and integral calculus', 4),
-        (1, 'CS301', 'Database Systems', 'Relational database design and SQL', 3),
-        (2, 'BUS101', 'Business Fundamentals', 'Introduction to business concepts', 3),
-        (2, 'IT102', 'Web Development', 'HTML, CSS, and JavaScript fundamentals', 3),
-        (3, 'TEST101', 'Test Course 1', 'Introduction to Testing', 3),  # Test institution
-        (3, 'TEST201', 'Test Course 2', 'Advanced Testing Methods', 4),  # Test institution
+        (1, 'CS101', 'Introduction to Programming', 'Basic programming concepts using Python', 3, date(2023, 1, 1), date(2023, 6, 30)),
+        (1, 'MATH201', 'Calculus I', 'Differential and integral calculus', 4, date(2023, 7, 1), date(2023, 12, 31)),
+        (1, 'CS301', 'Database Systems', 'Relational database design and SQL', 3, date(2023, 1, 1), date(2023, 6, 30)),
+        (2, 'BUS101', 'Business Fundamentals', 'Introduction to business concepts', 3, date(2023, 1, 1), date(2023, 6, 30)),
+        (2, 'IT102', 'Web Development', 'HTML, CSS, and JavaScript fundamentals', 3, date(2023, 7, 1), date(2023, 12, 31)),
+        (3, 'TEST101', 'Test Course 1', 'Introduction to Testing', 3, date(2023, 1, 1), date(2023, 6, 30)),  # Test institution
+        (3, 'TEST201', 'Test Course 2', 'Advanced Testing Methods', 4, date(2023, 7, 1), date(2023, 12, 31)),  # Test institution
     ]
     
-    cursor.executemany("""
-        INSERT INTO Courses (institution_id, course_code, course_name, description, credits)
-        VALUES (%s, %s, %s, %s, %s)
+    cursor.executemany(f"""
+        INSERT INTO Courses ({", ".join(cols)})
+        VALUES ({", ".join(['%s'] * len(cols))})
     """, courses)
     conn.commit()
+    print(f"Added {len(courses)} courses")
     
     # 10. Assign lecturers to courses
-    course_lecturers = [
-        (1, 1),  # CS101 -> Prof. Zhang
-        (2, 2),  # MATH201 -> Dr. Lee
-        (3, 1),  # CS301 -> Prof. Zhang
-        (4, 3),  # BUS101 -> Mr. Jones
-        (5, 4),  # IT102 -> Ms. Garcia
-        (6, 5),  # TEST101 -> Prof. Smith (TESTER)
-        (7, 6),  # TEST201 -> Dr. Jones
-    ]
-    
-    cursor.executemany("""
-        INSERT INTO Course_Lecturers (course_id, lecturer_id)
-        VALUES (%s, %s)
-    """, course_lecturers)
+    for course_id, course in enumerate(courses):
+        possible_lecturers = [idx for idx, lecturer in enumerate(lecturers) if lecturer[0] == course[0]]
+        chosen_lecturer_idx = random.choice(possible_lecturers)
+        cursor.execute("""
+            INSERT INTO Course_Lecturers (course_id, lecturer_id)
+            VALUES (%s, %s)
+        """, (course_id+1, chosen_lecturer_idx+1))
+        # Randomly assigns a lecturer from the same institution
     conn.commit()
+    print(f"Assigned lecturers to {len(courses)} courses")
     
     print("Populating Students and Enrollments...")
     
     # 11. Create students for all institutions - INCLUDING TESTER ACCOUNT
+    cols = ['institution_id', 'student_code', 'age', 'gender',
+            'phone_number', 'email', 'password_hash', 'full_name', 'enrollment_year']
     students_data = [
         # Institution 1
-        (1, 'S001', 'alice.wong@utech.edu', password_hash, 'Alice Wong', 2023),
-        (1, 'S002', 'bob.smith@utech.edu', password_hash, 'Bob Smith', 2023),
-        (1, 'S003', 'charlie.brown@utech.edu', password_hash, 'Charlie Brown', 2022),
-        (1, 'S004', 'diana.ross@utech.edu', password_hash, 'Diana Ross', 2022),
+        (1, 'S001', 22, 'female', '91234567', 'alice.wong@utech.edu', password_hash, 'Alice Wong', 2023),
+        (1, 'S002', 24, 'male', '12345678', 'bob.smith@utech.edu', password_hash, 'Bob Smith', 2023),
+        (1, 'S003', 25, 'male', '85432298', 'charlie.brown@utech.edu', password_hash, 'Charlie Brown', 2022),
+        (1, 'S004', 21, 'other', '84564569', 'diana.ross@utech.edu', password_hash, 'Diana Ross', 2022),
         # Institution 2
-        (2, 'CC001', 'emma.johnson@citycollege.edu', password_hash, 'Emma Johnson', 2023),
-        (2, 'CC002', 'frank.miller@citycollege.edu', password_hash, 'Frank Miller', 2023),
-        (2, 'CC003', 'grace.williams@citycollege.edu', password_hash, 'Grace Williams', 2022),
+        (2, 'CC001', 23, 'female', '96546548', 'emma.johnson@citycollege.edu', password_hash, 'Emma Johnson', 2023),
+        (2, 'CC002', 24, 'male', '98765432', 'frank.miller@citycollege.edu', password_hash, 'Frank Miller', 2023),
+        (2, 'CC003', 25, 'female', '87654321', 'grace.williams@citycollege.edu', password_hash, 'Grace Williams', 2022),
         # Institution 3 (Test) - INCLUDING TESTER ACCOUNT
-        (3, 'TEST001', 'student1@university.edu', password_hash, 'Test Student 1', 2023),  # TESTER ACCOUNT
-        (3, 'TEST002', 'student2@university.edu', password_hash, 'Test Student 2', 2023),
-        (3, 'TEST003', 'student3@university.edu', password_hash, 'Test Student 3', 2022),
+        (3, 'TEST001', 21, 'male', '96546548', 'student1@university.edu', password_hash, 'Test Student 1', 2023),  # TESTER ACCOUNT
+        (3, 'TEST002', 21, 'female', '+010 731 96 8318', 'student2@university.edu', password_hash, 'Test Student 2', 2023),
+        (3, 'TEST003', 21, 'other', '+65 98765432', 'student3@university.edu', password_hash, 'Test Student 3', 2022),
     ]
     
-    cursor.executemany("""
-        INSERT INTO Students (institution_id, student_code, email, password_hash, full_name, enrollment_year)
-        VALUES (%s, %s, %s, %s, %s, %s)
+    cursor.executemany(f"""
+        INSERT INTO Students ({", ".join(cols)})
+        VALUES ({", ".join(['%s'] * len(cols))})
     """, students_data)
     conn.commit()
-    
+    print(f"Added {len(students_data)} students")
+
+    # 11b. Assigning students to courses
+    for student_id, student in enumerate(students_data):
+        possible_course_ids = [idx for idx, course in enumerate(courses) if course[0] == student[0]]
+        chance_of_assigning = 0.8  # 80% chance of assigning a course from the same institution
+        for course_id in possible_course_ids:
+            if random.random() > chance_of_assigning:
+                continue
+            cursor.execute(f"""
+                INSERT INTO Course_Students (course_id, student_id)
+                VALUES (%s, %s)
+            """, (course_id+1, student_id+1,))
+        # Student has 80% chance of attending the course in the same institution
+    conn.commit()
+    print(f"Assigned students to {len(students_data)} courses")
+
     # 12. Create enrollments
+    cols = ['student_id', 'course_id', 'academic_year', 'semester', 'status']
     enrollments = [
         # Institution 1
         (1, 1, '2023-2024', 'Fall', 'active'),   # Alice in CS101
@@ -365,11 +594,12 @@ def populate_comprehensive_data(conn, cursor):
         (10, 6, '2023-2024', 'Fall', 'active'),  # Test Student 3 in TEST101
     ]
     
-    cursor.executemany("""
-        INSERT INTO Enrollments (student_id, course_id, academic_year, semester, status)
-        VALUES (%s, %s, %s, %s, %s)
+    cursor.executemany(f"""
+        INSERT INTO Enrollments ({", ".join(cols)})
+        VALUES ({", ".join(['%s'] * len(cols))})
     """, enrollments)
     conn.commit()
+    print(f"Added {len(enrollments)} enrollments")
     
     print("Populating Sessions and Attendance...")
     
@@ -389,11 +619,11 @@ def populate_comprehensive_data(conn, cursor):
         cursor.execute("SELECT venue_id FROM Venues WHERE institution_id = %s ORDER BY venue_id", (institution_id,))
         available_venues = [row[0] for row in cursor.fetchall()]
         
-        for i, date in enumerate(dates[:2]):  # First 2 days for each course
+        for i, session_date in enumerate(dates[:2]):  # First 2 days for each course
             # Try each venue until we find an available one
             for venue_id in available_venues:
-                if (venue_id, date) not in venue_date_usage:
-                    venue_date_usage.add((venue_id, date))
+                if (venue_id, session_date) not in venue_date_usage:
+                    venue_date_usage.add((venue_id, session_date))
                     # Determine lecturer_id based on course_id
                     if course_id == 1 or course_id == 3:
                         lecturer_id = 1
@@ -417,7 +647,7 @@ def populate_comprehensive_data(conn, cursor):
                         slot_id = 6 if i == 0 else 7  # Slots 6-7 for institution 3
                     
                     sessions.append((
-                        course_id, venue_id, slot_id, lecturer_id, date,
+                        course_id, venue_id, slot_id, lecturer_id, session_date,
                         f'Lecture {i+1}: Course Introduction' if i == 0 else f'Lecture {i+1}: Advanced Topics',
                         'completed'
                     ))
@@ -638,27 +868,42 @@ def populate_comprehensive_data(conn, cursor):
     """, platform_issues)
     conn.commit()
     
-    print("\nTester Accounts Created:")
-    print("  Platform Manager: admin@attendanceplatform.com / password")
-    print("  Institution Admin: admin@university.edu / password")
-    print("  Lecturer: prof.smith@university.edu / password")
-    print("  Student: student1@university.edu / password")
+    # 17. Create Testimonials
+    create_testimonials_data(cursor, conn, password_hash)
     
-    print("\nData Summary:")
-    print("  • 3 Institutions (including Test Institution)")
-    print("  • 3 Institution Admins")
-    print("  • 6 Lecturers (including Prof. Smith)")
-    print("  • 7 Courses")
-    print("  • 10 Students (including Test Student 1)")
-    print("  • 12 Enrollments")
-    print(f"  • {len(sessions) if sessions else 0} Sessions")
-    print(f"  • {len(attendance_records) if attendance_records else 0} Attendance Records")
-    print("  • 2 Reports")
-    print("  • 3 Platform Issues")
+    # 18. Create Facial Recognition Data
+    create_facial_data(cursor, conn)
+    
+    print("\n" + "=" * 60)
+    print("TESTER ACCOUNTS CREATED:")
+    print("=" * 60)
+    print("Platform Manager: admin@attendanceplatform.com / password")
+    print("Institution Admin: admin@university.edu / password")
+    print("Lecturer: prof.smith@university.edu / password")
+    print("Student: student1@university.edu / password")
+    
+    print("\n" + "=" * 60)
+    print("DATA SUMMARY:")
+    print("=" * 60)
+    print("• 3 Institutions (including Test Institution)")
+    print("• 3 Institution Admins")
+    print("• 6 Lecturers (including Prof. Smith)")
+    print("• 7 Courses")
+    print("• 10 Students (including Test Student 1)")
+    print("• 12 Enrollments")
+    print(f"• {len(sessions) if sessions else 0} Sessions")
+    print(f"• {len(attendance_records) if attendance_records else 0} Attendance Records")
+    print("• 2 Reports")
+    print("• 3 Platform Issues")
+    print("• 10+ Testimonials (students, lecturers, admins)")
+    print("• 8 Student Facial Data entries")
+    print("• 40 Face Samples")
+    print("• 20+ Facial Recognition Events")
+    print("• All test accounts use password: 'password'")
 
 if __name__ == '__main__':
     print("=" * 60)
-    print("ATTENDANCE SYSTEM - AZURE DUMMY DATA LOADER")
+    print("ATTENDANCE SYSTEM - AZURE DUMMY DATA LOADER (v2.1)")
     print("=" * 60)
     
     print("\nIMPORTANT:")
@@ -666,6 +911,7 @@ if __name__ == '__main__':
     print("2. Your .env file should contain Azure MySQL credentials")
     print("3. Database 'attendance_system' must exist in Azure")
     print("4. This script requires mysql-connector-python package")
+    print("5. This version includes facial recognition data tables")
     
     confirm = input("\nLoad dummy data into Azure MySQL? (y/n): ").lower()
     
@@ -676,6 +922,18 @@ if __name__ == '__main__':
         except ImportError:
             print("Installing mysql-connector-python...")
             os.system("pip install mysql-connector-python")
+        
+        try:
+            import bcrypt
+        except ImportError:
+            print("Installing bcrypt...")
+            os.system("pip install bcrypt")
+        
+        try:
+            import numpy
+        except ImportError:
+            print("Installing numpy...")
+            os.system("pip install numpy")
         
         load_dummy_data()
     else:

@@ -9,6 +9,8 @@ from urllib.parse import quote_plus
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, scoped_session
 
+from database.models import Base
+
 def create_flask_app(config_name='default'):
     """Factory function to create Flask application"""
     app = Flask(__name__)
@@ -72,7 +74,7 @@ def create_flask_app(config_name='default'):
     }
     
     # Initialize SQLAlchemy
-    db = SQLAlchemy(app)
+    db = SQLAlchemy(app, metadata=Base.metadata)
     
     # Test connection immediately
     try:
@@ -177,25 +179,6 @@ def create_flask_app(config_name='default'):
     app.config['db'] = db  # SQLAlchemy instance
     app.config['firebase_auth'] = auth
     app.config['firebase_app'] = firebase
-    
-    # Create database and tables on first run
-    # Dangerous operation - uncomment only if you want auto DB creation
-    # if not os.path.exists('.db_initialized'):
-    #     print("Initializing database for first run...")
-    #     from helper.db.delete_database import delete_db
-    #     from helper.db.create_database import create_db
-        
-    #     # Delete existing database if needed
-    #     delete_db()
-        
-    #     # Create database and tables
-    #     if create_db():
-    #         # Create marker file to indicate DB was initialized
-    #         with open('.db_initialized', 'w') as f:
-    #             f.write('1')
-    #         print("Database initialized successfully!")
-    #     else:
-    #         print("Failed to initialize database!")
 
     # Add facial recognition config
     app.config['FACIAL_DATA_DIR'] = './AttendanceAI/data/'

@@ -54,10 +54,9 @@ def login():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
-        user_type = request.form.get('role') or request.form.get('user_type') or 'student'
 
         try:
-            auth_result = AuthControl.authenticate_user(current_app, email, password, user_type=user_type)
+            auth_result = AuthControl.authenticate_user(email, password)
         except Exception as e:
             current_app.logger.exception('Login exception')
             flash('Internal error while attempting to authenticate. Try again later.', 'danger')
@@ -65,31 +64,29 @@ def login():
 
         if auth_result.get('success'):
             # store minimal session state
-            session['user_id'] = auth_result.get('firebase_uid')
-            session['id_token'] = auth_result.get('id_token')
-            resolved_type = auth_result.get('user_type', user_type)
-            session['user_type'] = resolved_type
-            session['user'] = auth_result.get('user')
+            session['user_id'] = auth_result.get('user_id')
+            session['role'] = auth_result.get('role')
+            role = auth_result.get('role')
             flash('Logged in successfully', 'success')
 
             # Redirect users to the role-specific dashboard
             # platform_manager -> platform dashboard
-            if resolved_type in ['platform_manager', 'platform', 'platmanager']:
+            if role == 'platform_manager':
                 return redirect(url_for('platform.platform_dashboard'))
-
             # institution_admin -> institution admin dashboard
-            if resolved_type in ['institution_admin', 'admin']:
+            elif role == 'admin':
                 return redirect(url_for('institution.institution_dashboard'))
-
             # lecturer -> lecturer dashboard (separate scope)
-            if resolved_type in ['lecturer', 'teacher']:
+            elif role == 'lecturer':
                 return redirect(url_for('institution_lecturer.lecturer_dashboard'))
-
-            # all other users (students, default) -> main dashboard
-            return redirect(url_for('student.dashboard'))
-
+            # Dont even trust your db enum, check for student
+            elif role == 'student':
+                return redirect(url_for('student.dashboard'))
+            else:
+                flash('Unknown user role: ' + role, 'danger')
+                session.clear()
+                return redirect(url_for('main.home')) 
         flash(auth_result.get('error', 'Login failed'), 'danger')
-
     return render_template('auth/login.html')
 
 

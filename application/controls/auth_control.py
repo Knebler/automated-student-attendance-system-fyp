@@ -1,13 +1,8 @@
 # auth_control.py (updated with ORM)
 from application.entities2.user import UserModel
-from application.entities.base_entity import BaseEntity
-from application.entities.platform_manager import PlatformManager
-from application.entities.student import Student
-from application.entities.lecturer import Lecturer
-from application.entities.institution_admin import InstitutionAdmin
-from application.entities.unregistered_user import UnregisteredUser
-from application.entities.subscription import Subscription
+from application.entities2.institution import InstitutionModel
 from application.controls.institution_control import InstitutionControl
+from application.entities2.subscription import SubscriptionModel
 from datetime import datetime, timedelta
 import bcrypt
 import secrets
@@ -26,8 +21,10 @@ def requires_roles(roles):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             print("Checking roles...")
-            # Check if user is logged in
-            if 'role' not in session or session.get('role') not in roles:
+            # Normalize roles to a list
+            allowed = roles if isinstance(roles, (list, tuple, set)) else [roles]
+            # Check if user is logged in and has an allowed role
+            if 'role' not in session or session.get('role') not in allowed:
                 flash('Access denied.', 'danger')
                 return redirect(url_for('auth.login'))
             return f(*args, **kwargs)
@@ -40,16 +37,22 @@ def authenticate_user(email, password):
         return {
             'success': True,
             'user': { 'user_id': 0, 'role': 'platform_manager' },
-        } # Currently shall hardcode the password but idea is only 1 platform manager account
+        }
 
-    with get_session() as session:
-        user_model = UserModel(session)
-        user = user_model.get_by_email(email)
-        if bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
-            return {
-                'success': True,
-                'user': user.as_sanitized_dict(),
-            }
+    try:
+        with get_session() as session:
+            user_model = UserModel(session)
+            user = user_model.get_by_email(email)
+            if not user or not getattr(user, 'password_hash', None):
+                return {'success': False, 'error': 'Invalid email or password'}
+            if bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
+                return {
+                    'success': True,
+                    'user': user.as_sanitized_dict(),
+                }
+    except Exception as e:
+        # log if necessary
+        pass
     return {'success': False, 'error': 'Invalid email or password'}
 
 class AuthControl:
@@ -71,107 +74,75 @@ class AuthControl:
         
     @staticmethod
     def get_user_by_email(app, email):
+        """Convenience method returning a user dict (defaults to student-level lookup)."""
         return AuthControl.get_user_by_email_and_type(app, email, 'student')
 
     @staticmethod
     def get_user_by_email_and_type(app, email, user_type):
-        """Get user information based on type using SQLAlchemy ORM"""
+        """Get user information using `users` table (UserModel). Returns a simple dict.
+        This function does not rely on the legacy `application.entities` module.
+        """
         try:
-            # Map user_type to entity class
-            entity_map = {
-                'student': Student,
-                'lecturer': Lecturer,
-                'teacher': Lecturer,
-                'platform_manager': PlatformManager,
-                'platform': PlatformManager,
-                'platmanager': PlatformManager,
-                'institution_admin': InstitutionAdmin,
-                'admin': InstitutionAdmin
+            # Map some aliases to canonical role values
+            role_aliases = {
+                'teacher': 'lecturer',
+                'platmanager': 'platform_manager',
+                'platform': 'platform_manager',
+                'admin': 'admin',
+                'institution_admin': 'admin'
             }
-            
-            entity_class = entity_map.get(user_type)
-            if not entity_class:
-                return None
-            
-            # Get the actual SQLAlchemy model class
-            model_class = entity_class.get_model()
-            
-            # Use BaseEntity to query with filters
-            filters = {'email': email}
-            results = BaseEntity.get_all(app, model_class, filters=filters)
-            
-            if not results:
-                return None
-            
-            result = results[0]  # Get first result
-            
-            # Convert result to dictionary based on user type
-            user_dict = {
-                'email': result.email,
-                'full_name': result.full_name,
-                'user_type': user_type if user_type != 'teacher' else 'lecturer'
-            }
-            
-            # Add type-specific fields
-            if user_type == 'student':
-                user_dict.update({
-                    'user_id': result.student_id,
-                    'institution_id': result.institution_id,
-                    'student_code': result.student_code,
-                    'enrollment_year': result.enrollment_year,
-                    'is_active': result.is_active
-                })
-            elif user_type in ['lecturer', 'teacher']:
-                user_dict.update({
-                    'user_id': result.lecturer_id,
-                    'institution_id': result.institution_id,
-                    'department': result.department,
-                    'is_active': result.is_active
-                })
-            elif user_type in ['platform_manager', 'platform', 'platmanager']:
-                user_dict.update({
-                    'user_id': result.platform_mgr_id,
-                    'created_at': result.created_at
-                })
-            elif user_type in ['institution_admin', 'admin']:
-                user_dict.update({
-                    'user_id': result.inst_admin_id,
-                    'institution_id': result.institution_id,
-                    'created_at': result.created_at
-                })
-            
-            return user_dict
-            
+            canonical_role = role_aliases.get(user_type, user_type)
+
+            with get_session() as session:
+                user_model = UserModel(session)
+                user = user_model.get_by_email(email)
+                if not user:
+                    return None
+                # If a specific role is requested, ensure it matches
+                if canonical_role and getattr(user, 'role', None) != canonical_role:
+                    return None
+
+                return {
+                    'user_id': getattr(user, 'user_id', None),
+                    'email': getattr(user, 'email', None),
+                    'full_name': getattr(user, 'name', None),
+                    'role': getattr(user, 'role', None),
+                    'institution_id': getattr(user, 'institution_id', None),
+                    'is_active': getattr(user, 'is_active', None)
+                }
         except Exception as e:
             app.logger.error(f"Error getting user by email and type: {e}")
             return None
     
     @staticmethod
     def register_institution(app, institution_data):
-        """Register a new institution using ORM"""
+        """Register a new institution request. Uses raw SQL to insert into Unregistered_Users to avoid legacy entity classes.
+        Returns the inserted unreg_user_id if successful.
+        """
         try:
-            # Create UnregisteredUser using ORM
-            unregistered_user = BaseEntity.create(
-                app=app,
-                model_class=UnregisteredUser.get_model(),  # Get the actual model class
-                data={
+            from sqlalchemy import text
+            with get_session() as session:
+                insert_sql = text(
+                    "INSERT INTO Unregistered_Users (email, full_name, institution_name, institution_address, phone_number, message, selected_plan_id, status)"
+                    " VALUES (:email, :full_name, :institution_name, :institution_address, :phone_number, :message, :selected_plan_id, 'pending')"
+                )
+                session.execute(insert_sql, {
                     'email': institution_data.get('email'),
                     'full_name': institution_data.get('full_name'),
                     'institution_name': institution_data.get('institution_name'),
                     'institution_address': institution_data.get('institution_address'),
                     'phone_number': institution_data.get('phone_number'),
                     'message': institution_data.get('message'),
-                    'selected_plan_id': institution_data.get('selected_plan_id'),
-                    'status': 'pending'
-                }
-            )
-            
+                    'selected_plan_id': institution_data.get('selected_plan_id')
+                })
+                # fetch last insert id (MySQL compatible)
+                new_id = session.execute(text('SELECT LAST_INSERT_ID()')).scalar()
+
             return {
                 'success': True,
-                'unreg_user_id': unregistered_user.unreg_user_id,
+                'unreg_user_id': int(new_id) if new_id is not None else None,
                 'message': 'Institution registration request submitted successfully. Awaiting approval.'
             }
-            
         except Exception as e:
             app.logger.error(f"Error registering institution: {e}")
             return {
@@ -181,202 +152,102 @@ class AuthControl:
 
     @staticmethod
     def approve_unregistered_user(app, unreg_user_id, reviewer_id=None, admin_password=None):
-        """Approve a pending Unregistered_Users entry using ORM"""
+        """Approve a pending Unregistered_Users entry. Uses ORM models from entities2 where possible and raw SQL for the unregistered table."""
         try:
-            # 1. Get the unregistered user
-            unreg_user_model = UnregisteredUser.get_model()
-            session = BaseEntity.get_db_session(app)
-            unreg_user = session.query(unreg_user_model).get(unreg_user_id)
-            
-            if not unreg_user or unreg_user.status != 'pending':
-                return {
-                    'success': False,
-                    'error': 'Registration request not found or not pending'
-                }
-            
-            # 2. Create Subscription
+            from sqlalchemy import text
             from datetime import date
-            start_date = date.today()
-            end_date = start_date + timedelta(days=365)
-            
-            subscription = BaseEntity.create(
-                app=app,
-                model_class=Subscription.get_model(),  # Get the actual model class
-                data={
-                    'unreg_user_id': unreg_user_id,
-                    'plan_id': unreg_user.selected_plan_id,
-                    'start_date': start_date,
-                    'end_date': end_date,
-                    'status': 'active'
-                }
-            )
-            
-            # 3. Create Institution
-            inst_data = {
-                'name': unreg_user.institution_name,
-                'address': unreg_user.institution_address,
-                'website': None,
-                'subscription_id': subscription.subscription_id
-            }
-            
-            ins_result = InstitutionControl.create_institution(app, inst_data, subscription.subscription_id)
-            if not ins_result.get('success'):
-                BaseEntity.rollback_changes(app)
-                return {
-                    'success': False,
-                    'error': f"Failed to create institution: {ins_result.get('error')}"
-                }
-            
-            institution_id = ins_result.get('institution_id')
-            
-            # 4. Create Firebase user (if available) - REMOVED User.create() since we removed user.py
-            used_password = admin_password or secrets.token_urlsafe(10)
-            created_firebase_uid = None
-            
-            firebase_auth = app.config.get('firebase_auth')
-            if firebase_auth:
-                try:
-                    reg_res = AuthControl.register_user(
-                        app, 
-                        unreg_user.email, 
-                        used_password, 
-                        name=unreg_user.full_name, 
-                        role='institution_admin'
-                    )
-                    if reg_res.get('success'):
-                        created_firebase_uid = reg_res.get('firebase_uid')
-                except Exception as e:
-                    app.logger.warning(f"Firebase user creation failed: {e}")
-            
-            # 5. Create Institution Admin
-            pw_hash = bcrypt.hashpw(used_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-            
-            admin_model = InstitutionAdmin.get_model()
-            admin = BaseEntity.create(
-                app=app,
-                model_class=admin_model,  # Use the actual model class
-                data={
-                    'email': unreg_user.email,
-                    'password_hash': pw_hash,
-                    'full_name': unreg_user.full_name,
-                    'institution_id': institution_id
-                }
-            )
-            
-            # 6. Update Unregistered User status
-            unreg_user.status = 'approved'
-            unreg_user.reviewed_by = reviewer_id
-            unreg_user.reviewed_at = datetime.now()
-            unreg_user.response_message = f'Approved by reviewer {reviewer_id}' if reviewer_id else 'Approved by platform manager'
-            
-            BaseEntity.commit_changes(app)
-            
+
+            with get_session() as session:
+                # Fetch the unregistered user row
+                row = session.execute(text("SELECT * FROM Unregistered_Users WHERE unreg_user_id = :id FOR UPDATE"), {'id': unreg_user_id}).first()
+                if not row or row.status != 'pending':
+                    return {'success': False, 'error': 'Registration request not found or not pending'}
+
+                data = dict(row._mapping)
+                selected_plan = data.get('selected_plan_id')
+
+                # 1. Create Subscription using SubscriptionModel
+                sub_model = SubscriptionModel(session)
+                start_date = date.today()
+                end_date = start_date + timedelta(days=365)
+                subscription = sub_model.create(plan_id=selected_plan, start_date=start_date, end_date=end_date, is_active=True)
+
+                # 2. Create Institution using InstitutionModel
+                inst_model = InstitutionModel(session)
+                inst = inst_model.create(name=data.get('institution_name'), address=data.get('institution_address'), subscription_id=subscription.subscription_id)
+                institution_id = inst.institution_id
+
+                # 3. Create admin password
+                used_password = admin_password or secrets.token_urlsafe(10)
+
+                # 4. Create Institution Admin as a user in the users table
+                pw_hash = bcrypt.hashpw(used_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                user_model = UserModel(session)
+                admin_user = user_model.create(
+                    institution_id=institution_id,
+                    role='admin',
+                    email=data.get('email'),
+                    password_hash=pw_hash,
+                    name=data.get('full_name')
+                )
+
+                # 5. Update Unregistered_Users status to approved
+                session.execute(text("UPDATE Unregistered_Users SET status = 'approved', reviewed_by = :rev, reviewed_at = NOW(), response_message = :msg WHERE unreg_user_id = :id"), {
+                    'rev': reviewer_id,
+                    'msg': f'Approved by reviewer {reviewer_id}' if reviewer_id else 'Approved by platform manager',
+                    'id': unreg_user_id
+                })
+
             return {
-                'success': True, 
-                'message': 'Approved and account created', 
-                'admin_password': used_password, 
+                'success': True,
+                'message': 'Approved and account created',
+                'admin_password': used_password,
                 'institution_id': institution_id
             }
-            
         except Exception as e:
-            BaseEntity.rollback_changes(app)
             app.logger.error(f"Error approving unregistered user: {e}")
-            return {
-                'success': False,
-                'error': str(e)
-            }
-        
-    @staticmethod
-    def verify_session(app, session_obj):
-        """Verify an existing session and return user info."""
-        try:
-            id_token = session_obj.get('id_token')
-            uid = session_obj.get('user_id')
-
-            # If no session present but Firebase is disabled, treat app as 'dev' mode
-            if not uid or not id_token:
-                if not app.config.get('firebase_auth'):
-                    # Try to load a platform manager from the DB for dev sessions
-                    try:
-                        # Use ORM to get platform manager
-                        pm_model = PlatformManager.get_model()
-                        session = BaseEntity.get_db_session(app)
-                        platform_manager = session.query(pm_model).first()
-                        
-                        if platform_manager:
-                            return {
-                                'success': True,
-                                'user': {
-                                    'user_type': 'platform_manager',
-                                    'user_id': platform_manager.platform_mgr_id,
-                                    'email': platform_manager.email,
-                                    'full_name': platform_manager.full_name
-                                }
-                            }
-
-                        # No platform manager present - return a generic dev user
-                        return {
-                            'success': True,
-                            'user': {
-                                'user_type': 'platform_manager',
-                                'user_id': 0,
-                                'email': 'dev@local'
-                            }
-                        }
-                    except Exception:
-                        # if anything goes wrong, be permissive in dev mode
-                        return {'success': True, 'user': {'user_type': 'platform_manager', 'user_id': 0}}
-                else:
-                    return {'success': False, 'error': 'No session present'}
-
-            # Since we removed user.py, just return session-stored user info
-            user = session_obj.get('user')
-            if not user:
-                return {'success': False, 'error': 'No user in session'}
-
-            return {'success': True, 'user': user}
-
-        except Exception as e:
-            # Any error -> mark as not authenticated
             return {'success': False, 'error': str(e)}
         
     @staticmethod
-    def register_user(app, email, password, name=None, role='student'):
-        """Register a new user in Firebase.
-        
-        Note: Since we removed user.py, this only creates Firebase user now.
+    def verify_session(app, session_obj):
+        """Verify an existing session and return user info.
+
+        Validation:
+        - If `session.user` (or `session.user_id`) is present, fetch from `users` table and confirm active.
+        - If no session, return a dev platform manager if present.
         """
         try:
-            firebase_auth = app.config.get('firebase_auth')
-            if not firebase_auth:
-                return {
-                    'success': False,
-                    'error': 'Registration disabled - Firebase not configured',
-                    'error_type': 'FIREBASE_DISABLED'
-                }
+            session_user = session_obj.get('user')
+            try:
+                with get_session() as s:
+                    user_model = UserModel(s)
+                    user = None
 
-            new_user = firebase_auth.create_user_with_email_and_password(email, password)
-            uid = new_user.get('localId')
-            id_token = new_user.get('idToken')
+                    # If session has full user dict, prefer email lookup
+                    if session_user:
+                        email = session_user.get('email')
+                        uid = session_user.get('user_id') or session_user.get('user_id')
+                        if email:
+                            user = user_model.get_by_email(email)
+                        elif uid:
+                            user = user_model.get_by_id(uid)
 
-            # Note: We removed User.create() since we removed user.py
-            # If you need to store user info, use the appropriate entity (Student, Lecturer, etc.)
+                    # Fallback to explicit session keys
+                    if not user:
+                        uid = session_obj.get('user_id')
+                        if uid:
+                            user = user_model.get_by_id(uid)
 
-            return {'success': True, 'firebase_uid': uid, 'id_token': id_token}
+                    # Ensure the user is active
+                    if getattr(user, 'is_active', True) is False:
+                        return {'success': False, 'error': 'User inactive'}
+
+                    return {'success': True, 'user': user.as_sanitized_dict()}
+
+            except Exception as inner_e:
+                app.logger.exception(f"Error validating session user: {inner_e}")
+                return {'success': False, 'error': str(inner_e)}
+
         except Exception as e:
-            # Try to parse firebase error codes from the exception message
-            msg = str(e)
-            error_type = 'UNKNOWN'
-            if 'EMAIL_EXISTS' in msg or 'email exists' in msg.lower():
-                error_type = 'EMAIL_EXISTS'
-                friendly = 'Email already registered'
-            elif 'INVALID_EMAIL' in msg or 'invalid email' in msg.lower():
-                error_type = 'INVALID_EMAIL'
-                friendly = 'Provided email is invalid'
-            elif 'WEAK_PASSWORD' in msg or 'password' in msg.lower():
-                error_type = 'WEAK_PASSWORD'
-                friendly = 'Password does not meet strength requirements'
-            else:
-                friendly = msg
-
-            return {'success': False, 'error': friendly, 'error_type': error_type}
+            app.logger.exception(f"Unexpected error in verify_session: {e}")
+            return {'success': False, 'error': str(e)}

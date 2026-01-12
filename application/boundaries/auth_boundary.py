@@ -3,10 +3,9 @@ import secrets
 import bcrypt
 from application.controls.auth_control import AuthControl, authenticate_user
 from application.controls.attendance_control import AttendanceControl
-from application.entities.institution import Institution
-from application.entities.student import Student
-from application.entities.lecturer import Lecturer
-from application.entities.base_entity import BaseEntity
+from application.entities2.institution import InstitutionModel
+from application.entities2.user import UserModel
+from database.base import get_session
 from application.boundaries.dev_actions import register_action
 
 auth_bp = Blueprint('auth', __name__)
@@ -23,7 +22,7 @@ def auth():
     
     # Get user from session
     user = auth_result.get('user', {})
-    user_id = user.get('firebase_uid') or session.get('user_id')
+    user_id = session.get('user_id')
     
     # Get attendance summary
     attendance_summary = {}
@@ -95,8 +94,15 @@ def login():
 def register():
     """User registration (creates Firebase user + local profile)."""
     # load active institutions for the registration form (for student/lecturer selection)
-    institutions_raw = BaseEntity.execute_query(current_app, "SELECT institution_id, name FROM Institutions WHERE is_active = TRUE", fetch_all=True)
-    institutions = [{'institution_id': r[0], 'name': r[1]} for r in institutions_raw] if institutions_raw else []
+    institutions = []
+    try:
+        with get_session() as session:
+            inst_model = InstitutionModel(session)
+            institutions_objs = inst_model.get_all()
+            institutions = [{'institution_id': inst.institution_id, 'name': inst.name} for inst in institutions_objs if getattr(inst, 'is_active', True)]
+    except Exception as e:
+        current_app.logger.warning(f"Could not load institutions: {e}")
+        institutions = []
 
     if request.method == 'POST':
         name = request.form.get('name')
@@ -144,31 +150,20 @@ def register():
                 return render_template('auth/register.html', institutions=institutions)
 
             if reg_res.get('success'):
-                # Optionally create a local DB record for student/lecturer
+                # Optionally create a local DB record for student/lecturer using new User model
                 try:
                     pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-                    if role == 'student':
-                        model = Student.get_model()
-                        # Generate a student_code (simple fallback)
-                        student_code = f"S{secrets.token_hex(3)}"
-                        student = BaseEntity.create(current_app, model, {
-                            'institution_id': int(institution_id) if institution_id else None,
-                            'student_code': student_code,
-                            'email': email,
-                            'password_hash': pw_hash,
-                            'full_name': name
-                        })
-                    elif role == 'lecturer':
-                        model = Lecturer.get_model()
-                        lecturer = BaseEntity.create(current_app, model, {
-                            'institution_id': int(institution_id) if institution_id else None,
-                            'email': email,
-                            'password_hash': pw_hash,
-                            'full_name': name
-                        })
+                    with get_session() as session:
+                        user_model = UserModel(session)
+                        user_model.create(
+                            institution_id=int(institution_id) if institution_id else None,
+                            role=role if role in ['student', 'lecturer'] else 'student',
+                            email=email,
+                            password_hash=pw_hash,
+                            name=name
+                        )
                 except Exception as e:
-                    current_app.logger.warning(f"Local {role} creation failed: {e}")
-
+                    current_app.logger.warning(f"Local user creation failed: {e}")
                 flash('Registration successful. Please log in.', 'success')
                 return redirect(url_for('auth.login'))
             else:

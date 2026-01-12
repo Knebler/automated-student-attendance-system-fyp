@@ -12,6 +12,7 @@ institution_bp = Blueprint('institution', __name__)
 def institution_dashboard():
     """Institution admin dashboard (admins / platform managers)"""
     institution_id = 1
+    print("entering institution dashboard")
 
     # Get institution statistics
     stats_result = InstitutionControl.get_institution_stats(current_app, institution_id)

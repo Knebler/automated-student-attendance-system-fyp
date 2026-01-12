@@ -26,8 +26,9 @@ def requires_roles(roles):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
+            print("Checking roles...")
             # Check if user is logged in
-            if 'user' not in session or session.get('user')['role'] not in roles:
+            if 'role' not in session or session.get('role') not in roles:
                 flash('Access denied.', 'danger')
                 return redirect(url_for('auth.login'))
             return f(*args, **kwargs)

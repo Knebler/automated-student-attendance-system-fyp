@@ -64,10 +64,11 @@ def login():
 
         if auth_result.get('success'):
             # store minimal session state
-            session['user'] = auth_result.get('user')
-            role = auth_result.get('user')['role']
+            user = auth_result.get('user')
+            session['user_id'] = user['user_id']
+            session['role'] = user['role']
+            role = user['role']
             flash('Logged in successfully', 'success')
-
             # Redirect users to the role-specific dashboard
             # platform_manager -> platform dashboard
             if role == 'platform_manager':

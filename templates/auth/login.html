@@ -20,15 +20,6 @@
                         <label for="password" class="form-label">Password</label>
                         <input type="password" class="form-control" id="password" name="password" required>
                     </div>
-                    <div class="mb-3">
-                        <label for="role" class="form-label">Role</label>
-                        <select id="role" name="role" class="form-select">
-                            <option value="student" selected>Student</option>
-                            <option value="lecturer">Lecturer</option>
-                            <option value="institution_admin">Admin</option>
-                            <option value="platform_manager">Platform Manager</option>
-                        </select>
-                    </div>
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary">Login</button>
                         <a href="{{ url_for('auth.register') }}" class="btn btn-link">Don't have an account? Register</a>

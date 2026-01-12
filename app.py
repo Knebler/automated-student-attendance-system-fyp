@@ -161,24 +161,8 @@ def create_flask_app(config_name='default'):
     csrf = CSRFProtect()
     csrf.init_app(app)
     
-    # Configure Firebase
-    firebase_config = {
-        "apiKey": app.config['FIREBASE_API_KEY'],
-        "authDomain": app.config['FIREBASE_AUTH_DOMAIN'],
-        "projectId": app.config['FIREBASE_PROJECT_ID'],
-        "storageBucket": app.config['FIREBASE_STORAGE_BUCKET'],
-        "messagingSenderId": app.config['FIREBASE_MESSAGING_SENDER_ID'],
-        "appId": app.config['FIREBASE_APP_ID'],
-        "databaseURL": app.config.get('FIREBASE_DATABASE_URL', '')
-    }
-    
-    firebase = pyrebase.initialize_app(firebase_config)
-    auth = firebase.auth()
-    
     # Store extensions in app config
     app.config['db'] = db  # SQLAlchemy instance
-    app.config['firebase_auth'] = auth
-    app.config['firebase_app'] = firebase
 
     # Add facial recognition config
     app.config['FACIAL_DATA_DIR'] = './AttendanceAI/data/'

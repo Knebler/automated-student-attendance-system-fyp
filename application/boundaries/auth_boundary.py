@@ -23,7 +23,7 @@ def auth():
     
     # Get user from session
     user = auth_result.get('user', {})
-    user_id = user.get('firebase_uid') or session.get('user_id')
+    user_id = user.get('user_id')  # Changed from firebase_uid
     
     # Get attendance summary
     attendance_summary = {}
@@ -64,24 +64,26 @@ def login():
             return render_template('auth/login.html')
 
         if auth_result.get('success'):
-            # store minimal session state
-            session['user_id'] = auth_result.get('firebase_uid')
-            session['id_token'] = auth_result.get('id_token')
+            # store session state
+            session['user_id'] = auth_result.get('user_id')
+            session['token'] = auth_result.get('token')
             resolved_type = auth_result.get('user_type', user_type)
             session['user_type'] = resolved_type
-            session['user'] = auth_result.get('user')
+            
+            # Remove password_hash from session storage
+            user_data = auth_result.get('user', {}).copy()
+            user_data.pop('password_hash', None)
+            session['user'] = user_data
+            
             flash('Logged in successfully', 'success')
 
             # Redirect users to the role-specific dashboard
-            # platform_manager -> platform dashboard
             if resolved_type in ['platform_manager', 'platform', 'platmanager']:
                 return redirect(url_for('platform.platform_dashboard'))
 
-            # institution_admin -> institution admin dashboard
             if resolved_type in ['institution_admin', 'admin']:
                 return redirect(url_for('institution.institution_dashboard'))
 
-            # lecturer -> lecturer dashboard (separate scope)
             if resolved_type in ['lecturer', 'teacher']:
                 return redirect(url_for('institution_lecturer.lecturer_dashboard'))
 
@@ -95,8 +97,8 @@ def login():
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
-    """User registration (creates Firebase user + local profile)."""
-    # load active institutions for the registration form (for student/lecturer selection)
+    """User registration (creates local profile only)."""
+    # load active institutions for the registration form
     institutions_raw = BaseEntity.execute_query(current_app, "SELECT institution_id, name FROM Institutions WHERE is_active = TRUE", fetch_all=True)
     institutions = [{'institution_id': r[0], 'name': r[1]} for r in institutions_raw] if institutions_raw else []
 
@@ -109,12 +111,10 @@ def register():
         # Institution Admins: create a pending registration request
         if role == 'institution_admin':
             institution_name = request.form.get('institution_name')
-            # require institution name
             if not institution_name:
                 flash('Educational Institute name is required for Institution Admin registration.', 'warning')
                 return render_template('auth/register.html', institutions=institutions)
 
-            # Build payload for institution registration (creates a pending/unregistered entry)
             institution_data = {
                 'email': email,
                 'full_name': name,
@@ -133,12 +133,14 @@ def register():
                 flash(result.get('error') or 'Failed to submit registration request', 'danger')
 
         else:
-            # For other roles, create a Firebase user account (registration)
+            # For other roles, validate registration
             institution_id = request.form.get('institution_id') or None
             if role in ['student', 'lecturer'] and not institution_id:
                 flash('Please select an institution for your account', 'warning')
                 return render_template('auth/register.html', institutions=institutions)
+            
             try:
+                # Validate registration
                 reg_res = AuthControl.register_user(current_app, email, password, name=name, role=role)
             except Exception as e:
                 current_app.logger.exception('Registration exception')
@@ -146,9 +148,9 @@ def register():
                 return render_template('auth/register.html', institutions=institutions)
 
             if reg_res.get('success'):
-                # Optionally create a local DB record for student/lecturer
                 try:
-                    pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                    # Use the hashed password from registration validation
+                    pw_hash = reg_res.get('password_hash')
                     if role == 'student':
                         model = Student.get_model()
                         # Generate a student_code (simple fallback)
@@ -195,7 +197,7 @@ def attendance_history():
         flash('Please login to view attendance history', 'warning')
         return redirect(url_for('auth.login'))
     
-    user_id = auth_result['user']['firebase_uid']
+    user_id = auth_result['user'].get('user_id')  # Changed from firebase_uid
     attendance_result = AttendanceControl.get_user_attendance_summary(current_app, user_id, days=90)
     
     if attendance_result['success']:
@@ -219,7 +221,7 @@ try:
             {'name': 'name', 'label': 'Full name', 'placeholder': 'Optional display name'},
             {'name': 'role', 'label': 'Role', 'placeholder': 'student | lecturer | institution_admin | platform_manager'}
         ],
-        description='Create a Firebase user and a local user record (dev use only)'
+        description='Create a local user record (dev use only)'
     )
 
     register_action(
@@ -230,9 +232,7 @@ try:
             {'name': 'password', 'label': 'Password', 'placeholder': 'password'},
             {'name': 'user_type', 'label': 'User type', 'placeholder': 'student | lecturer | institution_admin | platform_manager'}
         ],
-        description='Authenticate a user via Firebase (dev only)'
+        description='Authenticate a user (dev only)'
     )
 except Exception:
     pass
-
-

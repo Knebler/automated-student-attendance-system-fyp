@@ -22,7 +22,7 @@
                         {% endif %}
                         <p><span>Renewal</span>{{ institution.renewal.strftime('%d %b %Y') }}</p>
                     </div>
-                    <a class="btn-custom btn-outline">Manage Institution</a>
+                    <a class="btn-custom btn-outline" a href="{{ url_for('institution.institution_profile') }}">Manage Institution</a>
                 </div>
             </div>
 

@@ -223,7 +223,7 @@ def module_details(course_id):
 @requires_roles('admin')
 def institution_profile():
     """Render the institution profile page for admins"""
-    return render_template('institution/admin/institution_admin_institute_profile.html',)
+    return render_template('institution/admin/institution_admin_institution_profile.html',)
 
 
 @institution_bp.route('/import_data')

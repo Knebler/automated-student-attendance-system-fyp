@@ -29,19 +29,6 @@ class Config:
     # Application Settings
     UPLOAD_FOLDER = 'static/uploads'
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
-    
-    # Bcrypt Configuration (for password hashing)
-    bcrypt_rounds = os.getenv('BCRYPT_LOG_ROUNDS', '12')
-    bcrypt_rounds = bcrypt_rounds.split('#')[0].strip() if '#' in bcrypt_rounds else bcrypt_rounds.strip()
-    BCRYPT_LOG_ROUNDS = int(bcrypt_rounds)
-    
-    # Session Configuration
-    SESSION_TYPE = os.getenv('SESSION_TYPE', 'filesystem')
-    SESSION_PERMANENT = os.getenv('SESSION_PERMANENT', 'False').lower() == 'true'
-    
-    session_lifetime = os.getenv('PERMANENT_SESSION_LIFETIME', '3600')
-    session_lifetime = session_lifetime.split('#')[0].strip() if '#' in session_lifetime else session_lifetime.strip()
-    PERMANENT_SESSION_LIFETIME = int(session_lifetime)  # 1 hour
 
 class DevelopmentConfig(Config):
     DEBUG = True

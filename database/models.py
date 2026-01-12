@@ -1,9 +1,9 @@
-from datetime import datetime
 from sqlalchemy import (
     Column, Integer, String, Boolean, DateTime, Float, Text,
     Enum, ForeignKey, UniqueConstraint, JSON, Index
 )
 from sqlalchemy.orm import relationship, declarative_base
+from sqlalchemy.sql import text
 
 Base = declarative_base()
 
@@ -31,8 +31,8 @@ class SubscriptionPlan(Base):
     billing_cycle = Column(BillingCycleEnum, nullable=False)
     max_users = Column(Integer, nullable=False)
     features = Column(JSON)
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.now)
+    is_active = Column(Boolean, server_default="1")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
 
 
 class Subscription(Base):
@@ -43,9 +43,9 @@ class Subscription(Base):
 
     start_date = Column(DateTime, nullable=False)
     end_date = Column(DateTime)
-    is_active = Column(Boolean, default=True)
+    is_active = Column(Boolean, server_default="1")
     stripe_subscription_id = Column(String(255), unique=True)
-    created_at = Column(DateTime, default=datetime.now)
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
 
     plan = relationship("SubscriptionPlan")
     institution = relationship("Institution", back_populates="subscription")
@@ -85,10 +85,15 @@ class User(Base):
     phone_number = Column(String(30))
     email = Column(String(150), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
-    is_active = Column(Boolean, default=True)
-    date_joined = Column(DateTime, default=datetime.now)
+    is_active = Column(Boolean, server_default="1")
+    date_joined = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
 
     institution = relationship("Institution", back_populates="users")
+
+    def as_sanitized_dict(self):
+        data = self.__dict__.copy()
+        data.pop("password_hash")
+        return data
 
 # =====================
 # ANNOUNCEMENTS
@@ -102,7 +107,7 @@ class Announcement(Base):
 
     title = Column(String(200), nullable=False)
     content = Column(Text, nullable=False)
-    date_posted = Column(DateTime, default=datetime.now)
+    date_posted = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
 
 # =====================
 # NOTIFICATIONS
@@ -112,10 +117,10 @@ class Notification(Base):
 
     notification_id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
-    created_at = Column(DateTime, default=datetime.now)
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
 
     content = Column(Text, nullable=False)
-    acknowledged = Column(Boolean, default=False)
+    acknowledged = Column(Boolean, server_default="0")
 
 # =====================
 # COURSES
@@ -132,7 +137,7 @@ class Course(Base):
     end_date = Column(DateTime)
     description = Column(Text)
     credits = Column(Integer)
-    is_active = Column(Boolean, default=True)
+    is_active = Column(Boolean, server_default="1")
 
     institution = relationship("Institution", back_populates="courses")
 
@@ -174,7 +179,7 @@ class Class(Base):
     venue_id = Column(Integer, ForeignKey("venues.venue_id"), nullable=False)
     lecturer_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
 
-    status = Column(ClassStatusEnum, default="scheduled")
+    status = Column(ClassStatusEnum, server_default="scheduled")
     start_time = Column(DateTime, nullable=False)
     end_time = Column(DateTime, nullable=False)
 
@@ -196,7 +201,7 @@ class AttendanceRecord(Base):
     lecturer_id = Column(Integer, ForeignKey("users.user_id"))
     captured_image_id = Column(Integer)
     notes = Column(Text)
-    recorded_at = Column(DateTime, default=datetime.now)
+    recorded_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
 
 # =====================
 # REPORT SCHEDULE

@@ -407,24 +407,8 @@ class AuthControl:
             
             institution_id = ins_result.get('institution_id')
             
-            # 4. Create Firebase user (if available) - REMOVED User.create() since we removed user.py
+            # 4. Create Institution Admin password
             used_password = admin_password or secrets.token_urlsafe(10)
-            created_firebase_uid = None
-            
-            firebase_auth = app.config.get('firebase_auth')
-            if firebase_auth:
-                try:
-                    reg_res = AuthControl.register_user(
-                        app, 
-                        unreg_user.email, 
-                        used_password, 
-                        name=unreg_user.full_name, 
-                        role='institution_admin'
-                    )
-                    if reg_res.get('success'):
-                        created_firebase_uid = reg_res.get('firebase_uid')
-                except Exception as e:
-                    app.logger.warning(f"Firebase user creation failed: {e}")
             
             # 5. Create Institution Admin
             pw_hash = bcrypt.hashpw(used_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')

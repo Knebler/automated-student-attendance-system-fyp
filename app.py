@@ -5,7 +5,6 @@ import os
 import ssl
 from urllib.parse import quote_plus
 from sqlalchemy import create_engine, text
-import jwt
 from datetime import timedelta
 
 from database.models import Base

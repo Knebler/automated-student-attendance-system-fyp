@@ -9,16 +9,6 @@ class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'your-secret-key-here')
     DEBUG = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
     
-    # JWT Configuration (for authentication)
-    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', SECRET_KEY)  # Can be different from Flask secret
-    JWT_ALGORITHM = os.getenv('JWT_ALGORITHM', 'HS256')
-    
-    # Handle JWT expiration with proper integer conversion
-    jwt_expires = os.getenv('JWT_ACCESS_TOKEN_EXPIRES', '86400')
-    # Strip any comments or whitespace
-    jwt_expires = jwt_expires.split('#')[0].strip() if '#' in jwt_expires else jwt_expires.strip()
-    JWT_ACCESS_TOKEN_EXPIRES = int(jwt_expires)  # 24 hours in seconds
-    
     # MySQL Configuration for SQLAlchemy
     MYSQL_HOST = os.getenv('DB_HOST', 'attendai-fyp-project.mysql.database.azure.com')
     MYSQL_USER = os.getenv('DB_USER', 'attendai_superuser')

@@ -14,11 +14,15 @@
                 <div class="card-header-custom">Institution</div>
                 <div class="card-body-custom">
                     <div class="profile-info">
-                        <p><span>Name</span>{{ institution_name }}</p>
+                        <p><span>Name</span>{{ institution.name }}</p>
+                        {% if institution.is_active %}
                         <p><span>Status</span><span class="badge success">Active</span></p>
-                        <p><span>Renewal</span>XX / XX / XXXX</p>
+                        {% else %}
+                        <p><span>Status</span><span class="badge danger">Inactive</span></p>
+                        {% endif %}
+                        <p><span>Renewal</span>{{ institution.renewal.strftime('%d %b %Y') }}</p>
                     </div>
-                    <a class="btn-custom btn-outline">Manage Institution</a>
+                    <a class="btn-custom btn-outline" a href="{{ url_for('institution.institution_profile') }}">Manage Institution</a>
                 </div>
             </div>
 
@@ -41,14 +45,14 @@
                 <div class="stats-main">
                     <div class="stat-big">
                         <span>Total Users</span>
-                        <strong>{{ user_count }}</strong>
+                        <strong>{{ overview.user_count }}</strong>
                     </div>
                 </div>
 
                 <div class="stats-row">
-                    <div class="stat"><span>Admins</span>{{ admin_count }}</div>
-                    <div class="stat"><span>Lecturers</span>{{ lecturer_count }}</div>
-                    <div class="stat"><span>Students</span>{{ student_count }}</div>
+                    <div class="stat"><span>Admins</span>{{ overview.admin_count }}</div>
+                    <div class="stat"><span>Lecturers</span>{{ overview.lecturer_count }}</div>
+                    <div class="stat"><span>Students</span>{{ overview.student_count }}</div>
                 </div>
             </div>
         </div>
@@ -58,12 +62,12 @@
             <div class="card-header-custom">Classes Today</div>
             <div class="card-body-custom">
 
-                {% for _ in range(3) %}
+                {% for c in classes %}
                 <div class="class-item">
                     <div class="class-info">
-                        <p><strong>Module:</strong> XXXXX</p>
-                        <p><strong>Venue:</strong> XXXXX</p>
-                        <p><strong>Lecturer:</strong> XXXXX</p>
+                        <p><strong>Module: </strong>{{c.module}}</p>
+                        <p><strong>Venue: </strong>{{c.venue}}</p>
+                        <p><strong>Lecturer: </strong>{{c.lecturer}}</p>
                     </div>
                     <button class="btn-pill">View</button>
                 </div>

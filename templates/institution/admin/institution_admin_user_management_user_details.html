@@ -96,7 +96,7 @@
                                 Joined Year:
                                 {% endif %}
                             </span>
-                            <span class="info-value">{{ user_details.date_joined }}</span>
+                            <span class="info-value">{{ user_details.date_joined.strftime('%d %b %Y') }}</span>
                         </div>
                     </div>
                 </div>
@@ -119,14 +119,14 @@
                         <tbody>
                             {% for course in user_details.courses %}
                             <tr>
-                                <td>{{ course.course_code }}</td>
-                                <td>{{ course.course_name }}</td>
+                                <td>{{ course.code }}</td>
+                                <td>{{ course.name }}</td>
                                 <td>{{ course.start_date.strftime('%d %b %Y') }}</td>
                                 <td>{{ course.end_date.strftime('%d %b %Y') }}</td>
                                 <td>
                                     <div class="table-actions">
                                         <button class="btn-custom btn-view">View</button>
-                                        <form action="/institution/manage_users/{{ user_details.id }}/remove_course" method='POST'>
+                                        <form action="/institution/manage_users/{{ user_details.user_id }}/remove_course" method='POST'>
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <input type="hidden" name="redirect" value="{{ redirect_path }}">
                                             <input type="hidden" name="user_role" value="{{ user_details.role }}">
@@ -142,7 +142,7 @@
                                     <select class="select-courses" id="courses">
                                         <option value="">Select a class</option>
                                         {% for course in user_details.possible_courses %}
-                                        <option value="{{ course.course_code }}">{{ course.course_code }}</option>
+                                        <option value="{{ course.code }}">{{ course.code }}</option>
                                         {% endfor %}
                                     </select>
                                 </td>
@@ -151,7 +151,7 @@
                                 <td id="courses-end"></td>
                                 <td>
                                     <div class="table-actions">
-                                        <form action="/institution/manage_users/{{ user_details.id }}/add_course" method='POST'>
+                                        <form action="/institution/manage_users/{{ user_details.user_id }}/add_course" method='POST'>
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <input type="hidden" name="redirect" value="{{ redirect_path }}">
                                             <input type="hidden" name="user_role" value="{{ user_details.role }}">
@@ -175,6 +175,34 @@
         </div>
     </div>
 </div>
+
+<script id="course-data" type="application/json">
+    {{ user_details.possible_courses|tojson }}
+</script>
+
+<script>
+const courseMap = JSON.parse(document.getElementById('course-data').textContent);
+const options = { day: '2-digit', month: 'short', year: 'numeric' };
+function formatDate(date) {
+    return new Date(date).toLocaleDateString('en-GB', options);
+}
+function updateSelectedCourse(course_id, course_name, start_date_str, end_date_str) {
+    document.getElementById('course-id').value = course_id;
+    document.getElementById('courses-name').innerText = course_name;
+    document.getElementById('courses-start').innerText = start_date_str;
+    document.getElementById('courses-end').innerText = end_date_str;
+}
+document.getElementById('courses').addEventListener('change', function() {
+    const courseCode = this.value;
+    const selectedCourse = courseMap.filter(course => course.code == courseCode);
+    if (selectedCourse.length == 0) {
+        updateSelectedCourse('', '', '', '');
+    } else {
+        const course = selectedCourse[0];
+        updateSelectedCourse(course.course_id, course.name, formatDate(course.start_date), formatDate(course.end_date));
+    }
+});
+</script>
 
 
 <style>

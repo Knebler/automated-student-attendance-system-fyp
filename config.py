@@ -6,7 +6,7 @@ load_dotenv()
 
 class Config:
     # Flask Configuration
-    SECRET_KEY = os.getenv('SECRET_KEY', 'your-secret-key-change-this-in-production')
+    SECRET_KEY = os.getenv('SECRET_KEY', 'your-secret-key-here')
     DEBUG = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
     
     # JWT Configuration (for authentication)

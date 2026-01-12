@@ -6,8 +6,13 @@ load_dotenv()
 
 class Config:
     # Flask Configuration
-    SECRET_KEY = os.getenv('SECRET_KEY', 'your-secret-key-here')
+    SECRET_KEY = os.getenv('SECRET_KEY', 'your-secret-key-change-this-in-production')
     DEBUG = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
+    
+    # JWT Configuration (for authentication)
+    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', SECRET_KEY)  # Can be different from Flask secret
+    JWT_ALGORITHM = os.getenv('JWT_ALGORITHM', 'HS256')
+    JWT_ACCESS_TOKEN_EXPIRES = int(os.getenv('JWT_ACCESS_TOKEN_EXPIRES', '86400'))  # 24 hours in seconds
     
     # MySQL Configuration for SQLAlchemy
     MYSQL_HOST = os.getenv('DB_HOST', 'attendai-fyp-project.mysql.database.azure.com')
@@ -26,18 +31,17 @@ class Config:
     SQLALCHEMY_POOL_RECYCLE = int(os.getenv('DB_POOL_RECYCLE', '300'))
     SQLALCHEMY_POOL_TIMEOUT = int(os.getenv('DB_POOL_TIMEOUT', '30'))
     
-    # Firebase Configuration
-    FIREBASE_API_KEY = os.getenv('FIREBASE_API_KEY')
-    FIREBASE_AUTH_DOMAIN = os.getenv('FIREBASE_AUTH_DOMAIN')
-    FIREBASE_PROJECT_ID = os.getenv('FIREBASE_PROJECT_ID')
-    FIREBASE_STORAGE_BUCKET = os.getenv('FIREBASE_STORAGE_BUCKET')
-    FIREBASE_MESSAGING_SENDER_ID = os.getenv('FIREBASE_MESSAGING_SENDER_ID')
-    FIREBASE_APP_ID = os.getenv('FIREBASE_APP_ID')
-    FIREBASE_DATABASE_URL = os.getenv('FIREBASE_DATABASE_URL', '')
-    
     # Application Settings
     UPLOAD_FOLDER = 'static/uploads'
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
+    
+    # Bcrypt Configuration (for password hashing)
+    BCRYPT_LOG_ROUNDS = int(os.getenv('BCRYPT_LOG_ROUNDS', '12'))
+    
+    # Session Configuration
+    SESSION_TYPE = os.getenv('SESSION_TYPE', 'filesystem')
+    SESSION_PERMANENT = os.getenv('SESSION_PERMANENT', 'False').lower() == 'true'
+    PERMANENT_SESSION_LIFETIME = int(os.getenv('PERMANENT_SESSION_LIFETIME', '3600'))  # 1 hour
 
 class DevelopmentConfig(Config):
     DEBUG = True
@@ -46,11 +50,14 @@ class DevelopmentConfig(Config):
     # MYSQL_USER = 'root'
     # MYSQL_PASSWORD = ''
     # MYSQL_SSL_ENABLED = False
+    # JWT_ACCESS_TOKEN_EXPIRES = 86400  # 24 hours for dev
 
 class ProductionConfig(Config):
     DEBUG = False
     # Production MUST use SSL
     MYSQL_SSL_ENABLED = True
+    # Shorter token expiration for production security
+    JWT_ACCESS_TOKEN_EXPIRES = 28800  # 8 hours
 
 config_by_name = {
     'dev': DevelopmentConfig,

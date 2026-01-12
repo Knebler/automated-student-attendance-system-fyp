@@ -1,5 +1,4 @@
-# auth_control.py (updated with ORM)
-from application.entities2.user import UserModel
+# auth_control.py (updated without Firebase)
 from application.entities.base_entity import BaseEntity
 from application.entities.platform_manager import PlatformManager
 from application.entities.student import Student
@@ -9,70 +8,81 @@ from application.entities.unregistered_user import UnregisteredUser
 from application.entities.subscription import Subscription
 from application.controls.institution_control import InstitutionControl
 from datetime import datetime, timedelta
+import traceback
 import bcrypt
 import secrets
-from functools import wraps
-from flask import flash, redirect, url_for, session
-
-from database.base import get_session
-
-def requires_roles(roles):
-    """
-    Decorator to require specific role from session
-    Usage: @requires_roles(['admin', 'student'])
-        or @requires_roles('admin')
-    """
-    def decorator(f):
-        @wraps(f)
-        def decorated_function(*args, **kwargs):
-            print("Checking roles...")
-            # Check if user is logged in
-            if 'role' not in session or session.get('role') not in roles:
-                flash('Access denied.', 'danger')
-                return redirect(url_for('auth.login'))
-            return f(*args, **kwargs)
-        return decorated_function
-    return decorator
-
-def authenticate_user(email, password):
-    """Authenticate user based on their role/type using ORM"""
-    if (email, password) == ("admin@attendanceplatform.com", "password"):
-        return {
-            'success': True,
-            'user': { 'user_id': 0, 'role': 'platform_manager' },
-        } # Currently shall hardcode the password but idea is only 1 platform manager account
-
-    with get_session() as session:
-        user_model = UserModel(session)
-        user = user_model.get_by_email(email)
-        if bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
-            return {
-                'success': True,
-                'user': user.as_sanitized_dict(),
-            }
-    return {'success': False, 'error': 'Invalid email or password'}
+import jwt  # Add this for JWT token support
+from datetime import datetime, timedelta
 
 class AuthControl:
     """Control class for authentication business logic with multi-role support"""
     
     @staticmethod
-    def authenticate_user(email, password):
-        """Authenticate user based on their role/type using ORM"""
-        with get_session() as session:
-            user_model = UserModel(session)
-            user = user_model.get_by_email(email)
-            if bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
-                return {
-                    'success': True,
-                    'user_id': user.user_id,
-                    'role': user.role,
-                }
-        return {'success': False, 'error': 'Invalid email or password'}
-        
+    def generate_token(user_id, email, user_type, app):
+        """Generate JWT token for session"""
+        payload = {
+            'user_id': user_id,
+            'email': email,
+            'user_type': user_type,
+            'exp': datetime.utcnow() + timedelta(hours=24)
+        }
+        secret_key = app.config.get('SECRET_KEY', 'your-secret-key-change-this')
+        return jwt.encode(payload, secret_key, algorithm='HS256')
+    
     @staticmethod
-    def get_user_by_email(app, email):
-        return AuthControl.get_user_by_email_and_type(app, email, 'student')
-
+    def verify_password(password, password_hash):
+        """Verify password against bcrypt hash"""
+        return bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8'))
+    
+    @staticmethod
+    def authenticate_user(app, email, password, user_type='student'):
+        """Authenticate user based on their role/type using ORM"""
+        try:
+            # Get user info using ORM
+            user_info = AuthControl.get_user_by_email_and_type(app, email, user_type)
+            
+            if not user_info:
+                return {
+                    'success': False,
+                    'error': f'{user_type.capitalize()} not found in system',
+                    'error_type': 'USER_NOT_FOUND'
+                }
+            
+            # Verify password (password_hash should be in user_info)
+            password_hash = user_info.get('password_hash')
+            if not password_hash or not AuthControl.verify_password(password, password_hash):
+                return {
+                    'success': False,
+                    'error': 'Incorrect password. Please try again.',
+                    'error_type': 'INVALID_CREDENTIALS'
+                }
+            
+            # Generate JWT token
+            token = AuthControl.generate_token(
+                user_id=user_info.get('user_id'),
+                email=email,
+                user_type=user_type,
+                app=app
+            )
+            
+            return {
+                'success': True,
+                'user': user_info,
+                'user_type': user_type,
+                'token': token,
+                'user_id': user_info.get('user_id')
+            }
+            
+        except Exception as e:
+            error_message = str(e)
+            app.logger.error(f"Authentication error: {error_message}")
+            
+            return {
+                'success': False,
+                'error': 'Authentication failed. Please try again.',
+                'error_type': 'UNKNOWN'
+            }
+    
     @staticmethod
     def get_user_by_email_and_type(app, email, user_type):
         """Get user information based on type using SQLAlchemy ORM"""
@@ -109,7 +119,8 @@ class AuthControl:
             user_dict = {
                 'email': result.email,
                 'full_name': result.full_name,
-                'user_type': user_type if user_type != 'teacher' else 'lecturer'
+                'user_type': user_type if user_type != 'teacher' else 'lecturer',
+                'password_hash': result.password_hash  # Keep this for verification
             }
             
             # Add type-specific fields
@@ -145,6 +156,123 @@ class AuthControl:
         except Exception as e:
             app.logger.error(f"Error getting user by email and type: {e}")
             return None
+    
+    @staticmethod
+    def verify_token(app, token):
+        """Verify JWT token"""
+        try:
+            secret_key = app.config.get('SECRET_KEY', 'your-secret-key-change-this')
+            payload = jwt.decode(token, secret_key, algorithms=['HS256'])
+            return {'success': True, 'payload': payload}
+        except jwt.ExpiredSignatureError:
+            return {'success': False, 'error': 'Token expired'}
+        except jwt.InvalidTokenError:
+            return {'success': False, 'error': 'Invalid token'}
+    
+    @staticmethod
+    def verify_session(app, session_obj):
+        """Verify an existing session and return user info."""
+        try:
+            token = session_obj.get('token')
+            user_type = session_obj.get('user_type')
+            
+            if not token or not user_type:
+                # Try dev mode if no session
+                if app.config.get('DEBUG', False):
+                    try:
+                        # Use ORM to get platform manager
+                        pm_model = PlatformManager.get_model()
+                        session = BaseEntity.get_db_session(app)
+                        platform_manager = session.query(pm_model).first()
+                        
+                        if platform_manager:
+                            return {
+                                'success': True,
+                                'user': {
+                                    'user_type': 'platform_manager',
+                                    'user_id': platform_manager.platform_mgr_id,
+                                    'email': platform_manager.email,
+                                    'full_name': platform_manager.full_name
+                                }
+                            }
+
+                        # No platform manager present - return a generic dev user
+                        return {
+                            'success': True,
+                            'user': {
+                                'user_type': 'platform_manager',
+                                'user_id': 0,
+                                'email': 'dev@local'
+                            }
+                        }
+                    except Exception:
+                        # if anything goes wrong, be permissive in dev mode
+                        return {'success': True, 'user': {'user_type': 'platform_manager', 'user_id': 0}}
+                else:
+                    return {'success': False, 'error': 'No session present'}
+            
+            # Verify token
+            token_result = AuthControl.verify_token(app, token)
+            if not token_result['success']:
+                return {'success': False, 'error': token_result.get('error')}
+            
+            # Get user from session or database
+            user = session_obj.get('user')
+            if not user:
+                # Fallback: get user from database using token payload
+                payload = token_result['payload']
+                user_info = AuthControl.get_user_by_email_and_type(
+                    app, 
+                    payload['email'], 
+                    payload['user_type']
+                )
+                if user_info:
+                    # Remove password_hash from session
+                    user_info.pop('password_hash', None)
+                    return {'success': True, 'user': user_info}
+                else:
+                    return {'success': False, 'error': 'User not found'}
+            
+            return {'success': True, 'user': user}
+
+        except Exception as e:
+            # Any error -> mark as not authenticated
+            return {'success': False, 'error': str(e)}
+    
+    @staticmethod
+    def register_user(app, email, password, name=None, role='student'):
+        """Register a new user (creates local record only)"""
+        try:
+            # Check if user already exists
+            existing_user = AuthControl.get_user_by_email_and_type(app, email, role)
+            if existing_user:
+                return {
+                    'success': False,
+                    'error': 'Email already registered',
+                    'error_type': 'EMAIL_EXISTS'
+                }
+            
+            # Hash password
+            pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            
+            # Generate token for immediate login
+            # Note: user_id will be set after creation
+            temp_user_id = 0  # Will be updated
+            
+            # The actual user creation happens in auth_boundary.py
+            # This function just validates and returns success
+            return {
+                'success': True,
+                'message': 'User registration validated',
+                'password_hash': pw_hash
+            }
+            
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e),
+                'error_type': 'REGISTRATION_ERROR'
+            }
     
     @staticmethod
     def register_institution(app, institution_data):
@@ -285,98 +413,3 @@ class AuthControl:
                 'success': False,
                 'error': str(e)
             }
-        
-    @staticmethod
-    def verify_session(app, session_obj):
-        """Verify an existing session and return user info."""
-        try:
-            id_token = session_obj.get('id_token')
-            uid = session_obj.get('user_id')
-
-            # If no session present but Firebase is disabled, treat app as 'dev' mode
-            if not uid or not id_token:
-                if not app.config.get('firebase_auth'):
-                    # Try to load a platform manager from the DB for dev sessions
-                    try:
-                        # Use ORM to get platform manager
-                        pm_model = PlatformManager.get_model()
-                        session = BaseEntity.get_db_session(app)
-                        platform_manager = session.query(pm_model).first()
-                        
-                        if platform_manager:
-                            return {
-                                'success': True,
-                                'user': {
-                                    'user_type': 'platform_manager',
-                                    'user_id': platform_manager.platform_mgr_id,
-                                    'email': platform_manager.email,
-                                    'full_name': platform_manager.full_name
-                                }
-                            }
-
-                        # No platform manager present - return a generic dev user
-                        return {
-                            'success': True,
-                            'user': {
-                                'user_type': 'platform_manager',
-                                'user_id': 0,
-                                'email': 'dev@local'
-                            }
-                        }
-                    except Exception:
-                        # if anything goes wrong, be permissive in dev mode
-                        return {'success': True, 'user': {'user_type': 'platform_manager', 'user_id': 0}}
-                else:
-                    return {'success': False, 'error': 'No session present'}
-
-            # Since we removed user.py, just return session-stored user info
-            user = session_obj.get('user')
-            if not user:
-                return {'success': False, 'error': 'No user in session'}
-
-            return {'success': True, 'user': user}
-
-        except Exception as e:
-            # Any error -> mark as not authenticated
-            return {'success': False, 'error': str(e)}
-        
-    @staticmethod
-    def register_user(app, email, password, name=None, role='student'):
-        """Register a new user in Firebase.
-        
-        Note: Since we removed user.py, this only creates Firebase user now.
-        """
-        try:
-            firebase_auth = app.config.get('firebase_auth')
-            if not firebase_auth:
-                return {
-                    'success': False,
-                    'error': 'Registration disabled - Firebase not configured',
-                    'error_type': 'FIREBASE_DISABLED'
-                }
-
-            new_user = firebase_auth.create_user_with_email_and_password(email, password)
-            uid = new_user.get('localId')
-            id_token = new_user.get('idToken')
-
-            # Note: We removed User.create() since we removed user.py
-            # If you need to store user info, use the appropriate entity (Student, Lecturer, etc.)
-
-            return {'success': True, 'firebase_uid': uid, 'id_token': id_token}
-        except Exception as e:
-            # Try to parse firebase error codes from the exception message
-            msg = str(e)
-            error_type = 'UNKNOWN'
-            if 'EMAIL_EXISTS' in msg or 'email exists' in msg.lower():
-                error_type = 'EMAIL_EXISTS'
-                friendly = 'Email already registered'
-            elif 'INVALID_EMAIL' in msg or 'invalid email' in msg.lower():
-                error_type = 'INVALID_EMAIL'
-                friendly = 'Provided email is invalid'
-            elif 'WEAK_PASSWORD' in msg or 'password' in msg.lower():
-                error_type = 'WEAK_PASSWORD'
-                friendly = 'Password does not meet strength requirements'
-            else:
-                friendly = msg
-
-            return {'success': False, 'error': friendly, 'error_type': error_type}

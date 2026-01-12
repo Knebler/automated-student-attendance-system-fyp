@@ -1,6 +1,11 @@
 from flask import Blueprint, render_template, request, jsonify, session, current_app, flash, redirect, url_for
 from application.controls.auth_control import AuthControl, requires_roles
 from application.entities.base_entity import BaseEntity
+from application.entities2.institution import InstitutionModel
+from application.entities2.subscription import SubscriptionModel
+from application.entities2.user import UserModel
+
+from database.base import get_session
 
 platform_bp = Blueprint('platform', __name__)
 
@@ -18,108 +23,18 @@ def platform_dashboard():
     recent_changes = []
     recent_reports = []
 
-    try:
-        cursor = BaseEntity.get_db_connection(current_app)
+    with get_session() as session:
+        inst_model = InstitutionModel(session)
+        sub_model = SubscriptionModel(session)
+        user_model = UserModel(session)
 
-        # Counts
-        cursor.execute("SELECT COUNT(*) FROM Institutions")
-        row = cursor.fetchone()
-        total_institutions = int(row[0]) if row and row[0] is not None else 0
-
-        cursor.execute("SELECT COUNT(*) FROM Institutions WHERE is_active = TRUE")
-        row = cursor.fetchone()
-        active_institutions = int(row[0]) if row and row[0] is not None else 0
-
-        cursor.execute("SELECT COUNT(*) FROM Unregistered_Users WHERE status = 'pending'")
-        row = cursor.fetchone()
-        pending_subscriptions_count = int(row[0]) if row and row[0] is not None else 0
-
-        # Registered user counts (aggregate from known tables)
-        try:
-            cursor.execute("SELECT COUNT(*) FROM Platform_Managers")
-            row = cursor.fetchone()
-            pm_count = int(row[0]) if row and row[0] is not None else 0
-        except Exception:
-            pm_count = 0
-
-        try:
-            cursor.execute("SELECT COUNT(*) FROM Institution_Admins")
-            row = cursor.fetchone()
-            admin_count = int(row[0]) if row and row[0] is not None else 0
-        except Exception:
-            admin_count = 0
-
-        try:
-            cursor.execute("SELECT COUNT(*) FROM Lecturers")
-            row = cursor.fetchone()
-            lecturer_count = int(row[0]) if row and row[0] is not None else 0
-        except Exception:
-            lecturer_count = 0
-
-        try:
-            cursor.execute("SELECT COUNT(*) FROM Students")
-            row = cursor.fetchone()
-            student_count = int(row[0]) if row and row[0] is not None else 0
-        except Exception:
-            student_count = 0
-
-        total_registered_users = pm_count + admin_count + lecturer_count + student_count
-
-        # Pending subscriptions (top 5)
-        try:
-            cursor.execute("SELECT unreg_user_id, email, full_name, institution_name, applied_at, selected_plan_id FROM Unregistered_Users WHERE status = 'pending' ORDER BY applied_at DESC LIMIT 5")
-            pending_rows = cursor.fetchall() or []
-            pending_subscriptions = []
-            for r in pending_rows:
-                # r may be a tuple-like row
-                pending_subscriptions.append({
-                    'id': r[0],
-                    'email': r[1],
-                    'full_name': r[2],
-                    'institution_name': r[3],
-                    'request_date': r[4].strftime('%Y-%m-%d') if hasattr(r[4], 'strftime') else str(r[4]),
-                    'plan_id': r[5]
-                })
-        except Exception:
-            pending_subscriptions = []
-
-        # Recent institution changes (use created_at as proxy)
-        try:
-            cursor.execute("SELECT institution_id, name, created_at, is_active FROM Institutions ORDER BY created_at DESC LIMIT 5")
-            inst_rows = cursor.fetchall() or []
-            recent_changes = []
-            for r in inst_rows:
-                recent_changes.append({
-                    'action': f"Created institution: {r[1]}",
-                    'date': r[2].strftime('%Y-%m-%d') if hasattr(r[2], 'strftime') else str(r[2]),
-                    'link': url_for('institution.institution_profile') if 'institution' in globals() else url_for('platform.pending_registrations')
-                })
-        except Exception:
-            recent_changes = []
-
-        # Recent reports (if a Reports table exists)
-        try:
-            cursor.execute("SELECT report_id, institution_name, created_at, report_type FROM Reports ORDER BY created_at DESC LIMIT 5")
-            rep_rows = cursor.fetchall() or []
-            recent_reports = []
-            for r in rep_rows:
-                recent_reports.append({
-                    'id': r[0],
-                    'case_id': r[0],
-                    'institution': r[1],
-                    'date': r[2].strftime('%Y-%m-%d') if hasattr(r[2], 'strftime') else str(r[2]),
-                    'type': r[3]
-                })
-        except Exception:
-            recent_reports = []
-
-    except Exception:
-        # If any DB errors happen, fall back to empty/default data
-        pass
-
+        total_institutions = inst_model.count()
+        active_institutions = sub_model.count(is_active=True)
+        pending_subscriptions = sub_model.get_all()
+        pending_subscriptions_count = len(pending_subscriptions)
+        total_registered_users = user_model.count()
 
     return render_template('platmanager/platform_manager_dashboard.html',
-                               user=session['user'],
                                total_institutions=total_institutions,
                                active_institutions=active_institutions,
                                pending_subscriptions_count=pending_subscriptions_count,

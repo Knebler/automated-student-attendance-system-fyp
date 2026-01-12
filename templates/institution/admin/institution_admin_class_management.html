@@ -45,7 +45,7 @@
                             <td><span class="status inactive">INACTIVE</span></td>
                             {% endif %}
                             <td class="actions-cell">
-                                <button class="btn-custom btn-manage">Manage</button>
+                                <a href="{{ url_for('institution.module_details', course_id=course[0]) }}" class="btn-custom btn-manage">Manage</a>
                             </td>
                         </tr>
                         {% endfor %}

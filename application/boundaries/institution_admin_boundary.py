@@ -191,7 +191,6 @@ def manage_attendance():
         flash(result.get('error') or 'Failed to load sessions', 'warning')
     return render_template('institution/admin/institution_admin_attendance_management.html', sessions=sessions)
 
-
 @institution_bp.route('/manage_classes')
 @requires_roles('admin')
 def manage_classes():
@@ -204,6 +203,21 @@ def manage_classes():
         }
     return render_template('institution/admin/institution_admin_class_management.html', **context)
 
+@institution_bp.route('/manage_classes/<int:course_id>')
+@requires_roles('admin')
+def module_details(course_id):
+    """Render the module details page for admins"""
+    with get_session() as db_session:
+        class_model = ClassModel(db_session)
+        course_model = CourseModel(db_session)
+        completed = class_model.get_completed(course_id)
+        upcoming = class_model.get_upcoming(course_id)
+        context = {
+            "course": course_model.get_manage_course_info(session.get('institution_id'), course_id)[0],
+            "completed": completed,
+            "upcoming": upcoming,
+        }
+    return render_template('institution/admin/institution_admin_class_management_module_details.html', **context)
 
 @institution_bp.route('/institution_profile')
 @requires_roles('admin')

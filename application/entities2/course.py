@@ -7,16 +7,18 @@ class CourseModel(BaseEntity[Course]):
     def __init__(self, session):
         super().__init__(session, Course)
 
-    def get_manage_course_info(self, institution_id):
-        return (
+    def get_manage_course_info(self, institution_id, course_id=None):
+        q = (
             self.session
             .query(Course.course_id, Course.name, Course.code, User.name, Course.is_active)
             .join(CourseUser, CourseUser.course_id == Course.course_id)
             .join(User, User.user_id == CourseUser.user_id)
             .filter(Course.institution_id == institution_id)
             .filter(User.role == "lecturer")
-            .all()
         )
+        if course_id:
+            q.filter(Course.course_id == course_id)
+        return q.all()
 
     def get_by_user_id(self, user_id):
         return (

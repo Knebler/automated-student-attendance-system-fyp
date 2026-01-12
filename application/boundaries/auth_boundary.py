@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, session, redirect, url_for, flash, current_app, request
 import secrets
 import bcrypt
-from application.controls.auth_control import AuthControl
+from application.controls.auth_control import AuthControl, authenticate_user
 from application.controls.attendance_control import AttendanceControl
 from application.entities.institution import Institution
 from application.entities.student import Student
@@ -56,7 +56,7 @@ def login():
         password = request.form.get('password')
 
         try:
-            auth_result = AuthControl.authenticate_user(email, password)
+            auth_result = authenticate_user(email, password)
         except Exception as e:
             current_app.logger.exception('Login exception')
             flash('Internal error while attempting to authenticate. Try again later.', 'danger')
@@ -64,9 +64,8 @@ def login():
 
         if auth_result.get('success'):
             # store minimal session state
-            session['user_id'] = auth_result.get('user_id')
-            session['role'] = auth_result.get('role')
-            role = auth_result.get('role')
+            session['user'] = auth_result.get('user')
+            role = auth_result.get('user')['role']
             flash('Logged in successfully', 'success')
 
             # Redirect users to the role-specific dashboard

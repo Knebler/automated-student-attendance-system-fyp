@@ -27,12 +27,30 @@ def requires_roles(roles):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             # Check if user is logged in
-            if 'role' not in session or session.get('role') not in roles:
+            if 'user' not in session or session.get('user')['role'] not in roles:
                 flash('Access denied.', 'danger')
                 return redirect(url_for('auth.login'))
             return f(*args, **kwargs)
         return decorated_function
     return decorator
+
+def authenticate_user(email, password):
+    """Authenticate user based on their role/type using ORM"""
+    if (email, password) == ("admin@attendanceplatform.com", "password"):
+        return {
+            'success': True,
+            'user': { 'user_id': 0, 'role': 'platform_manager' },
+        } # Currently shall hardcode the password but idea is only 1 platform manager account
+
+    with get_session() as session:
+        user_model = UserModel(session)
+        user = user_model.get_by_email(email)
+        if bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
+            return {
+                'success': True,
+                'user': user.as_sanitized_dict(),
+            }
+    return {'success': False, 'error': 'Invalid email or password'}
 
 class AuthControl:
     """Control class for authentication business logic with multi-role support"""

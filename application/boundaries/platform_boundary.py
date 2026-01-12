@@ -1,18 +1,13 @@
 from flask import Blueprint, render_template, request, jsonify, session, current_app, flash, redirect, url_for
-from application.controls.auth_control import AuthControl
+from application.controls.auth_control import AuthControl, requires_roles
 from application.entities.base_entity import BaseEntity
 
 platform_bp = Blueprint('platform', __name__)
 
-
 @platform_bp.route('/')
+@requires_roles('platform_manager')
 def platform_dashboard():
     """Platform manager dashboard (alias of platform manager)"""
-    auth_result = AuthControl.verify_session(current_app, session)
-
-    if not auth_result['success'] or auth_result['user'].get('user_type') != 'platform_manager':
-        flash('Access denied. Platform manager privileges required.', 'danger')
-        return redirect(url_for('auth.login'))
 
     # Initialize defaults
     total_institutions = 0
@@ -124,7 +119,7 @@ def platform_dashboard():
 
 
     return render_template('platmanager/platform_manager_dashboard.html',
-                               user=auth_result['user'],
+                               user=session['user'],
                                total_institutions=total_institutions,
                                active_institutions=active_institutions,
                                pending_subscriptions_count=pending_subscriptions_count,

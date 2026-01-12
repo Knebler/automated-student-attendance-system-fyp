@@ -113,66 +113,110 @@ class AuthControl:
         except Exception as e:
             app.logger.error(f"Error getting user by email and type: {e}")
             return None
-    
+
     @staticmethod
-    def register_institution(app, institution_data):
-        """Register a new institution request. Uses raw SQL to insert into Unregistered_Users to avoid legacy entity classes.
-        Returns the inserted unreg_user_id if successful.
+    def register_institution(app, institution_data: dict):
+        """Register an institution application.
+
+        Creates a pending Subscription (is_active=False) and inserts an application row in
+        `Unregistered_Users` that references that subscription. Returns the application id
+        and subscription id so it can be reviewed later.
         """
         try:
             from sqlalchemy import text
-            with get_session() as session:
-                insert_sql = text(
-                    "INSERT INTO Unregistered_Users (email, full_name, institution_name, institution_address, phone_number, message, selected_plan_id, status)"
-                    " VALUES (:email, :full_name, :institution_name, :institution_address, :phone_number, :message, :selected_plan_id, 'pending')"
-                )
-                session.execute(insert_sql, {
-                    'email': institution_data.get('email'),
-                    'full_name': institution_data.get('full_name'),
-                    'institution_name': institution_data.get('institution_name'),
-                    'institution_address': institution_data.get('institution_address'),
-                    'phone_number': institution_data.get('phone_number'),
-                    'message': institution_data.get('message'),
-                    'selected_plan_id': institution_data.get('selected_plan_id')
-                })
-                # fetch last insert id (MySQL compatible)
-                new_id = session.execute(text('SELECT LAST_INSERT_ID()')).scalar()
+            from datetime import date
 
-            return {
-                'success': True,
-                'unreg_user_id': int(new_id) if new_id is not None else None,
-                'message': 'Institution registration request submitted successfully. Awaiting approval.'
-            }
+            email = institution_data.get('email')
+            full_name = institution_data.get('full_name')
+            inst_name = institution_data.get('institution_name')
+            inst_address = institution_data.get('institution_address')
+            phone = institution_data.get('phone_number')
+            message = institution_data.get('message')
+            selected_plan = institution_data.get('selected_plan_id')
+
+            with get_session() as session:
+                # Prevent duplicate pending application for the same email
+                existing = session.execute(text("SELECT * FROM Unregistered_Users WHERE email = :email"), {'email': email}).first()
+                if existing and dict(existing._mapping).get('status') == 'pending':
+                    return {'success': False, 'error': 'An application for this email is already pending.'}
+
+                sub_model = SubscriptionModel(session)
+                start_date = date.today()
+                end_date = start_date + timedelta(days=365)
+                subscription = sub_model.create(plan_id=selected_plan, start_date=start_date, end_date=end_date, is_active=False)
+
+                # Insert application referencing the pending subscription
+                session.execute(text(
+                    "INSERT INTO Unregistered_Users (email, full_name, institution_name, institution_address, phone_number, message, selected_plan_id, subscription_id, status)"
+                    " VALUES (:email, :full_name, :institution_name, :institution_address, :phone_number, :message, :selected_plan_id, :subscription_id, 'pending')"
+                ), {
+                    'email': email,
+                    'full_name': full_name,
+                    'institution_name': inst_name,
+                    'institution_address': inst_address,
+                    'phone_number': phone,
+                    'message': message,
+                    'selected_plan_id': selected_plan,
+                    'subscription_id': subscription.subscription_id
+                })
+
+                # Fetch inserted application id
+                inserted = session.execute(text("SELECT unreg_user_id FROM Unregistered_Users WHERE email = :email"), {'email': email}).first()
+                unreg_id = None
+                if inserted:
+                    unreg_id = dict(inserted._mapping).get('unreg_user_id')
+
+            return {'success': True, 'message': 'Registration request submitted — awaiting approval', 'unreg_user_id': unreg_id, 'subscription_id': subscription.subscription_id}
         except Exception as e:
-            app.logger.error(f"Error registering institution: {e}")
-            return {
-                'success': False,
-                'error': str(e)
-            }
+            app.logger.exception(f"Error registering institution: {e}")
+            return {'success': False, 'error': str(e)}
 
     @staticmethod
     def approve_unregistered_user(app, unreg_user_id, reviewer_id=None, admin_password=None):
-        """Approve a pending Unregistered_Users entry. Uses ORM models from entities2 where possible and raw SQL for the unregistered table."""
+        """Approve a pending registration application.
+
+        If the application was registered with a pending subscription, activate that subscription
+        and create the Institution + admin user; otherwise create the subscription and proceed.
+        """
         try:
             from sqlalchemy import text
             from datetime import date
 
             with get_session() as session:
-                # Fetch the unregistered user row
+                # Fetch the unregistered user row (lock for update)
                 row = session.execute(text("SELECT * FROM Unregistered_Users WHERE unreg_user_id = :id FOR UPDATE"), {'id': unreg_user_id}).first()
                 if not row or row.status != 'pending':
                     return {'success': False, 'error': 'Registration request not found or not pending'}
 
                 data = dict(row._mapping)
                 selected_plan = data.get('selected_plan_id')
+                subscription_id = data.get('subscription_id')
 
-                # 1. Create Subscription using SubscriptionModel
                 sub_model = SubscriptionModel(session)
-                start_date = date.today()
-                end_date = start_date + timedelta(days=365)
-                subscription = sub_model.create(plan_id=selected_plan, start_date=start_date, end_date=end_date, is_active=True)
 
-                # 2. Create Institution using InstitutionModel
+                # Use existing pending subscription if provided, otherwise create one (inactive -> will be activated)
+                if subscription_id:
+                    subscription = sub_model.get_by_subscription_id(subscription_id)
+                    if not subscription:
+                        # If subscription id is invalid, create a new one
+                        subscription = sub_model.create(plan_id=selected_plan, start_date=date.today(), end_date=(date.today() + timedelta(days=365)), is_active=False)
+                        # update the unregistered row with the new subscription id
+                        session.execute(text("UPDATE Unregistered_Users SET subscription_id = :sid WHERE unreg_user_id = :id"), {'sid': subscription.subscription_id, 'id': unreg_user_id})
+                else:
+                    subscription = sub_model.create(plan_id=selected_plan, start_date=date.today(), end_date=(date.today() + timedelta(days=365)), is_active=False)
+                    session.execute(text("UPDATE Unregistered_Users SET subscription_id = :sid WHERE unreg_user_id = :id"), {'sid': subscription.subscription_id, 'id': unreg_user_id})
+
+                # Activate the subscription now that it's approved
+                try:
+                    sub_model.activate(subscription.subscription_id)
+                except Exception:
+                    # If activation helper fails, we'll attempt a direct update as fallback
+                    try:
+                        sub_model.update(subscription.subscription_id, is_active=True)
+                    except Exception:
+                        pass
+
+                # Create Institution using InstitutionModel linked to the active subscription
                 inst_model = InstitutionModel(session)
                 inst = inst_model.create(name=data.get('institution_name'), address=data.get('institution_address'), subscription_id=subscription.subscription_id)
                 institution_id = inst.institution_id
@@ -180,16 +224,22 @@ class AuthControl:
                 # 3. Create admin password
                 used_password = admin_password or secrets.token_urlsafe(10)
 
-                # 4. Create Institution Admin as a user in the users table
+                # 4. Create or update Institution Admin as a user in the users table
                 pw_hash = bcrypt.hashpw(used_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
                 user_model = UserModel(session)
-                admin_user = user_model.create(
-                    institution_id=institution_id,
-                    role='admin',
-                    email=data.get('email'),
-                    password_hash=pw_hash,
-                    name=data.get('full_name')
-                )
+                existing_user = user_model.get_by_email(data.get('email'))
+                if existing_user:
+                    # Update existing user to become institution admin and belong to the new institution
+                    user_model.update(existing_user.user_id, role='admin', institution_id=institution_id, password_hash=pw_hash, name=data.get('full_name'))
+                    admin_user = user_model.get_by_email(data.get('email'))
+                else:
+                    admin_user = user_model.create(
+                        institution_id=institution_id,
+                        role='admin',
+                        email=data.get('email'),
+                        password_hash=pw_hash,
+                        name=data.get('full_name')
+                    )
 
                 # 5. Update Unregistered_Users status to approved
                 session.execute(text("UPDATE Unregistered_Users SET status = 'approved', reviewed_by = :rev, reviewed_at = NOW(), response_message = :msg WHERE unreg_user_id = :id"), {

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, session, current_app, flash, redirect, url_for
+from flask import Blueprint, render_template, request, session, current_app, flash, redirect, url_for, abort
 from application.controls.auth_control import AuthControl
 from application.controls.institution_control import InstitutionControl
 from application.controls.attendance_control import AttendanceControl
@@ -76,6 +76,9 @@ def manage_users():
 def suspend_user(user_id):
     with get_session() as db_session:
         user_model = UserModel(db_session)
+        target_user = user_model.get_by_id(user_id)
+        if target_user.role == 'admin' or target_user.institution_id != session.get('institution_id'):
+            return abort(401)
         user_model.suspend(user_id)
     redirect_path = request.form.get("redirect")
     if redirect_path:
@@ -88,6 +91,9 @@ def suspend_user(user_id):
 def unsuspend_user(user_id):
     with get_session() as db_session:
         user_model = UserModel(db_session)
+        target_user = user_model.get_by_id(user_id)
+        if target_user.role == 'admin' or target_user.institution_id != session.get('institution_id'):
+            return abort(401)
         user_model.unsuspend(user_id)
     redirect_path = request.form.get("redirect")
     if redirect_path:
@@ -100,6 +106,9 @@ def unsuspend_user(user_id):
 def delete_user(user_id):
     with get_session() as db_session:
         user_model = UserModel(db_session)
+        target_user = user_model.get_by_id(user_id)
+        if target_user.role == 'admin' or target_user.institution_id != session.get('institution_id'):
+            return abort(401)
         user_model.delete(user_id)
     redirect_path = request.form.get("redirect")
     if redirect_path:
@@ -112,6 +121,10 @@ def delete_user(user_id):
 def view_user_details(user_id):
     with get_session() as db_session:
         user_model = UserModel(db_session)
+        target_user = user_model.get_by_id(user_id)
+        # Should admins be able to view other admins?
+        if target_user.role == 'admin' or target_user.institution_id != session.get('institution_id'):
+            return abort(401)
         user = user_model.get_by_id(user_id)
         user_details = user.as_sanitized_dict() if user else None
             
@@ -123,6 +136,8 @@ def view_user_details(user_id):
 
 @institution_bp.route('/manage_users/<int:user_id>/add_course', methods=['POST'])
 def add_user_to_course(user_id):
+    # Remember to only allow students and lecturers to be assigned
+    # and admins must be from the same institution
     auth = AuthControl.verify_session(current_app, session)
     if not auth['success'] or auth['user'].get('user_type') not in ['institution_admin', 'admin']:
         flash('Access denied. Institution admin privileges required.', 'danger')
@@ -136,6 +151,7 @@ def add_user_to_course(user_id):
 
 @institution_bp.route('/manage_users/<int:user_id>/remove_course', methods=['POST'])
 def remove_user_from_course(user_id):
+    # Only allow admins from the same institution
     auth = AuthControl.verify_session(current_app, session)
     if not auth['success'] or auth['user'].get('user_type') not in ['institution_admin', 'admin']:
         flash('Access denied. Institution admin privileges required.', 'danger')
@@ -172,7 +188,7 @@ def manage_attendance():
     else:
         flash(result.get('error') or 'Failed to load sessions', 'warning')
 
-    return render_template('institution/admin/institution_admin_attendance_management.html', user=auth_result['user'], sessions=sessions)
+    return render_template('institution/admin/institution_admin_attendance_management.html')
 
 
 @institution_bp.route('/manage_classes')
@@ -211,6 +227,7 @@ def import_data():
 @institution_bp.route('/attendance/student/<int:student_id>')
 def attendance_student_details(student_id):
     """Show attendance details for a single student (admin view)"""
+    # Remember to only allow admins from the same institution
     auth_result = AuthControl.verify_session(current_app, session)
     if not auth_result['success'] or auth_result['user'].get('user_type') not in ['institution_admin', 'admin']:
         flash('Access denied. Institution admin privileges required.', 'danger')
@@ -233,6 +250,7 @@ def attendance_student_details(student_id):
 
 @institution_bp.route('/attendance/class/<int:class_id>')
 def attendance_class_details(class_id):
+    # Remember to only allow admins from the same institution
     """Show attendance details for a single class (admin view)"""
     auth_result = AuthControl.verify_session(current_app, session)
     if not auth_result['success'] or auth_result['user'].get('user_type') not in ['institution_admin', 'admin']:

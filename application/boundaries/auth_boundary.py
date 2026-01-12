@@ -5,6 +5,7 @@ from application.controls.auth_control import AuthControl, authenticate_user
 from application.controls.attendance_control import AttendanceControl
 from application.entities2.institution import InstitutionModel
 from application.entities2.user import UserModel
+from application.entities2.subscription import SubscriptionModel
 from database.base import get_session
 from application.boundaries.dev_actions import register_action
 
@@ -92,17 +93,29 @@ def login():
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
-    """User registration (creates Firebase user + local profile)."""
-    # load active institutions for the registration form (for student/lecturer selection)
+    """User registration"""
     institutions = []
+    subscription_plans = []
+    # Allow pre-selecting a plan and role via query params (used by subscription CTA links)
+    # Accept preselected values from either GET query (when arriving from CTA) or from POST form (in case of validation errors)
+    preselected_plan_id = request.args.get('selected_plan_id') or request.form.get('selected_plan_id')
+    preselected_role = 'institution_admin'
+
     try:
         with get_session() as session:
             inst_model = InstitutionModel(session)
             institutions_objs = inst_model.get_all()
             institutions = [{'institution_id': inst.institution_id, 'name': inst.name} for inst in institutions_objs if getattr(inst, 'is_active', True)]
+
+            # Load subscription plans for institution admin registration selection
+            sub_model = SubscriptionModel(session)
+            plans = sub_model.get_all()
+            subscription_plans = [{'plan_id': p.plan_id, 'name': p.name, 'price': getattr(p, 'price_per_cycle', None), 'billing_cycle': getattr(p, 'billing_cycle', None)} for p in plans if getattr(p, 'is_active', True)]
     except Exception as e:
-        current_app.logger.warning(f"Could not load institutions: {e}")
+        current_app.logger.warning(f"Could not load institutions or subscription plans: {e}")
         institutions = []
+        subscription_plans = []
+
 
     if request.method == 'POST':
         name = request.form.get('name')
@@ -116,9 +129,7 @@ def register():
             # require institution name
             if not institution_name:
                 flash('Educational Institute name is required for Institution Admin registration.', 'warning')
-                return render_template('auth/register.html', institutions=institutions)
-
-            # Build payload for institution registration (creates a pending/unregistered entry)
+                return render_template('auth/register.html', institutions=institutions, subscription_plans=subscription_plans, preselected_plan_id=preselected_plan_id, preselected_role=preselected_role)
             institution_data = {
                 'email': email,
                 'full_name': name,
@@ -137,17 +148,17 @@ def register():
                 flash(result.get('error') or 'Failed to submit registration request', 'danger')
 
         else:
-            # For other roles, create a Firebase user account (registration)
+            # For other roles, create a local user account (registration)
             institution_id = request.form.get('institution_id') or None
             if role in ['student', 'lecturer'] and not institution_id:
                 flash('Please select an institution for your account', 'warning')
-                return render_template('auth/register.html', institutions=institutions)
+                return render_template('auth/register.html', institutions=institutions, subscription_plans=subscription_plans, preselected_plan_id=preselected_plan_id, preselected_role=preselected_role)
             try:
                 reg_res = AuthControl.register_user(current_app, email, password, name=name, role=role)
             except Exception as e:
                 current_app.logger.exception('Registration exception')
                 flash('Internal error while attempting to register. Try again later.', 'danger')
-                return render_template('auth/register.html', institutions=institutions)
+                return render_template('auth/register.html', institutions=institutions, subscription_plans=subscription_plans, preselected_plan_id=preselected_plan_id, preselected_role=preselected_role)
 
             if reg_res.get('success'):
                 # Optionally create a local DB record for student/lecturer using new User model
@@ -168,9 +179,9 @@ def register():
                 return redirect(url_for('auth.login'))
             else:
                 flash(reg_res.get('error') or 'Registration failed', 'danger')
-                return render_template('auth/register.html', institutions=institutions)
+                return render_template('auth/register.html', institutions=institutions, subscription_plans=subscription_plans, preselected_plan_id=preselected_plan_id, preselected_role=preselected_role)
 
-    return render_template('auth/register.html', institutions=institutions)
+    return render_template('auth/register.html', institutions=institutions, subscription_plans=subscription_plans, preselected_plan_id=preselected_plan_id, preselected_role=preselected_role)
 
 
 @auth_bp.route('/logout')
@@ -188,7 +199,7 @@ def attendance_history():
         flash('Please login to view attendance history', 'warning')
         return redirect(url_for('auth.login'))
     
-    user_id = auth_result['user']['firebase_uid']
+    user_id = auth_result['user'].get('user_id') or session.get('user_id')
     attendance_result = AttendanceControl.get_user_attendance_summary(current_app, user_id, days=90)
     
     if attendance_result['success']:
@@ -212,7 +223,7 @@ try:
             {'name': 'name', 'label': 'Full name', 'placeholder': 'Optional display name'},
             {'name': 'role', 'label': 'Role', 'placeholder': 'student | lecturer | institution_admin | platform_manager'}
         ],
-        description='Create a Firebase user and a local user record (dev use only)'
+        description='Create a local user record (dev use only)'
     )
 
     register_action(
@@ -223,7 +234,7 @@ try:
             {'name': 'password', 'label': 'Password', 'placeholder': 'password'},
             {'name': 'user_type', 'label': 'User type', 'placeholder': 'student | lecturer | institution_admin | platform_manager'}
         ],
-        description='Authenticate a user via Firebase (dev only)'
+        description='Authenticate a user (dev only)'
     )
 except Exception:
     pass

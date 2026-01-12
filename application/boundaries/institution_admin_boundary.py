@@ -6,6 +6,7 @@ from application.controls.attendance_control import AttendanceControl
 from application.controls.auth_control import requires_roles
 from application.entities2 import ClassModel, UserModel, InstitutionModel, SubscriptionModel, CourseModel, VenueModel, CourseUserModel
 from database.base import get_session
+from database.models import *
 
 institution_bp = Blueprint('institution', __name__)
 
@@ -159,6 +160,9 @@ def add_user_to_course(user_id):
     # and admins must be from the same institution
     try:
         with get_session() as db_session:
+            target_user = UserModel(db_session).get_by_id(user_id)
+            if target_user.role == 'admin' or target_user.institution_id != session.get('institution_id'):
+                return abort(401)
             cu_model = CourseUserModel(db_session)
             cu_model.assign(user_id=user_id, course_id=request.form.get('course_id'))
     except IntegrityError as e:
@@ -172,8 +176,11 @@ def add_user_to_course(user_id):
 @institution_bp.route('/manage_users/<int:user_id>/remove_course', methods=['POST'])
 @requires_roles('admin')
 def remove_user_from_course(user_id):
-    # Only allow admins from the same institution
     with get_session() as db_session:
+        target_user = UserModel(db_session).get_by_id(user_id)
+        if target_user.role == 'admin' or target_user.institution_id != session.get('institution_id'):
+            return abort(401)
+
         cu_model = CourseUserModel(db_session)
         cu_model.unassign(user_id=user_id, course_id=request.form.get('course_id'))
     redirect_path = request.form.get("redirect")
@@ -227,6 +234,8 @@ def module_details(course_id):
     with get_session() as db_session:
         class_model = ClassModel(db_session)
         course_model = CourseModel(db_session)
+        if course_model.get_by_id(course_id).institution_id != session.get('institution_id'):
+            return abort(401)
         completed = class_model.get_completed(course_id)
         upcoming = class_model.get_upcoming(course_id)
         context = {

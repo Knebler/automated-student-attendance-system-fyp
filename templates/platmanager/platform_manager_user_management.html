@@ -25,23 +25,23 @@
                     <div class="stats-grid">
                         <div class="stat-item">
                             <div class="stat-label">Total Users</div>
-                            <div class="stat-value">2,847</div>
-                            <div class="stat-change positive">+12% this month</div>
+                            <div class="stat-value">{{ overview_stats.user_count }}</div>
+                            <div class="stat-change positive">+{{ overview_stats.user_change_percentage }}% this month</div>
                         </div>
                         <div class="stat-item">
                             <div class="stat-label">Institution Admins</div>
-                            <div class="stat-value">42</div>
-                            <div class="stat-change positive">+2 this month</div>
+                            <div class="stat-value">{{ overview_stats.admin_count }}</div>
+                            <div class="stat-change positive">+{{ overview_stats.admin_change_percentage }}% this month</div>
                         </div>
                         <div class="stat-item">
                             <div class="stat-label">Lecturers</div>
-                            <div class="stat-value">316</div>
-                            <div class="stat-change positive">+8% this month</div>
+                            <div class="stat-value">{{ overview_stats.lecturer_count }}</div>
+                            <div class="stat-change positive">+{{ overview_stats.lecturer_change_percentage }}% this month</div>
                         </div>
                         <div class="stat-item">
                             <div class="stat-label">Students</div>
-                            <div class="stat-value">2,489</div>
-                            <div class="stat-change positive">+15% this month</div>
+                            <div class="stat-value">{{ overview_stats.student_count }}</div>
+                            <div class="stat-change positive">+{{ overview_stats.student_change_percentage }}% this month</div>
                         </div>
                     </div>
                 </div>
@@ -90,7 +90,7 @@
                 <div class="card-header-custom">
                     <div class="header-content">
                         <span>Users Information</span>
-                        <span class="user-count">Showing 5 of 2,847 users</span>
+                        <span class="user-count">Showing {{ table.start }}-{{ table.end }} of {{ table.total }} users</span>
                     </div>
                 </div>
                 <div class="card-body-custom">
@@ -108,23 +108,28 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                {% for user in users %}
                                 <tr>
                                     <td>
                                         <div class="user-info">
-                                            <div class="user-avatar">GF</div>
+                                            <div class="user-avatar">{{ user.initials }}</div>
                                             <div class="user-details">
-                                                <div class="user-name">GOH CHING FONG</div>
-                                                <div class="user-email">goh.ching@university.edu</div>
+                                                <div class="user-name">{{ user.name }}</div>
+                                                <div class="user-email">{{ user.email }}</div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td>8551200</td>
+                                    <td>{{ user.user_id }}</td>
                                     <td>
-                                        <span class="role-badge institution-admin">Institution Admin</span>
+                                        <span class="role-badge {{ user.role }}">{{ user.role }}</span>
                                     </td>
-                                    <td>University of Technology</td>
+                                    <td>{{ user.institution }}</td>
                                     <td>
+                                        {% if user.is_active %}
+                                        <span class="status-badge active">Active</span>
+                                        {% else %}
                                         <span class="status-badge suspended">Suspended</span>
+                                        {% endif %}
                                     </td>
                                     <td>
                                         <div class="action-buttons">
@@ -140,134 +145,7 @@
                                         </div>
                                     </td>
                                 </tr>
-                                <tr>
-                                    <td>
-                                        <div class="user-info">
-                                            <div class="user-avatar">AT</div>
-                                            <div class="user-details">
-                                                <div class="user-name">ALEX TAN</div>
-                                                <div class="user-email">alex.tan@university.edu</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>8541200</td>
-                                    <td>
-                                        <span class="role-badge lecturer">Lecturer</span>
-                                    </td>
-                                    <td>University of Technology</td>
-                                    <td>
-                                        <span class="status-badge active">Active</span>
-                                    </td>
-                                    <td>
-                                        <div class="action-buttons">
-                                            <button class="btn-action btn-view" title="View Details">
-                                                <span class="action-icon">👁️</span>
-                                            </button>
-                                            <button class="btn-action btn-edit" title="Edit User">
-                                                <span class="action-icon">✏️</span>
-                                            </button>
-                                            <button class="btn-action btn-suspend" title="Suspend User">
-                                                <span class="action-icon">⏸️</span>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div class="user-info">
-                                            <div class="user-avatar">JT</div>
-                                            <div class="user-details">
-                                                <div class="user-name">JAMES TEO</div>
-                                                <div class="user-email">james.teo@university.edu</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>8531254</td>
-                                    <td>
-                                        <span class="role-badge student">Student</span>
-                                    </td>
-                                    <td>University of Technology</td>
-                                    <td>
-                                        <span class="status-badge active">Active</span>
-                                    </td>
-                                    <td>
-                                        <div class="action-buttons">
-                                            <button class="btn-action btn-view" title="View Details">
-                                                <span class="action-icon">👁️</span>
-                                            </button>
-                                            <button class="btn-action btn-edit" title="Edit User">
-                                                <span class="action-icon">✏️</span>
-                                            </button>
-                                            <button class="btn-action btn-suspend" title="Suspend User">
-                                                <span class="action-icon">⏸️</span>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div class="user-info">
-                                            <div class="user-avatar">MS</div>
-                                            <div class="user-details">
-                                                <div class="user-name">MARY SMITH</div>
-                                                <div class="user-email">mary.smith@college.edu</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>8546393</td>
-                                    <td>
-                                        <span class="role-badge lecturer">Lecturer</span>
-                                    </td>
-                                    <td>City College</td>
-                                    <td>
-                                        <span class="status-badge active">Active</span>
-                                    </td>
-                                    <td>
-                                        <div class="action-buttons">
-                                            <button class="btn-action btn-view" title="View Details">
-                                                <span class="action-icon">👁️</span>
-                                            </button>
-                                            <button class="btn-action btn-edit" title="Edit User">
-                                                <span class="action-icon">✏️</span>
-                                            </button>
-                                            <button class="btn-action btn-suspend" title="Suspend User">
-                                                <span class="action-icon">⏸️</span>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div class="user-info">
-                                            <div class="user-avatar">JR</div>
-                                            <div class="user-details">
-                                                <div class="user-name">JOHN ROBERTS</div>
-                                                <div class="user-email">john.roberts@institute.edu</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>8566839</td>
-                                    <td>
-                                        <span class="role-badge institution-admin">Institution Admin</span>
-                                    </td>
-                                    <td>Tech Institute</td>
-                                    <td>
-                                        <span class="status-badge active">Active</span>
-                                    </td>
-                                    <td>
-                                        <div class="action-buttons">
-                                            <button class="btn-action btn-view" title="View Details">
-                                                <span class="action-icon">👁️</span>
-                                            </button>
-                                            <button class="btn-action btn-edit" title="Edit User">
-                                                <span class="action-icon">✏️</span>
-                                            </button>
-                                            <button class="btn-action btn-suspend" title="Suspend User">
-                                                <span class="action-icon">⏸️</span>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
@@ -275,18 +153,17 @@
                     <!-- Pagination -->
                     <div class="pagination-section">
                         <div class="pagination-info">
-                            Showing 1-5 of 2,847 users
+                            Showing {{ table.start }}-{{ table.end }} of {{ table.total }} users
                         </div>
                         <div class="pagination-controls">
-                            <button class="btn-custom btn-outline-custom btn-prev" disabled>Previous</button>
+                            <a class="btn-custom btn-outline-custom btn-prev" disabled>Previous</a>
                             <span class="page-numbers">
-                                <span class="page-current">1</span>
-                                <a href="#" class="page-link">2</a>
-                                <a href="#" class="page-link">3</a>
-                                <span class="page-ellipsis">...</span>
-                                <a href="#" class="page-link">285</a>
+                                Page 
+                                <span class="page-current">{{ table.page }}</span>
+                                /
+                                <a href="#" class="page-link">{{ table.pages }}</a>
                             </span>
-                            <a href="#" class="btn-custom btn-outline-custom btn-next">Next</a>
+                            <a href="/platform/users?page={{ table.page + 1 }}" class="btn-custom btn-outline-custom btn-next">Next</a>
                         </div>
                     </div>
                 </div>
@@ -612,7 +489,7 @@
         letter-spacing: 0.5px;
     }
 
-    .role-badge.institution-admin {
+    .role-badge.admin {
         background-color: #e0f2fe;
         color: #075985;
         border: 1px solid #0ea5e9;
@@ -916,8 +793,7 @@
                             <div class="form-group">
                                 <label for="adminRole">Role Type</label>
                                 <select id="adminRole" required>
-                                    <option value="institution-admin">Institution Admin</option>
-                                    <option value="super-admin">Super Admin</option>
+                                    <option value="admin">Institution Admin</option>
                                 </select>
                             </div>
                         </form>
@@ -997,7 +873,7 @@
                 
                 // Filter by role
                 if (roleValue && roleBadge) {
-                    const rowRole = roleBadge.classList.contains('institution-admin') ? 'admin' :
+                    const rowRole = roleBadge.classList.contains('admin') ? 'admin' :
                                   roleBadge.classList.contains('lecturer') ? 'lecturer' :
                                   roleBadge.classList.contains('student') ? 'student' : '';
                     

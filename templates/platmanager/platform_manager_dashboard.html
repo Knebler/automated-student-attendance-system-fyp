@@ -15,20 +15,16 @@
                 <div class="card-body-custom">
                     <div class="stats-box">
                         <div class="stat-row mb-2">
-                            <span class="stat-label">Total Institutions:</span>
-                            <span class="stat-value">{{ total_institutions or '—' }}</span>
+                            <span class="stat-label">Total Subscriptions:</span>
+                            <span class="stat-value">{{ total_subscription_count or '—' }}</span>
                         </div>
                         <div class="stat-row mb-2">
-                            <span class="stat-label">Active Institutions:</span>
-                            <span class="stat-value">{{ active_institutions or '—' }}</span>
-                        </div>
-                        <div class="stat-row mb-2">
-                            <span class="stat-label">Pending Subscriptions:</span>
-                            <span class="stat-value">{{ pending_subscriptions_count or '—' }}</span>
+                            <span class="stat-label">Active Subscriptions:</span>
+                            <span class="stat-value">{{ active_subscription_count or '—' }}</span>
                         </div>
                         <div class="stat-row">
                             <span class="stat-label">Total Registered Users:</span>
-                            <span class="stat-value">{{ total_registered_users or '—' }}</span>
+                            <span class="stat-value">{{ total_user_count or '—' }}</span>
                         </div>
                     </div>
                 </div>
@@ -54,13 +50,13 @@
             <div class="card-header-custom">Subscription & Institution Status</div>
             <div class="card-body-custom">
                 <div class="column-section mb-4">
-                    <h3 class="section-title mb-3">Pending Subscriptions</h3>
-                    {% if pending_subscriptions %}
-                        {% for sub in pending_subscriptions %}
+                    <h3 class="section-title mb-3">Recent Subscriptions</h3>
+                    {% if recent_subscriptions %}
+                        {% for sub in recent_subscriptions %}
                             <div class="list-item mb-2">
                                 <div class="list-item-content">
-                                    <span class="list-item-text">Institution: {{ sub.institution_name }}</span>
-                                    <span class="list-item-text">Request Date: {{ sub.request_date }}</span>
+                                    <span class="list-item-text">{{ sub.institution_name }}</span>
+                                    <span class="list-item-text">{{ sub.request_date.strftime('%Y-%m-%d') }}</span>
                                 </div>
                                 <a href="{{ url_for('platform.pending_registrations') }}#req-{{ sub.id }}" class="btn-custom more-btn">More</a>
                             </div>
@@ -68,29 +64,11 @@
                     {% else %}
                         <div class="list-item">
                             <div class="list-item-content">
-                                <span class="list-item-text">No pending subscriptions</span>
+                                <span class="list-item-text">No recent subscriptions</span>
                             </div>
                         </div>
                     {% endif %}
                 <div class="column-section">
-                    <h3 class="section-title mb-3">Recent Institution Changes</h3>
-                    {% if recent_changes %}
-                        {% for change in recent_changes %}
-                            <div class="list-item mb-2">
-                                <div class="list-item-content">
-                                    <span class="list-item-text">Action: {{ change.action }}</span>
-                                    <span class="list-item-text">Date: {{ change.date }}</span>
-                                </div>
-                                <a href="{{ change.link or url_for('platform.pending_registrations') }}" class="btn-custom more-btn">More</a>
-                            </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="list-item">
-                            <div class="list-item-content">
-                                <span class="list-item-text">No recent changes</span>
-                            </div>
-                        </div>
-                    {% endif %}
                 </div>
             </div>
         </div>

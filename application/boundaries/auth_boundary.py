@@ -67,6 +67,7 @@ def login():
             user = auth_result.get('user')
             session['user_id'] = user['user_id']
             session['role'] = user['role']
+            session['institution_id'] = user.get('institution_id')
             role = user['role']
             flash('Logged in successfully', 'success')
             # Redirect users to the role-specific dashboard

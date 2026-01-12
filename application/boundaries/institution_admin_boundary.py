@@ -3,6 +3,9 @@ from application.controls.auth_control import AuthControl
 from application.controls.institution_control import InstitutionControl
 from application.controls.attendance_control import AttendanceControl
 from application.controls.auth_control import requires_roles
+from application.entities2.user import UserModel
+from application.entities2.institution import InstitutionModel
+from database.base import get_session
 
 institution_bp = Blueprint('institution', __name__)
 
@@ -11,60 +14,64 @@ institution_bp = Blueprint('institution', __name__)
 @requires_roles('admin')
 def institution_dashboard():
     """Institution admin dashboard (admins / platform managers)"""
-    institution_id = 1
+    institution_id = session.get('institution_id')
     print("entering institution dashboard")
 
     # Get institution statistics
     stats_result = InstitutionControl.get_institution_stats(current_app, institution_id)
-
+    
+    with get_session() as db_session:
+        user_model = UserModel(db_session)
+        user = user_model.get_all(institution_id=session.get('institution_id'))
+        user_count = len(user)
+        student_count = len([u for u in user if u.role == 'student'])
+        lecturer_count = len([u for u in user if u.role == 'lecturer'])
+        admin_count = len([u for u in user if u.role == 'admin'])
+        
+    with get_session() as db_session:
+        institution_model = InstitutionModel(db_session)
+        institution = institution_model.get_all(institution_id=session.get('institution_id'))
+        institution_name = institution[0].name if institution else "Unknown Institution"
+    
     return render_template('institution/admin/institution_admin_dashboard.html',
-                         user=session['user_id'],
-                         stats=stats_result.get('stats') if stats_result['success'] else {})
+                        user=session['user_id'],
+                        user_count=user_count,
+                        student_count=student_count,
+                        lecturer_count=lecturer_count,  
+                        admin_count=admin_count,
+                        institution_name=institution_name,
+                        stats=stats_result.get('stats') if stats_result['success'] else {})
 
 
 @institution_bp.route('/manage_users')
+@requires_roles('admin')
 def manage_users():
-    """Render the admin user-management page"""
-    auth_result = AuthControl.verify_session(current_app, session)
-    if not auth_result['success'] or auth_result['user'].get('user_type') not in ['institution_admin', 'admin']:
-        flash('Access denied. Institution admin privileges required.', 'danger')
-        return redirect(url_for('auth.login'))
-    
-    institution_id = auth_result['user'].get('institution_id')
-    
-    # Get user details
-    user_details_result = InstitutionControl.get_institution_user_details(current_app, institution_id)
-    
-    # Get user counts
-    user_counts_result = InstitutionControl.get_user_counts(current_app, institution_id)
-    counts = user_counts_result.get('counts') if user_counts_result['success'] else {
-        'total_users': 0,
-        'students': 0,
-        'lecturers': 0,
-        'admins': 0,
-        'suspended': 0
-    }
-    
-    data_to_pass = {
-        'user': auth_result['user'],
-        'user_count': counts['total_users'],
-        'student_count': counts['students'],
-        'lecturer_count': counts['lecturers'],
-        'admin_count': counts['admins'],
-        'suspended_count': counts['suspended'],
-        'users': user_details_result.get('users') if user_details_result['success'] else []
-    }
-
-    return render_template('institution/admin/institution_admin_user_management.html', **data_to_pass)
+    with get_session() as db_session:
+        user_model = UserModel(db_session)
+        users = user_model.get_all(institution_id=session.get('institution_id'))
+        users = [u.as_sanitized_dict() for u in users]
+        #count total users
+        user_count = len(users)
+        student_count = len([u for u in users if u['role'] == 'student'])
+        lecturer_count = len([u for u in users if u['role'] == 'lecturer'])
+        admin_count = len([u for u in users if u['role'] == 'admin'])
+        suspended_count = len([u for u in users if not u['is_active']])
+    return render_template(
+                        'institution/admin/institution_admin_user_management.html', 
+                           users=users, 
+                           user_count=user_count, 
+                           student_count=student_count, 
+                           lecturer_count=lecturer_count, 
+                           admin_count=admin_count, 
+                           suspended_count=suspended_count
+                           )
 
 @institution_bp.route('/manage_users/<int:user_id>/suspend', methods=['POST'])
+@requires_roles('admin')
 def suspend_user(user_id):
-    auth = AuthControl.verify_session(current_app, session)
-    if not auth['success'] or auth['user'].get('user_type') not in ['institution_admin', 'admin']:
-        flash('Access denied. Institution admin privileges required.', 'danger')
-        return redirect(url_for('auth.login'))
-
-    InstitutionControl.suspend_user(current_app, user_id, institution_id=auth['user'].get('institution_id'), role=request.form.get('user_role'))
+    with get_session() as db_session:
+        user_model = UserModel(db_session)
+        user_model.suspend(user_id)
     redirect_path = request.form.get("redirect")
     if redirect_path:
         return redirect(redirect_path)
@@ -72,45 +79,41 @@ def suspend_user(user_id):
 
 
 @institution_bp.route('/manage_users/<int:user_id>/unsuspend', methods=['POST'])
+@requires_roles('admin')
 def unsuspend_user(user_id):
-    auth = AuthControl.verify_session(current_app, session)
-    if not auth['success'] or auth['user'].get('user_type') not in ['institution_admin', 'admin']:
-        flash('Access denied. Institution admin privileges required.', 'danger')
-        return redirect(url_for('auth.login'))
-
-    result = InstitutionControl.unsuspend_user(current_app, user_id, institution_id=auth['user'].get('institution_id'), role=request.form.get('user_role'))
+    with get_session() as db_session:
+        user_model = UserModel(db_session)
+        user_model.unsuspend(user_id)
     redirect_path = request.form.get("redirect")
     if redirect_path:
         return redirect(redirect_path)
     return redirect(url_for('institution.manage_users'))
 
-@institution_bp.route('/manage_users/<int:user_id>/delete', methods=['POST'])
-def delete_user(user_id):
-    auth = AuthControl.verify_session(current_app, session)
-    if not auth['success'] or auth['user'].get('user_type') not in ['institution_admin', 'admin']:
-        flash('Access denied. Institution admin privileges required.', 'danger')
-        return redirect(url_for('auth.login'))
 
-    result = InstitutionControl.delete_user(current_app, user_id, institution_id=auth['user'].get('institution_id'), role=request.form.get('user_role'))
+@institution_bp.route('/manage_users/<int:user_id>/delete', methods=['POST'])
+@requires_roles('admin')
+def delete_user(user_id):
+    with get_session() as db_session:
+        user_model = UserModel(db_session)
+        user_model.delete(user_id)
+    redirect_path = request.form.get("redirect")
+    if redirect_path:
+        return redirect(redirect_path)
     return redirect(url_for('institution.manage_users'))
 
 
 @institution_bp.route('/manage_users/<int:user_id>/view', methods=['GET'])
+@requires_roles('admin')
 def view_user_details(user_id):
-    auth = AuthControl.verify_session(current_app, session)
-    if not auth['success'] or auth['user'].get('user_type') not in ['institution_admin', 'admin']:
-        flash('Access denied. Institution admin privileges required.', 'danger')
-        return redirect(url_for('auth.login'))
-
-    result = InstitutionControl.view_user(current_app, user_id, institution_id=auth['user'].get('institution_id'), role=request.args.get('role'))
-    if not result.get('success'):
-        flash(result.get('error') or 'Failed to load user details', 'danger')
-        return redirect(url_for('institution.manage_users'))
+    with get_session() as db_session:
+        user_model = UserModel(db_session)
+        user = user_model.get_by_id(user_id)
+        user_details = user.as_sanitized_dict() if user else None
+            
     return render_template(
         'institution/admin/institution_admin_user_management_user_details.html',
-        user=auth['user'],
-        user_details=result.get('user_details'),
-        redirect_path=f"{request.path}?role={request.args.get('role')}",
+        user_details=user_details,
+        redirect_path=f"{request.path}",
     )
 
 @institution_bp.route('/manage_users/<int:user_id>/add_course', methods=['POST'])
@@ -140,12 +143,8 @@ def remove_user_from_course(user_id):
     return redirect(url_for('institution.manage_users'))
 
 @institution_bp.route('/manage_attendance')
+@requires_roles('admin')
 def manage_attendance():
-    """Render the admin attendance-management page"""
-    auth_result = AuthControl.verify_session(current_app, session)
-    if not auth_result['success'] or auth_result['user'].get('user_type') not in ['institution_admin', 'admin']:
-        flash('Access denied. Institution admin privileges required.', 'danger')
-        return redirect(url_for('auth.login'))
 
     # load all sessions (historical) so admin can manage attendance across all dates
     # default: returns sessions up to today

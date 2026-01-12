@@ -14,7 +14,7 @@
                 <div class="card-header-custom">Institution Profile</div>
                 <div class="card-body-custom">
                     <div class="profile-info">
-                        <p><strong>Name of Institution:</strong> XXXXXX</p>
+                        <p><strong>Name of Institution:</strong> {{ institution_name }}</p>
                         <p><strong>Subscription Status:</strong> ACTIVE</p>
                         <p><strong>Subscription Renewal:</strong> XX/XX/XXXX</p>
                     </div>
@@ -42,11 +42,11 @@
             <div class="card-header-custom">User Management</div>
             <div class="card-body-custom">
                 <div class="stats-box mb-3">
-                    <div class="stats-header"><strong>Total Users:</strong> XXXX</div>
+                    <div class="stats-header"><strong>Total Users:</strong>{{user_count}}</div>
                     <div class="stats-row">
-                        <span><strong>Admins:</strong> XXX</span>
-                        <span><strong>Lecturers:</strong> XXX</span>
-                        <span><strong>Students:</strong> XXX</span>
+                        <span><strong>Admins:</strong>{{admin_count}}</span>
+                        <span><strong>Lecturers:</strong> {{lecturer_count}}</span>
+                        <span><strong>Students:</strong> {{student_count}}</span>
                     </div>
                 </div>
 

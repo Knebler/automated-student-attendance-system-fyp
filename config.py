@@ -12,7 +12,12 @@ class Config:
     # JWT Configuration (for authentication)
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', SECRET_KEY)  # Can be different from Flask secret
     JWT_ALGORITHM = os.getenv('JWT_ALGORITHM', 'HS256')
-    JWT_ACCESS_TOKEN_EXPIRES = int(os.getenv('JWT_ACCESS_TOKEN_EXPIRES', '86400'))  # 24 hours in seconds
+    
+    # Handle JWT expiration with proper integer conversion
+    jwt_expires = os.getenv('JWT_ACCESS_TOKEN_EXPIRES', '86400')
+    # Strip any comments or whitespace
+    jwt_expires = jwt_expires.split('#')[0].strip() if '#' in jwt_expires else jwt_expires.strip()
+    JWT_ACCESS_TOKEN_EXPIRES = int(jwt_expires)  # 24 hours in seconds
     
     # MySQL Configuration for SQLAlchemy
     MYSQL_HOST = os.getenv('DB_HOST', 'attendai-fyp-project.mysql.database.azure.com')
@@ -36,12 +41,17 @@ class Config:
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
     
     # Bcrypt Configuration (for password hashing)
-    BCRYPT_LOG_ROUNDS = int(os.getenv('BCRYPT_LOG_ROUNDS', '12'))
+    bcrypt_rounds = os.getenv('BCRYPT_LOG_ROUNDS', '12')
+    bcrypt_rounds = bcrypt_rounds.split('#')[0].strip() if '#' in bcrypt_rounds else bcrypt_rounds.strip()
+    BCRYPT_LOG_ROUNDS = int(bcrypt_rounds)
     
     # Session Configuration
     SESSION_TYPE = os.getenv('SESSION_TYPE', 'filesystem')
     SESSION_PERMANENT = os.getenv('SESSION_PERMANENT', 'False').lower() == 'true'
-    PERMANENT_SESSION_LIFETIME = int(os.getenv('PERMANENT_SESSION_LIFETIME', '3600'))  # 1 hour
+    
+    session_lifetime = os.getenv('PERMANENT_SESSION_LIFETIME', '3600')
+    session_lifetime = session_lifetime.split('#')[0].strip() if '#' in session_lifetime else session_lifetime.strip()
+    PERMANENT_SESSION_LIFETIME = int(session_lifetime)  # 1 hour
 
 class DevelopmentConfig(Config):
     DEBUG = True

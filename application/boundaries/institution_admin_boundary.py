@@ -5,6 +5,7 @@ from application.controls.attendance_control import AttendanceControl
 from application.controls.auth_control import requires_roles
 from application.entities2.user import UserModel
 from application.entities2.institution import InstitutionModel
+from application.entities2.subscription import SubscriptionModel
 from database.base import get_session
 
 institution_bp = Blueprint('institution', __name__)
@@ -32,6 +33,10 @@ def institution_dashboard():
         institution_model = InstitutionModel(db_session)
         institution = institution_model.get_all(institution_id=session.get('institution_id'))
         institution_name = institution[0].name if institution else "Unknown Institution"
+        
+  
+        
+        
     
     return render_template('institution/admin/institution_admin_dashboard.html',
                         user=session['user_id'],

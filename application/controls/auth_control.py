@@ -19,7 +19,6 @@ from database.base import get_session
 def requires_roles(roles):
     """
     Decorator to require specific role from session
-    Important to put it after the route in order to detect the session variable
     Usage: @requires_roles(['admin', 'student'])
         or @requires_roles('admin')
     """

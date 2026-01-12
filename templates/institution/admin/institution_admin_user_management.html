@@ -81,7 +81,7 @@
                                 {% if user.role != 'admin' %}
                                     {% if user.is_active %}
                                     <div class="actions">
-                                        <a href="/institution/manage_users/{{ user.user_id }}/view?role={{ user.role }}" class="btn-custom btn-view">View</a>
+                                        <a href="/institution/manage_users/{{ user.user_id }}/view" class="btn-custom btn-view">View</a>
                                         <form action="/institution/manage_users/{{ user.user_id }}/suspend" method='POST'>
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <button class="btn-custom btn-suspend" data-user-id="{{ user.user_id }}" data-role="{{ user.role }}">Suspend</button>
@@ -89,7 +89,7 @@
                                     </div>
                                     {% else %}
                                     <div class="actions">
-                                        <a href="/institution/manage_users/{{ user.user_id }}/view?role={{ user.role }}" class="btn-custom btn-view">View</a>
+                                        <a href="/institution/manage_users/{{ user.user_id }}/view" class="btn-custom btn-view">View</a>
                                         <form action="/institution/manage_users/{{ user.user_id }}/unsuspend" method='POST'>
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <input type="hidden" name="user_role" value="{{ user.role }}">

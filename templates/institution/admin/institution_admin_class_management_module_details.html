@@ -8,7 +8,7 @@
         <h1 class="page-title">Class Management</h1>
         <div class="breadcrumb">
             <a href="{{ url_for('institution.manage_classes') }}">Classes</a> / 
-            <span>MGNT 110 - Introduction to Management</span>
+            <span>{{course[2]}} - {{course[1]}}</span>
         </div>
     </div>
 
@@ -16,11 +16,14 @@
         <div class="card-header-custom">Course Information</div>
         <div class="card-body-custom">
             <div class="course-info">
-                <h2 class="course-title">MGNT 110 - Introduction to Management</h2>
+                <h2 class="course-title">{{course[2]}} - {{course[1]}}</h2>
                 <div class="course-meta">
-                    <span><strong>Lecturer:</strong> JASON HO</span>
-                    <span><strong>Status:</strong> <span class="status active">ACTIVE</span></span>
-                    <span><strong>Venue:</strong> A.117/A</span>
+                    <span><strong>Lecturer: </strong>{{course[3]}}</span>
+                    {% if course[4] %}
+                    <span><strong>Status: </strong> <span class="status active">ACTIVE</span></span>
+                    {% else %}
+                    <span><strong>Status: </strong> <span class="status inactive">INACTIVE</span></span>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -45,56 +48,18 @@
                         </tr>
                     </thead>
                     <tbody>
+                        {% for c in completed %}
                         <tr>
-                            <td>L02</td>
-                            <td>xx/xx/xxxx xxxx</td>
-                            <td>xx/xx/xxxx xxxx</td>
-                            <td>A.117/A</td>
-                            <td>JASON HO</td>
+                            <td>{{c[0]}}</td>
+                            <td>{{c[1]}}</td>
+                            <td>{{c[2]}}</td>
+                            <td>{{c[3]}}</td>
+                            <td>{{c[4]}}</td>
                             <td class="actions-cell">
                                 <button class="btn-custom btn-manage">Manage Class</button>
                             </td>
                         </tr>
-                        <tr>
-                            <td>L03</td>
-                            <td>xx/xx/xxxx xxxx</td>
-                            <td>xx/xx/xxxx xxxx</td>
-                            <td>A.117/A</td>
-                            <td>JASON HO</td>
-                            <td class="actions-cell">
-                                <button class="btn-custom btn-manage">Manage Class</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>L04</td>
-                            <td>xx/xx/xxxx xxxx</td>
-                            <td>xx/xx/xxxx xxxx</td>
-                            <td>A.117/A</td>
-                            <td>JASON HO</td>
-                            <td class="actions-cell">
-                                <button class="btn-custom btn-manage">Manage Class</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>L05</td>
-                            <td>xx/xx/xxxx xxxx</td>
-                            <td>xx/xx/xxxx xxxx</td>
-                            <td>A.117/A</td>
-                            <td>JASON HO</td>
-                            <td class="actions-cell">
-                                <button class="btn-custom btn-manage">Manage Class</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>L06</td>
-                            <td>xx/xx/xxxx xxxx</td>
-                            <td>xx/xx/xxxx xxxx</td>
-                            <td>A.117/A</td>
-                            <td>JASON HO</td>
-                            <td class="actions-cell">
-                                <button class="btn-custom btn-manage">Manage Class</button>
-                            </td>
-                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
@@ -121,56 +86,18 @@
                         </tr>
                     </thead>
                     <tbody>
+                        {% for c in upcoming %}
                         <tr>
-                            <td>L07</td>
-                            <td>xx/xx/xxxx xxxx</td>
-                            <td>xx/xx/xxxx xxxx</td>
-                            <td>A.117/A</td>
-                            <td>JASON HO</td>
+                            <td>{{c[0]}}</td>
+                            <td>{{c[1]}}</td>
+                            <td>{{c[2]}}</td>
+                            <td>{{c[3]}}</td>
+                            <td>{{c[4]}}</td>
                             <td class="actions-cell">
                                 <button class="btn-custom btn-manage">Manage Class</button>
                             </td>
                         </tr>
-                        <tr>
-                            <td>L08</td>
-                            <td>xx/xx/xxxx xxxx</td>
-                            <td>xx/xx/xxxx xxxx</td>
-                            <td>A.117/A</td>
-                            <td>JASON HO</td>
-                            <td class="actions-cell">
-                                <button class="btn-custom btn-manage">Manage Class</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>L09</td>
-                            <td>xx/xx/xxxx xxxx</td>
-                            <td>xx/xx/xxxx xxxx</td>
-                            <td>A.117/A</td>
-                            <td>JASON HO</td>
-                            <td class="actions-cell">
-                                <button class="btn-custom btn-manage">Manage Class</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>L10</td>
-                            <td>xx/xx/xxxx xxxx</td>
-                            <td>xx/xx/xxxx xxxx</td>
-                            <td>A.117/A</td>
-                            <td>JASON HO</td>
-                            <td class="actions-cell">
-                                <button class="btn-custom btn-manage">Manage Class</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>L11</td>
-                            <td>xx/xx/xxxx xxxx</td>
-                            <td>xx/xx/xxxx xxxx</td>
-                            <td>A.117/A</td>
-                            <td>JASON HO</td>
-                            <td class="actions-cell">
-                                <button class="btn-custom btn-manage">Manage Class</button>
-                            </td>
-                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>

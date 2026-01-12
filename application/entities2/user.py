@@ -55,7 +55,7 @@ class UserModel(BaseEntity[User]):
             "student_count": student_count,
             "student_change_percentage": perc_change(student_added_last_month, student_count),
         }
-    
+
     def delete(self, user_id) -> bool:
         user = self.get_by_id(user_id)
         if user:

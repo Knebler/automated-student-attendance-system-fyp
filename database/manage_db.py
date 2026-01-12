@@ -132,18 +132,18 @@ def seed_database():
             possible_lecturers = [user_id for user_id, user in enumerate(users, 1) if user[0] == institution_id and user[1] == "lecturer"]
 
             cols = [
-                'course_id', 'user_id', 'academic_year'
+                'course_id', 'user_id'
             ]
             # 80% chance student enrolls
             chance_of_assignment = 0.8
             for student_id in possible_students:
                 if random.random() > chance_of_assignment:
                     continue
-                s.execute(text(f"INSERT INTO Course_Users ({comma_join(cols)}) VALUES ({colon_join(cols)})"), zip_dict(cols, [(course_id, student_id, 2023)]))
+                s.execute(text(f"INSERT INTO Course_Users ({comma_join(cols)}) VALUES ({colon_join(cols)})"), zip_dict(cols, [(course_id, student_id)]))
             # Random lecturer assigned
             lecturer_id = random.choice(possible_lecturers)
             course_lecturer_map[course_id] = lecturer_id
-            s.execute(text(f"INSERT INTO Course_Users ({comma_join(cols)}) VALUES ({colon_join(cols)})"), zip_dict(cols, [(course_id, lecturer_id, 2023)]))
+            s.execute(text(f"INSERT INTO Course_Users ({comma_join(cols)}) VALUES ({colon_join(cols)})"), zip_dict(cols, [(course_id, lecturer_id)]))
 
     if row_count("Venues") == 0:
         cols = [
@@ -173,7 +173,7 @@ def seed_database():
             possible_venues = [venue_id for venue_id, venue in enumerate(venues, 1) if venue[0] == institution_id]
 
             for _ in range(5):
-                start_time = datetime(2023, random.randint(1, 12), random.randint(1, 28), random.randint(8, 18), 0, 0)
+                start_time = datetime.now() + timedelta(hours=random.randint(0, 7))
                 end_time = start_time + timedelta(hours=2)
                 lecturer_id = course_lecturer_map[course_id]
                 classes.append((course_id, random.choice(possible_venues), lecturer_id, start_time, end_time))

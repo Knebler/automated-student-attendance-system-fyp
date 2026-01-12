@@ -4,8 +4,16 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship, declarative_base
 from sqlalchemy.sql import text
+from sqlalchemy.inspection import inspect
 
 Base = declarative_base()
+
+class BaseMixin:
+    def as_dict(self):
+        return {
+            c.key: getattr(self, c.key)
+            for c in inspect(self).mapper.column_attrs
+        }
 
 # =====================
 # ENUM DEFINITIONS
@@ -21,7 +29,7 @@ ReportScheduleEnum = Enum("one", "daily", "weekly", "monthly", name="report_sche
 # =====================
 # SUBSCRIPTION
 # =====================
-class SubscriptionPlan(Base):
+class SubscriptionPlan(Base, BaseMixin):
     __tablename__ = "subscription_plans"
 
     plan_id = Column(Integer, primary_key=True)
@@ -35,7 +43,7 @@ class SubscriptionPlan(Base):
     created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
 
 
-class Subscription(Base):
+class Subscription(Base, BaseMixin):
     __tablename__ = "subscriptions"
 
     subscription_id = Column(Integer, primary_key=True)
@@ -53,7 +61,7 @@ class Subscription(Base):
 # =====================
 # INSTITUTION
 # =====================
-class Institution(Base):
+class Institution(Base, BaseMixin):
     __tablename__ = "institutions"
 
     institution_id = Column(Integer, primary_key=True)
@@ -72,7 +80,7 @@ class Institution(Base):
 # =====================
 # USERS
 # =====================
-class User(Base):
+class User(Base, BaseMixin):
     __tablename__ = "users"
 
     user_id = Column(Integer, primary_key=True)
@@ -91,14 +99,14 @@ class User(Base):
     institution = relationship("Institution", back_populates="users")
 
     def as_sanitized_dict(self):
-        data = self.__dict__.copy()
+        data = self.as_dict()
         data.pop("password_hash")
         return data
 
 # =====================
 # ANNOUNCEMENTS
 # =====================
-class Announcement(Base):
+class Announcement(Base, BaseMixin):
     __tablename__ = "announcements"
 
     announcement_id = Column(Integer, primary_key=True)
@@ -112,7 +120,7 @@ class Announcement(Base):
 # =====================
 # NOTIFICATIONS
 # =====================
-class Notification(Base):
+class Notification(Base, BaseMixin):
     __tablename__ = "notifications"
 
     notification_id = Column(Integer, primary_key=True)
@@ -125,7 +133,7 @@ class Notification(Base):
 # =====================
 # COURSES
 # =====================
-class Course(Base):
+class Course(Base, BaseMixin):
     __tablename__ = "courses"
 
     course_id = Column(Integer, primary_key=True)
@@ -144,7 +152,7 @@ class Course(Base):
 # =====================
 # COURSE USERS (M2M)
 # =====================
-class CourseUser(Base):
+class CourseUser(Base, BaseMixin):
     __tablename__ = "course_users"
     table_args = (
         UniqueConstraint("course_id", "user_id", "academic_year", name="uq_course_user_year"),
@@ -152,12 +160,11 @@ class CourseUser(Base):
 
     course_id = Column(Integer, ForeignKey("courses.course_id"), primary_key=True)
     user_id = Column(Integer, ForeignKey("users.user_id"), primary_key=True)
-    academic_year = Column(String(20), primary_key=True)
 
 # =====================
 # VENUE
 # =====================
-class Venue(Base):
+class Venue(Base, BaseMixin):
     __tablename__ = "venues"
 
     venue_id = Column(Integer, primary_key=True)
@@ -171,7 +178,7 @@ class Venue(Base):
 # =====================
 # CLASSES
 # =====================
-class Class(Base):
+class Class(Base, BaseMixin):
     __tablename__ = "classes"
 
     class_id = Column(Integer, primary_key=True)
@@ -186,7 +193,7 @@ class Class(Base):
 # =====================
 # ATTENDANCE RECORDS
 # =====================
-class AttendanceRecord(Base):
+class AttendanceRecord(Base, BaseMixin):
     __tablename__ = "attendance_records"
     table_args = (
         UniqueConstraint("class_id", "student_id", name="uq_attendance_class_student"),
@@ -206,7 +213,7 @@ class AttendanceRecord(Base):
 # =====================
 # REPORT SCHEDULE
 # =====================
-class ReportSchedule(Base):
+class ReportSchedule(Base, BaseMixin):
     __tablename__ = "reports_schedule"
 
     schedule_id = Column(Integer, primary_key=True)

@@ -8,7 +8,6 @@
     <ul class="nav-links-custom" id="mobileMenu">
         {% if session.role %}
             {% set user_role = session.role if session.role else None %}
-            
             {% if user_role == 'platform_manager' %}
                 <!-- TODO: Implement proper routing for these sub pages -->
                 <li><a class="nav-link-custom" href="{{ url_for('platform.platform_dashboard') }}">Dashboard</a></li>

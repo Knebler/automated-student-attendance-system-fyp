@@ -1,10 +1,10 @@
 # AttendAI (Automated Student Attendance System)
 
-A full-stack web application built as a school project which aims to demonstrate the integration of generative AI within a modern, secure web environment. The project uses Python and Flask on the backend, MySQL for data storage, Bootstrap for a responsive user interface, and Firebase for authentication.
+A full-stack web application built as a school project which aims to demonstrate the integration of generative AI within a modern, secure web environment. The project uses Python and Flask on the backend, MySQL for data storage, Bootstrap for a responsive user interface, and a local DB-backed authentication system.
 
 ## Overview
 
-This application showcases generative artificial intelligence capabilities with a focus on Facial Recognition. Users should use this system for their educational institute entirely for attendance taking purposes. Our application allows for a seamless integration experience with any educational institute's operations as the application's primary interface is Web-based. All data is managed through a MySQL database, and user sessions are handled by Firebase Authentication.
+This application showcases generative artificial intelligence capabilities with a focus on Facial Recognition. Users should use this system for their educational institute entirely for attendance taking purposes. Our application allows for a seamless integration experience with any educational institute's operations as the application's primary interface is Web-based. All data is managed through a MySQL database, and user sessions are handled via Flask server-side sessions backed by the local users table.
 
 ## Project Structure
 ```
@@ -141,7 +141,6 @@ automated-student-attendance-system-fyp/
 │   └── index.html                      # Home page with feature tabs
 │
 ├── instance/                           # Instance folder (for sensitive config)
-│   ├── firebase_service_account.json   # Firebase service account (secrets)
 │
 ├── dummy_data/                         # Dummy data helpers
 │   ├── dummy_data_reference.csv        # Shorthand dummy data for reference
@@ -162,18 +161,18 @@ automated-student-attendance-system-fyp/
 
 ## Features
 
-*   **Secure Authentication:** User management via Firebase Authentication (email/password).
+*   **Secure Authentication:** User management via local DB (bcrypt password hashing).
 *   **Generative AI Integration:** Backend integration with AI models to provide dynamic facial recognition capabilities.
 *   **Data Persistence:** Storage of user data and AI generation history in a MySQL relational database.
 *   **Scalable Backend:** A flexible Flask microframework architecture.
 
 ## Tech Stack
 
-*   **Frontend:** HTML5, CSS3 (Bootstrap framework), JavaScript (for Firebase SDK)
+*   **Frontend:** HTML5, CSS3 (Bootstrap framework), JavaScript
 *   **Backend:** Python 3.10+, Flask
 *   **Database:** MySQL
-*   **Authentication:** Firebase Authentication
-*   **AI/ML Libraries:** `openai`, `firebase-admin`, `Flask-SQLAlchemy`, etc.
+*   **Authentication:** Local DB-based (bcrypt)
+*   **AI/ML Libraries:** `openai`, `Flask-SQLAlchemy`, etc.
 
 ## Getting Started
 
@@ -184,7 +183,6 @@ Follow these instructions to get the project running.
 *   Python 3.10+ installed
 *   MySQL Server installed and running
 *   Git installed
-*   A Firebase Project and service account credentials
 
 ### Installation Steps
 
@@ -210,7 +208,7 @@ Follow these instructions to get the project running.
 
 4.  **Set up Environment Variables**
     cp .env.example .env
-    * Edit .env with your Firebase and MySQL credentials
+    * Edit .env with your MySQL credentials
 
 5.  **Run schema.sql to create the Database**
     mysql -u root -p < schema.sql

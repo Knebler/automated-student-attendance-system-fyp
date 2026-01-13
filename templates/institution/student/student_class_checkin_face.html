@@ -22,7 +22,7 @@
 <script>
 let videoStream = null;
 let currentUserSession = "{{ user | tojson }}"; // set by Flask
-let sessionId = currentUserSession.id_token;
+let sessionId = currentUserSession.user_id || null;
 let currentUserId = currentUserSession.user_id;  
 
 async function initCamera() {

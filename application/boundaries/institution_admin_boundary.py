@@ -1,10 +1,8 @@
 from flask import Blueprint, render_template, request, session, current_app, flash, redirect, url_for, abort
 from sqlalchemy.exc import IntegrityError
-from application.controls.auth_control import AuthControl
-from application.controls.institution_control import InstitutionControl
 from application.controls.attendance_control import AttendanceControl
 from application.controls.auth_control import requires_roles
-from application.entities2 import ClassModel, UserModel, InstitutionModel, SubscriptionModel, CourseModel, VenueModel, CourseUserModel
+from application.entities2 import ClassModel, UserModel, InstitutionModel, SubscriptionModel, CourseModel, AttendanceRecordModel, CourseUserModel
 from database.base import get_session
 from database.models import *
 
@@ -240,12 +238,18 @@ def attendance_student_details(student_id):
     )
 
 
-@institution_bp.route('/attendance/class')
+@institution_bp.route('/attendance/class/<int:class_id>')
 @requires_roles('admin')
-def attendance_class_details():
-    return render_template(
-        'institution/admin/institution_admin_attendance_management_class_details.html',
-    )
+def attendance_class_details(class_id):
+    with get_session() as db_session:
+        class_model = ClassModel(db_session)
+        if not class_model.class_is_institution(class_id, session.get('institution_id')):
+            return abort(401)
+        context = {
+            "class": class_model.admin_class_details(class_id),
+            "records": class_model.get_attendance_records(class_id),
+        }
+    return render_template('institution/admin/institution_admin_attendance_management_class_details.html', **context)
 
 
 @institution_bp.route('/attendance/reports')

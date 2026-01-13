@@ -231,6 +231,39 @@ def seed_classes():
         session.commit()
     print(f"{len(classes)} classes created.")
 
+def seed_attendance():
+    with get_session() as session:
+        classes = session.query(Class).all()
+        statuses = AttendanceStatusEnum.enums
+
+        for cls in classes:
+            # Get all students enrolled in this course (ignoring semester for now)
+            course_students = session.query(CourseUser).join(User).filter(
+                CourseUser.course_id == cls.course_id,
+                User.role == "student",
+                User.is_active == True
+            ).all()
+
+            # Initialize attendance records list
+            attendance_records = []
+
+            for cu in course_students:
+                if random.random() < 0.8:  # 80% chance
+                    record = AttendanceRecord(
+                        class_id=cls.class_id,
+                        student_id=cu.user_id,
+                        status=random.choice(statuses),
+                        marked_by="lecturer",
+                        lecturer_id=cls.lecturer_id
+                    )
+                    attendance_records.append(record)
+
+            # Add all attendance records for this class at once
+            session.add_all(attendance_records)
+
+        session.commit()
+        print(f"Created {len(attendance_records)} attendance records.")
+
 def seed_database():
     import random
     zip_dict = lambda keys, list_of_values: [dict(zip(keys, values)) for values in list_of_values]
@@ -335,7 +368,7 @@ def seed_database():
         seed_classes()
     
     if row_count("Attendance_Records") == 0:
-        pass # TODO: Have to pull and coordinate information
+        seed_attendance()
 
     if row_count("Announcements") == 0:
         cols = [

@@ -6,6 +6,7 @@ import ssl
 from urllib.parse import quote_plus
 from sqlalchemy import create_engine, text
 from datetime import timedelta
+from application import create_app
 
 from database.models import Base
 
@@ -96,7 +97,6 @@ def create_flask_app(config_name='default'):
     app.register_blueprint(facial_recognition_bp, url_prefix='/api/facial-recognition')
     
     # Initialize application with BCE structure
-    from application import create_app
     create_app(app)
     
     return app

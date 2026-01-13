@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, current_app, request, redirect, url_for, flash
+from flask import Blueprint, render_template, session, current_app, request, redirect, url_for, flash
 from application.controls.database_control import DatabaseControl
 from application.controls.testimonial_control import TestimonialControl
 from application.controls.auth_control import AuthControl, requires_roles
@@ -229,13 +229,14 @@ def testimonial_detail(testimonial_id):
     )
 
 @main_bp.route('/submit-testimonial', methods=['GET', 'POST'])
+@requires_roles('student', 'lecturer', 'admin', 'platform_manager')
 def submit_testimonial():
     """Page for submitting a new testimonial"""
     from flask import session as flask_session  # Import Flask session separately to avoid confusion
     
     if request.method == 'POST':
         # Get user info from verified session
-        user = auth_result['user']
+        user = session.get('user')
         user_id = user.get('user_id')
         institution_id = user.get('institution_id')
         

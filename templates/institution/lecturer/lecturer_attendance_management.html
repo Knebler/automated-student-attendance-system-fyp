@@ -27,7 +27,7 @@
                 </div>
             </div>
             <div>
-                <a href="{{ url_for('lecturer.class_details', class_id=class.id) }}" class="btn-outline-custom">Class Details</a>
+                <a href="{{ url_for('institution_lecturer.manage_classes', class_id=class.id) }}" class="btn-outline-custom">Class Details</a>
             </div>
         </div>
     </div>
@@ -222,7 +222,7 @@
                 <div class="empty-state-icon">👥</div>
                 <h4>No Students Found</h4>
                 <p>This class doesn't have any students enrolled yet.</p>
-                <a href="{{ url_for('lecturer.manage_rosters') }}" class="btn-custom">Manage Roster</a>
+                <a href="{{ url_for('institution_lecturer.manage_classes') }}" class="btn-custom">Manage Roster</a>
             </div>
         </div>
         {% endif %}

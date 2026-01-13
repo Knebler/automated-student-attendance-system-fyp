@@ -126,7 +126,6 @@ def register():
         # Institution Admins: create a pending registration request
         if role == 'institution_admin':
             institution_name = request.form.get('institution_name')
-            # require institution name
             if not institution_name:
                 flash('Educational Institute name is required for Institution Admin registration.', 'warning')
                 return render_template('auth/register.html', institutions=institutions, subscription_plans=subscription_plans, preselected_plan_id=preselected_plan_id, preselected_role=preselected_role)
@@ -154,6 +153,7 @@ def register():
                 flash('Please select an institution for your account', 'warning')
                 return render_template('auth/register.html', institutions=institutions, subscription_plans=subscription_plans, preselected_plan_id=preselected_plan_id, preselected_role=preselected_role)
             try:
+                # Validate registration
                 reg_res = AuthControl.register_user(current_app, email, password, name=name, role=role)
             except Exception as e:
                 current_app.logger.exception('Registration exception')
@@ -199,7 +199,7 @@ def attendance_history():
         flash('Please login to view attendance history', 'warning')
         return redirect(url_for('auth.login'))
     
-    user_id = auth_result['user'].get('user_id') or session.get('user_id')
+    user_id = auth_result['user'].get('user_id')  # Changed from firebase_uid
     attendance_result = AttendanceControl.get_user_attendance_summary(current_app, user_id, days=90)
     
     if attendance_result['success']:
@@ -238,4 +238,3 @@ try:
     )
 except Exception:
     pass
-

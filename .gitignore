@@ -67,3 +67,4 @@ temp/
 tmp/
 tests/
 test_connection.py
+.pkl

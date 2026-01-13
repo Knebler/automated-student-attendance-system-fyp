@@ -14,9 +14,9 @@ def lecturer_dashboard():
         flash('Please login to access lecturer dashboard', 'warning')
         return redirect(url_for('auth.login'))
 
-    user_type = auth_result['user'].get('user_type')
+    role = auth_result['user'].get('role')
 
-    if user_type not in ['lecturer', 'teacher']:
+    if role not in ['lecturer', 'teacher']:
         flash('Access denied. Lecturer privileges required.', 'danger')
         return redirect(url_for('main.home'))
 
@@ -35,7 +35,7 @@ def lecturer_dashboard():
 def manage_appeals():
     """Render the lecturer appeal-management page"""
     auth_result = AuthControl.verify_session(current_app, session)
-    if not auth_result['success'] or auth_result['user'].get('user_type') not in ['lecturer', 'teacher']:
+    if not auth_result['success'] or auth_result['user'].get('role') not in ['lecturer', 'teacher']:
         flash('Access denied. Lecturer privileges required.', 'danger')
         return redirect(url_for('auth.login'))
 
@@ -46,7 +46,7 @@ def manage_appeals():
 def manage_attendance():
     """Render the lecturer attendance-management page"""
     auth_result = AuthControl.verify_session(current_app, session)
-    if not auth_result['success'] or auth_result['user'].get('user_type') not in ['lecturer', 'teacher']:
+    if not auth_result['success'] or auth_result['user'].get('role') not in ['lecturer', 'teacher']:
         flash('Access denied. Lecturer privileges required.', 'danger')
         return redirect(url_for('auth.login'))
 
@@ -65,7 +65,7 @@ def manage_attendance():
 def attendance_statistics():
     """Render the lecturer attendance statistics page"""
     auth_result = AuthControl.verify_session(current_app, session)
-    if not auth_result['success'] or auth_result['user'].get('user_type') not in ['lecturer', 'teacher']:
+    if not auth_result['success'] or auth_result['user'].get('role') not in ['lecturer', 'teacher']:
         flash('Access denied. Lecturer privileges required.', 'danger')
         return redirect(url_for('auth.login'))
 
@@ -86,7 +86,7 @@ def attendance_statistics():
 def manage_classes():
     """Render the lecturer class-management page"""
     auth_result = AuthControl.verify_session(current_app, session)
-    if not auth_result['success'] or auth_result['user'].get('user_type') not in ['lecturer', 'teacher']:
+    if not auth_result['success'] or auth_result['user'].get('role') not in ['lecturer', 'teacher']:
         flash('Access denied. Lecturer privileges required.', 'danger')
         return redirect(url_for('auth.login'))
 
@@ -117,7 +117,7 @@ def manage_classes():
 def timetable():
     """Render the lecturer timetable page"""
     auth_result = AuthControl.verify_session(current_app, session)
-    if not auth_result['success'] or auth_result['user'].get('user_type') not in ['lecturer', 'teacher']:
+    if not auth_result['success'] or auth_result['user'].get('role') not in ['lecturer', 'teacher']:
         flash('Access denied. Lecturer privileges required.', 'danger')
         return redirect(url_for('auth.login'))
 

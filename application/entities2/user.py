@@ -1,6 +1,7 @@
 from .base_entity import BaseEntity
 from database.models import User
 from datetime import datetime
+from sqlalchemy import func
 
 class UserModel(BaseEntity[User]):
     """Specific entity for User model with custom methods"""
@@ -30,31 +31,36 @@ class UserModel(BaseEntity[User]):
     def pm_user_stats(self):
         cutoff_date = datetime(datetime.now().year, datetime.now().month, 1)
 
-        user_count = self.session.query(User).count()
-        user_added_last_month = self.session.query(User).filter(User.date_joined > cutoff_date).count()
-        admin_count = self.session.query(User).filter(User.role == "admin").count()
-        admin_added_last_month = self.session.query(User).filter(User.role == "admin", User.date_joined > cutoff_date).count()
-        lecturer_count = self.session.query(User).filter(User.role == "lecturer").count()
-        lecturer_added_last_month = self.session.query(User).filter(User.role == "lecturer", User.date_joined > cutoff_date).count()
-        student_count = self.session.query(User).filter(User.role == "student").count()
-        student_added_last_month = self.session.query(User).filter(User.role == "student", User.date_joined > cutoff_date).count()
+        q_user_count = self.session.query(func.count(User.user_id))
+        q_user_count_last_month = q_user_count.filter(User.date_joined > cutoff_date)
+        q_admin_count = q_user_count.filter(User.role == "admin").scalar_subquery()
+        q_admin_count_last_month = q_user_count_last_month.filter(User.role == "admin").scalar_subquery()
+        q_lecturer_count = q_user_count.filter(User.role == "lecturer").scalar_subquery()
+        q_lecturer_count_last_month = q_user_count_last_month.filter(User.role == "lecturer").scalar_subquery()
+        q_student_count = q_user_count.filter(User.role == "student").scalar_subquery()
+        q_student_count_last_month = q_user_count_last_month.filter(User.role == "student").scalar_subquery()
 
+        headers = [
+            "user_count", "user_change_percentage",
+            "admin_count", "admin_change_percentage",
+            "lecturer_count", "lecturer_change_percentage",
+            "student_count", "student_change_percentage"
+        ]
+        count_data = self.session.query(
+            q_user_count.scalar_subquery(), q_user_count_last_month.scalar_subquery(),
+            q_admin_count, q_admin_count_last_month,
+            q_lecturer_count, q_lecturer_count_last_month,
+            q_student_count, q_student_count_last_month
+        ).one()
+        count_data = list(count_data)
         def perc_change(added, total):
             try:
                 return added / (total - added) * 100
             except ZeroDivisionError:
                 return 9999
-    
-        return {
-            "user_count": user_count,
-            "user_change_percentage": perc_change(user_added_last_month, user_count),
-            "admin_count": admin_count,
-            "admin_change_percentage": perc_change(admin_added_last_month, admin_count),
-            "lecturer_count": lecturer_count,
-            "lecturer_change_percentage": perc_change(lecturer_added_last_month, lecturer_count),
-            "student_count": student_count,
-            "student_change_percentage": perc_change(student_added_last_month, student_count),
-        }
+        for idx in range(1, len(headers), 2):
+            count_data[idx] = perc_change(count_data[idx], count_data[idx - 1])
+        return dict(zip(headers, count_data))
 
     def admin_user_stats(self, institution_id):
         base_filter = self.session.query(User).filter(User.institution_id == institution_id)

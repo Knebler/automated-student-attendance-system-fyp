@@ -11,11 +11,12 @@
         <div class="card-header-custom">
             <div class="user-header-tabs">
                 <div class="user-info-header">
-                    <h2 class="user-name">JASON HO</h2>
-                    <div class="user-status">
-                        Status: <span class="status-suspended">SUSPENDED</span>
-                        <button class="btn-custom btn-status-toggle">Unsuspend</button>
-                    </div>
+                    <h2 class="user-name">{{ user_details.name }}</h2>
+                    {% if user_details.is_active %}
+                        <div class="user-status">Status: <span class="status-active">ACTIVE</span></div>
+                    {% else %}
+                        <div class="user-status">Status: <span class="status-suspended">SUSPENDED</span></div>
+                    {% endif %}
                 </div>
                 <div class="tabs">
                     <button class="tab-btn active" data-tab="profile">Profile</button>
@@ -34,75 +35,96 @@
                         <div class="info-grid">
                             <div class="info-item">
                                 <span class="info-label">Full Name:</span>
-                                <span class="info-value">Kai Joo Jason</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">Display Name:</span>
-                                <span class="info-value">Jason Ho</span>
+                                <span class="info-value">{{ user_details.name }}</span>
                             </div>
                             <div class="info-item">
                                 <span class="info-label">Age:</span>
-                                <span class="info-value">54</span>
+                                <span class="info-value">{{ user_details.age }}</span>
                             </div>
                             <div class="info-item">
                                 <span class="info-label">Gender:</span>
-                                <span class="info-value">Male</span>
+                                <span class="info-value">{{ user_details.gender|capitalize }}</span>
                             </div>
                             <div class="info-item">
                                 <span class="info-label">Email:</span>
-                                <span class="info-value">haolian@uow.edu.au</span>
+                                <span class="info-value">{{ user_details.email }}</span>
                             </div>
                             <div class="info-item">
                                 <span class="info-label">Phone:</span>
-                                <span class="info-value">+61 4XX XXX XXX</span>
+                                <span class="info-value">{{ user_details.phone_number }}</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
+                <form method="POST" action="{{ url_for('institution.update_user_details', user_id=user_details.user_id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
                 <div class="section-container">
                     <h3 class="section-title mb-3">Edit Profile Information</h3>
+
                     <div class="edit-form">
                         <div class="form-row">
                             <div class="form-group">
                                 <label class="form-label">Full Name</label>
-                                <input type="text" class="form-input" value="Ho Kai Joo Jason">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Display Name</label>
-                                <input type="text" class="form-input" value="Jason Ho">
+                                <input type="text" class="form-input"
+                                    name="name"
+                                    value="{{ user_details.name }}">
                             </div>
                         </div>
+
                         <div class="form-row">
                             <div class="form-group">
                                 <label class="form-label">Gender</label>
-                                <select class="form-select">
-                                    <option value="male" selected>Male</option>
-                                    <option value="female">Female</option>
-                                    <option value="other">Other</option>
+                                <select class="form-select" name="gender">
+                                    {% for r in ['male', 'female', 'other'] %}
+                                    <option value="{{ r }}"
+                                        {% if user_details.gender == r %}selected{% endif %}>
+                                        {{ r|capitalize }}
+                                    </option>
+                                    {% endfor %}
                                 </select>
                             </div>
+
                             <div class="form-group">
                                 <label class="form-label">Age</label>
-                                <input type="number" class="form-input" value="42" min="18" max="99">
+                                <input type="number" class="form-input"
+                                    name="age"
+                                    value="{{ user_details.age }}"
+                                    min="18" max="99">
                             </div>
                         </div>
+
                         <div class="form-row">
                             <div class="form-group">
                                 <label class="form-label">Email</label>
-                                <input type="email" class="form-input" value="haolian@uow.edu.au">
+                                <input type="email" class="form-input"
+                                    name="email"
+                                    value="{{ user_details.email }}">
                             </div>
+
                             <div class="form-group">
                                 <label class="form-label">Phone Number</label>
-                                <input type="tel" class="form-input" value="+61 4XX XXX XXX">
+                                <input type="tel" class="form-input"
+                                    name="phone_number"
+                                    value="{{ user_details.phone_number }}">
                             </div>
                         </div>
+
                         <div class="form-actions">
-                            <button class="btn-custom btn-secondary">Cancel</button>
-                            <button class="btn-custom btn-primary">Save Changes</button>
+                            <a href="{{ url_for('institution.manage_users') }}"
+                            class="btn-custom btn-secondary">
+                            Cancel
+                            </a>
+                            <button type="submit"
+                                    class="btn-custom btn-primary">
+                                Save Changes
+                            </button>
                         </div>
                     </div>
                 </div>
+                </form>
+
             </div>
 
             <!-- Account Settings Tab Content -->
@@ -113,20 +135,17 @@
                         <div class="info-grid">
                             <div class="info-item">
                                 <span class="info-label">User ID:</span>
-                                <span class="info-value">67695569</span>
+                                <span class="info-value">{{ user_details.user_id }}</span>
                             </div>
                             <div class="info-item">
                                 <span class="info-label">Role:</span>
-                                <span class="role-badge role-lecturer">Lecturer</span>
+                                <span class="role-badge role-lecturer">{{ user_details.role|capitalize }}</span>
                             </div>
                             <div class="info-item">
                                 <span class="info-label">Account Created:</span>
-                                <span class="info-value">15/03/2023</span>
+                                <span class="info-value">{{ user_details.date_joined.strftime('%d %b %Y') }}</span>
                             </div>
-                            <div class="info-item">
-                                <span class="info-label">Last Login:</span>
-                                <span class="info-value">22/11/2024</span>
-                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -137,15 +156,18 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label class="form-label">User ID</label>
-                                <input type="text" class="form-input" value="67695569" readonly>
+                                <input type="text" class="form-input" value="{{ user_details.user_id }}" readonly>
                                 <div class="form-hint">Unique identifier (cannot be changed)</div>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Role</label>
-                                <select class="form-select">
-                                    <option value="student">Student</option>
-                                    <option value="lecturer" selected>Lecturer</option>
-                                    <option value="admin">Admin</option>
+                                 <select class="form-select" name="role">
+                                        {% for r in ['student', 'lecturer', 'admin'] %}
+                                        <option value="{{ r }}"
+                                        {% if user_details.role == r %}selected{% endif %}>
+                                        {{ r|capitalize }}
+                                        </option>
+                                        {% endfor %}
                                 </select>
                                 <div class="form-hint">User's role in the system</div>
                             </div>
@@ -329,6 +351,13 @@
         border-radius: 12px;
     }
 
+    .status-active {
+        color: #065f46;
+        font-weight: bold;
+        background-color: rgba(5, 95, 70, 0.1);
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+    }
     .btn-status-toggle {
         padding: 0.4rem 1rem;
         border-radius: 15px;

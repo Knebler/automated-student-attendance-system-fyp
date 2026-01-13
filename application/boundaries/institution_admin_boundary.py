@@ -191,26 +191,6 @@ def remove_user_from_course(user_id):
 @institution_bp.route('/manage_attendance')
 @requires_roles('admin')
 def manage_attendance():
-    # load all sessions (historical) so admin can manage attendance across all dates
-    # default: returns sessions up to today
-    result = AttendanceControl.get_all_sessions_attendance(current_app)
-    sessions = []
-    if result.get('success'):
-        raw_sessions = result.get('sessions') or []
-        for s in raw_sessions:
-            sess = s.get('session') if isinstance(s, dict) else None
-            records = s.get('attendance_records') if isinstance(s, dict) else []
-            present = sum(1 for r in records if r.get('status') == 'present')
-            absent = sum(1 for r in records if r.get('status') == 'absent')
-            sessions.append({
-                'session': sess,
-                'attendance_records': records,
-                'present_count': present,
-                'absent_count': absent,
-                'total': len(records)
-            })
-    else:
-        flash(result.get('error') or 'Failed to load sessions', 'warning')
 
     return render_template('institution/admin/institution_admin_attendance_management.html')
 
@@ -278,21 +258,11 @@ def attendance_student_details(student_id):
     )
 
 
-@institution_bp.route('/attendance/class/<int:class_id>')
+@institution_bp.route('/attendance/class')
 @requires_roles('admin')
-def attendance_class_details(class_id):
-    # Remember to only allow admins from the same institution
-    """Show attendance details for a single class (admin view)"""
-    # Load session (class) attendance
-    result = AttendanceControl.get_session_attendance(current_app, class_id)
-    if not result.get('success'):
-        flash(result.get('error') or 'Failed to load class attendance', 'danger')
-        return redirect(url_for('institution.manage_attendance'))
-
+def attendance_class_details():
     return render_template(
         'institution/admin/institution_admin_attendance_management_class_details.html',
-        session_info=result.get('session'),
-        records=result.get('attendance_records')
     )
 
 

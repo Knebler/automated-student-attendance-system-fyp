@@ -182,7 +182,62 @@ def seed_database():
         print(f"Added {len(classes)} classes")
     
     if row_count("Attendance_Records") == 0:
-        pass # TODO: Have to pull and coordinate information
+        with get_session() as s:
+            # Get all classes and their enrolled students
+            all_classes = s.execute(text("SELECT class_id, course_id, lecturer_id FROM Classes")).fetchall()
+            
+            for class_record in all_classes:
+                class_id, course_id, lecturer_id = class_record
+                
+                # Get students enrolled in this course
+                enrolled_students = s.execute(
+                    text("SELECT user_id FROM Course_Users WHERE course_id = :course_id AND user_id IN (SELECT user_id FROM Users WHERE role = 'student')"),
+                    {"course_id": course_id}
+                ).fetchall()
+                
+                for student_record in enrolled_students:
+                    student_id = student_record[0]
+                    
+                    # Determine attendance status (weighted toward 'present')
+                    status_options = ['present', 'absent', 'late', 'excused']
+                    weights = [0.7, 0.15, 0.1, 0.05]  # 70% present, 15% absent, etc.
+                    status = random.choices(status_options, weights=weights)[0]
+                    
+                    # Determine marked by (mostly system, some lecturer)
+                    marked_by = 'system' if random.random() > 0.2 else 'lecturer'
+                    
+                    # For some records, add notes
+                    notes = None
+                    if status in ['late', 'excused'] and random.random() > 0.5:
+                        note_templates = {
+                            'late': ['Traffic delay', 'Public transport issues', 'Personal emergency'],
+                            'excused': ['Medical appointment', 'Family emergency', 'University event']
+                        }
+                        notes = random.choice(note_templates[status])
+                    
+                    # Random recorded time (within last 30 days)
+                    recorded_at = datetime.now() - timedelta(days=random.randint(0, 30))
+                    
+                    cols = [
+                        'class_id', 'student_id', 'status', 'marked_by', 'lecturer_id', 'notes', 'recorded_at'
+                    ]
+                    
+                    data = {
+                        'class_id': class_id,
+                        'student_id': student_id,
+                        'status': status,
+                        'marked_by': marked_by,
+                        'lecturer_id': lecturer_id if marked_by == 'lecturer' else None,
+                        'notes': notes,
+                        'recorded_at': recorded_at
+                    }
+                    
+                    s.execute(
+                        text(f"INSERT INTO Attendance_Records ({comma_join(cols)}) VALUES ({colon_join(cols)})"),
+                        data
+                    )
+        
+        print(f"Added attendance records for all classes")
 
     if row_count("Announcements") == 0:
         cols = [
@@ -206,6 +261,115 @@ def seed_database():
                 content = f"Notification {random.randint(1, 100)} for user {user_id}"
                 s.execute(text(f"INSERT INTO Notifications (user_id, content) VALUES ({user_id}, '{content}')"))
     print(f"Added 5 notifications to each user")
+    
+    # ====================
+    # TESTIMONIALS SEEDING
+    # ====================
+    if row_count("Testimonials") == 0:
+        with get_session() as s:
+            # Get some students from each institution
+            for institution_id in range(1, 4):
+                # Get 2-3 students from each institution
+                students = s.execute(
+                    text("SELECT user_id, name FROM Users WHERE institution_id = :inst_id AND role = 'student' LIMIT 3"),
+                    {"inst_id": institution_id}
+                ).fetchall()
+                
+                testimonial_templates = [
+                    {
+                        "title": "Excellent Attendance System",
+                        "description": "This platform has completely transformed how we track attendance. The facial recognition feature is incredibly accurate and saves us so much time.",
+                        "rating": 5
+                    },
+                    {
+                        "title": "Great for Large Classes",
+                        "description": "Managing attendance for 200+ students was a nightmare before. Now it's automated and efficient. Highly recommended!",
+                        "rating": 4
+                    },
+                    {
+                        "title": "Very Reliable",
+                        "description": "The system rarely has any downtime and the reporting features are comprehensive. It has made administrative tasks much easier.",
+                        "rating": 5
+                    },
+                    {
+                        "title": "Good but Could Improve",
+                        "description": "Overall a solid system, though the mobile interface could be more intuitive. The customer support is responsive though.",
+                        "rating": 3
+                    },
+                    {
+                        "title": "Best Investment We Made",
+                        "description": "The ROI on this system is incredible. Reduced administrative workload by 70% and improved accuracy to nearly 100%.",
+                        "rating": 5
+                    }
+                ]
+                
+                status_options = ["pending", "approved", "rejected"]
+                status_weights = [0.2, 0.7, 0.1]  # 70% approved, 20% pending, 10% rejected
+                
+                for idx, student in enumerate(students):
+                    if idx >= len(testimonial_templates):
+                        break
+                    
+                    user_id, user_name = student
+                    template = testimonial_templates[idx]
+                    status = random.choices(status_options, weights=status_weights)[0]
+                    
+                    # Customize description with user's name
+                    description = template["description"]
+                    if random.random() > 0.5:
+                        description = f"As {user_name}, I can say that {description.lower()}"
+                    
+                    cols = [
+                        'institution_id', 'user_id', 'title', 'description', 'rating', 'status'
+                    ]
+                    
+                    data = {
+                        'institution_id': institution_id,
+                        'user_id': user_id,
+                        'title': template["title"],
+                        'description': description,
+                        'rating': template["rating"],
+                        'status': status
+                    }
+                    
+                    s.execute(
+                        text(f"INSERT INTO Testimonials ({comma_join(cols)}) VALUES ({colon_join(cols)})"),
+                        data
+                    )
+        
+        print(f"Added testimonials for each institution")
+
+    # ====================
+    # REPORT SCHEDULE SEEDING
+    # ====================
+    if row_count("Reports_Schedule") == 0:
+        cols = [
+            'institution_id', 'requested_by_user_id', 'schedule_type'
+        ]
+        
+        report_schedules = []
+        schedule_types = ['one', 'daily', 'weekly', 'monthly']
+        
+        # Create some report schedules for each institution
+        for institution_id in range(1, 4):
+            # Get admin user for this institution
+            with get_session() as s:
+                admin_user = s.execute(
+                    text("SELECT user_id FROM Users WHERE institution_id = :inst_id AND role = 'admin' LIMIT 1"),
+                    {"inst_id": institution_id}
+                ).fetchone()
+                
+                if admin_user:
+                    admin_id = admin_user[0]
+                    # Create 2-3 report schedules per institution
+                    for _ in range(random.randint(2, 3)):
+                        schedule_type = random.choice(schedule_types)
+                        report_schedules.append((institution_id, admin_id, schedule_type))
+        
+        if report_schedules:
+            push_data(f"INSERT INTO Reports_Schedule ({comma_join(cols)}) VALUES ({colon_join(cols)}) ", zip_dict(cols, report_schedules))
+            print(f"Added {len(report_schedules)} report schedules")
+
     print("Database seeded, models created")
 
 def reset_database():

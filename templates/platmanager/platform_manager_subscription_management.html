@@ -78,7 +78,7 @@
                             </select>
                             <select class="filter-select">
                                 <option value="">All Plans</option>
-                                <option value="basic">Basic</option>
+                                <option value="starter">Starter</option>
                                 <option value="pro">Professional</option>
                                 <option value="enterprise">Enterprise</option>
                                 <option value="custom">Custom</option>
@@ -190,7 +190,7 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="plan-badge basic">Basic</span>
+                                        <span class="plan-badge starter">Starter</span>
                                     </td>
                                     <td>Feb 10, 2026</td>
                                     <td>Feb 10, 2027</td>
@@ -377,7 +377,7 @@
                                     </td>
                                     <td>Dec 02, 2026</td>
                                     <td>
-                                        <span class="plan-badge basic">Basic</span>
+                                        <span class="plan-badge starter">Starter</span>
                                     </td>
                                     <td>
                                         <span class="status-badge pending">Pending</span>
@@ -883,7 +883,7 @@
         text-align: center;
     }
 
-    .plan-badge.basic {
+    .plan-badge.starter {
         background-color: #e0f2fe;
         color: #075985;
         border: 1px solid #0ea5e9;
@@ -1213,7 +1213,7 @@
                                 <label for="institutionPlan">Subscription Plan</label>
                                 <select id="institutionPlan" required>
                                     <option value="">Select Plan</option>
-                                    <option value="basic">Basic (100 users)</option>
+                                    <option value="starter">Starter (100 users)</option>
                                     <option value="pro">Professional (500 users)</option>
                                     <option value="enterprise">Enterprise (Unlimited)</option>
                                     <option value="custom">Custom</option>
@@ -1347,7 +1347,7 @@
                 
                 // Filter by plan
                 if (showRow && planValue && planBadge) {
-                    const rowPlan = planBadge.classList.contains('basic') ? 'basic' :
+                    const rowPlan = planBadge.classList.contains('starter') ? 'starter' :
                                   planBadge.classList.contains('pro') ? 'pro' :
                                   planBadge.classList.contains('enterprise') ? 'enterprise' :
                                   planBadge.classList.contains('custom') ? 'custom' : '';

@@ -1,33 +1,14 @@
 from flask import Blueprint, render_template, session, redirect, url_for, flash, current_app, request
-from application.controls.auth_control import AuthControl
+from application.controls.auth_control import AuthControl, requires_roles
 from application.controls.attendance_control import AttendanceControl
 
 student_bp = Blueprint('student', __name__)
 
 @student_bp.route('/')
+@requires_roles('student')
 def dashboard():
     """Main dashboard route"""
-    # Check authentication
-    auth_result = AuthControl.verify_session(current_app, session)
-    
-    if not auth_result['success']:
-        flash('Please login to access the dashboard', 'warning')
-        return redirect(url_for('auth.login'))
-    
-    # Get user from session
-    user = auth_result.get('user', {})
-    user_id = user.get('user_id') or session.get('user_id')
-    
-    # Get attendance summary
-    attendance_summary = {}
-    if user_id:
-        attendance_result = AttendanceControl.get_student_attendance_summary(current_app, user_id, days=30)
-        if attendance_result['success']:
-            attendance_summary = attendance_result['summary']
-    
-    return render_template('institution/student/student_dashboard.html',
-                         user=user,
-                         attendance_summary=attendance_summary)
+    return render_template('institution/student/student_dashboard.html')
 
 @student_bp.route('/profile')
 def profile():

@@ -1,137 +1,39 @@
 from flask import Blueprint, render_template, request, jsonify, session, current_app, flash, redirect, url_for
-from application.controls.auth_control import AuthControl
+from datetime import datetime
+
+from application.controls.auth_control import AuthControl, requires_roles
 from application.entities.base_entity import BaseEntity
+from application.entities2.institution import InstitutionModel
+from application.entities2.subscription import SubscriptionModel
+from application.entities2.user import UserModel
+from database.base import get_session
+from database.models import User
 
 platform_bp = Blueprint('platform', __name__)
 
-
 @platform_bp.route('/')
+@requires_roles('platform_manager')
 def platform_dashboard():
     """Platform manager dashboard (alias of platform manager)"""
-    auth_result = AuthControl.verify_session(current_app, session)
+    with get_session() as session:
+        inst_model = InstitutionModel(session)
+        sub_model = SubscriptionModel(session)
+        user_model = UserModel(session)
 
-    if not auth_result['success'] or auth_result['user'].get('user_type') != 'platform_manager':
-        flash('Access denied. Platform manager privileges required.', 'danger')
-        return redirect(url_for('auth.login'))
+        subscriptions = sub_model.get_all()
+        active_subscriptions = [sub for sub in subscriptions if sub.is_active == True]
+        recent_subscriptions = sorted(active_subscriptions, key=lambda sub: sub.created_at, reverse=True)[:5]
 
-    # Initialize defaults
-    total_institutions = 0
-    active_institutions = 0
-    pending_subscriptions_count = 0
-    total_registered_users = 0
-    pending_subscriptions = []
-    recent_changes = []
-    recent_reports = []
-
-    try:
-        cursor = BaseEntity.get_db_connection(current_app)
-
-        # Counts
-        cursor.execute("SELECT COUNT(*) FROM Institutions")
-        row = cursor.fetchone()
-        total_institutions = int(row[0]) if row and row[0] is not None else 0
-
-        cursor.execute("SELECT COUNT(*) FROM Institutions WHERE is_active = TRUE")
-        row = cursor.fetchone()
-        active_institutions = int(row[0]) if row and row[0] is not None else 0
-
-        cursor.execute("SELECT COUNT(*) FROM Unregistered_Users WHERE status = 'pending'")
-        row = cursor.fetchone()
-        pending_subscriptions_count = int(row[0]) if row and row[0] is not None else 0
-
-        # Registered user counts (aggregate from known tables)
-        try:
-            cursor.execute("SELECT COUNT(*) FROM Platform_Managers")
-            row = cursor.fetchone()
-            pm_count = int(row[0]) if row and row[0] is not None else 0
-        except Exception:
-            pm_count = 0
-
-        try:
-            cursor.execute("SELECT COUNT(*) FROM Institution_Admins")
-            row = cursor.fetchone()
-            admin_count = int(row[0]) if row and row[0] is not None else 0
-        except Exception:
-            admin_count = 0
-
-        try:
-            cursor.execute("SELECT COUNT(*) FROM Lecturers")
-            row = cursor.fetchone()
-            lecturer_count = int(row[0]) if row and row[0] is not None else 0
-        except Exception:
-            lecturer_count = 0
-
-        try:
-            cursor.execute("SELECT COUNT(*) FROM Students")
-            row = cursor.fetchone()
-            student_count = int(row[0]) if row and row[0] is not None else 0
-        except Exception:
-            student_count = 0
-
-        total_registered_users = pm_count + admin_count + lecturer_count + student_count
-
-        # Pending subscriptions (top 5)
-        try:
-            cursor.execute("SELECT unreg_user_id, email, full_name, institution_name, applied_at, selected_plan_id FROM Unregistered_Users WHERE status = 'pending' ORDER BY applied_at DESC LIMIT 5")
-            pending_rows = cursor.fetchall() or []
-            pending_subscriptions = []
-            for r in pending_rows:
-                # r may be a tuple-like row
-                pending_subscriptions.append({
-                    'id': r[0],
-                    'email': r[1],
-                    'full_name': r[2],
-                    'institution_name': r[3],
-                    'request_date': r[4].strftime('%Y-%m-%d') if hasattr(r[4], 'strftime') else str(r[4]),
-                    'plan_id': r[5]
-                })
-        except Exception:
-            pending_subscriptions = []
-
-        # Recent institution changes (use created_at as proxy)
-        try:
-            cursor.execute("SELECT institution_id, name, created_at, is_active FROM Institutions ORDER BY created_at DESC LIMIT 5")
-            inst_rows = cursor.fetchall() or []
-            recent_changes = []
-            for r in inst_rows:
-                recent_changes.append({
-                    'action': f"Created institution: {r[1]}",
-                    'date': r[2].strftime('%Y-%m-%d') if hasattr(r[2], 'strftime') else str(r[2]),
-                    'link': url_for('institution.institution_profile') if 'institution' in globals() else url_for('platform.pending_registrations')
-                })
-        except Exception:
-            recent_changes = []
-
-        # Recent reports (if a Reports table exists)
-        try:
-            cursor.execute("SELECT report_id, institution_name, created_at, report_type FROM Reports ORDER BY created_at DESC LIMIT 5")
-            rep_rows = cursor.fetchall() or []
-            recent_reports = []
-            for r in rep_rows:
-                recent_reports.append({
-                    'id': r[0],
-                    'case_id': r[0],
-                    'institution': r[1],
-                    'date': r[2].strftime('%Y-%m-%d') if hasattr(r[2], 'strftime') else str(r[2]),
-                    'type': r[3]
-                })
-        except Exception:
-            recent_reports = []
-
-    except Exception:
-        # If any DB errors happen, fall back to empty/default data
-        pass
-
-
-    return render_template('platmanager/platform_manager_dashboard.html',
-                               user=auth_result['user'],
-                               total_institutions=total_institutions,
-                               active_institutions=active_institutions,
-                               pending_subscriptions_count=pending_subscriptions_count,
-                               total_registered_users=total_registered_users,
-                               pending_subscriptions=pending_subscriptions,
-                               recent_changes=recent_changes,
-                               recent_reports=recent_reports)
+        context = {
+            'total_subscription_count': len(subscriptions),
+            'active_subscription_count': len(active_subscriptions),
+            'total_user_count': user_model.count(),
+            'recent_subscriptions': [{
+                "institution_name": inst_model.get_one(subscription_id=sub.subscription_id).name,
+                "request_date": sub.created_at,
+            } for sub in recent_subscriptions],
+        }
+    return render_template('platmanager/platform_manager_dashboard.html', **context)
 
 
 @platform_bp.route('/pending-registrations')
@@ -173,29 +75,47 @@ def approve_registration(unreg_user_id):
 
 
 @platform_bp.route('/users')
+@requires_roles('platform_manager')
 def user_management():
     """Platform manager - user management"""
-    auth_result = AuthControl.verify_session(current_app, session)
-    if not auth_result['success'] or auth_result['user'].get('user_type') != 'platform_manager':
-        flash('Access denied. Platform manager privileges required.', 'danger')
-        return redirect(url_for('auth.login'))
-
-
-    return render_template('platmanager/platform_manager_user_management.html', user=auth_result['user'])
-
+    PER_PAGE = 5
+    with get_session() as session:
+        user_model = UserModel(session)
+        inst_model = InstitutionModel(session)
+        page = int(request.args.get('page', 1))
+        paginated_info = user_model.get_paginated(page, PER_PAGE)
+        users = paginated_info.pop('items')
+        def get_info(user: User):
+            info = user.as_sanitized_dict()
+            name_split = user.name.split(' ')
+            if len(name_split) > 1:
+                info['initials'] = name_split[0][0] + name_split[-1][0]
+            else:
+                info['initials'] = name_split[0][:2]
+            info['institution'] = inst_model.get_by_id(user.institution_id).name
+            return info
+        context = {
+            "overview_stats": user_model.pm_user_stats(),
+            "users": [
+                get_info(user) for user in users
+            ],
+            "table": {
+                "start": (page-1)*PER_PAGE + 1,
+                "end": min(page * PER_PAGE, paginated_info['total']),
+                "total": paginated_info['total'],
+                "pages": paginated_info['pages'],
+                "page": page,
+            },
+        }
+    print(context)
+    return render_template('platmanager/platform_manager_user_management.html', **context)
 
 
 @platform_bp.route('/subscriptions')
+@requires_roles('platform_manager')
 def subscription_management():
     """Platform manager - subscription management"""
-    auth_result = AuthControl.verify_session(current_app, session)
-    if not auth_result['success'] or auth_result['user'].get('user_type') != 'platform_manager':
-        flash('Access denied. Platform manager privileges required.', 'danger')
-        return redirect(url_for('auth.login'))
-
-
-    return render_template('platmanager/platform_manager_subscription_management.html', user=auth_result['user'])
-
+    return render_template('platmanager/platform_manager_subscription_management.html')
 
 
 @platform_bp.route('/subscriptions/profile-creator')
@@ -205,25 +125,15 @@ def subscription_profile_creator():
     if not auth_result['success'] or auth_result['user'].get('user_type') != 'platform_manager':
         flash('Access denied. Platform manager privileges required.', 'danger')
         return redirect(url_for('auth.login'))
-
-
     return render_template('platmanager/platform_manager_subscription_management_profile_creator.html', user=auth_result['user'])
 
 
-
-
 @platform_bp.route('/reports')
+@requires_roles('platform_manager')
 def report_management():
     """Platform manager - reports overview"""
-    auth_result = AuthControl.verify_session(current_app, session)
-    if not auth_result['success'] or auth_result['user'].get('user_type') != 'platform_manager':
-        flash('Access denied. Platform manager privileges required.', 'danger')
-        return redirect(url_for('auth.login'))
-
     # TODO: query reports from DB
-
-    return render_template('platmanager/platform_manager_report_management.html', user=auth_result['user'])
-
+    return render_template('platmanager/platform_manager_report_management.html')
 
 
 @platform_bp.route('/reports/<int:report_id>')
@@ -233,33 +143,19 @@ def report_details(report_id):
     if not auth_result['success'] or auth_result['user'].get('user_type') != 'platform_manager':
         flash('Access denied. Platform manager privileges required.', 'danger')
         return redirect(url_for('auth.login'))
-
     # TODO: fetch report by id from DB
-
     return render_template('platmanager/platform_manager_report_management_report_details.html', user=auth_result['user'], report_id=report_id)
 
 
-
 @platform_bp.route('/performance')
+@requires_roles('platform_manager')
 def performance_management():
     """Platform manager - performance management"""
-    auth_result = AuthControl.verify_session(current_app, session)
-    if not auth_result['success'] or auth_result['user'].get('user_type') != 'platform_manager':
-        flash('Access denied. Platform manager privileges required.', 'danger')
-        return redirect(url_for('auth.login'))
-
-
-    return render_template('platmanager/platform_manager_performance_management.html', user=auth_result['user'])
-
+    return render_template('platmanager/platform_manager_performance_management.html')
 
 
 @platform_bp.route('/settings')
+@requires_roles('platform_manager')
 def settings_management():
     """Platform manager - settings"""
-    auth_result = AuthControl.verify_session(current_app, session)
-    if not auth_result['success'] or auth_result['user'].get('user_type') != 'platform_manager':
-        flash('Access denied. Platform manager privileges required.', 'danger')
-        return redirect(url_for('auth.login'))
-
-
-    return render_template('platmanager/platform_manager_settings_management.html', user=auth_result['user'])
+    return render_template('platmanager/platform_manager_settings_management.html')

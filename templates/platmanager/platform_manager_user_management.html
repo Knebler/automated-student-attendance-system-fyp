@@ -25,23 +25,23 @@
                     <div class="stats-grid">
                         <div class="stat-item">
                             <div class="stat-label">Total Users</div>
-                            <div class="stat-value">2,847</div>
-                            <div class="stat-change positive">+12% this month</div>
+                            <div class="stat-value">{{ overview_stats.user_count }}</div>
+                            <div class="stat-change positive">+{{ overview_stats.user_change_percentage }}% this month</div>
                         </div>
                         <div class="stat-item">
                             <div class="stat-label">Institution Admins</div>
-                            <div class="stat-value">42</div>
-                            <div class="stat-change positive">+2 this month</div>
+                            <div class="stat-value">{{ overview_stats.admin_count }}</div>
+                            <div class="stat-change positive">+{{ overview_stats.admin_change_percentage }}% this month</div>
                         </div>
                         <div class="stat-item">
                             <div class="stat-label">Lecturers</div>
-                            <div class="stat-value">316</div>
-                            <div class="stat-change positive">+8% this month</div>
+                            <div class="stat-value">{{ overview_stats.lecturer_count }}</div>
+                            <div class="stat-change positive">+{{ overview_stats.lecturer_change_percentage }}% this month</div>
                         </div>
                         <div class="stat-item">
                             <div class="stat-label">Students</div>
-                            <div class="stat-value">2,489</div>
-                            <div class="stat-change positive">+15% this month</div>
+                            <div class="stat-value">{{ overview_stats.student_count }}</div>
+                            <div class="stat-change positive">+{{ overview_stats.student_change_percentage }}% this month</div>
                         </div>
                     </div>
                 </div>
@@ -90,7 +90,7 @@
                 <div class="card-header-custom">
                     <div class="header-content">
                         <span>Users Information</span>
-                        <span class="user-count">Showing 5 of 2,847 users</span>
+                        <span class="user-count">Showing {{ table.start }}-{{ table.end }} of {{ table.total }} users</span>
                     </div>
                 </div>
                 <div class="card-body-custom">
@@ -108,23 +108,28 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                {% for user in users %}
                                 <tr>
                                     <td>
                                         <div class="user-info">
-                                            <div class="user-avatar">GF</div>
+                                            <div class="user-avatar">{{ user.initials }}</div>
                                             <div class="user-details">
-                                                <div class="user-name">GOH CHING FONG</div>
-                                                <div class="user-email">goh.ching@university.edu</div>
+                                                <div class="user-name">{{ user.name }}</div>
+                                                <div class="user-email">{{ user.email }}</div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td>8551200</td>
+                                    <td>{{ user.user_id }}</td>
                                     <td>
-                                        <span class="role-badge institution-admin">Institution Admin</span>
+                                        <span class="role-badge {{ user.role }}">{{ user.role }}</span>
                                     </td>
-                                    <td>University of Technology</td>
+                                    <td>{{ user.institution }}</td>
                                     <td>
+                                        {% if user.is_active %}
+                                        <span class="status-badge active">Active</span>
+                                        {% else %}
                                         <span class="status-badge suspended">Suspended</span>
+                                        {% endif %}
                                     </td>
                                     <td>
                                         <div class="action-buttons">
@@ -140,134 +145,7 @@
                                         </div>
                                     </td>
                                 </tr>
-                                <tr>
-                                    <td>
-                                        <div class="user-info">
-                                            <div class="user-avatar">AT</div>
-                                            <div class="user-details">
-                                                <div class="user-name">ALEX TAN</div>
-                                                <div class="user-email">alex.tan@university.edu</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>8541200</td>
-                                    <td>
-                                        <span class="role-badge lecturer">Lecturer</span>
-                                    </td>
-                                    <td>University of Technology</td>
-                                    <td>
-                                        <span class="status-badge active">Active</span>
-                                    </td>
-                                    <td>
-                                        <div class="action-buttons">
-                                            <button class="btn-action btn-view" title="View Details">
-                                                <span class="action-icon">👁️</span>
-                                            </button>
-                                            <button class="btn-action btn-edit" title="Edit User">
-                                                <span class="action-icon">✏️</span>
-                                            </button>
-                                            <button class="btn-action btn-suspend" title="Suspend User">
-                                                <span class="action-icon">⏸️</span>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div class="user-info">
-                                            <div class="user-avatar">JT</div>
-                                            <div class="user-details">
-                                                <div class="user-name">JAMES TEO</div>
-                                                <div class="user-email">james.teo@university.edu</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>8531254</td>
-                                    <td>
-                                        <span class="role-badge student">Student</span>
-                                    </td>
-                                    <td>University of Technology</td>
-                                    <td>
-                                        <span class="status-badge active">Active</span>
-                                    </td>
-                                    <td>
-                                        <div class="action-buttons">
-                                            <button class="btn-action btn-view" title="View Details">
-                                                <span class="action-icon">👁️</span>
-                                            </button>
-                                            <button class="btn-action btn-edit" title="Edit User">
-                                                <span class="action-icon">✏️</span>
-                                            </button>
-                                            <button class="btn-action btn-suspend" title="Suspend User">
-                                                <span class="action-icon">⏸️</span>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div class="user-info">
-                                            <div class="user-avatar">MS</div>
-                                            <div class="user-details">
-                                                <div class="user-name">MARY SMITH</div>
-                                                <div class="user-email">mary.smith@college.edu</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>8546393</td>
-                                    <td>
-                                        <span class="role-badge lecturer">Lecturer</span>
-                                    </td>
-                                    <td>City College</td>
-                                    <td>
-                                        <span class="status-badge active">Active</span>
-                                    </td>
-                                    <td>
-                                        <div class="action-buttons">
-                                            <button class="btn-action btn-view" title="View Details">
-                                                <span class="action-icon">👁️</span>
-                                            </button>
-                                            <button class="btn-action btn-edit" title="Edit User">
-                                                <span class="action-icon">✏️</span>
-                                            </button>
-                                            <button class="btn-action btn-suspend" title="Suspend User">
-                                                <span class="action-icon">⏸️</span>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div class="user-info">
-                                            <div class="user-avatar">JR</div>
-                                            <div class="user-details">
-                                                <div class="user-name">JOHN ROBERTS</div>
-                                                <div class="user-email">john.roberts@institute.edu</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>8566839</td>
-                                    <td>
-                                        <span class="role-badge institution-admin">Institution Admin</span>
-                                    </td>
-                                    <td>Tech Institute</td>
-                                    <td>
-                                        <span class="status-badge active">Active</span>
-                                    </td>
-                                    <td>
-                                        <div class="action-buttons">
-                                            <button class="btn-action btn-view" title="View Details">
-                                                <span class="action-icon">👁️</span>
-                                            </button>
-                                            <button class="btn-action btn-edit" title="Edit User">
-                                                <span class="action-icon">✏️</span>
-                                            </button>
-                                            <button class="btn-action btn-suspend" title="Suspend User">
-                                                <span class="action-icon">⏸️</span>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
@@ -275,18 +153,17 @@
                     <!-- Pagination -->
                     <div class="pagination-section">
                         <div class="pagination-info">
-                            Showing 1-5 of 2,847 users
+                            Showing {{ table.start }}-{{ table.end }} of {{ table.total }} users
                         </div>
                         <div class="pagination-controls">
-                            <button class="btn-custom btn-outline-custom btn-prev" disabled>Previous</button>
+                            <a class="btn-custom btn-outline-custom btn-prev" disabled>Previous</a>
                             <span class="page-numbers">
-                                <span class="page-current">1</span>
-                                <a href="#" class="page-link">2</a>
-                                <a href="#" class="page-link">3</a>
-                                <span class="page-ellipsis">...</span>
-                                <a href="#" class="page-link">285</a>
+                                Page 
+                                <span class="page-current">{{ table.page }}</span>
+                                /
+                                <a href="#" class="page-link">{{ table.pages }}</a>
                             </span>
-                            <a href="#" class="btn-custom btn-outline-custom btn-next">Next</a>
+                            <a href="/platform/users?page={{ table.page + 1 }}" class="btn-custom btn-outline-custom btn-next">Next</a>
                         </div>
                     </div>
                 </div>
@@ -612,7 +489,7 @@
         letter-spacing: 0.5px;
     }
 
-    .role-badge.institution-admin {
+    .role-badge.admin {
         background-color: #e0f2fe;
         color: #075985;
         border: 1px solid #0ea5e9;
@@ -879,292 +756,4 @@
     }
 </style>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Add Admin Button
-        const addAdminBtn = document.getElementById('addAdminBtn');
-        addAdminBtn.addEventListener('click', function() {
-            // Create modal for adding admin
-            const modal = document.createElement('div');
-            modal.className = 'modal-overlay';
-            modal.innerHTML = `
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3>Add Admin Account</h3>
-                        <button class="modal-close">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="addAdminForm">
-                            <div class="form-group">
-                                <label for="adminName">Full Name</label>
-                                <input type="text" id="adminName" placeholder="Enter full name" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="adminEmail">Email Address</label>
-                                <input type="email" id="adminEmail" placeholder="Enter email address" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="adminInstitution">Institution</label>
-                                <select id="adminInstitution" required>
-                                    <option value="">Select Institution</option>
-                                    <option value="university-tech">University of Technology</option>
-                                    <option value="city-college">City College</option>
-                                    <option value="tech-institute">Tech Institute</option>
-                                    <option value="science-academy">Science Academy</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="adminRole">Role Type</label>
-                                <select id="adminRole" required>
-                                    <option value="institution-admin">Institution Admin</option>
-                                    <option value="super-admin">Super Admin</option>
-                                </select>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn-custom btn-outline-custom btn-cancel">Cancel</button>
-                        <button class="btn-custom btn-submit" type="submit" form="addAdminForm">Create Admin</button>
-                    </div>
-                </div>
-            `;
-            
-            document.body.appendChild(modal);
-            
-            // Close modal functionality
-            const closeModal = () => {
-                document.body.removeChild(modal);
-            };
-            
-            modal.querySelector('.modal-close').addEventListener('click', closeModal);
-            modal.querySelector('.btn-cancel').addEventListener('click', closeModal);
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal) closeModal();
-            });
-            
-            // Form submission
-            modal.querySelector('#addAdminForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                const name = document.getElementById('adminName').value;
-                const email = document.getElementById('adminEmail').value;
-                
-                showAlert(`Admin account for ${name} (${email}) has been created successfully.`, 'success');
-                closeModal();
-            });
-        });
-
-        // Search functionality
-        const searchInput = document.querySelector('.search-input');
-        const searchButton = document.querySelector('.btn-search');
-        const tableRows = document.querySelectorAll('.users-table tbody tr');
-
-        function performSearch() {
-            const searchTerm = searchInput.value.toLowerCase().trim();
-            
-            tableRows.forEach(row => {
-                const rowText = row.textContent.toLowerCase();
-                if (searchTerm === '' || rowText.includes(searchTerm)) {
-                    row.style.display = 'table-row';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-            
-            updateUserCount();
-        }
-
-        searchButton.addEventListener('click', performSearch);
-        searchInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                performSearch();
-            }
-        });
-
-        // Filter functionality
-        const roleFilter = document.querySelectorAll('.filter-select')[0];
-        const statusFilter = document.querySelectorAll('.filter-select')[1];
-        const resetButton = document.querySelector('.btn-reset');
-
-        function applyFilters() {
-            const roleValue = roleFilter.value;
-            const statusValue = statusFilter.value;
-            
-            tableRows.forEach(row => {
-                const roleBadge = row.querySelector('.role-badge');
-                const statusBadge = row.querySelector('.status-badge');
-                
-                let showRow = true;
-                
-                // Filter by role
-                if (roleValue && roleBadge) {
-                    const rowRole = roleBadge.classList.contains('institution-admin') ? 'admin' :
-                                  roleBadge.classList.contains('lecturer') ? 'lecturer' :
-                                  roleBadge.classList.contains('student') ? 'student' : '';
-                    
-                    if (roleValue !== rowRole) {
-                        showRow = false;
-                    }
-                }
-                
-                // Filter by status
-                if (showRow && statusValue && statusBadge) {
-                    const rowStatus = statusBadge.classList.contains('active') ? 'active' :
-                                    statusBadge.classList.contains('suspended') ? 'suspended' :
-                                    statusBadge.classList.contains('pending') ? 'pending' : '';
-                    
-                    if (statusValue !== rowStatus) {
-                        showRow = false;
-                    }
-                }
-                
-                row.style.display = showRow ? 'table-row' : 'none';
-            });
-            
-            updateUserCount();
-        }
-
-        roleFilter.addEventListener('change', applyFilters);
-        statusFilter.addEventListener('change', applyFilters);
-
-        resetButton.addEventListener('click', function() {
-            searchInput.value = '';
-            roleFilter.value = '';
-            statusFilter.value = '';
-            
-            tableRows.forEach(row => {
-                row.style.display = 'table-row';
-            });
-            
-            updateUserCount();
-        });
-
-        // Update user count
-        function updateUserCount() {
-            const visibleRows = Array.from(tableRows).filter(row => 
-                row.style.display !== 'none'
-            ).length;
-            
-            const userCountElement = document.querySelector('.user-count');
-            if (userCountElement) {
-                userCountElement.textContent = `Showing ${visibleRows} of 2,847 users`;
-            }
-            
-            // Update pagination info
-            const paginationInfo = document.querySelector('.pagination-info');
-            if (paginationInfo) {
-                paginationInfo.textContent = `Showing 1-${Math.min(5, visibleRows)} of ${visibleRows} users`;
-            }
-        }
-
-        // Action buttons functionality
-        document.querySelectorAll('.btn-view').forEach(button => {
-            button.addEventListener('click', function() {
-                const row = this.closest('tr');
-                const userName = row.querySelector('.user-name').textContent;
-                const userId = row.querySelector('td:nth-child(2)').textContent;
-                
-                showAlert(`Viewing details for ${userName} (ID: ${userId})`, 'info');
-            });
-        });
-
-        document.querySelectorAll('.btn-edit').forEach(button => {
-            button.addEventListener('click', function() {
-                const row = this.closest('tr');
-                const userName = row.querySelector('.user-name').textContent;
-                
-                showAlert(`Opening edit form for ${userName}`, 'warning');
-            });
-        });
-
-        document.querySelectorAll('.btn-activate').forEach(button => {
-            button.addEventListener('click', function() {
-                const row = this.closest('tr');
-                const userName = row.querySelector('.user-name').textContent;
-                const statusBadge = row.querySelector('.status-badge');
-                
-                if (confirm(`Activate user ${userName}?`)) {
-                    statusBadge.className = 'status-badge active';
-                    statusBadge.textContent = 'Active';
-                    this.innerHTML = '<span class="action-icon">⏸️</span>';
-                    this.title = 'Suspend User';
-                    this.classList.remove('btn-activate');
-                    this.classList.add('btn-suspend');
-                    
-                    showAlert(`User ${userName} has been activated.`, 'success');
-                }
-            });
-        });
-
-        document.querySelectorAll('.btn-suspend').forEach(button => {
-            button.addEventListener('click', function() {
-                const row = this.closest('tr');
-                const userName = row.querySelector('.user-name').textContent;
-                const statusBadge = row.querySelector('.status-badge');
-                
-                if (confirm(`Suspend user ${userName}?`)) {
-                    statusBadge.className = 'status-badge suspended';
-                    statusBadge.textContent = 'Suspended';
-                    this.innerHTML = '<span class="action-icon">✅</span>';
-                    this.title = 'Activate User';
-                    this.classList.remove('btn-suspend');
-                    this.classList.add('btn-activate');
-                    
-                    showAlert(`User ${userName} has been suspended.`, 'warning');
-                }
-            });
-        });
-
-        // Pagination functionality
-        document.querySelector('.btn-next').addEventListener('click', function(e) {
-            e.preventDefault();
-            showAlert('Loading next page...', 'info');
-        });
-
-        document.querySelectorAll('.page-link').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const pageNum = this.textContent;
-                showAlert(`Loading page ${pageNum}...`, 'info');
-            });
-        });
-
-        // Show alert message
-        function showAlert(message, type) {
-            // Create alert element
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert-custom alert-${type} mt-3`;
-            alertDiv.innerHTML = `
-                ${message}
-                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'" style="float: right; background: none; border: none; font-size: 1.2rem; cursor: pointer;">×</button>
-            `;
-            
-            // Find alert container or create one
-            let alertContainer = document.querySelector('.alert-container');
-            if (!alertContainer) {
-                alertContainer = document.createElement('div');
-                alertContainer.className = 'alert-container';
-                document.querySelector('.main-container').insertBefore(alertContainer, document.querySelector('.main-container').firstChild);
-            }
-            
-            // Add alert to container
-            alertContainer.appendChild(alertDiv);
-            
-            // Auto-remove after 5 seconds
-            setTimeout(() => {
-                if (alertDiv.parentElement) {
-                    alertDiv.style.opacity = '0';
-                    alertDiv.style.transition = 'opacity 0.5s';
-                    setTimeout(() => {
-                        if (alertDiv.parentElement) {
-                            alertDiv.parentElement.removeChild(alertDiv);
-                        }
-                    }, 500);
-                }
-            }, 5000);
-        }
-
-        // Initialize
-        updateUserCount();
-    });
-</script>
 {% endblock %}

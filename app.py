@@ -1,13 +1,14 @@
 from flask import Flask, app
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import CSRFProtect
-import pyrebase
-from application import create_app
 import os
 import ssl
 from urllib.parse import quote_plus
 from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker, scoped_session
+from datetime import timedelta
+from application import create_app
+
+from database.models import Base
 
 def create_flask_app(config_name='default'):
     """Factory function to create Flask application"""
@@ -72,130 +73,14 @@ def create_flask_app(config_name='default'):
     }
     
     # Initialize SQLAlchemy
-    db = SQLAlchemy(app)
-    
-    # Test connection immediately
-    try:
-        with app.app_context():
-            print("Testing database connection...")
-            
-            # Simple connection test
-            result = db.session.execute(text('SELECT 1'))
-            print("Basic connection test passed")
-            
-            # Test SSL if enabled
-            if ssl_enabled:
-                try:
-                    result = db.session.execute(text('SHOW STATUS LIKE "Ssl_cipher"'))
-                    ssl_status = result.fetchone()
-                    if ssl_status and ssl_status[1]:
-                        print(f"SSL active. Cipher: {ssl_status[1]}")
-                    else:
-                        print("Connected but SSL cipher not detected")
-                except Exception as ssl_err:
-                    print(f"Could not check SSL status: {ssl_err}")
-            
-            # Get database info
-            result = db.session.execute(text('SELECT DATABASE(), VERSION()'))
-            db_info = result.fetchone()
-            print(f"Connected to: {db_info[0]}")
-            print(f"MySQL Version: {db_info[1]}")
-            
-    except Exception as e:
-        print(f"Database connection failed: {e}")
-        
-        # Try alternative connection method
-        print("\nAttempting alternative connection method...")
-        try:
-            # Create a custom engine with explicit SSL
-            engine = create_engine(
-                database_uri,
-                connect_args=connect_args,
-                pool_size=10,
-                pool_recycle=300
-            )
-            
-            # Test the custom engine
-            with engine.connect() as conn:
-                result = conn.execute(text('SELECT 1'))
-                print("Alternative connection method works!")
-                
-                # Replace Flask-SQLAlchemy's engine with our custom one
-                db.engine.dispose()  # Dispose old engine
-                db.engine = engine
-                db.session.bind = engine
-                
-                print("Replaced SQLAlchemy engine with custom SSL-enabled engine")
-                
-        except Exception as alt_err:
-            print(f"Alternative connection also failed: {alt_err}")
-            
-            # Last resort: create a minimal working connection
-            print("\nCreating minimal test connection...")
-            try:
-                import pymysql
-                
-                connection = pymysql.connect(
-                    host=app.config['MYSQL_HOST'],
-                    user=app.config['MYSQL_USER'],
-                    password=app.config['MYSQL_PASSWORD'],
-                    database=app.config['MYSQL_DB'],
-                    port=app.config.get('MYSQL_PORT', 3306),
-                    charset='utf8mb4',
-                    cursorclass=pymysql.cursors.DictCursor,
-                    ssl={'ca': ssl_ca_path} if ssl_enabled and os.path.exists(ssl_ca_path) else None
-                )
-                
-                print("Minimal PyMySQL connection works!")
-                connection.close()
-                
-            except Exception as pymysql_err:
-                print(f"Even minimal connection failed: {pymysql_err}")
-        
-        # Don't raise error - let the app start anyway
-        print("\nContinuing with app startup despite connection issues...")
+    db = SQLAlchemy(app, metadata=Base.metadata)
     
     # Initialize CSRF protection for forms
     csrf = CSRFProtect()
     csrf.init_app(app)
     
-    # Configure Firebase
-    firebase_config = {
-        "apiKey": app.config['FIREBASE_API_KEY'],
-        "authDomain": app.config['FIREBASE_AUTH_DOMAIN'],
-        "projectId": app.config['FIREBASE_PROJECT_ID'],
-        "storageBucket": app.config['FIREBASE_STORAGE_BUCKET'],
-        "messagingSenderId": app.config['FIREBASE_MESSAGING_SENDER_ID'],
-        "appId": app.config['FIREBASE_APP_ID'],
-        "databaseURL": app.config.get('FIREBASE_DATABASE_URL', '')
-    }
-    
-    firebase = pyrebase.initialize_app(firebase_config)
-    auth = firebase.auth()
-    
     # Store extensions in app config
     app.config['db'] = db  # SQLAlchemy instance
-    app.config['firebase_auth'] = auth
-    app.config['firebase_app'] = firebase
-    
-    # Create database and tables on first run
-    # Dangerous operation - uncomment only if you want auto DB creation
-    # if not os.path.exists('.db_initialized'):
-    #     print("Initializing database for first run...")
-    #     from helper.db.delete_database import delete_db
-    #     from helper.db.create_database import create_db
-        
-    #     # Delete existing database if needed
-    #     delete_db()
-        
-    #     # Create database and tables
-    #     if create_db():
-    #         # Create marker file to indicate DB was initialized
-    #         with open('.db_initialized', 'w') as f:
-    #             f.write('1')
-    #         print("Database initialized successfully!")
-    #     else:
-    #         print("Failed to initialize database!")
 
     # Add facial recognition config
     app.config['FACIAL_DATA_DIR'] = './AttendanceAI/data/'

@@ -25,6 +25,7 @@ ClassStatusEnum = Enum("scheduled", "in_progress", "completed", "cancelled", nam
 AttendanceStatusEnum = Enum("unmarked", "present", "absent", "late", "excused", name="attendance_status_enum")
 MarkedByEnum = Enum("system", "lecturer", name="marked_by_enum")
 ReportScheduleEnum = Enum("one", "daily", "weekly", "monthly", name="report_schedule_enum")
+TestimonialStatusEnum = Enum("pending", "approved", "rejected", name="testimonial_status_enum")
 
 # =====================
 # SUBSCRIPTION

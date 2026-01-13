@@ -132,20 +132,6 @@
         background-color: var(--border-color);
     }
 
-    /* Feature Categories */
-    .category-section {
-        margin: 3rem 0;
-    }
-
-    .category-title {
-        font-size: 1.75rem;
-        color: var(--text-dark);
-        margin-bottom: 1.5rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid var(--primary-light);
-        font-weight: bold;
-    }
-
     /* Comparison Section */
     .comparison-section {
         margin: 4rem 0;
@@ -240,6 +226,116 @@
         margin-right: auto;
     }
 
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 1rem;
+    }
+
+    .modal-content {
+        background-color: white;
+        border-radius: 16px;
+        padding: 2.5rem;
+        max-width: 600px;
+        width: 100%;
+        max-height: 80vh;
+        overflow-y: auto;
+        position: relative;
+        border: 2px solid var(--border-color);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-close {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: none;
+        border: none;
+        font-size: 2rem;
+        cursor: pointer;
+        color: var(--text-light);
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s ease;
+    }
+
+    .modal-close:hover {
+        background-color: var(--primary-light);
+        color: var(--text-dark);
+    }
+
+    .modal-icon {
+        font-size: 4rem;
+        text-align: center;
+        margin-bottom: 1.5rem;
+        width: 100px;
+        height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--primary-light);
+        border-radius: 50%;
+        margin: 0 auto 2rem auto;
+        border: 2px solid var(--border-color);
+    }
+
+    .modal-title {
+        font-size: 2rem;
+        color: var(--text-dark);
+        text-align: center;
+        margin-bottom: 1.5rem;
+        font-weight: bold;
+    }
+
+    .modal-body {
+        font-size: 1.1rem;
+        color: var(--text-dark);
+        line-height: 1.7;
+        margin-bottom: 2rem;
+    }
+
+    .modal-body h4 {
+        font-size: 1.3rem;
+        color: var(--text-dark);
+        margin: 1.5rem 0 0.5rem 0;
+        font-weight: bold;
+    }
+
+    .modal-body ul {
+        padding-left: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .modal-body li {
+        margin-bottom: 0.5rem;
+        color: var(--text-dark);
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .modal-try, .modal-close-btn {
+        padding: 0.75rem 1.5rem;
+        cursor: pointer;
+    }
+
     /* Responsive */
     @media (max-width: 1024px) {
         .features-grid {
@@ -285,6 +381,24 @@
         .cta-section {
             padding: 2rem 1.5rem;
         }
+
+        .modal-content {
+            padding: 2rem 1.5rem;
+        }
+        
+        .modal-icon {
+            width: 80px;
+            height: 80px;
+            font-size: 3rem;
+        }
+        
+        .modal-title {
+            font-size: 1.75rem;
+        }
+        
+        .modal-actions {
+            flex-direction: column;
+        }
     }
 
     @media (max-width: 480px) {
@@ -305,6 +419,21 @@
         .page-header h1 {
             font-size: 1.75rem;
         }
+
+        .modal-content {
+            padding: 1.5rem 1rem;
+        }
+        
+        .modal-icon {
+            width: 70px;
+            height: 70px;
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+        }
     }
 </style>
 
@@ -322,62 +451,78 @@
 
 <!-- Main Features -->
 <div class="features-grid">
-    <div class="feature-card card-custom">
+    <div class="feature-card card-custom" data-feature="ai-face-recognition">
         <div class="feature-icon">🤖</div>
         <h3>AI-Powered Face Recognition</h3>
         <p>Automatically identify and mark attendance using advanced facial recognition technology with 99.8% accuracy. No more manual check-ins or proxy attendance.</p>
-        <a href="#" class="btn-custom" style="padding: 0.75rem 1.5rem;">Learn More</a>
+        <button class="btn-custom show-feature-detail" style="padding: 0.75rem 1.5rem;">Learn More</button>
     </div>
 
-    <div class="feature-card card-custom">
+    <div class="feature-card card-custom" data-feature="qr-mobile-checkins">
         <div class="feature-icon">📱</div>
         <h3>QR Code & Mobile Check-ins</h3>
         <p>Quick QR code scanning for fast check-ins. Students and staff can mark attendance with a simple scan using our mobile app or web interface.</p>
-        <a href="#" class="btn-custom" style="padding: 0.75rem 1.5rem;">Learn More</a>
+        <button class="btn-custom show-feature-detail" style="padding: 0.75rem 1.5rem;">Learn More</button>
     </div>
 
-    <div class="feature-card card-custom">
+    <div class="feature-card card-custom" data-feature="real-time-analytics">
         <div class="feature-icon">📊</div>
         <h3>Real-time Analytics Dashboard</h3>
         <p>Monitor attendance patterns, trends, and statistics in real-time. Generate instant reports and identify at-risk students with predictive analytics.</p>
-        <a href="#" class="btn-custom" style="padding: 0.75rem 1.5rem;">Learn More</a>
+        <button class="btn-custom show-feature-detail" style="padding: 0.75rem 1.5rem;">Learn More</button>
     </div>
 
-    <div class="feature-card card-custom">
+    <div class="feature-card card-custom" data-feature="automated-notifications">
         <div class="feature-icon">🔔</div>
         <h3>Automated Notifications</h3>
         <p>Send automatic alerts to students, parents, and staff about attendance status, upcoming classes, and important announcements via email or SMS.</p>
-        <a href="#" class="btn-custom" style="padding: 0.75rem 1.5rem;">Learn More</a>
+        <button class="btn-custom show-feature-detail" style="padding: 0.75rem 1.5rem;">Learn More</button>
     </div>
 
-    <div class="feature-card card-custom">
+    <div class="feature-card card-custom" data-feature="advanced-security">
         <div class="feature-icon">🔒</div>
         <h3>Advanced Security & Compliance</h3>
         <p>Enterprise-grade security with data encryption, role-based access control, and GDPR compliance. Your data is protected with bank-level security.</p>
-        <a href="#" class="btn-custom" style="padding: 0.75rem 1.5rem;">Learn More</a>
+        <button class="btn-custom show-feature-detail" style="padding: 0.75rem 1.5rem;">Learn More</button>
     </div>
 
-    <div class="feature-card card-custom">
+    <div class="feature-card card-custom" data-feature="seamless-integrations">
         <div class="feature-icon">🔄</div>
         <h3>Seamless Integrations</h3>
         <p>Connect with existing systems like Google Classroom, Microsoft Teams, LMS platforms, and student information systems through our powerful API.</p>
-        <a href="#" class="btn-custom" style="padding: 0.75rem 1.5rem;">Learn More</a>
+        <button class="btn-custom show-feature-detail" style="padding: 0.75rem 1.5rem;">Learn More</button>
     </div>
 </div>
 
 <!-- Advanced Features Section -->
 <h2 class="section-title">Advanced Capabilities</h2>
 <div class="features-grid">
-    <div class="feature-card card-custom">
+    <div class="feature-card card-custom" data-feature="predictive-analytics">
         <div class="feature-icon">🎯</div>
         <h3>Predictive Analytics</h3>
         <p>AI algorithms predict student performance based on attendance patterns, helping educators identify at-risk students early and intervene proactively.</p>
+        <button class="btn-custom show-feature-detail" style="padding: 0.75rem 1.5rem;">Learn More</button>
     </div>
 
-    <div class="feature-card card-custom">
+    <div class="feature-card card-custom" data-feature="geolocation-tracking">
         <div class="feature-icon">🌐</div>
         <h3>Geolocation Tracking</h3>
         <p>Verify attendance based on location for remote or hybrid learning. Ensure students are in the right place at the right time with geofencing technology.</p>
+        <button class="btn-custom show-feature-detail" style="padding: 0.75rem 1.5rem;">Learn More</button>
+    </div>
+</div>
+
+<!-- Feature Detail Modals -->
+<div id="featureModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <button class="modal-close">&times;</button>
+        <div class="modal-icon"></div>
+        <h2 class="modal-title"></h2>
+        <div class="modal-body"></div>
+        <div class="modal-actions">
+            <button class="btn-custom modal-try">Try This Feature</button>
+            <button class="btn-custom btn-outline-custom modal-close-btn">Close</button>
+        </div>
     </div>
 </div>
 
@@ -422,8 +567,338 @@
         <a class="btn-custom" href="{{ url_for('auth.register') }}" style="margin-right: 1rem;">Start Free Trial</a>
         <a class="btn-custom btn-outline-custom" href="{{ url_for('main.subscriptions') }}">View Pricing</a>
     {% else %}
-
         <a class="btn-custom btn-outline-custom" href="{{ url_for('main.subscriptions') }}">Upgrade Plan</a>
     {% endif %}
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('featureModal');
+    const modalIcon = modal.querySelector('.modal-icon');
+    const modalTitle = modal.querySelector('.modal-title');
+    const modalBody = modal.querySelector('.modal-body');
+    const modalTryBtn = modal.querySelector('.modal-try');
+    const closeButtons = modal.querySelectorAll('.modal-close, .modal-close-btn');
+    
+    // Feature data with detailed descriptions
+    const featureDetails = {
+        'ai-face-recognition': {
+            icon: '🤖',
+            title: 'AI-Powered Face Recognition',
+            description: 'Our advanced facial recognition system revolutionizes attendance tracking with unparalleled accuracy and efficiency.',
+            details: `
+                <h4>How It Works</h4>
+                <ul>
+                    <li>Students register their face once through our secure portal</li>
+                    <li>AI model analyzes facial features and creates a unique biometric signature</li>
+                    <li>During class, cameras automatically detect and identify students</li>
+                    <li>Attendance is marked in real-time without any manual intervention</li>
+                </ul>
+                
+                <h4>Key Benefits</h4>
+                <ul>
+                    <li><strong>99.8% Accuracy:</strong> Industry-leading recognition accuracy</li>
+                    <li><strong>Anti-Spoofing:</strong> Detects photos and videos to prevent fraud</li>
+                    <li><strong>Fast Processing:</strong> Identifies up to 50 faces per second</li>
+                    <li><strong>Multi-Angle Detection:</strong> Works from various angles and lighting conditions</li>
+                    <li><strong>Privacy-First:</strong> All biometric data is encrypted and GDPR compliant</li>
+                </ul>
+                
+                <h4>Use Cases</h4>
+                <ul>
+                    <li>Large lecture halls with hundreds of students</li>
+                    <li>Secure access control for labs and restricted areas</li>
+                    <li>Hybrid classrooms with in-person and remote students</li>
+                    <li>Exam attendance verification</li>
+                </ul>
+            `,
+            tryUrl: '/auth/register'
+        },
+        'qr-mobile-checkins': {
+            icon: '📱',
+            title: 'QR Code & Mobile Check-ins',
+            description: 'Streamline attendance with quick QR code scanning and mobile check-ins for maximum flexibility.',
+            details: `
+                <h4>Multiple Check-in Methods</h4>
+                <ul>
+                    <li><strong>QR Code Scanning:</strong> Static and dynamic QR codes for different sessions</li>
+                    <li><strong>Mobile App:</strong> Dedicated iOS and Android applications</li>
+                    <li><strong>Web Check-in:</strong> Browser-based attendance marking</li>
+                    <li><strong>NFC Support:</strong> Tap-to-check-in with NFC cards</li>
+                </ul>
+                
+                <h4>Advanced Features</h4>
+                <ul>
+                    <li><strong>Time-based Codes:</strong> QR codes that expire after class starts</li>
+                    <li><strong>Location Verification:</strong> Optional GPS verification for remote classes</li>
+                    <li><strong>Batch Processing:</strong> Scan multiple QR codes quickly</li>
+                    <li><strong>Offline Mode:</strong> Check-ins work without internet connection</li>
+                    <li><strong>Custom Branding:</strong> Branded QR codes with your institution's logo</li>
+                </ul>
+                
+                <h4>Security Features</h4>
+                <ul>
+                    <li>Encrypted QR codes to prevent unauthorized use</li>
+                    <li>IP address tracking for audit trails</li>
+                    <li>Device fingerprinting to prevent duplicate check-ins</li>
+                    <li>Real-time validation against student database</li>
+                </ul>
+            `,
+            tryUrl: '/demo/qr-checkin'
+        },
+        'real-time-analytics': {
+            icon: '📊',
+            title: 'Real-time Analytics Dashboard',
+            description: 'Transform raw attendance data into actionable insights with our powerful analytics platform.',
+            details: `
+                <h4>Dashboard Features</h4>
+                <ul>
+                    <li><strong>Live Attendance View:</strong> See who\'s present in real-time</li>
+                    <li><strong>Trend Analysis:</strong> Track attendance patterns over time</li>
+                    <li><strong>Heat Maps:</strong> Visualize attendance density across different time slots</li>
+                    <li><strong>Predictive Insights:</strong> AI-powered predictions of future attendance</li>
+                </ul>
+                
+                <h4>Reporting Capabilities</h4>
+                <ul>
+                    <li><strong>Custom Reports:</strong> Create reports tailored to your needs</li>
+                    <li><strong>Automated Exports:</strong> Schedule reports to be sent automatically</li>
+                    <li><strong>Multi-format Support:</strong> Export to PDF, Excel, CSV, or Google Sheets</li>
+                    <li><strong>Comparative Analysis:</strong> Compare attendance across classes, departments, or time periods</li>
+                </ul>
+                
+                <h4>Alert System</h4>
+                <ul>
+                    <li>Real-time notifications for unusual patterns</li>
+                    <li>Early warning system for at-risk students</li>
+                    <li>Customizable alert thresholds</li>
+                    <li>Integration with communication platforms</li>
+                </ul>
+            `,
+            tryUrl: '/demo/analytics'
+        },
+        'automated-notifications': {
+            icon: '🔔',
+            title: 'Automated Notifications',
+            description: 'Keep everyone informed with automated, customizable notification system.',
+            details: `
+                <h4>Notification Types</h4>
+                <ul>
+                    <li><strong>Attendance Alerts:</strong> Real-time notifications for absences</li>
+                    <li><strong>Class Reminders:</strong> Automated reminders before classes start</li>
+                    <li><strong>Progress Reports:</strong> Weekly or monthly attendance summaries</li>
+                    <li><strong>Urgent Alerts:</strong> Emergency notifications for campus closures</li>
+                </ul>
+                
+                <h4>Delivery Channels</h4>
+                <ul>
+                    <li><strong>Email:</strong> Customizable email templates</li>
+                    <li><strong>SMS:</strong> Text messages for urgent notifications</li>
+                    <li><strong>Mobile Push:</strong> Notifications through our mobile app</li>
+                    <li><strong>Platform Integrations:</strong> Slack, Microsoft Teams, Google Chat</li>
+                    <li><strong>Voice Calls:</strong> Automated phone calls for important alerts</li>
+                </ul>
+                
+                <h4>Customization Options</h4>
+                <ul>
+                    <li>Personalized message content</li>
+                    <li>Scheduled sending times</li>
+                    <li>Targeted recipient groups</li>
+                    <li>Multi-language support</li>
+                    <li>Branded templates with your institution\'s logo</li>
+                </ul>
+            `,
+            tryUrl: '/demo/notifications'
+        },
+        'advanced-security': {
+            icon: '🔒',
+            title: 'Advanced Security & Compliance',
+            description: 'Enterprise-grade security measures to protect sensitive attendance data.',
+            details: `
+                <h4>Security Features</h4>
+                <ul>
+                    <li><strong>End-to-End Encryption:</strong> All data encrypted in transit and at rest</li>
+                    <li><strong>Multi-factor Authentication:</strong> Secure login with 2FA/3FA options</li>
+                    <li><strong>Role-Based Access Control:</strong> Granular permissions for different user types</li>
+                    <li><strong>Audit Logging:</strong> Complete audit trail of all system activities</li>
+                </ul>
+                
+                <h4>Compliance Standards</h4>
+                <ul>
+                    <li><strong>GDPR Compliant:</strong> Full compliance with European data protection laws</li>
+                    <li><strong>FERPA Ready:</strong> Meets educational privacy requirements</li>
+                    <li><strong>ISO 27001 Certified:</strong> International security standards</li>
+                    <li><strong>SOC 2 Type II:</strong> Regular security audits and reports</li>
+                    <li><strong>HIPAA Compliant:</strong> For healthcare education institutions</li>
+                </ul>
+                
+                <h4>Data Protection</h4>
+                <ul>
+                    <li>Regular security penetration testing</li>
+                    <li>Automated vulnerability scanning</li>
+                    <li>Data backup and disaster recovery</li>
+                    <li>Privacy by design architecture</li>
+                    <li>Regular security awareness training for staff</li>
+                </ul>
+            `,
+            tryUrl: '/demo/security'
+        },
+        'seamless-integrations': {
+            icon: '🔄',
+            title: 'Seamless Integrations',
+            description: 'Connect AttendAI with your existing systems for a unified workflow.',
+            details: `
+                <h4>Supported Platforms</h4>
+                <ul>
+                    <li><strong>Learning Management Systems:</strong> Canvas, Moodle, Blackboard, Schoology</li>
+                    <li><strong>Collaboration Tools:</strong> Microsoft Teams, Google Classroom, Zoom</li>
+                    <li><strong>Student Information Systems:</strong> PowerSchool, Infinite Campus, Skyward</li>
+                    <li><strong>Calendar Systems:</strong> Google Calendar, Microsoft Outlook, Apple Calendar</li>
+                </ul>
+                
+                <h4>Integration Methods</h4>
+                <ul>
+                    <li><strong>RESTful API:</strong> Full API access for custom integrations</li>
+                    <li><strong>Pre-built Connectors:</strong> Plug-and-play integrations for popular platforms</li>
+                    <li><strong>Webhooks:</strong> Real-time data synchronization</li>
+                    <li><strong>Single Sign-On:</strong> SAML, OAuth, and OpenID Connect support</li>
+                </ul>
+                
+                <h4>Data Synchronization</h4>
+                <ul>
+                    <li>Real-time student roster updates</li>
+                    <li>Automatic class schedule import</li>
+                    <li>Bi-directional grade synchronization</li>
+                    <li>Automated report distribution to SIS</li>
+                    <li>Custom field mapping for unique requirements</li>
+                </ul>
+            `,
+            tryUrl: '/demo/integrations'
+        },
+        'predictive-analytics': {
+            icon: '🎯',
+            title: 'Predictive Analytics',
+            description: 'Use AI to predict student outcomes based on attendance patterns.',
+            details: `
+                <h4>Prediction Models</h4>
+                <ul>
+                    <li><strong>Performance Prediction:</strong> Forecast student grades based on attendance</li>
+                    <li><strong>Dropout Risk Assessment:</strong> Identify students at risk of dropping out</li>
+                    <li><strong>Engagement Scoring:</strong> Measure and track student engagement levels</li>
+                    <li><strong>Pattern Recognition:</strong> Identify unusual attendance patterns</li>
+                </ul>
+                
+                <h4>AI Capabilities</h4>
+                <ul>
+                    <li><strong>Machine Learning Algorithms:</strong> Continuously improving prediction accuracy</li>
+                    <li><strong>Natural Language Processing:</strong> Analyze feedback and comments</li>
+                    <li><strong>Pattern Recognition:</strong> Identify correlations between attendance and performance</li>
+                    <li><strong>Predictive Modeling:</strong> Create custom models for your institution</li>
+                </ul>
+                
+                <h4>Intervention Tools</h4>
+                <ul>
+                    <li>Automated alerts for at-risk students</li>
+                    <li>Recommended intervention strategies</li>
+                    <li>Progress tracking for intervention programs</li>
+                    <li>Success rate analysis of different interventions</li>
+                </ul>
+            `,
+            tryUrl: '/demo/predictive-analytics'
+        },
+        'geolocation-tracking': {
+            icon: '🌐',
+            title: 'Geolocation Tracking',
+            description: 'Verify attendance location for remote and hybrid learning environments.',
+            details: `
+                <h4>Location Features</h4>
+                <ul>
+                    <li><strong>Geofencing:</strong> Create virtual boundaries for attendance zones</li>
+                    <li><strong>GPS Verification:</strong> Real-time location validation</li>
+                    <li><strong>Wi-Fi Positioning:</strong> Use Wi-Fi networks for indoor tracking</li>
+                    <li><strong>Multi-location Support:</strong> Support for multiple campuses or remote locations</li>
+                </ul>
+                
+                <h4>Privacy Controls</h4>
+                <ul>
+                    <li><strong>Opt-in System:</strong> Students control location sharing</li>
+                    <li><strong>Time-limited Tracking:</strong> Location only checked during class times</li>
+                    <li><strong>Anonymized Data:</strong> Location data is anonymized where possible</li>
+                    <li><strong>Clear Data Policies:</strong> Transparent data usage policies</li>
+                </ul>
+                
+                <h4>Use Cases</h4>
+                <ul>
+                    <li>Remote learning attendance verification</li>
+                    <li>Field trip or excursion tracking</li>
+                    <li>Internship or work placement monitoring</li>
+                    <li>Study abroad program management</li>
+                    <li>Research project location validation</li>
+                </ul>
+                
+                <h4>Accuracy & Reliability</h4>
+                <ul>
+                    <li>Sub-meter accuracy with modern devices</li>
+                    <li>Multiple verification methods for reliability</li>
+                    <li>Offline mode support with later verification</li>
+                    <li>Battery optimization for mobile devices</li>
+                </ul>
+            `,
+            tryUrl: '/demo/geolocation'
+        }
+    };
+
+    // Open modal when Learn More is clicked
+    document.querySelectorAll('.show-feature-detail').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const featureCard = this.closest('.feature-card');
+            const featureKey = featureCard.dataset.feature;
+            
+            if (featureDetails[featureKey]) {
+                const feature = featureDetails[featureKey];
+                
+                modalIcon.textContent = feature.icon;
+                modalTitle.textContent = feature.title;
+                modalBody.innerHTML = `
+                    <p><strong>${feature.description}</strong></p>
+                    ${feature.details}
+                `;
+                modalTryBtn.onclick = () => {
+                    if (feature.tryUrl) {
+                        window.location.href = feature.tryUrl;
+                    }
+                };
+                
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
+        });
+    });
+
+    // Close modal functionality
+    closeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+    });
+
+    // Close modal when clicking outside
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    });
+
+    // Close with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal.style.display === 'flex') {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    });
+});
+</script>
 {% endblock %}

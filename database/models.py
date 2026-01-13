@@ -25,7 +25,6 @@ ClassStatusEnum = Enum("scheduled", "in_progress", "completed", "cancelled", nam
 AttendanceStatusEnum = Enum("unmarked", "present", "absent", "late", "excused", name="attendance_status_enum")
 MarkedByEnum = Enum("system", "lecturer", name="marked_by_enum")
 ReportScheduleEnum = Enum("one", "daily", "weekly", "monthly", name="report_schedule_enum")
-TestimonialStatusEnum = Enum("pending", "approved", "rejected", name="testimonial_status_enum")
 
 # =====================
 # SUBSCRIPTION
@@ -71,7 +70,7 @@ class Institution(Base, BaseMixin):
     poc_name = Column(String(100))
     poc_phone = Column(String(30))
     poc_email = Column(String(150))
-    subscription_id = Column(Integer, ForeignKey("subscriptions.subscription_id"))
+    subscription_id = Column(Integer, ForeignKey("subscriptions.subscription_id"), index=True)
 
     subscription = relationship("Subscription", back_populates="institution")
     users = relationship("User", back_populates="institution")
@@ -85,7 +84,7 @@ class User(Base, BaseMixin):
     __tablename__ = "users"
 
     user_id = Column(Integer, primary_key=True)
-    institution_id = Column(Integer, ForeignKey("institutions.institution_id"), nullable=False)
+    institution_id = Column(Integer, ForeignKey("institutions.institution_id"), nullable=False, index=True)
 
     role = Column(UserRoleEnum, nullable=False)
     name = Column(String(100), nullable=False)
@@ -111,7 +110,7 @@ class Announcement(Base, BaseMixin):
     __tablename__ = "announcements"
 
     announcement_id = Column(Integer, primary_key=True)
-    institution_id = Column(Integer, ForeignKey("institutions.institution_id"), nullable=False)
+    institution_id = Column(Integer, ForeignKey("institutions.institution_id"), nullable=False, index=True)
     requested_by_user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
 
     title = Column(String(200), nullable=False)
@@ -125,7 +124,7 @@ class Notification(Base, BaseMixin):
     __tablename__ = "notifications"
 
     notification_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, index=True)
     created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
 
     content = Column(Text, nullable=False)
@@ -138,12 +137,12 @@ class Course(Base, BaseMixin):
     __tablename__ = "courses"
 
     course_id = Column(Integer, primary_key=True)
-    institution_id = Column(Integer, ForeignKey("institutions.institution_id"), nullable=False)
+    institution_id = Column(Integer, ForeignKey("institutions.institution_id"), nullable=False, index=True)
 
-    code = Column(String(50), nullable=False)
+    code = Column(String(50), nullable=False, index=True)
     name = Column(String(150), nullable=False)
-    start_date = Column(DateTime)
-    end_date = Column(DateTime)
+    start_date = Column(DateTime, index=True)
+    end_date = Column(DateTime, index=True)
     description = Column(Text)
     credits = Column(Integer)
     is_active = Column(Boolean, server_default="1")
@@ -169,7 +168,7 @@ class Venue(Base, BaseMixin):
     __tablename__ = "venues"
 
     venue_id = Column(Integer, primary_key=True)
-    institution_id = Column(Integer, ForeignKey("institutions.institution_id"), nullable=False)
+    institution_id = Column(Integer, ForeignKey("institutions.institution_id"), nullable=False, index=True)
 
     name = Column(String(100), nullable=False)
     capacity = Column(Integer)
@@ -183,9 +182,9 @@ class Class(Base, BaseMixin):
     __tablename__ = "classes"
 
     class_id = Column(Integer, primary_key=True)
-    course_id = Column(Integer, ForeignKey("courses.course_id"), nullable=False)
-    venue_id = Column(Integer, ForeignKey("venues.venue_id"), nullable=False)
-    lecturer_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    course_id = Column(Integer, ForeignKey("courses.course_id"), nullable=False, index=True)
+    venue_id = Column(Integer, ForeignKey("venues.venue_id"), nullable=False, index=True)
+    lecturer_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, index=True)
 
     status = Column(ClassStatusEnum, server_default="scheduled")
     start_time = Column(DateTime, nullable=False)
@@ -201,12 +200,12 @@ class AttendanceRecord(Base, BaseMixin):
     )
 
     attendance_id = Column(Integer, primary_key=True)
-    class_id = Column(Integer, ForeignKey("classes.class_id"), nullable=False)
-    student_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    class_id = Column(Integer, ForeignKey("classes.class_id"), nullable=False, index=True)
+    student_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, index=True)
 
-    status = Column(AttendanceStatusEnum, nullable=False)
+    status = Column(AttendanceStatusEnum, nullable=False, index=True)
     marked_by = Column(MarkedByEnum, nullable=False)
-    lecturer_id = Column(Integer, ForeignKey("users.user_id"))
+    lecturer_id = Column(Integer, ForeignKey("users.user_id"), index=True)
     captured_image_id = Column(Integer)
     notes = Column(Text)
     recorded_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
@@ -221,6 +220,7 @@ class ReportSchedule(Base, BaseMixin):
     institution_id = Column(Integer, ForeignKey("institutions.institution_id"), nullable=False)
     requested_by_user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
 
+    schedule_type = Column(ReportScheduleEnum, nullable=False)
     schedule_type = Column(ReportScheduleEnum, nullable=False)
 
 # ====================

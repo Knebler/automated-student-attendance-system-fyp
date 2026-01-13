@@ -10,27 +10,26 @@
     <div class="card-custom mb-4">
         <div class="card-header-custom">Classes</div>
         <div class="card-body-custom">
-            {% if sessions and sessions|length > 0 %}
-                {% for s in sessions %}
+        
                 <div class="class-row mb-3">
                     <div class="class-info">
                         <div class="info-group">
-                            <span><strong>Name:</strong> {{ s.session.course_code if s.session and s.session.course_code else 'Session ' ~ (s.session.session_id if s.session and s.session.session_id else '') }}</span>
-                            <span><strong>Date:</strong> {{ s.session.session_date if s.session and s.session.session_date else 'TBD' }}</span>
+                            <span><strong>Name:</strong> class/module.name</span>
+                            <span><strong>Date:</strong> classes.date </span>
                         </div>
                         <div class="info-group">
-                            <span><strong>Venue:</strong> {{ s.session.venue_id if s.session and s.session.venue_id else 'TBD' }}</span>
-                            <span><strong>Present:</strong> {{ s.present_count }}</span>
+                            <span><strong>Venue:</strong>class.venue</span>
+                            <span><strong>Present:</strong>present.count</span>
                         </div>
                         <div class="info-group">
-                            <span><strong>Lecturer:</strong> {{ s.session.lecturer_id if s.session and s.session.lecturer_id else 'TBD' }}</span>
-                            <span><strong>Absent:</strong> {{ s.absent_count }}</span>
+                            <span><strong>Lecturer:</strong>lecturer.name</span>
+                            <span><strong>Absent:</strong>absent.count</span>
                         </div>
                     </div>
-                    <a class="btn-custom details-btn" href="{{ url_for('institution.attendance_class_details', class_id=(s.session.session_id if s.session and s.session.session_id else 0)) }}">Details</a>
+                    <a class="btn-custom details-btn" href="{{url_for('institution.attendance_class_details')}}">View Details</a>
                 </div>
-                {% endfor %}
-            {% else %}
+     
+
                 <div class="class-row mb-3">
                     <div class="class-info">
                         <div class="info-group">
@@ -38,7 +37,6 @@
                         </div>
                     </div>
                 </div>
-            {% endif %}
 
             <!-- Pagination -->
             <div class="pagination">
@@ -48,10 +46,7 @@
         </div>
     </div>
 
-    <!-- Generate Reports Button -->
-    <div class="generate-reports-container">
-        <a class="btn-custom generate-reports-btn" href="{{ url_for('institution.attendance_reports') }}">Generate Reports</a>
-    </div>
+    
 </div>
 
 <style>

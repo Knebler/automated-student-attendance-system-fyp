@@ -21,13 +21,6 @@ def institution_dashboard():
         institution_model = InstitutionModel(db_session)
         sub_model = SubscriptionModel(db_session)
         class_model = ClassModel(db_session)
-        course_model = CourseModel(db_session)
-        venue_model = VenueModel(db_session)
-
-        user_count = user_model.count()
-        student_count = user_model.count(institution_id=institution_id, role='student')
-        lecturer_count = user_model.count(institution_id=institution_id, role='lecturer')
-        admin_count = user_model.count(institution_id=institution_id, role='admin')
         
         institution = institution_model.get_one(institution_id=institution_id)
         institution_name = institution.name if institution else "Unknown Institution"
@@ -35,25 +28,14 @@ def institution_dashboard():
         sub = sub_model.get_by_id(institution.subscription_id)
         sub_active = True if sub and sub.is_active else False
 
-        classes = class_model.get_today(institution_id=institution_id)
-
         context = {
             "institution": {
                 "name": institution_name,
                 "is_active": sub_active,
                 "renewal": sub.end_date,
             },
-            "overview": {
-                "user_count": user_count,
-                "student_count": student_count,
-                "lecturer_count": lecturer_count,
-                "admin_count": admin_count
-            },
-            "classes": [{
-                "module": course_model.get_by_id(c.course_id).name,
-                "venue": venue_model.get_by_id(c.venue_id).name,
-                "lecturer": user_model.get_by_id(c.lecturer_id).name,
-            } for c in classes],
+            "overview": user_model.admin_user_stats(institution_id),
+            "classes": class_model.admin_dashboard_classes_today(institution_id),
         }
 
     return render_template('institution/admin/institution_admin_dashboard.html',

@@ -10,6 +10,7 @@ from .subscription import SubscriptionModel
 from .subscription_plans import SubscriptionPlanModel
 from .user import UserModel
 from .venue import VenueModel
+from .testimonial import TestimonialModel
 
 
 

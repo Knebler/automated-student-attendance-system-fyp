@@ -26,15 +26,6 @@ class Config:
     SQLALCHEMY_POOL_RECYCLE = int(os.getenv('DB_POOL_RECYCLE', '300'))
     SQLALCHEMY_POOL_TIMEOUT = int(os.getenv('DB_POOL_TIMEOUT', '30'))
     
-    # Firebase Configuration
-    FIREBASE_API_KEY = os.getenv('FIREBASE_API_KEY')
-    FIREBASE_AUTH_DOMAIN = os.getenv('FIREBASE_AUTH_DOMAIN')
-    FIREBASE_PROJECT_ID = os.getenv('FIREBASE_PROJECT_ID')
-    FIREBASE_STORAGE_BUCKET = os.getenv('FIREBASE_STORAGE_BUCKET')
-    FIREBASE_MESSAGING_SENDER_ID = os.getenv('FIREBASE_MESSAGING_SENDER_ID')
-    FIREBASE_APP_ID = os.getenv('FIREBASE_APP_ID')
-    FIREBASE_DATABASE_URL = os.getenv('FIREBASE_DATABASE_URL', '')
-    
     # Application Settings
     UPLOAD_FOLDER = 'static/uploads'
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size

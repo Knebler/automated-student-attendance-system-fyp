@@ -27,49 +27,28 @@
                     <thead>
                         <tr>
                             <th>Name</th>
-                            <th>ID</th>
+                            <th>Code</th>
                             <th>Lecturer</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
+                        {% for course in courses %}
                         <tr>
-                            <td>Introduction to Management</td>
-                            <td>MGNT 113</td>
-                            <td>JASON HO</td>
+                            <td>{{ course[1] }}</td>
+                            <td>{{ course[2] }}</td>
+                            <td>{{ course[3] }}</td>
+                            {% if course[4] %}
                             <td><span class="status active">ACTIVE</span></td>
-                            <td class="actions-cell">
-                                <button class="btn-custom btn-manage">Manage</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Business Accounting</td>
-                            <td>ACCY 111</td>
-                            <td>JASON HO</td>
-                            <td><span class="status active">ACTIVE</span></td>
-                            <td class="actions-cell">
-                                <button class="btn-custom btn-manage">Manage</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Business Management</td>
-                            <td>MGNT 102</td>
-                            <td>JASON HO</td>
-                            <td><span class="status active">ACTIVE</span></td>
-                            <td class="actions-cell">
-                                <button class="btn-custom btn-manage">Manage</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Software Development Methodologies</td>
-                            <td>CSIT 314</td>
-                            <td>XXXXXX</td>
+                            {% else %}
                             <td><span class="status inactive">INACTIVE</span></td>
+                            {% endif %}
                             <td class="actions-cell">
-                                <button class="btn-custom btn-manage">Manage</button>
+                                <a href="{{ url_for('institution.module_details', course_id=course[0]) }}" class="btn-custom btn-manage">Manage</a>
                             </td>
                         </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>

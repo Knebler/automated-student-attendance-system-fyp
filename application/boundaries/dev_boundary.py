@@ -81,7 +81,7 @@ def test_endpoint():
             try:
                 importlib.import_module(m)
             except Exception:
-                # ignore import-time errors in environments where DB/Firebase not configured
+                # ignore import-time errors in environments where DB is not configured
                 current_app.logger.debug(f'Failed to import {m} for dev registry: ignore')
     except Exception:
         # safest fallback: do nothing

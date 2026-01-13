@@ -284,11 +284,18 @@ def attendance_reports():
     
 
 # user edit page
-@institution_bp.route('/manage_users/edit', methods=['GET'])
+@institution_bp.route('/manage_users/<int:user_id>/edit', methods=['GET'])
 @requires_roles('admin')
-def edit_user_details():
+def edit_user_details(user_id):
+    with get_session() as db_session:
+        user_model = UserModel(db_session)
+        user = user_model.get_by_id(user_id)
+        user_details = user.as_sanitized_dict()
+        if user.role == 'admin' or user.institution_id != session.get('institution_id'):
+            return abort(401)
     return render_template(
         'institution/admin/institution_admin_user_management_user_edit.html',
+        user_details=user_details,
     )
     
     

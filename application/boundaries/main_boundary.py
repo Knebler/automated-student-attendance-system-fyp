@@ -229,11 +229,9 @@ def testimonial_detail(testimonial_id):
     )
 
 @main_bp.route('/submit-testimonial', methods=['GET', 'POST'])
-@requires_roles('student', 'lecturer', 'admin', 'platform_manager')
+@requires_roles('student' or 'lecturer' or 'admin' or 'platform_manager')
 def submit_testimonial():
     """Page for submitting a new testimonial"""
-    from flask import session as flask_session  # Import Flask session separately to avoid confusion
-    
     if request.method == 'POST':
         # Get user info from verified session
         user = session.get('user')

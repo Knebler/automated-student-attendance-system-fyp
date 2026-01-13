@@ -12,13 +12,13 @@ from application.boundaries.dev_actions import register_action
 auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/')
-@requires_roles('student', 'lecturer', 'admin', 'platform_manager')
+@requires_roles('student' or 'lecturer' or 'admin' or 'platform_manager')
 def auth():
     """Main dashboard route"""
     return render_template('dashboard.html')
 
 @auth_bp.route('/profile')
-@requires_roles('student', 'lecturer', 'admin', 'platform_manager')
+@requires_roles('student' or 'lecturer' or 'admin' or 'platform_manager')
 def profile():
     """User profile route"""
     return render_template('components/profile.html')
@@ -167,7 +167,7 @@ def logout():
     return redirect(url_for('main.home'))
 
 @auth_bp.route('/attendance-history')
-@requires_roles('student', 'lecturer', 'admin', 'platform_manager')
+@requires_roles('student' or 'lecturer' or 'admin'or 'platform_manager')
 def attendance_history():
     """Attendance history route"""
     return render_template('attendance_history.html')

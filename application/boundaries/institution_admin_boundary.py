@@ -223,7 +223,6 @@ def import_data():
 @requires_roles('admin')
 def attendance_student_details():
 
-
     return render_template(
         'institution/admin/institution_admin_attendance_management_student_details.html',
     )

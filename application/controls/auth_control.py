@@ -25,7 +25,7 @@ def requires_roles(roles):
             print("Checking roles...")
             # Normalize roles to a list
             # Check if user is logged in and has an allowed role
-            if 'role' not in session:
+            if 'role' not in session or session.get('role'):
                 flash('Access denied.', 'danger')
                 return redirect(url_for('auth.login'))
             return f(*args, **kwargs)

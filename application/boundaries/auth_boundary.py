@@ -23,7 +23,7 @@ def auth():
     
     # Get user from session
     user = auth_result.get('user', {})
-    user_id = user.get('user_id')  # Changed from firebase_uid
+    user_id = user.get('user_id')
     
     # Get attendance summary
     attendance_summary = {}
@@ -54,43 +54,41 @@ def login():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
-        user_type = request.form.get('role') or request.form.get('user_type') or 'student'
+        user_type = request.form.get('role') or 'student'
 
         try:
             auth_result = AuthControl.authenticate_user(current_app, email, password, user_type=user_type)
-        except Exception as e:
+        except Exception:
             current_app.logger.exception('Login exception')
             flash('Internal error while attempting to authenticate. Try again later.', 'danger')
             return render_template('auth/login.html')
 
-        if auth_result.get('success'):
-            # store session state
-            session['user_id'] = auth_result.get('user_id')
-            session['token'] = auth_result.get('token')
-            resolved_type = auth_result.get('user_type', user_type)
-            session['user_type'] = resolved_type
-            
-            # Remove password_hash from session storage
-            user_data = auth_result.get('user', {}).copy()
-            user_data.pop('password_hash', None)
-            session['user'] = user_data
-            
-            flash('Logged in successfully', 'success')
+        if not auth_result.get('success'):
+            flash(auth_result.get('error', 'Login failed'), 'danger')
+            return render_template('auth/login.html')
 
-            # Redirect users to the role-specific dashboard
-            if resolved_type in ['platform_manager', 'platform', 'platmanager']:
-                return redirect(url_for('platform.platform_dashboard'))
+        # Success — rely on AuthControl returned fields
+        user = auth_result.get('user', {}) or {}
+        user.pop('password_hash', None)
+        session['user'] = user
+        session['user_id'] = auth_result.get('user_id') or user.get('user_id')
+        resolved_type = auth_result.get('user_type') or user.get('user_type') or user.get('role') or user_type
+        session['role'] = resolved_type
 
-            if resolved_type in ['institution_admin', 'admin']:
-                return redirect(url_for('institution.institution_dashboard'))
+        flash('Logged in successfully', 'success')
 
-            if resolved_type in ['lecturer', 'teacher']:
-                return redirect(url_for('institution_lecturer.lecturer_dashboard'))
+        # Redirect users to the role-specific dashboard
+        if resolved_type in ['platform_manager', 'platform', 'platmanager']:
+            return redirect(url_for('platform.platform_dashboard'))
 
-            # all other users (students, default) -> main dashboard
-            return redirect(url_for('student.dashboard'))
+        if resolved_type in ['institution_admin', 'admin']:
+            return redirect(url_for('institution.institution_dashboard'))
 
-        flash(auth_result.get('error', 'Login failed'), 'danger')
+        if resolved_type in ['lecturer', 'teacher']:
+            return redirect(url_for('institution_lecturer.lecturer_dashboard'))
+
+        # all other users (students, default) -> main dashboard
+        return redirect(url_for('student.dashboard'))
 
     return render_template('auth/login.html')
 
@@ -197,7 +195,7 @@ def attendance_history():
         flash('Please login to view attendance history', 'warning')
         return redirect(url_for('auth.login'))
     
-    user_id = auth_result['user'].get('user_id')  # Changed from firebase_uid
+    user_id = auth_result['user'].get('user_id')
     attendance_result = AttendanceControl.get_user_attendance_summary(current_app, user_id, days=90)
     
     if attendance_result['success']:

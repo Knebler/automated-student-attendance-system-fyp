@@ -16,7 +16,7 @@ def dashboard():
     
     # Get user from session
     user = auth_result.get('user', {})
-    user_id = user.get('firebase_uid') or session.get('user_id')
+    user_id = user.get('user_id') or session.get('user_id')
     
     # Get attendance summary
     attendance_summary = {}
@@ -50,7 +50,7 @@ def attendance():
         return redirect(url_for('auth.login'))
 
     user = auth_result['user']
-    user_id = user.get('user_id') or user.get('firebase_uid') or session.get('user_id')
+    user_id = user.get('user_id') or session.get('user_id')
 
     attendance_summary = {}
     records = []
@@ -76,7 +76,7 @@ def attendance_history():
         return redirect(url_for('auth.login'))
 
     user = auth_result['user']
-    user_id = user.get('user_id') or user.get('firebase_uid') or session.get('user_id')
+    user_id = user.get('user_id') or session.get('user_id')
 
     attendance_summary = {}
     records = []
@@ -115,7 +115,7 @@ def class_checkin_face():
     session_id = request.args.get('session_id')
 
     user = auth_result['user']
-    user_id = user.get('user_id') or user.get('firebase_uid') or session.get('user_id')
+    user_id = user.get('user_id') or session.get('user_id')
 
     return render_template('institution/student/student_class_checkin_face.html',
                            user=user,

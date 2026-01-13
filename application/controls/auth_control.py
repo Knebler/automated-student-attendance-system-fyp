@@ -11,7 +11,6 @@ from datetime import datetime, timedelta
 import traceback
 import bcrypt
 import secrets
-import jwt  # Add this for JWT token support
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import flash, redirect, url_for, session
@@ -47,38 +46,17 @@ def authenticate_user(email, password):
         } # Currently shall hardcode the password but idea is only 1 platform manager account
 
     with get_session() as session:
-
         user_model = UserModel(session)
-
         user = user_model.get_by_email(email)
-
         if bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
-
             return {
-
                 'success': True,
-
                 'user': user.as_sanitized_dict(),
-
             }
-
     return {'success': False, 'error': 'Invalid email or password'}
 
 class AuthControl:
     """Control class for authentication business logic with multi-role support"""
-    
-    @staticmethod
-    def generate_token(user_id, email, user_type, app):
-        """Generate JWT token for session"""
-        payload = {
-            'user_id': user_id,
-            'email': email,
-            'user_type': user_type,
-            'exp': datetime.utcnow() + timedelta(hours=24)
-        }
-        secret_key = app.config.get('SECRET_KEY', 'your-secret-key-change-this')
-        return jwt.encode(payload, secret_key, algorithm='HS256')
-    
     @staticmethod
     def verify_password(password, password_hash):
         """Verify password against bcrypt hash"""
@@ -107,19 +85,10 @@ class AuthControl:
                     'error_type': 'INVALID_CREDENTIALS'
                 }
             
-            # Generate JWT token
-            token = AuthControl.generate_token(
-                user_id=user_info.get('user_id'),
-                email=email,
-                user_type=user_type,
-                app=app
-            )
-            
             return {
                 'success': True,
                 'user': user_info,
                 'user_type': user_type,
-                'token': token,
                 'user_id': user_info.get('user_id')
             }
             
@@ -208,83 +177,50 @@ class AuthControl:
             return None
     
     @staticmethod
-    def verify_token(app, token):
-        """Verify JWT token"""
-        try:
-            secret_key = app.config.get('SECRET_KEY', 'your-secret-key-change-this')
-            payload = jwt.decode(token, secret_key, algorithms=['HS256'])
-            return {'success': True, 'payload': payload}
-        except jwt.ExpiredSignatureError:
-            return {'success': False, 'error': 'Token expired'}
-        except jwt.InvalidTokenError:
-            return {'success': False, 'error': 'Invalid token'}
-    
-    @staticmethod
     def verify_session(app, session_obj):
         """Verify an existing session and return user info."""
         try:
-            token = session_obj.get('token')
-            user_type = session_obj.get('user_type')
-            
-            if not token or not user_type:
-                # Try dev mode if no session
-                if app.config.get('DEBUG', False):
-                    try:
-                        # Use ORM to get platform manager
-                        pm_model = PlatformManager.get_model()
-                        session = BaseEntity.get_db_session(app)
-                        platform_manager = session.query(pm_model).first()
-                        
-                        if platform_manager:
-                            return {
-                                'success': True,
-                                'user': {
-                                    'user_type': 'platform_manager',
-                                    'user_id': platform_manager.platform_mgr_id,
-                                    'email': platform_manager.email,
-                                    'full_name': platform_manager.full_name
-                                }
-                            }
+            # Prefer explicit user object in session (set during login)
+            user = session_obj.get('user')
+            if user:
+                return {'success': True, 'user': user}
 
-                        # No platform manager present - return a generic dev user
+            # Fallback: try session user_id + role
+            user_id = session_obj.get('user_id')
+            role = session_obj.get('role') or session_obj.get('user_type')
+            if user_id and role:
+                return {'success': True, 'user': {'user_id': user_id, 'role': role}}
+
+            # Dev fallback for convenience
+            if app.config.get('DEBUG', False):
+                try:
+                    pm_model = PlatformManager.get_model()
+                    session = BaseEntity.get_db_session(app)
+                    platform_manager = session.query(pm_model).first()
+
+                    if platform_manager:
                         return {
                             'success': True,
                             'user': {
                                 'user_type': 'platform_manager',
-                                'user_id': 0,
-                                'email': 'dev@local'
+                                'user_id': platform_manager.platform_mgr_id,
+                                'email': platform_manager.email,
+                                'full_name': platform_manager.full_name
                             }
                         }
-                    except Exception:
-                        # if anything goes wrong, be permissive in dev mode
-                        return {'success': True, 'user': {'user_type': 'platform_manager', 'user_id': 0}}
-                else:
-                    return {'success': False, 'error': 'No session present'}
-            
-            # Verify token
-            token_result = AuthControl.verify_token(app, token)
-            if not token_result['success']:
-                return {'success': False, 'error': token_result.get('error')}
-            
-            # Get user from session or database
-            user = session_obj.get('user')
-            if not user:
-                # Fallback: get user from database using token payload
-                payload = token_result['payload']
-                user_info = AuthControl.get_user_by_email_and_type(
-                    app, 
-                    payload['email'], 
-                    payload['user_type']
-                )
-                if user_info:
-                    # Remove password_hash from session
-                    user_info.pop('password_hash', None)
-                    return {'success': True, 'user': user_info}
-                else:
-                    return {'success': False, 'error': 'User not found'}
-            
-            return {'success': True, 'user': user}
 
+                    return {
+                        'success': True,
+                        'user': {
+                            'user_type': 'platform_manager',
+                            'user_id': 0,
+                            'email': 'dev@local'
+                        }
+                    }
+                except Exception:
+                    return {'success': True, 'user': {'user_type': 'platform_manager', 'user_id': 0}}
+
+            return {'success': False, 'error': 'No session present'}
         except Exception as e:
             # Any error -> mark as not authenticated
             return {'success': False, 'error': str(e)}

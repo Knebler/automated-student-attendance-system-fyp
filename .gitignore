@@ -62,10 +62,6 @@ logs/
 # Uploads
 static/uploads/
 
-# Firebase
-firebase-service-account.json
-firebase_credentials.json
-
 # Temporary files
 temp/
 tmp/

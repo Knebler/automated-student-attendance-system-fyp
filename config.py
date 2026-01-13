@@ -37,14 +37,11 @@ class DevelopmentConfig(Config):
     # MYSQL_USER = 'root'
     # MYSQL_PASSWORD = ''
     # MYSQL_SSL_ENABLED = False
-    # JWT_ACCESS_TOKEN_EXPIRES = 86400  # 24 hours for dev
 
 class ProductionConfig(Config):
     DEBUG = False
     # Production MUST use SSL
     MYSQL_SSL_ENABLED = True
-    # Shorter token expiration for production security
-    JWT_ACCESS_TOKEN_EXPIRES = 28800  # 8 hours
 
 config_by_name = {
     'dev': DevelopmentConfig,

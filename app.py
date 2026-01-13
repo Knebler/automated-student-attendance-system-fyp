@@ -17,11 +17,6 @@ def create_flask_app(config_name='default'):
     from config import config_by_name
     app.config.from_object(config_by_name[config_name])
     
-    # JWT Configuration - Critical for auth system
-    app.config['JWT_SECRET_KEY'] = app.config.get('SECRET_KEY', 'your-jwt-secret-key-change-in-production')
-    app.config['JWT_ALGORITHM'] = 'HS256'
-    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
-    
     # Get SSL configuration
     ssl_ca_path = app.config.get('MYSQL_SSL_CA', './combined-ca-certificates.pem')
     ssl_enabled = app.config.get('MYSQL_SSL_ENABLED', True)

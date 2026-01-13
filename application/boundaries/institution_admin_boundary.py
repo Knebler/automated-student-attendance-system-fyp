@@ -298,6 +298,7 @@ def update_user_details(user_id):
             gender=request.form.get('gender'),
             email=request.form.get('email'),
             phone_number=request.form.get('phone_number'),
+            age=request.form.get('age')
         )
     return redirect(url_for('institution.view_user_details', user_id=user_id))
     

@@ -265,5 +265,13 @@ def attendance_reports():
     )
     
 
+# user edit page
+@institution_bp.route('/manage_users/edit', methods=['GET'])
+@requires_roles('admin')
+def edit_user_details():
+    return render_template(
+        'institution/admin/institution_admin_user_management_user_edit.html',
+    )
+    
     
         

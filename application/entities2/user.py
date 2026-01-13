@@ -56,6 +56,20 @@ class UserModel(BaseEntity[User]):
             "student_change_percentage": perc_change(student_added_last_month, student_count),
         }
 
+    def admin_user_stats(self, institution_id):
+        base_filter = self.session.query(User).filter(User.institution_id == institution_id)
+        user_count = base_filter.count()
+        admin_count = base_filter.filter(User.role == "admin").count()
+        lecturer_count = base_filter.filter(User.role == "lecturer").count()
+        student_count = base_filter.filter(User.role == "student").count()
+
+        return {
+            "user_count": user_count,
+            "admin_count": admin_count,
+            "lecturer_count": lecturer_count,
+            "student_count": student_count,
+        }
+
     def delete(self, user_id) -> bool:
         user = self.get_by_id(user_id)
         if user:

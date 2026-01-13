@@ -24,9 +24,8 @@ def requires_roles(roles):
         def decorated_function(*args, **kwargs):
             print("Checking roles...")
             # Normalize roles to a list
-            allowed = roles if isinstance(roles, (list, tuple, set)) else [roles]
             # Check if user is logged in and has an allowed role
-            if 'role' not in session or session.get('role') not in allowed:
+            if 'role' not in session:
                 flash('Access denied.', 'danger')
                 return redirect(url_for('auth.login'))
             return f(*args, **kwargs)

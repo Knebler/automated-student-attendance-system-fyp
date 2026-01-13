@@ -254,3 +254,7 @@ class BaseEntity(Generic[ModelType]):
         except SQLAlchemyError as e:
             self.session.rollback()
             raise e
+        
+    @staticmethod
+    def add_headers(headers: List[str], rows_from_db: List[List[Any]]) -> List[Dict[str, Any]]:
+        return [dict(zip(headers, row)) for row in rows_from_db]

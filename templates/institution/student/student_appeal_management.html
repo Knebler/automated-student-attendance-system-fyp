@@ -1,0 +1,125 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Manage Attendance Appeals{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <div class="page-header mb-4">
+        <h1 class="page-title">Attendance Appeals Management</h1>
+        <p class="text-muted">Review, approve, or reject submitted attendance appeals</p>
+    </div>
+
+    <!-- Filters -->
+    <div class="card-custom mb-4">
+        <div class="card-body-custom">
+            <form method="GET" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Module</label>
+                    <select class="form-select" name="module">
+                        <option value="">All Modules</option>
+                        <option value="CSIT321">CSIT321</option>
+                        <option value="CSIT314">CSIT314</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" name="status">
+                        <option value="">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Date</label>
+                    <input type="date" class="form-control" name="date">
+                </div>
+
+                <div class="col-md-3 text-end">
+                    <button class="btn btn-primary">Apply Filters</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Appeals Table -->
+    <div class="card-custom">
+        <div class="card-header-custom">
+            Submitted Appeals
+        </div>
+
+        <div class="card-body-custom p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Student</th>
+                        <th>Student ID</th>
+                        <th>Module</th>
+                        <th>Class Date</th>
+                        <th>Reason</th>
+                        <th>Document</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for appeal in appeals %}
+                    <tr>
+                        <td>{{ appeal.student_name }}</td>
+                        <td>{{ appeal.student_id }}</td>
+                        <td>{{ appeal.module_code }}</td>
+                        <td>{{ appeal.class_date }}</td>
+                        <td class="text-truncate" style="max-width: 250px;">
+                            {{ appeal.reason }}
+                        </td>
+                        <td>
+                            {% if appeal.document_path %}
+                                <a href="{{ url_for('attendance.download_document', appeal_id=appeal.id) }}" class="btn btn-sm btn-outline-secondary">
+                                    View
+                                </a>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if appeal.status == 'pending' %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                            {% elif appeal.status == 'approved' %}
+                                <span class="badge bg-success">Approved</span>
+                            {% elif appeal.status == 'rejected' %}
+                                <span class="badge bg-danger">Rejected</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if appeal.status == 'pending' %}
+                                <form method="POST" action="{{ url_for('attendance.update_appeal_status', appeal_id=appeal.id) }}" class="d-inline">
+                                    <input type="hidden" name="action" value="approve">
+                                    <button class="btn btn-sm btn-success">Approve</button>
+                                </form>
+                                <form method="POST" action="{{ url_for('attendance.update_appeal_status', appeal_id=appeal.id) }}" class="d-inline">
+                                    <input type="hidden" name="action" value="reject">
+                                    <button class="btn btn-sm btn-danger">Reject</button>
+                                </form>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">
+                            No appeals found
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -196,10 +196,10 @@ class AuthControl:
                 db_session.rollback()
             app.logger.exception(f"Error registering institution: {e}")
             return {'success': False, 'error': f'Registration failed: {str(e)}'}
-    """ 
+     
     @staticmethod
     def approve_institution_registration(app, subscription_id):
-        Activate a pending institution registration.
+        """Activate a pending institution registration."""
         try:
             with get_session() as db_session:
                 subscription_model = SubscriptionModel(db_session)
@@ -240,5 +240,3 @@ class AuthControl:
                 db_session.rollback()
             app.logger.exception(f"Error approving institution registration: {e}")
             return {'success': False, 'error': str(e)}
-
-        """

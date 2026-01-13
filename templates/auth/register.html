@@ -24,13 +24,11 @@
                         <label for="password" class="form-label">Password</label>
                         <input type="password" class="form-control" id="password" name="password" required>
                     </div>
+
                     <div class="mb-3">
                         <label for="role" class="form-label">Register As</label>
                         <select id="role" name="role" class="form-select">
-                            <option value="student">Student</option>
-                            <option value="lecturer">Lecturer</option>
                             <option value="institution_admin">Institution Admin</option>
-                            <option value="platform_manager">Platform Manager</option>
                         </select>
                     </div>
 
@@ -39,6 +37,33 @@
                         <input type="text" class="form-control" id="institution_name" name="institution_name" placeholder="Your institution name (e.g., Example University)">
                         <small class="form-text text-muted" id="inst-note">Only institution admins can register here — your request will be reviewed before an account is issued.</small>
                     </div>
+
+                    <div class="mb-3 d-none" id="inst-address-group">
+                        <label for="institution_address" class="form-label">Institution Address</label>
+                        <input type="text" class="form-control" id="institution_address" name="institution_address" placeholder="Postal address or campus location">
+                    </div>
+
+                    <div class="mb-3 d-none" id="inst-phone-group">
+                        <label for="phone_number" class="form-label">Contact Phone</label>
+                        <input type="text" class="form-control" id="phone_number" name="phone_number" placeholder="Optional phone number">
+                    </div>
+
+                    <div class="mb-3 d-none" id="inst-message-group">
+                        <label for="message" class="form-label">Message</label>
+                        <textarea class="form-control" id="message" name="message" rows="3" placeholder="Optional message to the platform managers."></textarea>
+                    </div>
+
+                    <div class="mb-3 d-none" id="inst-plan-group">
+                        <label for="selected_plan_id" class="form-label">Subscription Plan</label>
+                        <select id="selected_plan_id" name="selected_plan_id" class="form-select">
+                            <option value="">-- Select a plan --</option>
+                            {% for plan in subscription_plans %}
+                                <option value="{{ plan.plan_id }}" {% if preselected_plan_id and preselected_plan_id|int == plan.plan_id %}selected{% endif %}>{{ plan.name }}{% if plan.price %} — {{ plan.price }}{% endif %}{% if plan.billing_cycle %} / {{ plan.billing_cycle }}{% endif %}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text text-muted">Select a subscription plan for your institution; it will be activated upon approval.</small>
+                    </div>
+
                     <div class="mb-3 d-none" id="inst-select-group">
                         <label for="institution_id" class="form-label">Select your Institution</label>
                         <select id="institution_id" name="institution_id" class="form-select">
@@ -58,27 +83,56 @@
     </div>
 </div>
 <script>
-    // Toggle institution name requirement when role is Institution Admin
+    // Toggle institution name / plan / contact fields depending on role selection
     (function() {
         const roleSelect = document.getElementById('role');
         const instGroup = document.getElementById('inst-name-group');
         const instInput = document.getElementById('institution_name');
+        const instAddressGroup = document.getElementById('inst-address-group');
+        const instPhoneGroup = document.getElementById('inst-phone-group');
+        const instMessageGroup = document.getElementById('inst-message-group');
+        const instPlanGroup = document.getElementById('inst-plan-group');
+        const selectedPlan = document.getElementById('selected_plan_id');
 
         function updateInstVisibility() {
             const val = roleSelect.value;
             if (val === 'institution_admin') {
+                // Show all institution registration fields
                 instGroup.classList.remove('d-none');
+                instAddressGroup.classList.remove('d-none');
+                instPhoneGroup.classList.remove('d-none');
+                instMessageGroup.classList.remove('d-none');
+                instPlanGroup.classList.remove('d-none');
+
                 instInput.setAttribute('required', 'required');
+                if (selectedPlan) selectedPlan.setAttribute('required', 'required');
+
                 document.getElementById('inst-select-group').classList.add('d-none');
                 document.getElementById('institution_id').removeAttribute('required');
             } else if (val === 'student' || val === 'lecturer') {
+                // Students / lecturers pick an existing institution
                 instGroup.classList.add('d-none');
+                instAddressGroup.classList.add('d-none');
+                instPhoneGroup.classList.add('d-none');
+                instMessageGroup.classList.add('d-none');
+                instPlanGroup.classList.add('d-none');
+
                 instInput.removeAttribute('required');
+                if (selectedPlan) selectedPlan.removeAttribute('required');
+
                 document.getElementById('inst-select-group').classList.remove('d-none');
                 document.getElementById('institution_id').setAttribute('required', 'required');
             } else {
+                // Other roles (platform_manager) - hide all institution-specific fields
                 instGroup.classList.add('d-none');
+                instAddressGroup.classList.add('d-none');
+                instPhoneGroup.classList.add('d-none');
+                instMessageGroup.classList.add('d-none');
+                instPlanGroup.classList.add('d-none');
+
                 instInput.removeAttribute('required');
+                if (selectedPlan) selectedPlan.removeAttribute('required');
+
                 document.getElementById('inst-select-group').classList.add('d-none');
                 document.getElementById('institution_id').removeAttribute('required');
             }

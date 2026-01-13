@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, session, redirect, url_for, flash, current_app, request
 import secrets
 import bcrypt
-from application.controls.auth_control import AuthControl, authenticate_user
+from application.controls.auth_control import AuthControl, authenticate_user, requires_roles
 from application.controls.attendance_control import AttendanceControl
 from application.entities2.institution import InstitutionModel
 from application.entities2.user import UserModel
@@ -12,40 +12,16 @@ from application.boundaries.dev_actions import register_action
 auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/')
+@requires_roles('student', 'lecturer', 'admin', 'platform_manager')
 def auth():
     """Main dashboard route"""
-    # Check authentication
-    auth_result = AuthControl.verify_session(current_app, session)
-    
-    if not auth_result['success']:
-        flash('Please login to access the dashboard', 'warning')
-        return redirect(url_for('auth.login'))
-    
-    # Get user from session
-    user = auth_result.get('user', {})
-    user_id = session.get('user_id')
-    
-    # Get attendance summary
-    attendance_summary = {}
-    if user_id:
-        attendance_result = AttendanceControl.get_all_sessions_attendance(current_app, user_id, days=30)
-        if attendance_result['success']:
-            attendance_summary = attendance_result['summary']
-    
-    return render_template('dashboard.html',
-                         user=user,
-                         attendance_summary=attendance_summary)
+    return render_template('dashboard.html')
 
 @auth_bp.route('/profile')
+@requires_roles('student', 'lecturer', 'admin', 'platform_manager')
 def profile():
     """User profile route"""
-    auth_result = AuthControl.verify_session(current_app, session)
-    
-    if not auth_result['success']:
-        flash('Please login to view profile', 'warning')
-        return redirect(url_for('auth.login'))
-    
-    return render_template('components/profile.html', user=auth_result['user'])
+    return render_template('components/profile.html')
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -191,26 +167,10 @@ def logout():
     return redirect(url_for('main.home'))
 
 @auth_bp.route('/attendance-history')
+@requires_roles('student', 'lecturer', 'admin', 'platform_manager')
 def attendance_history():
     """Attendance history route"""
-    auth_result = AuthControl.verify_session(current_app, session)
-    
-    if not auth_result['success']:
-        flash('Please login to view attendance history', 'warning')
-        return redirect(url_for('auth.login'))
-    
-    user_id = auth_result['user'].get('user_id')  # Changed from firebase_uid
-    attendance_result = AttendanceControl.get_user_attendance_summary(current_app, user_id, days=90)
-    
-    if attendance_result['success']:
-        return render_template('attendance_history.html',
-                             user=auth_result['user'],
-                             summary=attendance_result['summary'],
-                             records=attendance_result['records'])
-    else:
-        flash('Failed to load attendance history', 'danger')
-        return redirect(url_for('student.dashboard'))
-
+    return render_template('attendance_history.html')
 
 # Register dev actions for auth helpers
 try:

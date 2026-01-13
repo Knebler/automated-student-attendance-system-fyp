@@ -1,7 +1,7 @@
 {% extends "layouts/base.html" %}
 
 {% block title %}Class Details - MGNT 110 - AttendAI{% endblock %}
-
+    
 {% block content %}
 <div class="class-details-management">
     <div class="page-header mb-4">
@@ -56,7 +56,7 @@
                             <td>{{c[3]}}</td>
                             <td>{{c[4]}}</td>
                             <td class="actions-cell">
-                                <a href="{{ url_for('institution.attendance_class_details') }}" class="btn-custom btn-manage">Manage Class</a>
+                                <a href="{{ url_for('institution.attendance_class_details', class_id=c[0]) }}" class="btn-custom btn-manage">Manage Class</a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -94,7 +94,7 @@
                             <td>{{c[3]}}</td>
                             <td>{{c[4]}}</td>
                             <td class="actions-cell">
-                                <a href="{{ url_for('institution.attendance_class_details') }}" class="btn-custom btn-manage">Manage Class</a>
+                                <a href="{{ url_for('institution.attendance_class_details', class_id=c[0]) }}" class="btn-custom btn-manage">Manage Class</a>
                             </td>
                         </tr>
                         {% endfor %}

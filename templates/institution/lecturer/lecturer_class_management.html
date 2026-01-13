@@ -1188,19 +1188,19 @@
     
     function loadClassDetails(classId) {
         if (!classId) {
-            window.location.href = "{{ url_for('lecturer.class_management') }}";
+            window.location.href = "{{ url_for('institution_lecturer.manage_classes') }}";
             return;
         }
         
-        window.location.href = "{{ url_for('lecturer.class_management') }}?class_id=" + classId;
+        window.location.href = "{{ url_for('institution_lecturer.manage_classes') }}?class_id=" + classId;
     }
     
     function createNewClass() {
-        window.location.href = "{{ url_for('lecturer.create_class') }}";
+        window.location.href = "{{ url_for('institution_lecturer.manage_classes') }}";
     }
     
     function editClass() {
-        window.location.href = "{{ url_for('lecturer.edit_class', class_id=current_class.id) if current_class else '#' }}";
+        window.location.href = "{{ url_for('institution_lecturer.manage_classes', class_id=current_class.id) if current_class else '#' }}";
     }
     
     function duplicateClass() {
@@ -1245,7 +1245,7 @@
             console.log('Archiving class:', currentClassId);
             showToast('Class archived', 'info');
             setTimeout(() => {
-                window.location.href = "{{ url_for('lecturer.class_management') }}";
+                window.location.href = "{{ url_for('institution_lecturer.manage_classes') }}";
             }, 1500);
         }
     }
@@ -1481,7 +1481,7 @@
                 window.location.reload();
             }
         } else {
-            window.location.href = "{{ url_for('lecturer.dashboard') }}";
+            window.location.href = "{{ url_for('institution_lecturer.lecturer_dashboard') }}";
         }
     }
     

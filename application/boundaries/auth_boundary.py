@@ -23,7 +23,7 @@ def auth():
     
     # Get user from session
     user = auth_result.get('user', {})
-    user_id = user.get('firebase_uid') or session.get('user_id')
+    user_id = user.get('user_id')  # Changed from firebase_uid
     
     # Get attendance summary
     attendance_summary = {}
@@ -93,8 +93,8 @@ def login():
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
-    """User registration (creates Firebase user + local profile)."""
-    # load active institutions for the registration form (for student/lecturer selection)
+    """User registration (creates local profile only)."""
+    # load active institutions for the registration form
     institutions_raw = BaseEntity.execute_query(current_app, "SELECT institution_id, name FROM Institutions WHERE is_active = TRUE", fetch_all=True)
     institutions = [{'institution_id': r[0], 'name': r[1]} for r in institutions_raw] if institutions_raw else []
 
@@ -107,12 +107,10 @@ def register():
         # Institution Admins: create a pending registration request
         if role == 'institution_admin':
             institution_name = request.form.get('institution_name')
-            # require institution name
             if not institution_name:
                 flash('Educational Institute name is required for Institution Admin registration.', 'warning')
                 return render_template('auth/register.html', institutions=institutions)
 
-            # Build payload for institution registration (creates a pending/unregistered entry)
             institution_data = {
                 'email': email,
                 'full_name': name,
@@ -131,12 +129,14 @@ def register():
                 flash(result.get('error') or 'Failed to submit registration request', 'danger')
 
         else:
-            # For other roles, create a Firebase user account (registration)
+            # For other roles, validate registration
             institution_id = request.form.get('institution_id') or None
             if role in ['student', 'lecturer'] and not institution_id:
                 flash('Please select an institution for your account', 'warning')
                 return render_template('auth/register.html', institutions=institutions)
+            
             try:
+                # Validate registration
                 reg_res = AuthControl.register_user(current_app, email, password, name=name, role=role)
             except Exception as e:
                 current_app.logger.exception('Registration exception')
@@ -144,9 +144,9 @@ def register():
                 return render_template('auth/register.html', institutions=institutions)
 
             if reg_res.get('success'):
-                # Optionally create a local DB record for student/lecturer
                 try:
-                    pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                    # Use the hashed password from registration validation
+                    pw_hash = reg_res.get('password_hash')
                     if role == 'student':
                         model = Student.get_model()
                         # Generate a student_code (simple fallback)
@@ -193,7 +193,7 @@ def attendance_history():
         flash('Please login to view attendance history', 'warning')
         return redirect(url_for('auth.login'))
     
-    user_id = auth_result['user']['firebase_uid']
+    user_id = auth_result['user'].get('user_id')  # Changed from firebase_uid
     attendance_result = AttendanceControl.get_user_attendance_summary(current_app, user_id, days=90)
     
     if attendance_result['success']:
@@ -217,7 +217,7 @@ try:
             {'name': 'name', 'label': 'Full name', 'placeholder': 'Optional display name'},
             {'name': 'role', 'label': 'Role', 'placeholder': 'student | lecturer | institution_admin | platform_manager'}
         ],
-        description='Create a Firebase user and a local user record (dev use only)'
+        description='Create a local user record (dev use only)'
     )
 
     register_action(
@@ -228,9 +228,7 @@ try:
             {'name': 'password', 'label': 'Password', 'placeholder': 'password'},
             {'name': 'user_type', 'label': 'User type', 'placeholder': 'student | lecturer | institution_admin | platform_manager'}
         ],
-        description='Authenticate a user via Firebase (dev only)'
+        description='Authenticate a user (dev only)'
     )
 except Exception:
     pass
-
-

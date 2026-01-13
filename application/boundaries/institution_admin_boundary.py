@@ -219,22 +219,12 @@ def import_data():
     return render_template('institution/admin/import_institution_data.html')
 
 
-@institution_bp.route('/attendance/student/<int:student_id>')
+@institution_bp.route('/attendance/student/')
 @requires_roles('admin')
-def attendance_student_details(student_id):
-    """Show attendance details for a single student (admin view)"""
-    # Remember to only allow admins from the same institution
-    # Load attendance summary for the student
-    result = AttendanceControl.get_student_attendance_summary(current_app, student_id, days=365)
-    if not result.get('success'):
-        flash(result.get('error') or 'Failed to load student attendance', 'danger')
-        return redirect(url_for('institution.manage_attendance'))
+def attendance_student_details():
 
     return render_template(
         'institution/admin/institution_admin_attendance_management_student_details.html',
-        student_info=result.get('student_info'),
-        summary=result.get('summary'),
-        records=result.get('attendance_records')
     )
 
 
@@ -248,6 +238,8 @@ def attendance_class_details(class_id):
         context = {
             "class": class_model.admin_class_details(class_id),
             "records": class_model.get_attendance_records(class_id),
+            "class_id": class_id,
+            "course_name": class_model.get_course_name(class_id),
         }
     return render_template('institution/admin/institution_admin_attendance_management_class_details.html', **context)
 
@@ -298,6 +290,7 @@ def update_user_details(user_id):
             gender=request.form.get('gender'),
             email=request.form.get('email'),
             phone_number=request.form.get('phone_number'),
+            age=request.form.get('age')
         )
     return redirect(url_for('institution.view_user_details', user_id=user_id))
     

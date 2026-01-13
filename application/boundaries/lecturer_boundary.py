@@ -20,7 +20,10 @@ def manage_appeals():
 @lecturer_bp.route('/manage_attendance')
 def manage_attendance():
     """Render the lecturer attendance-management page"""
-    return render_template('institution/lecturer/lecturer_attendance_management.html')
+    context = {
+        "class": {},
+    }
+    return render_template('institution/lecturer/lecturer_attendance_management.html', **context)
 
 
 @lecturer_bp.route('/manage_attendance/statistics')

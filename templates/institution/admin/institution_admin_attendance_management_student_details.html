@@ -10,11 +10,11 @@
     <div class="card-custom mb-4">
         <div class="card-header-custom">Student Information</div>
         <div class="card-body-custom">
-            <h2 class="student-name mb-3">{{ student_info.full_name if student_info else 'Unknown Student' }}</h2>
+            <h2 class="student-name mb-3"></h2>
             <div class="student-info">
                 <div class="info-group">
-                    <span><strong>Student ID:</strong> {{ student_info.student_id if student_info else '' }}</span>
-                    <span><strong>Module:</strong> {% if records and records|length > 0 %}{{ records[0].get('course_code','') }} - {{ records[0].get('course_name','') }}{% else %}N/A{% endif %}</span>
+                    <span><strong>Student ID:</strong></span>
+                    <span><strong>Module:</strong></span>
                 </div>
             </div>
         </div>
@@ -51,11 +51,11 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for r in records %}
-                        <tr class="row-{{ r.status }}">
-                            <td>{{ r.session_topic or r.session_id }}</td>
-                            <td>{% if r.get('appeal') %}<a href="#" class="appeal-link">View Appeal</a>{% else %}<span class="appeal-nil">NIL</span>{% endif %}</td>
-                            <td><span class="status-{{ r.status|upper if r.status else 'present' }}">{{ r.status|upper }}</span></td>
+                       
+                        <tr class="row-present">
+                            <td>L04</td>
+                            <td><a href="#" class="appeal-link">View Appeal</a></td>
+                            <td><span class="status-present">PRESENT</span></td>
                             <td>
                                 <div class="action-buttons">
                                     <button class="btn-custom action-btn btn-present">Present</button>
@@ -63,7 +63,7 @@
                                 </div>
                             </td>
                         </tr>
-                        {% endfor %}
+                     
                         <tr class="row-vr">
                             <td>L05</td>
                             <td><a href="#" class="appeal-link">View Appeal</a></td>

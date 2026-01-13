@@ -69,7 +69,7 @@
                         <p><strong>Venue: </strong>{{c.venue}}</p>
                         <p><strong>Lecturer: </strong>{{c.lecturer}}</p>
                     </div>
-                    <button class="btn-pill">View</button>
+                    <a href="{{ url_for('institution.attendance_class_details') }}" class="btn-pill">Manage Class</a>
                 </div>
                 {% endfor %}
 

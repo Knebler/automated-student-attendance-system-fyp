@@ -56,7 +56,7 @@
                             <td>{{c[3]}}</td>
                             <td>{{c[4]}}</td>
                             <td class="actions-cell">
-                                <button class="btn-custom btn-manage">Manage Class</button>
+                                <a href="{{ url_for('institution.attendance_class_details') }}" class="btn-custom btn-manage">Manage Class</a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -94,7 +94,7 @@
                             <td>{{c[3]}}</td>
                             <td>{{c[4]}}</td>
                             <td class="actions-cell">
-                                <button class="btn-custom btn-manage">Manage Class</button>
+                                <a href="{{ url_for('institution.attendance_class_details') }}" class="btn-custom btn-manage">Manage Class</a>
                             </td>
                         </tr>
                         {% endfor %}

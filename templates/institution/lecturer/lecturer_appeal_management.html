@@ -1,891 +1,847 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Manage Appeals - Attendance Management System</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+{% extends "layouts/base.html" %}
+
+{% block title %}Manage Appeals - AttendAI{% endblock %}
+
+{% block content %}
+<div class="appeals-management">
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <h1 class="page-title">Appeals</h1>
+        <p class="page-subtitle">Review and manage student attendance appeals</p>
+    </div>
+
+    <!-- Main Content Card -->
+    <div class="card-custom">
+        <div class="card-header-custom">Manage Appeals</div>
+        <div class="card-body-custom">
+            <!-- Search and Filter Section -->
+            <div class="search-section mb-4">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control search-input" placeholder="Search by student name, ID, class or reason...">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control filter-input" placeholder="Filter">
+                    </div>
+                    <div class="col-md-2">
+                        <div class="sort-dropdown">
+                            Newest First
+                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style="width: 20px; height: 20px;">
+                                <path d="M7 10l5 5 5-5z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Appeals List -->
+            <div class="appeals-list">
+                <!-- Appeal Card 1 - Rejected -->
+                <div class="appeal-card mb-3" onclick="openModal()" style="cursor: pointer;">
+                    <div class="appeal-header">
+                        <div class="appeal-student">James Teo</div>
+                        <div class="status-badge status-rejected">Rejected</div>
+                    </div>
+
+                    <div class="appeal-info">
+                        <div class="info-item">
+                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style="width: 18px; height: 18px;">
+                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                            </svg>
+                            8531254
+                        </div>
+                        <div class="info-item">
+                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style="width: 18px; height: 18px;">
+                                <path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/>
+                            </svg>
+                            CSCI251 - Advanced Programming - L01
+                        </div>
+                    </div>
+
+                    <div class="appeal-details">
+                        <div class="detail-item">
+                            <div class="detail-label">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style="width: 18px; height: 18px;">
+                                    <path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                                </svg>
+                                Absence Date
+                            </div>
+                            <div class="detail-value">Nov 20, 2025</div>
+                        </div>
+
+                        <div class="detail-item">
+                            <div class="detail-label">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style="width: 18px; height: 18px;">
+                                    <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+                                </svg>
+                                Submitted Date
+                            </div>
+                            <div class="detail-value">Nov 30, 2025</div>
+                        </div>
+
+                        <div class="detail-item">
+                            <div class="detail-label">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style="width: 18px; height: 18px;">
+                                    <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                                </svg>
+                                Appeal Type
+                            </div>
+                            <div class="detail-value">Without Medical Certificate (MC)</div>
+                        </div>
+                    </div>
+
+                    <div class="appeal-reason">
+                        My dog ate my shoes
+                    </div>
+
+                    <div class="appeal-attachments">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style="width: 18px; height: 18px;">
+                            <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                        </svg>
+                        0 attachments
+                    </div>
+                </div>
+
+                <!-- Appeal Card 2 - Pending -->
+                <div class="appeal-card" onclick="openModal()" style="cursor: pointer;">
+                    <div class="appeal-header">
+                        <div class="appeal-student">Alex Tan</div>
+                        <div class="status-badge status-pending">Pending</div>
+                    </div>
+
+                    <div class="appeal-info">
+                        <div class="info-item">
+                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style="width: 18px; height: 18px;">
+                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                            </svg>
+                            8541200
+                        </div>
+                        <div class="info-item">
+                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style="width: 18px; height: 18px;">
+                                <path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/>
+                            </svg>
+                            CSCI251 - Advanced Programming - L01
+                        </div>
+                    </div>
+
+                    <div class="appeal-details">
+                        <div class="detail-item">
+                            <div class="detail-label">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style="width: 18px; height: 18px;">
+                                    <path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                                </svg>
+                                Absence Date
+                            </div>
+                            <div class="detail-value">Nov 20, 2025</div>
+                        </div>
+
+                        <div class="detail-item">
+                            <div class="detail-label">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style="width: 18px; height: 18px;">
+                                    <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+                                </svg>
+                                Submitted Date
+                            </div>
+                            <div class="detail-value">Nov 21, 2025</div>
+                        </div>
+
+                        <div class="detail-item">
+                            <div class="detail-label">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style="width: 18px; height: 18px;">
+                                    <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                                </svg>
+                                Appeal Type
+                            </div>
+                            <div class="detail-value">With Medical Certificate (MC)</div>
+                        </div>
+                    </div>
+
+                    <div class="appeal-reason">
+                        I felt sick on the day itself, rendering me unable to attend the lecture. I have attached my MC from the polyclinic I went to.
+                    </div>
+
+                    <div class="appeal-attachments">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style="width: 18px; height: 18px;">
+                            <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                        </svg>
+                        <a href="#" class="attachment-link" onclick="event.stopPropagation()">1 attachment</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Overlay for Appeal Details -->
+<div class="modal-overlay" id="appealModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Appeal Details</h2>
+            <button class="close-button" onclick="closeModal()">&times;</button>
+        </div>
+
+        <div class="modal-body">
+            <!-- Student Information -->
+            <div class="modal-section">
+                <h3 class="section-title">Student Information</h3>
+                <div class="info-grid">
+                    <div class="info-row">
+                        <div class="info-label">
+                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style="width: 20px; height: 20px;">
+                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                            </svg>
+                            Student Name
+                        </div>
+                        <div class="info-value">Alex Tan</div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-label">
+                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style="width: 20px; height: 20px;">
+                                <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                            </svg>
+                            Email
+                        </div>
+                        <div class="info-value">XXXX123@uowmail.edu.au</div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-label">
+                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style="width: 20px; height: 20px;">
+                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                            </svg>
+                            University ID
+                        </div>
+                        <div class="info-value">8531254</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Class & Absence Details -->
+            <div class="modal-section">
+                <h3 class="section-title">Class & Absence Details</h3>
+                <div class="info-grid">
+                    <div class="info-row">
+                        <div class="info-label">
+                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style="width: 20px; height: 20px;">
+                                <path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/>
+                            </svg>
+                            Class
+                        </div>
+                        <div class="info-value">
+                            CSCI251 - L01<br>
+                            <span style="font-size: 0.9rem; color: #666;">Advanced Programming</span>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-label">
+                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style="width: 20px; height: 20px;">
+                                <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                            </svg>
+                            Appeal Type
+                        </div>
+                        <div class="info-value">With Medical Certificate</div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-label">
+                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style="width: 20px; height: 20px;">
+                                <path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                            </svg>
+                            Absence Date
+                        </div>
+                        <div class="info-value">Thursday, November 20, 2025</div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-label">
+                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style="width: 20px; height: 20px;">
+                                <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+                            </svg>
+                            Submitted On
+                        </div>
+                        <div class="info-value">November 21, 2025, 8:00 AM</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="modal-section">
+                <h3 class="section-title">Description</h3>
+                <p class="description-text">
+                    I felt sick on the day itself, rendering me unable to attend the lecture. I have attached my MC from the polyclinic I went to.
+                </p>
+            </div>
+
+            <!-- Attachments -->
+            <div class="modal-section">
+                <h3 class="section-title">Attachments</h3>
+                <div class="attachment-item">
+                    <div class="attachment-name">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 20px; height: 20px; fill: #3b82f6;">
+                            <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                        </svg>
+                        mc_20_nov_2025.pdf
+                    </div>
+                    <a href="#" class="download-link">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style="width: 20px; height: 20px;">
+                            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                        </svg>
+                        Download
+                    </a>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="modal-actions">
+                <button class="modal-button reject-button" onclick="handleReject()">Reject</button>
+                <button class="modal-button approve-button" onclick="handleApprove()">Approve</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Appeals Management Specific Styles */
+    .appeals-management {
+        max-width: 1400px;
+        margin: 0 auto;
     }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background-color: #f5f5f5;
-      color: #0a1e42;
+    .page-header {
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid var(--border-color);
+        margin-bottom: 2rem;
     }
 
-    /* Navigation */
-    nav {
-      background-color: #0a1e42;
-      padding: 1.25rem 3rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
     }
 
-    .logo {
-      color: white;
-      font-size: 2.5rem;
-      font-weight: bold;
-      letter-spacing: 2px;
-    }
-
-    .nav-links {
-      display: flex;
-      gap: 0;
-      align-items: center;
-      flex: 1;
-      justify-content: center;
-      margin-left: 2rem;
-    }
-
-    .nav-links a {
-      color: white;
-      text-decoration: none;
-      padding: 0.75rem 1.5rem;
-      border-right: 1px solid rgba(255,255,255,0.3);
-      transition: background-color 0.3s;
-      white-space: nowrap;
-      font-size: 1.05rem;
-    }
-
-    .nav-links a:first-child {
-      border-left: 1px solid rgba(255,255,255,0.3);
-    }
-
-    .nav-links a:hover {
-      background-color: rgba(255,255,255,0.1);
-    }
-
-    .nav-links a.active {
-      text-decoration: underline;
-      text-underline-offset: 4px;
-      font-weight: 600;
-    }
-
-    .notification-icon {
-      width: 32px;
-      height: 32px;
-      margin-left: 2rem;
-      cursor: pointer;
-    }
-
-    .notification-icon svg {
-      width: 100%;
-      height: 100%;
-      fill: white;
-    }
-
-    /* Main Content */
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 2rem;
-    }
-
-    h1 {
-      font-size: 2.5rem;
-      color: #0a1e42;
-      margin-bottom: 1.5rem;
-    }
-
-    .content-card {
-      background: white;
-      border: 3px solid #0a1e42;
-      border-radius: 12px;
-      padding: 2rem;
+    .page-subtitle {
+        font-size: 1.1rem;
+        color: var(--text-light);
     }
 
     /* Search and Filter Section */
     .search-section {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 2rem;
-      align-items: center;
-      flex-wrap: wrap;
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        align-items: center;
+        flex-wrap: wrap;
     }
 
     .search-input {
-      flex: 2;
-      min-width: 300px;
-      padding: 0.875rem 1.25rem;
-      border: none;
-      border-radius: 25px;
-      background-color: #e8e8e8;
-      font-size: 1rem;
-      color: #666;
+        flex: 2;
+        min-width: 300px;
+        padding: 0.875rem 1.25rem;
+        border: 2px solid var(--border-color);
+        border-radius: 25px;
+        background-color: var(--primary-light);
+        font-size: 1rem;
+        color: var(--text-dark);
     }
 
     .filter-input {
-      flex: 1;
-      min-width: 150px;
-      padding: 0.875rem 1.25rem;
-      border: none;
-      border-radius: 25px;
-      background-color: #e8e8e8;
-      font-size: 1rem;
-      color: #666;
-    }
-
-    .filter-icon {
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
-
-    .filter-icon svg {
-      width: 24px;
-      height: 24px;
+        flex: 1;
+        min-width: 150px;
+        padding: 0.875rem 1.25rem;
+        border: 2px solid var(--border-color);
+        border-radius: 25px;
+        background-color: var(--primary-light);
+        font-size: 1rem;
+        color: var(--text-dark);
     }
 
     .sort-dropdown {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1.5rem;
-      border: 2px solid #0a1e42;
-      border-radius: 8px;
-      background-color: white;
-      cursor: pointer;
-      font-size: 1rem;
-      font-weight: 500;
-    }
-
-    .sort-dropdown svg {
-      width: 20px;
-      height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        background-color: white;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 500;
+        min-width: 150px;
     }
 
     /* Appeal Cards */
     .appeals-list {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
     }
 
     .appeal-card {
-      background-color: #f5f5f5;
-      border: 2px solid #ccc;
-      border-radius: 12px;
-      padding: 1.5rem;
-      position: relative;
+        background-color: var(--primary-light);
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        position: relative;
+        transition: all 0.3s ease;
+    }
+
+    .appeal-card:hover {
+        background-color: #f1f5f9;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
     .appeal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
     }
 
     .appeal-student {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: #0a1e42;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-dark);
     }
 
     .status-badge {
-      padding: 0.5rem 1.5rem;
-      border-radius: 20px;
-      font-weight: 600;
-      font-size: 1rem;
-      color: white;
+        padding: 0.5rem 1.5rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 1rem;
+        color: white;
     }
 
     .status-rejected {
-      background-color: #ef4444;
+        background-color: #ef4444;
     }
 
     .status-pending {
-      background-color: #f59e0b;
+        background-color: #f59e0b;
     }
 
     .appeal-info {
-      display: flex;
-      gap: 2rem;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
+        display: flex;
+        gap: 2rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
     }
 
     .info-item {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.95rem;
-      color: #333;
-    }
-
-    .info-item svg {
-      width: 18px;
-      height: 18px;
-      flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.95rem;
+        color: var(--text-dark);
     }
 
     .appeal-details {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1.5rem;
-      margin-bottom: 1rem;
-      padding: 1rem 0;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+        padding: 1rem 0;
     }
 
     .detail-item {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
     }
 
     .detail-label {
-      font-size: 0.85rem;
-      color: #666;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .detail-label svg {
-      width: 18px;
-      height: 18px;
+        font-size: 0.85rem;
+        color: var(--text-light);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
 
     .detail-value {
-      font-size: 0.95rem;
-      color: #0a1e42;
-      font-weight: 500;
+        font-size: 0.95rem;
+        color: var(--text-dark);
+        font-weight: 500;
     }
 
     .appeal-reason {
-      margin-bottom: 1rem;
-      padding: 1rem 0;
-      line-height: 1.6;
+        margin-bottom: 1rem;
+        padding: 1rem 0;
+        line-height: 1.6;
+        color: var(--text-dark);
     }
 
     .appeal-attachments {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.95rem;
-    }
-
-    .appeal-attachments svg {
-      width: 18px;
-      height: 18px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.95rem;
+        color: var(--text-dark);
     }
 
     .attachment-link {
-      color: #3b82f6;
-      text-decoration: none;
-      cursor: pointer;
+        color: #3b82f6;
+        text-decoration: none;
+        cursor: pointer;
     }
 
     .attachment-link:hover {
-      text-decoration: underline;
+        text-decoration: underline;
     }
 
     /* Modal Overlay and Appeal Details Modal Styles */
     .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: rgba(0, 0, 0, 0.6);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-      padding: 2rem;
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.6);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
     }
 
     .modal-overlay.active {
-      display: flex;
+        display: flex;
     }
 
     .modal-content {
-      background: white;
-      border-radius: 12px;
-      max-width: 800px;
-      width: 100%;
-      max-height: 90vh;
-      overflow-y: auto;
-      position: relative;
+        background: white;
+        border-radius: 12px;
+        max-width: 800px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+        border: 2px solid var(--border-color);
     }
 
     .modal-header {
-      background-color: #0a1e42;
-      color: white;
-      padding: 1.5rem 2rem;
-      border-radius: 12px 12px 0 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+        background-color: var(--primary-dark);
+        color: white;
+        padding: 1.5rem 2rem;
+        border-radius: 10px 10px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
 
     .modal-title {
-      font-size: 1.75rem;
-      font-weight: 600;
+        font-size: 1.75rem;
+        font-weight: 600;
     }
 
     .close-button {
-      background: none;
-      border: none;
-      color: white;
-      font-size: 2rem;
-      cursor: pointer;
-      padding: 0;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      line-height: 1;
+        background: none;
+        border: none;
+        color: white;
+        font-size: 2rem;
+        cursor: pointer;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
     }
 
     .close-button:hover {
-      opacity: 0.8;
+        opacity: 0.8;
     }
 
     .modal-body {
-      padding: 2rem;
+        padding: 2rem;
     }
 
     .modal-section {
-      margin-bottom: 2rem;
+        margin-bottom: 2rem;
     }
 
     .modal-section:last-of-type {
-      margin-bottom: 0;
+        margin-bottom: 0;
     }
 
     .section-title {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: #0a1e42;
-      margin-bottom: 1rem;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-bottom: 1rem;
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 0.5rem;
     }
 
     .info-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1.5rem;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
     }
 
     .info-row {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
     }
 
     .info-label {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: #666;
-      font-size: 0.9rem;
-    }
-
-    .info-label svg {
-      width: 20px;
-      height: 20px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-light);
+        font-size: 0.9rem;
     }
 
     .info-value {
-      font-size: 1rem;
-      color: #0a1e42;
-      font-weight: 500;
-      padding-left: 28px;
+        font-size: 1rem;
+        color: var(--text-dark);
+        font-weight: 500;
+        padding-left: 28px;
     }
 
     .description-text {
-      line-height: 1.6;
-      color: #333;
+        line-height: 1.6;
+        color: var(--text-dark);
+        padding: 1rem;
+        background-color: var(--primary-light);
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
     }
 
     .attachment-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1rem;
-      background-color: #f5f5f5;
-      border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem;
+        background-color: var(--primary-light);
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
     }
 
     .attachment-name {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: #0a1e42;
-    }
-
-    .attachment-name svg {
-      width: 20px;
-      height: 20px;
-      fill: #3b82f6;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-dark);
+        font-weight: 500;
     }
 
     .download-link {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: #3b82f6;
-      text-decoration: none;
-      font-weight: 500;
-    }
-
-    .download-link svg {
-      width: 20px;
-      height: 20px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #3b82f6;
+        text-decoration: none;
+        font-weight: 500;
     }
 
     .download-link:hover {
-      text-decoration: underline;
+        text-decoration: underline;
     }
 
     .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 1rem;
-      margin-top: 2rem;
-      padding-top: 2rem;
-      border-top: 1px solid #e5e5e5;
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 2px solid var(--border-color);
     }
 
     .modal-button {
-      padding: 0.875rem 2.5rem;
-      border: none;
-      border-radius: 25px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: opacity 0.3s;
+        padding: 0.875rem 2.5rem;
+        border: none;
+        border-radius: 25px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
     }
 
     .modal-button:hover {
-      opacity: 0.9;
+        opacity: 0.9;
+        transform: translateY(-2px);
     }
 
     .reject-button {
-      background-color: #ef4444;
-      color: white;
+        background-color: #ef4444;
+        color: white;
+        border: 2px solid #ef4444;
     }
 
     .approve-button {
-      background-color: #0a1e42;
-      color: white;
+        background-color: var(--primary-dark);
+        color: white;
+        border: 2px solid var(--primary-dark);
     }
 
+    .approve-button:hover {
+        background-color: #1e293b;
+        border-color: #1e293b;
+    }
+
+    /* Responsive Design */
     @media (max-width: 768px) {
-      nav {
-        flex-direction: column;
-        padding: 1rem;
-        gap: 1rem;
-      }
+        .appeal-details {
+            grid-template-columns: 1fr;
+        }
 
-      .nav-links {
-        flex-direction: column;
-        width: 100%;
-        margin-left: 0;
-      }
+        .search-section {
+            flex-direction: column;
+        }
 
-      .nav-links a {
-        width: 100%;
-        text-align: center;
-        border: none;
-        border-bottom: 1px solid rgba(255,255,255,0.3);
-      }
+        .search-input,
+        .filter-input {
+            width: 100%;
+        }
 
-      .notification-icon {
-        margin-left: 0;
-      }
+        .appeal-info {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
 
-      .appeal-details {
-        grid-template-columns: 1fr;
-      }
+        /* Responsive styles for modal */
+        .modal-overlay {
+            padding: 1rem;
+        }
 
-      .search-section {
-        flex-direction: column;
-      }
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
 
-      .search-input,
-      .filter-input {
-        width: 100%;
-      }
+        .modal-actions {
+            flex-direction: column;
+        }
 
-      /* Responsive styles for modal */
-      .modal-overlay {
-        padding: 1rem;
-      }
+        .modal-button {
+            width: 100%;
+        }
 
-      .info-grid {
-        grid-template-columns: 1fr;
-      }
+        .modal-header {
+            padding: 1rem;
+        }
 
-      .modal-actions {
-        flex-direction: column;
-      }
+        .modal-title {
+            font-size: 1.5rem;
+        }
 
-      .modal-button {
-        width: 100%;
-      }
+        .modal-body {
+            padding: 1rem;
+        }
     }
-  </style>
-</head>
-<body>
-  <nav>
-    <div class="logo">LOGO</div>
-    <div class="nav-links">
-      <a href="lecturer-dashboard.html">Dashboard</a>
-      <a href="lecturer-timetable.html">View Timetable</a>
-      <a href="lecturer-attendance.html">Manage Attendance</a>
-      <a href="lecturer-classes.html">Manage Classes/Rosters</a>
-      <a href="lecturer-appeals.html" class="active">Manage Appeals</a>
-    </div>
-    <div class="notification-icon">
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/>
-      </svg>
-    </div>
-  </nav>
 
-  <div class="container">
-    <h1>Appeals</h1>
+    @media (max-width: 480px) {
+        .page-title {
+            font-size: 1.75rem;
+        }
 
-    <div class="content-card">
-      <div class="search-section">
-        <input type="text" class="search-input" placeholder="Search by student name, ID, class or reason...">
-        <input type="text" class="filter-input" placeholder="Filter">
-        <div class="filter-icon">
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2">
-            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-          </svg>
-        </div>
-        <div class="sort-dropdown">
-          Newest First
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-            <path d="M7 10l5 5 5-5z"/>
-          </svg>
-        </div>
-      </div>
+        .page-subtitle {
+            font-size: 1rem;
+        }
 
-      <div class="appeals-list">
-        <!-- Appeal Card 1 - Rejected -->
-        <div class="appeal-card">
-          <div class="appeal-header">
-            <div class="appeal-student">James Teo</div>
-            <div class="status-badge status-rejected">Rejected</div>
-          </div>
+        .appeal-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
 
-          <div class="appeal-info">
-            <div class="info-item">
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-              </svg>
-              8531254
-            </div>
-            <div class="info-item">
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                <path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/>
-              </svg>
-              CSCI251 - Advanced Programming - L01
-            </div>
-          </div>
+        .status-badge {
+            align-self: flex-start;
+        }
+    }
+</style>
 
-          <div class="appeal-details">
-            <div class="detail-item">
-              <div class="detail-label">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                  <path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
-                </svg>
-                Absence Date
-              </div>
-              <div class="detail-value">Nov 20, 2025</div>
-            </div>
-
-            <div class="detail-item">
-              <div class="detail-label">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                  <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
-                </svg>
-                Submitted Date
-              </div>
-              <div class="detail-value">Nov 30, 2025</div>
-            </div>
-
-            <div class="detail-item">
-              <div class="detail-label">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                  <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
-                </svg>
-                Appeal Type
-              </div>
-              <div class="detail-value">Without Medical Certificate (MC)</div>
-            </div>
-          </div>
-
-          <div class="appeal-reason">
-            My dog ate my shoes
-          </div>
-
-          <div class="appeal-attachments">
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-              <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
-            </svg>
-            0 attachments
-          </div>
-        </div>
-
-        <!-- Appeal Card 2 - Pending -->
-        <div class="appeal-card">
-          <div class="appeal-header">
-            <div class="appeal-student">Alex Tan</div>
-            <div class="status-badge status-pending">Pending</div>
-          </div>
-
-          <div class="appeal-info">
-            <div class="info-item">
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-              </svg>
-              8541200
-            </div>
-            <div class="info-item">
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                <path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/>
-              </svg>
-              CSCI251 - Advanced Programming - L01
-            </div>
-          </div>
-
-          <div class="appeal-details">
-            <div class="detail-item">
-              <div class="detail-label">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                  <path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
-                </svg>
-                Absence Date
-              </div>
-              <div class="detail-value">Nov 20, 2025</div>
-            </div>
-
-            <div class="detail-item">
-              <div class="detail-label">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                  <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
-                </svg>
-                Submitted Date
-              </div>
-              <div class="detail-value">Nov 21, 2025</div>
-            </div>
-
-            <div class="detail-item">
-              <div class="detail-label">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                  <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
-                </svg>
-                Appeal Type
-              </div>
-              <div class="detail-value">With Medical Certificate (MC)</div>
-            </div>
-          </div>
-
-          <div class="appeal-reason">
-            I felt sick on the day itself, rendering me unable to attend the lecture. I have attached my MC from the polyclinic I went to.
-          </div>
-
-          <div class="appeal-attachments">
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-              <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
-            </svg>
-            <a href="#" class="attachment-link">1 attachment</a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Overlay for Appeal Details -->
-  <div class="modal-overlay" id="appealModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 class="modal-title">Appeal Details</h2>
-        <button class="close-button" onclick="closeModal()">&times;</button>
-      </div>
-
-      <div class="modal-body">
-        <!-- Student Information -->
-        <div class="modal-section">
-          <h3 class="section-title">Student Information</h3>
-          <div class="info-grid">
-            <div class="info-row">
-              <div class="info-label">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                </svg>
-                Student Name
-              </div>
-              <div class="info-value">Alex Tan</div>
-            </div>
-
-            <div class="info-row">
-              <div class="info-label">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                  <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-                </svg>
-                Email
-              </div>
-              <div class="info-value">XXXX123@uowmail.edu.au</div>
-            </div>
-
-            <div class="info-row">
-              <div class="info-label">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                </svg>
-                University ID
-              </div>
-              <div class="info-value">8531254</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Class & Absence Details -->
-        <div class="modal-section">
-          <h3 class="section-title">Class & Absence Details</h3>
-          <div class="info-grid">
-            <div class="info-row">
-              <div class="info-label">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                  <path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/>
-                </svg>
-                Class
-              </div>
-              <div class="info-value">
-                CSCI251 - L01<br>
-                <span style="font-size: 0.9rem; color: #666;">Advanced Programming</span>
-              </div>
-            </div>
-
-            <div class="info-row">
-              <div class="info-label">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                  <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
-                </svg>
-                Appeal Type
-              </div>
-              <div class="info-value">With Medical Certificate</div>
-            </div>
-
-            <div class="info-row">
-              <div class="info-label">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                  <path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
-                </svg>
-                Absence Date
-              </div>
-              <div class="info-value">Thursday, November 20, 2025</div>
-            </div>
-
-            <div class="info-row">
-              <div class="info-label">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                  <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
-                </svg>
-                Submitted On
-              </div>
-              <div class="info-value">November 21, 2025, 8:00 AM</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Description -->
-        <div class="modal-section">
-          <h3 class="section-title">Description</h3>
-          <p class="description-text">
-            I felt sick on the day itself, rendering me unable to attend the lecture. I have attached my MC from the polyclinic I went to.
-          </p>
-        </div>
-
-        <!-- Attachments -->
-        <div class="modal-section">
-          <h3 class="section-title">Attachments</h3>
-          <div class="attachment-item">
-            <div class="attachment-name">
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
-              </svg>
-              mc_20_nov_2025.pdf
-            </div>
-            <a href="#" class="download-link">
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-              </svg>
-              Download
-            </a>
-          </div>
-        </div>
-
-        <!-- Actions -->
-        <div class="modal-actions">
-          <button class="modal-button reject-button" onclick="handleReject()">Reject</button>
-          <button class="modal-button approve-button" onclick="handleApprove()">Approve</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- JavaScript for Modal Functionality -->
-  <script>
+<script>
     function openModal() {
-      document.getElementById('appealModal').classList.add('active');
-      document.body.style.overflow = 'hidden';
+        document.getElementById('appealModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
     }
 
     function closeModal() {
-      document.getElementById('appealModal').classList.remove('active');
-      document.body.style.overflow = '';
+        document.getElementById('appealModal').classList.remove('active');
+        document.body.style.overflow = '';
     }
 
     function handleReject() {
-      alert('Appeal rejected');
-      closeModal();
+        if (confirm('Are you sure you want to reject this appeal?')) {
+            alert('Appeal rejected');
+            closeModal();
+        }
     }
 
     function handleApprove() {
-      alert('Appeal approved');
-      closeModal();
+        if (confirm('Are you sure you want to approve this appeal?')) {
+            alert('Appeal approved');
+            closeModal();
+        }
     }
 
     // Close modal when clicking outside
     document.getElementById('appealModal').addEventListener('click', function(e) {
-      if (e.target === this) {
-        closeModal();
-      }
+        if (e.target === this) {
+            closeModal();
+        }
     });
 
     // Close modal with Escape key
     document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') {
-        closeModal();
-      }
+        if (e.key === 'Escape') {
+            closeModal();
+        }
     });
 
-    // Add click handlers to appeal cards
-    document.querySelectorAll('.appeal-card').forEach(card => {
-      card.style.cursor = 'pointer';
-      card.addEventListener('click', function(e) {
-        // Don't open modal if clicking on attachment link
-        if (!e.target.classList.contains('attachment-link')) {
-          openModal();
-        }
-      });
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add click handlers to appeal cards
+        document.querySelectorAll('.appeal-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                // Don't open modal if clicking on attachment link
+                if (!e.target.classList.contains('attachment-link')) {
+                    openModal();
+                }
+            });
+        });
+
+        // Search functionality
+        const searchInput = document.querySelector('.search-input');
+        const appealCards = document.querySelectorAll('.appeal-card');
+
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            appealCards.forEach(card => {
+                const cardText = card.textContent.toLowerCase();
+                if (cardText.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        // Sort dropdown functionality
+        const sortDropdown = document.querySelector('.sort-dropdown');
+        
+        sortDropdown.addEventListener('click', function() {
+            // Toggle between newest and oldest
+            const isNewest = this.textContent.includes('Newest');
+            this.textContent = isNewest ? 'Oldest First' : 'Newest First';
+            
+            // Add the arrow icon back
+            const svg = document.createElement('svg');
+            svg.setAttribute('viewBox', '0 0 24 24');
+            svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+            svg.setAttribute('fill', 'currentColor');
+            svg.style.width = '20px';
+            svg.style.height = '20px';
+            svg.innerHTML = '<path d="M7 10l5 5 5-5z"/>';
+            
+            this.appendChild(svg);
+        });
     });
-  </script>
-</body>
-</html>
+</script>
+{% endblock %}

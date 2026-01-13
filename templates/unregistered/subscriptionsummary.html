@@ -287,9 +287,9 @@
 
 <!-- Plans Grid -->
 <div class="plans-grid">
-    <!-- Basic Plan -->
+    <!-- Starter Plan -->
     <div class="plan-card">
-        <h3 class="plan-title">Basic</h3>
+        <h3 class="plan-title">Starter</h3>
         <div class="plan-price">
             <div class="price-amount">$19</div>
             <div class="price-period">per month</div>
@@ -306,7 +306,7 @@
                 <li class="feature-unavailable"><span class="xmark">✗</span> Priority support</li>
             </ul>
             <div class="plan-button">
-                <a href="#" class="btn-custom btn-outline-custom">Get Started</a>
+                <a href="{{ url_for('auth.register', selected_plan_id=1, role='institution_admin') }}" class="btn-custom btn-outline-custom">Get Started</a>
             </div>
         </div>
     </div>
@@ -331,7 +331,7 @@
                 <li class="feature-unavailable"><span class="xmark">✗</span> Dedicated account manager</li>
             </ul>
             <div class="plan-button">
-                <a href="#" class="btn-custom" style="background-color: #059669; border-color: #059669;">Get Started</a>
+                <a href="{{ url_for('auth.register', selected_plan_id=2, role='institution_admin') }}" class="btn-custom" style="background-color: #059669; border-color: #059669;">Get Started</a>
             </div>
         </div>
     </div>
@@ -355,7 +355,7 @@
                 <li><span class="feature-icon">✓</span> 24/7 dedicated support</li>
             </ul>
             <div class="plan-button">
-                <a href="#" class="btn-custom">Contact Sales</a>
+                <a href="{{ url_for('auth.register', selected_plan_id=3, role='institution_admin') }}" class="btn-custom">Get Started</a>
             </div>
         </div>
     </div>
@@ -368,7 +368,7 @@
         <thead>
             <tr>
                 <th>Features</th>
-                <th>Basic</th>
+                <th>Starter</th>
                 <th>Professional</th>
                 <th>Enterprise</th>
             </tr>

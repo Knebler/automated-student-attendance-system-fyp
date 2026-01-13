@@ -366,21 +366,21 @@
 
 <!-- Author Section -->
 <div class="author-section">
+    <div class="author-section">
     <div class="author-avatar-placeholder" style="width: 80px; height: 80px; border-radius: 50%; background-color: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--text-light); border: 3px solid white;">
-        MA
+        {{ testimonial.user_name[:2]|upper }}
     </div>
     <div class="author-info">
-        <div class="author-name">Madeline Ang</div>
-        <div class="author-title">Director of Human Resources</div>
-        <div class="author-organization">HelloWorld University</div>
+        <div class="author-name">{{ testimonial.user_name }}</div>
+        <div class="author-title">{{ testimonial.author_role }}</div>
+        <div class="author-organization">{{ testimonial.author_organization }}</div>
         <div class="testimonial-rating">
+            {% for i in range(testimonial.rating) %}
             <span class="star">★</span>
-            <span class="star">★</span>
-            <span class="star">★</span>
-            <span class="star">★</span>
-            <span class="star">★</span>
+            {% endfor %}
         </div>
     </div>
+</div>
 </div>
 
 <!-- Testimonial Content -->

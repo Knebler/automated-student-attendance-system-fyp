@@ -14,16 +14,20 @@
             
             <div class="class-info mb-4">
                 <div class="info-group">
-                    <span><strong>Date:</strong> XX/XX/XXXX XXXX</span>
-                    <span><strong>Venue:</strong> XXXXXXX</span>
+                    <span><strong>Date: </strong>{{ class.start_time }}</span>
+                    <span><strong>Venue: </strong>{{ class.venue }}</span>
                 </div>
                 <div class="info-group">
-                    <span><strong>Lecturer:</strong> Alan Ho</span>
-                    <span><strong>Class Size:</strong> 5</span>
+                    <span><strong>Lecturer: </strong>{{ class.lecturer }}</span>
+                    <span><strong>Attendance Marked: </strong>{{ class.marked }} / {{ class.total }}</span>
                 </div>
                 <div class="info-group">
-                    <span><strong>Present:</strong> 3</span>
-                    <span><strong>Absent:</strong> 2</span>
+                    <span><strong>Present: </strong>{{ class.present }}</span>
+                    <span><strong>Late: </strong>{{ class.late }}</span>
+                </div>
+                <div class="info-group">
+                    <span><strong>Absent: </strong>{{ class.absent }}</span>
+                    <span><strong>Excused: </strong>{{ class.excused }}</span>
                 </div>
             </div>
 
@@ -64,46 +68,6 @@
                                 </td>
                             </tr>
                             {% endfor %}
-                            <tr class="row-vr">
-                                <td>Alex Tan</td>
-                                <td>8541200</td>
-                                <td><span class="status-vr">VR</span></td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <button class="btn-custom manage-btn">Manage</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr class="row-present">
-                                <td>James Teo</td>
-                                <td>8531254</td>
-                                <td><span class="status-present">PRESENT</span></td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <button class="btn-custom manage-btn">Manage</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr class="row-present">
-                                <td>XXXXXXXXX</td>
-                                <td>XXXXXXXX</td>
-                                <td><span class="status-present">PRESENT</span></td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <button class="btn-custom manage-btn">Manage</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr class="row-present">
-                                <td>XXXXXXXX</td>
-                                <td>XXXXXXXX</td>
-                                <td><span class="status-present">PRESENT</span></td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <button class="btn-custom manage-btn">Manage</button>
-                                    </div>
-                                </td>
-                            </tr>
                         </tbody>
                     </table>
                 </div>

@@ -1,11 +1,10 @@
 from flask import Blueprint, render_template, request, session, current_app, flash, redirect, url_for, abort
 from sqlalchemy.exc import IntegrityError
-from application.controls.auth_control import AuthControl
-from application.controls.institution_control import InstitutionControl
 from application.controls.attendance_control import AttendanceControl
 from application.controls.auth_control import requires_roles
-from application.entities2 import ClassModel, UserModel, InstitutionModel, SubscriptionModel, CourseModel, VenueModel, CourseUserModel
+from application.entities2 import ClassModel, UserModel, InstitutionModel, SubscriptionModel, CourseModel, AttendanceRecordModel, CourseUserModel
 from database.base import get_session
+from database.models import *
 
 institution_bp = Blueprint('institution', __name__)
 
@@ -20,13 +19,6 @@ def institution_dashboard():
         institution_model = InstitutionModel(db_session)
         sub_model = SubscriptionModel(db_session)
         class_model = ClassModel(db_session)
-        course_model = CourseModel(db_session)
-        venue_model = VenueModel(db_session)
-
-        user_count = user_model.count()
-        student_count = user_model.count(institution_id=institution_id, role='student')
-        lecturer_count = user_model.count(institution_id=institution_id, role='lecturer')
-        admin_count = user_model.count(institution_id=institution_id, role='admin')
         
         institution = institution_model.get_one(institution_id=institution_id)
         institution_name = institution.name if institution else "Unknown Institution"
@@ -34,25 +26,14 @@ def institution_dashboard():
         sub = sub_model.get_by_id(institution.subscription_id)
         sub_active = True if sub and sub.is_active else False
 
-        classes = class_model.get_today(institution_id=institution_id)
-
         context = {
             "institution": {
                 "name": institution_name,
                 "is_active": sub_active,
                 "renewal": sub.end_date,
             },
-            "overview": {
-                "user_count": user_count,
-                "student_count": student_count,
-                "lecturer_count": lecturer_count,
-                "admin_count": admin_count
-            },
-            "classes": [{
-                "module": course_model.get_by_id(c.course_id).name,
-                "venue": venue_model.get_by_id(c.venue_id).name,
-                "lecturer": user_model.get_by_id(c.lecturer_id).name,
-            } for c in classes],
+            "overview": user_model.admin_user_stats(institution_id),
+            "classes": class_model.admin_dashboard_classes_today(institution_id),
         }
 
     return render_template('institution/admin/institution_admin_dashboard.html',
@@ -159,6 +140,9 @@ def add_user_to_course(user_id):
     # and admins must be from the same institution
     try:
         with get_session() as db_session:
+            target_user = UserModel(db_session).get_by_id(user_id)
+            if target_user.role == 'admin' or target_user.institution_id != session.get('institution_id'):
+                return abort(401)
             cu_model = CourseUserModel(db_session)
             cu_model.assign(user_id=user_id, course_id=request.form.get('course_id'))
     except IntegrityError as e:
@@ -172,8 +156,11 @@ def add_user_to_course(user_id):
 @institution_bp.route('/manage_users/<int:user_id>/remove_course', methods=['POST'])
 @requires_roles('admin')
 def remove_user_from_course(user_id):
-    # Only allow admins from the same institution
     with get_session() as db_session:
+        target_user = UserModel(db_session).get_by_id(user_id)
+        if target_user.role == 'admin' or target_user.institution_id != session.get('institution_id'):
+            return abort(401)
+
         cu_model = CourseUserModel(db_session)
         cu_model.unassign(user_id=user_id, course_id=request.form.get('course_id'))
     redirect_path = request.form.get("redirect")
@@ -184,26 +171,6 @@ def remove_user_from_course(user_id):
 @institution_bp.route('/manage_attendance')
 @requires_roles('admin')
 def manage_attendance():
-    # load all sessions (historical) so admin can manage attendance across all dates
-    # default: returns sessions up to today
-    result = AttendanceControl.get_all_sessions_attendance(current_app)
-    sessions = []
-    if result.get('success'):
-        raw_sessions = result.get('sessions') or []
-        for s in raw_sessions:
-            sess = s.get('session') if isinstance(s, dict) else None
-            records = s.get('attendance_records') if isinstance(s, dict) else []
-            present = sum(1 for r in records if r.get('status') == 'present')
-            absent = sum(1 for r in records if r.get('status') == 'absent')
-            sessions.append({
-                'session': sess,
-                'attendance_records': records,
-                'present_count': present,
-                'absent_count': absent,
-                'total': len(records)
-            })
-    else:
-        flash(result.get('error') or 'Failed to load sessions', 'warning')
 
     return render_template('institution/admin/institution_admin_attendance_management.html')
 
@@ -227,6 +194,8 @@ def module_details(course_id):
     with get_session() as db_session:
         class_model = ClassModel(db_session)
         course_model = CourseModel(db_session)
+        if course_model.get_by_id(course_id).institution_id != session.get('institution_id'):
+            return abort(401)
         completed = class_model.get_completed(course_id)
         upcoming = class_model.get_upcoming(course_id)
         context = {
@@ -272,19 +241,15 @@ def attendance_student_details(student_id):
 @institution_bp.route('/attendance/class/<int:class_id>')
 @requires_roles('admin')
 def attendance_class_details(class_id):
-    # Remember to only allow admins from the same institution
-    """Show attendance details for a single class (admin view)"""
-    # Load session (class) attendance
-    result = AttendanceControl.get_session_attendance(current_app, class_id)
-    if not result.get('success'):
-        flash(result.get('error') or 'Failed to load class attendance', 'danger')
-        return redirect(url_for('institution.manage_attendance'))
-
-    return render_template(
-        'institution/admin/institution_admin_attendance_management_class_details.html',
-        session_info=result.get('session'),
-        records=result.get('attendance_records')
-    )
+    with get_session() as db_session:
+        class_model = ClassModel(db_session)
+        if not class_model.class_is_institution(class_id, session.get('institution_id')):
+            return abort(401)
+        context = {
+            "class": class_model.admin_class_details(class_id),
+            "records": class_model.get_attendance_records(class_id),
+        }
+    return render_template('institution/admin/institution_admin_attendance_management_class_details.html', **context)
 
 
 @institution_bp.route('/attendance/reports')
@@ -304,5 +269,36 @@ def attendance_reports():
     )
     
 
+# user edit page
+@institution_bp.route('/manage_users/<int:user_id>/edit', methods=['GET'])
+@requires_roles('admin')
+def edit_user_details(user_id):
+    with get_session() as db_session:
+        user_model = UserModel(db_session)
+        user = user_model.get_by_id(user_id)
+        user_details = user.as_sanitized_dict()
+        if user.role == 'admin' or user.institution_id != session.get('institution_id'):
+            return abort(401)
+    return render_template(
+        'institution/admin/institution_admin_user_management_user_edit.html',
+        user_details=user_details,
+    )
+
+@institution_bp.route('/manage_users/<int:user_id>/edit', methods=['POST'])
+@requires_roles('admin')
+def update_user_details(user_id):
+    with get_session() as db_session:
+        user_model = UserModel(db_session)
+        user = user_model.get_by_id(user_id)
+        if user.role == 'admin' or user.institution_id != session.get('institution_id'):
+            return abort(401)
+        #update user details
+        user_model.update(user_id,
+            name=request.form.get('name'),
+            gender=request.form.get('gender'),
+            email=request.form.get('email'),
+            phone_number=request.form.get('phone_number'),
+        )
+    return redirect(url_for('institution.view_user_details', user_id=user_id))
     
-        
+    

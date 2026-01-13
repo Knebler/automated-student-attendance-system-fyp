@@ -11,130 +11,71 @@ def dashboard():
     return render_template('institution/student/student_dashboard.html')
 
 @student_bp.route('/profile')
+@requires_roles('student')
 def profile():
     """User profile route"""
-    auth_result = AuthControl.verify_session(current_app, session)
-    
-    if not auth_result['success']:
-        flash('Please login to view profile', 'warning')
-        return redirect(url_for('auth.login'))
-    
-    return render_template('institution/student/student_profile_management.html', user=auth_result['user'])
+    return render_template('institution/student/student_profile_management.html')
 
 @student_bp.route('/attendance')
+@requires_roles('student')
 def attendance():
     """Student attendance overview"""
-    auth_result = AuthControl.verify_session(current_app, session)
-
-    if not auth_result['success']:
-        flash('Please login to view attendance', 'warning')
-        return redirect(url_for('auth.login'))
-
-    user = auth_result['user']
-    user_id = user.get('user_id') or session.get('user_id')
-
-    attendance_summary = {}
-    records = []
-    if user_id:
-        attendance_result = AttendanceControl.get_student_attendance_summary(current_app, user_id, days=30)
-        if attendance_result.get('success'):
-            attendance_summary = attendance_result.get('summary')
-            records = attendance_result.get('attendance_records')
-
     return render_template('institution/student/student_attendance_management.html',
-                         user=user,
-                         summary=attendance_summary,
-                         records=records)
+                            user=session.get('user'))
 
 
 @student_bp.route('/attendance/history')
+@requires_roles('student')
 def attendance_history():
     """Attendance history route"""
-    auth_result = AuthControl.verify_session(current_app, session)
-
-    if not auth_result['success']:
-        flash('Please login to view attendance history', 'warning')
-        return redirect(url_for('auth.login'))
-
-    user = auth_result['user']
-    user_id = user.get('user_id') or session.get('user_id')
-
-    attendance_summary = {}
-    records = []
-    if user_id:
-        attendance_result = AttendanceControl.get_student_attendance_summary(current_app, user_id, days=365)
-        if attendance_result.get('success'):
-            attendance_summary = attendance_result.get('summary')
-            records = attendance_result.get('attendance_records')
-
     return render_template('institution/student/student_attendance_management_history.html',
-                         user=user,
-                         summary=attendance_summary,
-                         records=records)
+                           user=session.get('user'))
 
 
 @student_bp.route('/attendance/checkin')
+@requires_roles('student')
 def class_checkin():
     """Student class check-in view"""
-    auth_result = AuthControl.verify_session(current_app, session)
-    if not auth_result['success']:
-        flash('Please login to check in', 'warning')
-        return redirect(url_for('auth.login'))
-
-    return render_template('institution/student/student_class_checkin.html', user=auth_result['user'])
+    return render_template('institution/student/student_class_checkin.html',
+                           user=session.get('user'))
 
 
 @student_bp.route('/attendance/checkin/face')
+@requires_roles('student')
 def class_checkin_face():
     """Student class check-in (face capture)"""
-    auth_result = AuthControl.verify_session(current_app, session)
-    if not auth_result['success']:
-        flash('Please login to check in', 'warning')
-        return redirect(url_for('auth.login'))
-
     # Allow frontend to pass a session_id via query string for context (e.g. ?session_id=123)
     session_id = request.args.get('session_id')
-
-    user = auth_result['user']
-    user_id = user.get('user_id') or session.get('user_id')
+    user_id = session.get('user_id')
 
     return render_template('institution/student/student_class_checkin_face.html',
-                           user=user,
+                           user=session.get('user'),
                            session_id=session_id,
                            user_id=user_id)
 
 
 @student_bp.route('/appeal')
+@requires_roles('student')
 def appeal_management():
     """Student appeal management"""
-    auth_result = AuthControl.verify_session(current_app, session)
-    if not auth_result['success']:
-        flash('Please login to view appeals', 'warning')
-        return redirect(url_for('auth.login'))
-
-    return render_template('institution/student/student_appeal_management.html', user=auth_result['user'])
+    return render_template('institution/student/student_appeal_management.html', user=session.get('user'))
 
 
 @student_bp.route('/appeal/form', endpoint='appeal_form')
+@requires_roles('student')
 def appeal_form():
     """Show appeal form"""
-    auth_result = AuthControl.verify_session(current_app, session)
-    if not auth_result['success']:
-        flash('Please login to submit an appeal', 'warning')
-        return redirect(url_for('auth.login'))
-
-    return render_template('institution/student/student_appeal_management_appeal_form.html', user=auth_result['user'])
+    return render_template('institution/student/student_appeal_management_appeal_form.html', user=session.get('user'))
 
 
 @student_bp.route('/absent-records', endpoint='absent_records')
+@requires_roles('student')
 def absent_records():
     """View all absent records (stub)"""
-    auth_result = AuthControl.verify_session(current_app, session)
-    if not auth_result['success']:
-        flash('Please login to view records', 'warning')
-        return redirect(url_for('auth.login'))
-
     # For now reuse the attendance history template as a placeholder
-    return render_template('institution/student/student_attendance_management_history.html', user=auth_result['user'], summary={}, records=[])
+    return render_template('institution/student/student_attendance_management_history.html',
+                            user=session.get('user'),
+                            summary={},
+                            records=[])
 
 # TODO: Add more student-specific routes and functionalities as needed

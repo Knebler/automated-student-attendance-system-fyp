@@ -279,6 +279,22 @@ def edit_user_details(user_id):
         'institution/admin/institution_admin_user_management_user_edit.html',
         user_details=user_details,
     )
+
+@institution_bp.route('/manage_users/<int:user_id>/edit', methods=['POST'])
+@requires_roles('admin')
+def update_user_details(user_id):
+    with get_session() as db_session:
+        user_model = UserModel(db_session)
+        user = user_model.get_by_id(user_id)
+        if user.role == 'admin' or user.institution_id != session.get('institution_id'):
+            return abort(401)
+        #update user details
+        user_model.update(user_id,
+            name=request.form.get('name'),
+            gender=request.form.get('gender'),
+            email=request.form.get('email'),
+            phone_number=request.form.get('phone_number'),
+        )
+    return redirect(url_for('institution.view_user_details', user_id=user_id))
     
     
-        

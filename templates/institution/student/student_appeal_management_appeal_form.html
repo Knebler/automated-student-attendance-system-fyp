@@ -1,0 +1,120 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Attendance Appeal{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card-custom">
+        <div class="card-header-custom">
+            Attendance Appeal Form
+        </div>
+
+        <div class="card-body-custom">
+            <form method="POST" action=>
+                
+                <!-- Student Information -->
+                <h5 class="mb-3">Student Details</h5>
+
+                <div class="form-group mb-3">
+                    <label for="student_name">Student Name</label>
+                    <input 
+                        type="text" 
+                        class="form-control" 
+                        id="student_name" 
+                        name="student_name" 
+                        value="John Doe" 
+                        readonly
+                    >
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="student_id">Student ID</label>
+                    <input 
+                        type="text" 
+                        class="form-control" 
+                        id="student_id" 
+                        name="student_id" 
+                        value="UOW1234567" 
+                        readonly
+                    >
+                </div>
+
+                <!-- Class Information -->
+                <h5 class="mt-4 mb-3">Class Details</h5>
+
+                <div class="form-group mb-3">
+                    <label for="module_code">Module Code</label>
+                    <input 
+                        type="text" 
+                        class="form-control" 
+                        id="module_code" 
+                        name="module_code" 
+                        value="CSIT321" 
+                        readonly
+                    >
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="class_date">Class Date</label>
+                    <input 
+                        type="date" 
+                        class="form-control" 
+                        id="class_date" 
+                        name="class_date"
+                    >
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="class_time">Class Time</label>
+                    <input 
+                        type="time" 
+                        class="form-control" 
+                        id="class_time" 
+                        name="class_time"
+                    >
+                </div>
+
+                <!-- Appeal Reason -->
+                <h5 class="mt-4 mb-3">Appeal Details</h5>
+
+                <div class="form-group mb-3">
+                    <label for="appeal_reason">Reason for Appeal</label>
+                    <textarea 
+                        class="form-control" 
+                        id="appeal_reason" 
+                        name="appeal_reason" 
+                        rows="5"
+                        placeholder="Please explain clearly why you are appealing this attendance record (e.g., medical reason, system error, late arrival with valid justification)."
+                        required
+                    ></textarea>
+                </div>
+
+                <!-- File Upload -->
+                <div class="form-group mb-4">
+                    <label for="supporting_document">
+                        Supporting Document (optional)
+                    </label>
+                    <input 
+                        type="file" 
+                        class="form-control" 
+                        id="supporting_document" 
+                        name="supporting_document"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                    >
+                    <small class="form-text text-muted">
+                        Accepted formats: PDF, JPG, PNG (e.g., medical certificate, email proof).
+                    </small>
+                </div>
+
+                <!-- Submit -->
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary">
+                        Submit Appeal
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

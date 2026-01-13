@@ -119,3 +119,14 @@ class ClassModel(BaseEntity[Class]):
             .filter(Course.institution_id == institution_id)
             .count() > 0
         )
+    
+    def get_course_name(self, class_id) -> str:
+        result = (
+            self.session
+            .query(Course.name)
+            .join(Class, Class.course_id == Course.course_id)
+            .filter(Class.class_id == class_id)
+            .one_or_none()
+        )
+        return result[0] if result else ""
+    

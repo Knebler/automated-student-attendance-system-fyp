@@ -6,6 +6,7 @@ from application.entities.lecturer import Lecturer
 from application.entities.institution_admin import InstitutionAdmin
 from application.entities.unregistered_user import UnregisteredUser
 from application.entities.subscription import Subscription
+from application.entities2 import UserModel
 from application.controls.institution_control import InstitutionControl
 from datetime import datetime, timedelta
 import bcrypt

@@ -58,11 +58,6 @@ def attendance():
             },
             "classes": class_model.student_attendance_absent_late(uid),
         }
-        s_model = UserModel(db_session)
-
-        pprint(s_model.student_stats(uid))
-        pprint(term_stats)
-
     return render_template('institution/student/student_attendance_management.html', **context)
 
 

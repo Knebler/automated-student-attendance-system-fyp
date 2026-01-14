@@ -30,8 +30,8 @@ class Config:
     UPLOAD_FOLDER = 'static/uploads'
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
 
-    STRIPE_PUBLIC_KEY = 'pk_test_51SpIfs7X9xH9U2VHlSkfNEDtNQupjpaCmPG0wKpwaeRLKOANhHnZgJ5wh1nUBlFdJq3AKp0HkPkFA3JN4IUwvr1Y00gSBLTzA8'
-    STRIPE_SECRET_KEY = 'sk_test_51SpIfs7X9xH9U2VHK1s0wKBVIG0UO3hxKWrWqkgv952G0b4dfh7ixr2PYIXJ7kC2a0y8MR09bn4yoIQ0xLheVTqg00ZRBkxv01'
+    STRIPE_PUBLIC_KEY = 'pk'
+    STRIPE_SECRET_KEY = 'sk'
 
 class DevelopmentConfig(Config):
     DEBUG = True

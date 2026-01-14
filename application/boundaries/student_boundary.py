@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, session, redirect, url_for, flash, current_app, request
 from application.controls.auth_control import AuthControl, requires_roles
 from application.controls.attendance_control import AttendanceControl
-from application.entities2 import ClassModel, SemesterModel
+from application.entities2 import ClassModel, SemesterModel, UserModel
 from pprint import pprint
 from datetime import date
 
@@ -26,26 +26,42 @@ def profile():
 def attendance():
     """Student attendance overview"""
     good_attendance_cutoff = 0.9
+    uid = session.get('user_id')
     with get_session() as db_session:
         class_model = ClassModel(db_session)
         sem_model = SemesterModel(db_session)
         term_info = sem_model.get_current_semester_info()
-        term_info["student_id"] = session.get('user_id')
+        term_info["student_id"] = uid
         term_info["cutoff"] = good_attendance_cutoff * 100
 
+        term_stats = sem_model.student_dashboard_term_attendance(uid)
         monthly_report = [{
             "month": date(report['year'], report['month'], 1).strftime("%B %Y"),
             "absent_percent": report["absent_percent"],
             "present_percent": report["present_percent"],
             "total_classes": report["total_classes"],
             "is_good": report["present_percent"] >= good_attendance_cutoff,
-        } for report in class_model.student_attendance_monthly(session.get('user_id'), 4)]
+        } for report in class_model.student_attendance_monthly(uid, 4)]
         
+        p, a, l, e = term_stats.get("present", 0), term_stats.get("absent", 0), term_stats.get("late", 0), term_stats.get("excused", 0)
+        marked = p + a + l + e
+
         context = {
             "term_info": term_info,
             "monthly_report": monthly_report,
-            "classes": class_model.student_attendance_absent_late(session.get('user_id')),
+            "overview": {
+                "present_percent": (p + l + e) / marked * 100 if marked > 0 else 100.0,
+                "absent_percent": a / marked * 100 if marked > 0 else 100.0,
+                "present": p,
+                "absent": a,
+                "total": sum(term_stats.values()),
+            },
+            "classes": class_model.student_attendance_absent_late(uid),
         }
+        s_model = UserModel(db_session)
+
+        pprint(s_model.student_stats(uid))
+        pprint(term_stats)
 
     return render_template('institution/student/student_attendance_management.html', **context)
 

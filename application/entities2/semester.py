@@ -1,6 +1,7 @@
 from .base_entity import BaseEntity
-from database.models import Semester, Institution
+from database.models import *
 from datetime import date
+from sqlalchemy import func
 
 class SemesterModel(BaseEntity[Semester]):
     """Specific entity for User model with custom methods"""
@@ -22,4 +23,25 @@ class SemesterModel(BaseEntity[Semester]):
             .first()
         )
         return dict(zip(headers, data))
+    
+    def student_dashboard_term_attendance(self, student_id):
+        data = dict(
+            self.session
+            .query(
+                func.coalesce(AttendanceRecord.status, "unmarked").label("status"),
+                func.count(Class.class_id).label("count")
+            )
+            .join(CourseUser, (CourseUser.course_id == Class.course_id) & (CourseUser.semester_id == Class.semester_id))
+            .join(Semester, Semester.semester_id == Class.semester_id)
+            .outerjoin(
+                AttendanceRecord,
+                (AttendanceRecord.class_id == Class.class_id) & (AttendanceRecord.student_id == CourseUser.user_id)
+            )
+            .filter(CourseUser.user_id == student_id)
+            .filter(Semester.start_date <= func.now(), Semester.end_date >= func.now())
+            .group_by(func.coalesce(AttendanceRecord.status, "unmarked"))
+            .all()
+        )
+        print(data)
+        return data
 

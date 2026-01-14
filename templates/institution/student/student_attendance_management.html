@@ -98,11 +98,11 @@
                 <div class="term-overview">
                     <div class="overall-stats">
                         <div class="chart-container large">
-                            <div class="chart" data-percent="88.5" data-absent="11.5"></div>
+                            <div class="chart" data-percent="{{overview.present_percent}}" data-absent="{{overview.absent_percent}}"></div>
                         </div>
                         <div class="overall-info">
                             <h3 class="overall-title">Term Attendance</h3>
-                            <div class="overall-percentage">88.5%</div>
+                            <div class="overall-percentage">{{overview.present_percent|round(1)}}%</div>
                             <div class="status-badge">
                                 <span class="status-dot"></span>
                                 <span class="status-text">Meeting Requirement</span>
@@ -110,11 +110,11 @@
                             <div class="overall-details">
                                 <div class="detail">
                                     <span class="detail-label">Present:</span>
-                                    <span class="detail-value">75/85 classes</span>
+                                    <span class="detail-value">{{overview.present}}</span>
                                 </div>
                                 <div class="detail">
                                     <span class="detail-label">Absent:</span>
-                                    <span class="detail-value">10/85 classes</span>
+                                    <span class="detail-value">{{overview.absent}}</span>
                                 </div>
                                 <div class="detail">
                                     <span class="detail-label">Required:</span>

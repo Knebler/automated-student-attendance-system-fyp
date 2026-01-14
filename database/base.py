@@ -18,7 +18,7 @@ DATABASE_URL = "mysql+pymysql://{}:{}@{}:{}/{}?charset=utf8mb4".format(*db_detai
 ROOT_URL = "mysql+pymysql://{}:{}@{}:{}".format(*db_details[:-1])
 
 connect_args = {}
-if os.environ['DB_SSL_ENABLED'] == 'True':
+if os.environ['DB_SSL_ENABLED'] == 'true':
     ssl_ca_path = os.getenv('DB_SSL_CA', None)
     if not os.path.exists(ssl_ca_path):
         print(f"SSL enabled but certificate not found at {ssl_ca_path}")

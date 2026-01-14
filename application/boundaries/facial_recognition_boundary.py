@@ -107,7 +107,7 @@ def recognize_face():
         
         attendance_result = AttendanceControl.mark_attendance(
             current_app,
-            session_id=session_id,
+            class_id=session_id,
             student_id=student_id,
             status='present',
             marked_by='system',

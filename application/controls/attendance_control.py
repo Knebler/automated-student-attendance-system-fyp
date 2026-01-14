@@ -2,58 +2,98 @@ from application.entities.attendance_record import AttendanceRecord
 from application.entities.session import Session
 from application.entities.student import Student
 from application.entities.course import Course
+from database.base import get_session
+from database.models import AttendanceRecord as DBAttendanceRecord, AttendanceStatusEnum, MarkedByEnum
 from datetime import datetime, date, timedelta
 
 class AttendanceControl:
     """Control class for attendance business logic"""
     
     @staticmethod
-    def mark_attendance(app, session_id, student_id, status='present', 
+    def mark_attendance(app=None, class_id=None, student_id=None, status='present', 
                        marked_by='system', lecturer_id=None, 
                        captured_image_path=None, notes=None):
-        """Mark attendance for a student in a session"""
+        """
+        Mark attendance for a student in a class
+        
+        Args:
+            app: Flask app instance (optional, kept for backward compatibility)
+            class_id: Class ID (required)
+            student_id: Student ID (required)
+            status: Attendance status (default: 'present')
+            marked_by: Who marked the attendance (default: 'system')
+            lecturer_id: Lecturer ID (optional)
+            captured_image_path: Path to captured image (optional, not used in DB model)
+            notes: Optional notes
+            
+        Returns:
+            Dictionary with success status and attendance data or error message
+        """
         try:
-            attendance_data = {
-                'session_id': session_id,
-                'student_id': student_id,
-                'status': status,
-                'marked_by': marked_by,
-                'lecturer_id': lecturer_id,
-                'captured_image_path': captured_image_path,
-                'attendance_time': datetime.now().time(),
-                'notes': notes
-            }
-            
-            # Check if attendance already exists
-            existing_record = AttendanceRecord.get_model().get_by_session_and_student(app, session_id, student_id)
-            
-            if existing_record:
-                # Update existing record
-                updated_record = AttendanceRecord.update_attendance(app, existing_record.attendance_id, attendance_data)
-                attendance_id = updated_record.attendance_id if updated_record else None
-                message = f'Attendance updated to {status}'
-            else:
-                # Create new record
-                new_record = AttendanceRecord.mark_attendance(app, attendance_data)
-                attendance_id = new_record.attendance_id if new_record else None
-                message = f'Attendance marked as {status}'
-            
-            if attendance_id:
-                return {
-                    'success': True,
-                    'attendance_id': attendance_id,
-                    'message': message
-                }
-            else:
+            if not class_id:
                 return {
                     'success': False,
-                    'error': 'Failed to mark attendance'
+                    'error': 'Class ID is required'
                 }
+            
+            if not student_id:
+                return {
+                    'success': False,
+                    'error': 'Student ID is required'
+                }
+            
+            # Use database model directly (works with class_id)
+            with get_session() as session:
+                # Check if attendance record already exists
+                existing_record = (
+                    session.query(DBAttendanceRecord)
+                    .filter(DBAttendanceRecord.class_id == class_id)
+                    .filter(DBAttendanceRecord.student_id == student_id)
+                    .first()
+                )
+                
+                if existing_record:
+                    # Update existing record
+                    existing_record.status = AttendanceStatusEnum[status] if isinstance(status, str) else status
+                    existing_record.marked_by = MarkedByEnum[marked_by] if isinstance(marked_by, str) else marked_by
+                    if lecturer_id:
+                        existing_record.lecturer_id = lecturer_id
+                    if notes is not None:
+                        existing_record.notes = notes
+                    session.commit()
+                    session.refresh(existing_record)
+                    
+                    return {
+                        'success': True,
+                        'attendance_id': existing_record.attendance_id,
+                        'message': f'Attendance updated to {status}',
+                        'record': existing_record
+                    }
+                else:
+                    # Create new record
+                    new_record = DBAttendanceRecord(
+                        class_id=class_id,
+                        student_id=student_id,
+                        status=AttendanceStatusEnum[status] if isinstance(status, str) else status,
+                        marked_by=MarkedByEnum[marked_by] if isinstance(marked_by, str) else marked_by,
+                        lecturer_id=lecturer_id,
+                        notes=notes
+                    )
+                    session.add(new_record)
+                    session.commit()
+                    session.refresh(new_record)
+                    
+                    return {
+                        'success': True,
+                        'attendance_id': new_record.attendance_id,
+                        'message': f'Attendance marked as {status}',
+                        'record': new_record
+                    }
             
         except Exception as e:
             return {
                 'success': False,
-                'error': str(e)
+                'error': f'Error marking attendance: {str(e)}'
             }
     
     @staticmethod
@@ -304,7 +344,7 @@ try:
         'mark_attendance',
         AttendanceControl.mark_attendance,
         params=[
-            {'name': 'session_id', 'label': 'Session ID', 'placeholder': 'e.g. 123'},
+            {'name': 'class_id', 'label': 'Class ID', 'placeholder': 'e.g. 123'},
             {'name': 'student_id', 'label': 'Student ID', 'placeholder': 'e.g. 456'},
             {'name': 'status', 'label': 'Status', 'placeholder': 'present, absent, late, excused'},
             {'name': 'marked_by', 'label': 'Marked By', 'placeholder': 'system or lecturer'},

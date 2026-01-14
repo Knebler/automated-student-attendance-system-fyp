@@ -54,14 +54,14 @@ def mark_attendance():
         }), 400
     
     result = AttendanceControl.mark_attendance(
-        current_app, 
-        session_id, 
-        student_id, 
-        status, 
-        marked_by, 
-        lecturer_id, 
-        captured_image_path, 
-        notes
+        app=current_app,
+        class_id=session_id,  # session_id is actually class_id in the new model
+        student_id=student_id,
+        status=status,
+        marked_by=marked_by,
+        lecturer_id=lecturer_id,
+        captured_image_path=captured_image_path,
+        notes=notes
     )
     
     return jsonify(result)

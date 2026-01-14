@@ -6,13 +6,14 @@ load_dotenv()
 
 class Config:
     # Flask Configuration
-    SECRET_KEY = os.getenv('SECRET_KEY', 'your-secret-key-here')
-    DEBUG = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
+    # Secrets MUST be provided through environment variables (e.g. via .env); do NOT commit secrets to git.
+    SECRET_KEY = os.getenv('SECRET_KEY')
+    DEBUG = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'    
     
     # MySQL Configuration for SQLAlchemy
     MYSQL_HOST = os.getenv('DB_HOST', 'attendai-fyp-project.mysql.database.azure.com')
     MYSQL_USER = os.getenv('DB_USER', 'attendai_superuser')
-    MYSQL_PASSWORD = os.getenv('DB_PASSWORD', 'passwordComplicated557')
+    MYSQL_PASSWORD = os.getenv('DB_PASSWORD')
     MYSQL_DB = os.getenv('DB_NAME', 'attendance_system')
     MYSQL_PORT = int(os.getenv('DB_PORT', '3306'))
 
@@ -30,8 +31,8 @@ class Config:
     UPLOAD_FOLDER = 'static/uploads'
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
 
-    STRIPE_PUBLIC_KEY = 'pk'
-    STRIPE_SECRET_KEY = 'sk'
+    STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
+    STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
 
 class DevelopmentConfig(Config):
     DEBUG = True

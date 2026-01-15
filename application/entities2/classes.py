@@ -223,3 +223,93 @@ class ClassModel(BaseEntity[Class]):
             query = query.filter(Class.class_type == class_type_filter)
     
         return query.all()
+    
+    def get_institution_classes_with_attendance_summary(self, institution_id):
+        """Get classes with attendance summary for an institution"""
+        return (
+            self.session.query(Class)
+            .join(Course, Class.course_id == Course.course_id)
+            .filter(Course.institution_id == institution_id)
+            .join(AttendanceRecord, Class.class_id == AttendanceRecord.class_id)
+            .all()
+        )
+    
+    def get_all_classes_with_attendance(self, institution_id):
+        """Get all classes for an institution with attendance statistics"""
+        headers = ["class_id", "module_name", "date", "venue", "lecturer", 
+                   "total", "present", "absent", "late", "excused", "unmarked"]
+        
+        # Subqueries for attendance counts
+        q_total = (
+            self.session
+            .query(func.count(User.user_id))
+            .select_from(CourseUser)
+            .join(User, User.user_id == CourseUser.user_id)
+            .filter(CourseUser.course_id == Class.course_id)
+            .filter(User.role == "student")
+            .correlate(Class)
+            .scalar_subquery()
+        )
+        
+        q_present = (
+            self.session
+            .query(func.count(AttendanceRecord.attendance_id))
+            .filter(AttendanceRecord.class_id == Class.class_id)
+            .filter(AttendanceRecord.status == "present")
+            .correlate(Class)
+            .scalar_subquery()
+        )
+        
+        q_absent = (
+            self.session
+            .query(func.count(AttendanceRecord.attendance_id))
+            .filter(AttendanceRecord.class_id == Class.class_id)
+            .filter(AttendanceRecord.status == "absent")
+            .correlate(Class)
+            .scalar_subquery()
+        )
+        
+        q_late = (
+            self.session
+            .query(func.count(AttendanceRecord.attendance_id))
+            .filter(AttendanceRecord.class_id == Class.class_id)
+            .filter(AttendanceRecord.status == "late")
+            .correlate(Class)
+            .scalar_subquery()
+        )
+        
+        q_excused = (
+            self.session
+            .query(func.count(AttendanceRecord.attendance_id))
+            .filter(AttendanceRecord.class_id == Class.class_id)
+            .filter(AttendanceRecord.status == "excused")
+            .correlate(Class)
+            .scalar_subquery()
+        )
+        
+        # Main query
+        classes = (
+            self.session
+            .query(
+                Class.class_id,
+                Course.name,
+                Class.start_time,
+                Venue.name,
+                User.name,
+                q_total,
+                func.coalesce(q_present, 0),
+                func.coalesce(q_absent, 0),
+                func.coalesce(q_late, 0),
+                func.coalesce(q_excused, 0),
+                (q_total - func.coalesce(q_present, 0) - func.coalesce(q_absent, 0) - 
+                 func.coalesce(q_late, 0) - func.coalesce(q_excused, 0))
+            )
+            .join(Course, Class.course_id == Course.course_id)
+            .join(Venue, Class.venue_id == Venue.venue_id)
+            .join(User, Class.lecturer_id == User.user_id)
+            .filter(Course.institution_id == institution_id)
+            .order_by(Class.start_time.desc())
+            .all()
+        )
+        
+        return self.add_headers(headers, classes)

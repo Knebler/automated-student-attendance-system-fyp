@@ -3,7 +3,6 @@ from sqlalchemy.exc import IntegrityError
 from application.controls.attendance_control import AttendanceControl
 from application.controls.auth_control import requires_roles
 from application.entities2 import ClassModel, UserModel, InstitutionModel, SubscriptionModel, CourseModel, AttendanceRecordModel, CourseUserModel
-from application.entities2 import VenueModel
 from database.base import get_session
 from database.models import *
 
@@ -246,65 +245,10 @@ def attendance_class_details(class_id):
 def manage_attendance():
     institution_id = session.get('institution_id')
     with get_session() as db_session:
-        # Get all classes with detailed information
-        from sqlalchemy import func, case
-        classes_data = (
-            db_session.query(
-                Class.class_id,
-                Course.name.label('course_name'),
-                Class.start_time,
-                Class.end_time,
-                Venue.name.label('venue_name'),
-                User.name.label('lecturer_name'),
-                func.count(AttendanceRecord.attendance_id).label('total_marked'),
-                func.sum(
-                    case(
-                        (AttendanceRecord.status == 'present', 1),
-                        else_=0
-                    )
-                ).label('present_count'),
-                func.sum(
-                    case(
-                        (AttendanceRecord.status == 'absent', 1),
-                        else_=0
-                    )
-                ).label('absent_count')
-            )
-            .select_from(Class)
-            .join(Course, Class.course_id == Course.course_id)
-            .join(Venue, Class.venue_id == Venue.venue_id)
-            .join(User, Class.lecturer_id == User.user_id)
-            .outerjoin(AttendanceRecord, AttendanceRecord.class_id == Class.class_id)
-            .filter(Course.institution_id == institution_id)
-            .group_by(
-                Class.class_id,
-                Course.name,
-                Class.start_time,
-                Class.end_time,
-                Venue.name,
-                User.name
-            )
-            .order_by(Class.start_time.desc())
-            .all()
-        )
-        
-        # Convert to list of dictionaries
-        class_sessions = [
-            {
-                'class_id': c.class_id,
-                'course_name': c.course_name,
-                'start_time': c.start_time,
-                'end_time': c.end_time,
-                'venue_name': c.venue_name,
-                'lecturer_name': c.lecturer_name,
-                'total_marked': c.total_marked or 0,
-                'present_count': c.present_count or 0,
-                'absent_count': c.absent_count or 0
-            }
-            for c in classes_data
-        ]
+        class_model = ClassModel(db_session)
+        classes = class_model.get_all_classes_with_attendance(institution_id)
 
-    return render_template('institution/admin/institution_admin_attendance_management.html', classes=class_sessions)
+    return render_template('institution/admin/institution_admin_attendance_management.html', classes=classes)
 
 
 @institution_bp.route('/attendance/reports')

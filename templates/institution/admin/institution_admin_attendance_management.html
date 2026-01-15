@@ -10,38 +10,43 @@
     <div class="card-custom mb-4">
         <div class="card-header-custom">Classes</div>
         <div class="card-body-custom">
-        
+            {% if classes %}
+                {% for class in classes %}
                 <div class="class-row mb-3">
                     <div class="class-info">
                         <div class="info-group">
-                            <span><strong>Name:</strong> class/module.name</span>
-                            <span><strong>Date:</strong> classes.date </span>
+                            <span><strong>Name:</strong> {{ class.course_name }}</span>
+                            <span><strong>Date:</strong> {{ class.start_time.strftime('%Y-%m-%d') }}</span>
                         </div>
                         <div class="info-group">
-                            <span><strong>Venue:</strong>class.venue</span>
-                            <span><strong>Present:</strong>present.count</span>
+                            <span><strong>Time:</strong> {{ class.start_time.strftime('%H:%M') }} - {{ class.end_time.strftime('%H:%M') }}</span>
+                            <span><strong>Venue:</strong> {{ class.venue_name }}</span>
                         </div>
                         <div class="info-group">
-                            <span><strong>Lecturer:</strong>lecturer.name</span>
-                            <span><strong>Absent:</strong>absent.count</span>
+                            <span><strong>Lecturer:</strong> {{ class.lecturer_name }}</span>
+                            <span><strong>Present:</strong> {{ class.present_count }}</span>
+                        </div>
+                        <div class="info-group">
+                            <span><strong>Marked:</strong> {{ class.total_marked }}</span>
+                            <span><strong>Absent:</strong> {{ class.absent_count }}</span>
                         </div>
                     </div>
-                    <button class="btn-custom details-btn">View Details</button>
+                    <a href="{{ url_for('institution.attendance_class_details', class_id=class.class_id) }}" class="btn-custom details-btn">View Details</a>
                 </div>
-     
-
+                {% endfor %}
+            {% else %}
                 <div class="class-row mb-3">
                     <div class="class-info">
                         <div class="info-group">
-                            <span>No sessions found for today</span>
+                            <span>No classes found</span>
                         </div>
                     </div>
                 </div>
+            {% endif %}
 
             <!-- Pagination -->
             <div class="pagination">
-                <span>Page 1 of 1</span>
-                <span class="pagination-arrow">›</span>
+                <span>Showing {{ classes|length }} class{{ 'es' if classes|length != 1 else '' }}</span>
             </div>
         </div>
     </div>

@@ -83,7 +83,9 @@ class ClassModel(BaseEntity[Class]):
             .filter(User.role == "student")
         )
         q_total = q_in_course.scalar_subquery()
-        q_attendance_exists = q_in_course.join(AttendanceRecord, AttendanceRecord.class_id == Class.class_id)
+        q_attendance_exists = q_in_course.join(AttendanceRecord, 
+                                               (AttendanceRecord.class_id == Class.class_id) & 
+                                               (AttendanceRecord.student_id == User.user_id))
         q_present = q_attendance_exists.filter(AttendanceRecord.status == "present").scalar_subquery()
         q_late = q_attendance_exists.filter(AttendanceRecord.status == "late").scalar_subquery()
         q_excused = q_attendance_exists.filter(AttendanceRecord.status == "excused").scalar_subquery()

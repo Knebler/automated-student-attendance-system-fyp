@@ -305,5 +305,14 @@ def update_user_details(user_id):
 @requires_roles('admin')
 def manage_appeals():
     """Render the lecturer appeal-management page"""
-    return render_template('institution/admin/institution_admin_appeal_management.html')    
-    
+    return render_template('institution/admin/institution_admin_appeal_management.html')  
+
+@institution_bp.route('/student_class_attendance_details/<int:course_id>/<int:class_id>/<int:student_id>')  
+@requires_roles('admin')
+def student_class_attendance_details(course_id, class_id, student_id):
+    return render_template(
+        'institution/admin/institution_admin_student_class_attendance_page.html',
+        course_id=course_id,
+        class_id=class_id,
+        student_id=student_id
+    )

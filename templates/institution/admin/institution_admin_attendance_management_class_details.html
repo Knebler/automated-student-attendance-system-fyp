@@ -62,7 +62,7 @@
                                 <td><span class="status-{{ r.status }}">{{ r.status|upper }}</span></td>
                                 <td>
                                     <div class="action-buttons">
-                                        <a href="{{ url_for('institution.attendance_student_details')}}" class="btn-custom manage-btn">Manage</a>
+                                        <a href="{{ url_for('institution.student_class_attendance_details', course_id=course_id, class_id=class_id, student_id=r.get('student_id'))}}" class="btn-custom manage-btn">Manage</a>
                                         {% if r.get('notes') %}<span class="appeal-badge">Has Notes</span>{% endif %}
                                     </div>
                                 </td>

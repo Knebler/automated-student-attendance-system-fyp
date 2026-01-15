@@ -1,0 +1,246 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Student Attendance - AttendAI{% endblock %}
+
+{% block content %}
+<div class="dashboard-admin">
+    <h1 class="page-title mb-4">Student Class Attendance</h1>
+
+    <!-- Student Details -->
+    <div class="card-custom mb-4">
+        <div class="card-header-custom">Student Details</div>
+        <div class="card-body-custom">
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <span class="detail-label">Name:</span>
+                    <span class="detail-value">John Doe</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Student ID:</span>
+                    <span class="detail-value">S12345678</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Email:</span>
+                    <span class="detail-value">john.doe@university.edu</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Course:</span>
+                    <span class="detail-value">Computer Science</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Class Details (Attendance Status Included) -->
+    <div class="card-custom mb-4">
+        <div class="card-header-custom">Class Details</div>
+        <div class="card-body-custom">
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <span class="detail-label">Module:</span>
+                    <span class="detail-value">Advanced Database Systems - L001</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Date & Time:</span>
+                    <span class="detail-value">15 Jan 2026, 10:00 AM – 12:00 PM</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Venue:</span>
+                    <span class="detail-value">Room 301, Building A</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Lecturer:</span>
+                    <span class="detail-value">Dr. Sarah Smith</span>
+                </div>
+
+                <!-- Attendance Status -->
+                <div class="detail-item">
+                    <span class="detail-label">Attendance Status:</span>
+                    <span class="status-chip status-present">✓ Present</span>
+                    <span class="status-timestamp">Updated: 15 Jan 2026, 10:15 AM</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Attendance (Compact) -->
+    <div class="card-custom mb-4">
+        <div class="card-header-custom">Update Attendance</div>
+        <div class="card-body-custom">
+            <form class="attendance-form compact">
+                <div class="attendance-toggle">
+                    <label>
+                        <input type="radio" name="attendance" value="present" checked>
+                        <span class="toggle-chip present">Present</span>
+                    </label>
+
+                    <label>
+                        <input type="radio" name="attendance" value="absent">
+                        <span class="toggle-chip absent">Absent</span>
+                    </label>
+
+                    <label>
+                        <input type="radio" name="attendance" value="excused">
+                        <span class="toggle-chip excused">Excused</span>
+                    </label>
+                </div>
+
+                <div class="action-buttons-container mt-3">
+                    <button type="submit" class="btn-custom btn-save small">Save</button>
+                    <button type="button" class="btn-custom btn-cancel small">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.dashboard-admin {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.page-title {
+    font-size: 2.4rem;
+    font-weight: bold;
+    font-style: italic;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 1rem;
+}
+
+/* Card */
+.card-custom {
+    background: white;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card-header-custom {
+    background: var(--primary-dark);
+    color: white;
+    padding: 1rem 1.5rem;
+    font-weight: 600;
+}
+
+.card-body-custom {
+    padding: 1.5rem;
+}
+
+/* Details */
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.detail-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.detail-value {
+    color: var(--text-light);
+}
+
+/* Status Chip */
+.status-chip {
+    display: inline-block;
+    padding: 0.35rem 0.9rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    width: fit-content;
+}
+
+.status-present {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #166534;
+}
+
+.status-timestamp {
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+/* Compact Attendance */
+.attendance-form.compact {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.attendance-toggle {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+}
+
+.attendance-toggle input {
+    display: none;
+}
+
+.toggle-chip {
+    padding: 0.45rem 1.1rem;
+    border-radius: 20px;
+    border: 2px solid var(--border-color);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.toggle-chip.present { border-color: #166534; color: #166534; }
+.toggle-chip.absent  { border-color: #991b1b; color: #991b1b; }
+.toggle-chip.excused { border-color: #ea580c; color: #ea580c; }
+
+.attendance-toggle input:checked + .toggle-chip {
+    background-color: var(--primary-light);
+}
+
+/* Buttons */
+.action-buttons-container {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.btn-custom.small {
+    padding: 0.45rem 1.3rem;
+    font-size: 0.85rem;
+}
+
+.btn-save {
+    background: var(--primary-dark);
+    color: white;
+}
+
+.btn-cancel {
+    background: grey;
+}
+@media (max-width: 768px) {
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+document.querySelector('.attendance-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const status = document.querySelector('input[name="attendance"]:checked').value;
+    alert('Attendance updated to: ' + status);
+});
+
+document.querySelector('.btn-cancel').addEventListener('click', () => {
+    window.history.back();
+});
+</script>
+{% endblock %}

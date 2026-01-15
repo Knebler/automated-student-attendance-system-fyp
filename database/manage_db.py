@@ -1,7 +1,8 @@
-from sqlalchemy import text
+from sqlalchemy import text, func
 from datetime import datetime, date, timedelta
 import os
 import bcrypt
+import random
 
 from base import root_engine, engine, get_session
 from models import *
@@ -15,6 +16,253 @@ def create_database():
     with root_engine.connect() as conn:
         conn.execute(text(f"CREATE DATABASE IF NOT EXISTS {os.environ['DB_NAME']}"))
     print(f"Database {os.environ['DB_NAME']} created")
+
+def seed_subscription_plans():
+    with get_session() as session:
+        plans = [
+            SubscriptionPlan(
+                name="Starter Plan",
+                description="Perfect for small institutions",
+                price_per_cycle=99.99,
+                billing_cycle="monthly",
+                max_users=500,
+                features='{"facial_recognition": true, "basic_reporting": true, "email_support": true}'
+            ),
+            SubscriptionPlan(
+                name="Professional Plan",
+                description="For growing institutions",
+                price_per_cycle=199.99,
+                billing_cycle="monthly",
+                max_users=2000,
+                features='{"facial_recognition": true, "advanced_reporting": true, "priority_support": true, "api_access": true}'
+            ),
+            SubscriptionPlan(
+                name="Enterprise Plan",
+                description="For large institutions",
+                price_per_cycle=499.99,
+                billing_cycle="annual",
+                max_users=10000,
+                features='{"facial_recognition": true, "custom_reporting": true, "24/7_support": true, "api_access": true, "custom_integrations": true}'
+            )
+        ]
+        session.add_all(plans)
+        session.commit()
+    print(f"Added {len(plans)} subscription plans")
+
+def seed_subscriptions():
+    with get_session() as session:
+        subs = [
+            Subscription(
+                plan_id=1,
+                start_date=date(2023, 1, 1),
+                end_date=date(2029, 1, 31),
+                stripe_subscription_id="stripe_subscription_id_1"
+            ),
+            Subscription(
+                plan_id=2,
+                start_date=date(2023, 2, 1),
+                end_date=date(2029, 2, 28),
+                stripe_subscription_id="stripe_subscription_id_2"
+            ),
+            Subscription(
+                plan_id=3,
+                start_date=date(2023, 3, 1),
+                end_date=date(2029, 3, 31),
+                stripe_subscription_id="stripe_subscription_id_3"
+            )
+        ]
+        session.add_all(subs)
+        session.commit()
+    print(f"Added {len(subs)} subscriptions")
+
+def seed_institutions():
+    with get_session() as session:
+        insts = [
+            Institution(
+                name="University of Technology",
+                address="123 Campus Road, Tech City",
+                poc_name="Your Admin POC",
+                poc_phone="89 54987 954",
+                poc_email="https://utech.edu",
+                subscription_id=1,
+            ),
+            Institution(
+                name="City College",
+                address="456 College Ave, Metro City",
+                poc_name="My Admin POC",
+                poc_phone="549832168",
+                poc_email="https://citycollege.edu",
+                subscription_id=2,
+            ),
+            Institution(
+                name="University Test",
+                address="789 Test Street, Test City",
+                poc_name="Test Admin POC",
+                poc_phone="4578 5668 12",
+                poc_email="https://university.test.edu",
+                subscription_id=3,
+            )
+        ]
+        session.add_all(insts)
+        session.commit()
+    print(f"Added {len(insts)} institutions")
+
+def seed_semesters(years: int, sem_per_year: int=4):
+    with get_session() as session:
+        num_inst = session.query(Institution).count()
+    semesters = []
+    for inst_id in range(1, num_inst+1):
+        for year in range(date.today().year, date.today().year + years + 1):
+            for q in range(1, sem_per_year + 1):
+                semesters.append(Semester(
+                    institution_id=inst_id,
+                    name=f"{year}-Q{q}",
+                    start_date=date(year, (q - 1) * 3 + 1, 1),
+                    end_date=date(year, q * 3, 28),
+                ))
+    with get_session() as session:
+        session.add_all(semesters)
+        session.commit()
+    print(f"Added {len(semesters)} semesters")
+
+def seed_assign_courses():
+    with get_session() as session:
+        # Preload everything needed once
+        semesters = session.query(Semester).all()
+        courses = session.query(Course).all()
+        users = session.query(User).all()
+
+        # Group users by institution + role
+        inst_lecturers = {}
+        inst_students = {}
+        inst_semesters = {}
+
+        for user in users:
+            if user.role == "lecturer":
+                inst_lecturers.setdefault(user.institution_id, []).append(user)
+            elif user.role == "student":
+                inst_students.setdefault(user.institution_id, []).append(user)
+
+        for sem in semesters:
+            inst_semesters.setdefault(sem.institution_id, []).append(sem)
+
+        bindings = []
+        for course in courses:
+            inst_id = course.institution_id
+
+            course_lecturers: list[User] = inst_lecturers.get(inst_id, [])
+            course_students: list[User] = inst_students.get(inst_id, [])
+            course_semesters: list[Semester] = inst_semesters.get(inst_id, [])
+
+            if not course_lecturers or not course_semesters:
+                # Skip institution if incomplete data
+                continue
+
+            # Pick 1 lecturer in the same institution
+            lecturer: User = random.choice(course_lecturers)
+
+            for sem in course_semesters:
+                # Add lecturer binding
+                bindings.append(CourseUser(
+                    course_id=course.course_id,
+                    user_id=lecturer.user_id,
+                    semester_id=sem.semester_id
+                ))
+
+                # Add students with 80% chance
+                for student in course_students:
+                    if random.random() < 0.8:
+                        bindings.append(CourseUser(
+                            course_id=course.course_id,
+                            user_id=student.user_id,
+                            semester_id=sem.semester_id
+                        ))
+        session.add_all(bindings)
+        session.commit()
+        print(f"Created {len(bindings)} course_user bindings created.")
+
+def seed_classes():
+    with get_session() as session:
+        courses = session.query(Course).all()
+        users = session.query(User).filter(User.role == "lecturer").all()
+        venues = session.query(Venue).all()
+
+        # Group lecturers by institution
+        inst_lecturers = {}
+        for u in users:
+            inst_lecturers.setdefault(u.institution_id, []).append(u)
+
+        # Group venues by institution
+        inst_venues = {}
+        for v in venues:
+            inst_venues.setdefault(v.institution_id, []).append(v)
+
+        def random_datetime_in_month():
+            random_day = random.randint(1, 28)
+            random_hour = random.randint(8, 18) 
+            random_minute = random.choice([0, 15, 30, 45])
+            return datetime.now().replace(day=random_day, hour=random_hour, minute=random_minute, second=0, microsecond=0)
+
+        for course in courses:
+            inst_id = course.institution_id
+
+            # Skip if institution has no lecturer or venue
+            lecturers: list[User] = inst_lecturers.get(inst_id, [])
+            venue_list: list[Venue] = inst_venues.get(inst_id, [])
+            if not lecturers or not venue_list:
+                continue
+            lecturer = random.choice(lecturers)
+            classes = []
+
+            for _ in range(5):
+                start = random_datetime_in_month()
+                end = start + timedelta(hours=2)
+
+                cls = Class(
+                    course_id=course.course_id,
+                    venue_id=random.choice(venue_list).venue_id,
+                    lecturer_id=lecturer.user_id,
+                    start_time=start,
+                    end_time=end,
+                    status="scheduled",
+                )
+                classes.append(cls)
+            session.add_all(classes)
+        session.commit()
+    print(f"{len(classes)} classes created.")
+
+def seed_attendance():
+    with get_session() as session:
+        classes = session.query(Class).all()
+        statuses = AttendanceStatusEnum.enums
+
+        for cls in classes:
+            # Get all students enrolled in this course (ignoring semester for now)
+            course_students = session.query(CourseUser).join(User).filter(
+                CourseUser.course_id == cls.course_id,
+                User.role == "student",
+                User.is_active == True
+            ).all()
+
+            # Initialize attendance records list
+            attendance_records = []
+
+            for cu in course_students:
+                if random.random() < 0.8:  # 80% chance
+                    record = AttendanceRecord(
+                        class_id=cls.class_id,
+                        student_id=cu.user_id,
+                        status=random.choice(statuses),
+                        marked_by="lecturer",
+                        lecturer_id=cls.lecturer_id
+                    )
+                    attendance_records.append(record)
+
+            # Add all attendance records for this class at once
+            session.add_all(attendance_records)
+
+        session.commit()
+        print(f"Created {len(attendance_records)} attendance records.")
 
 def seed_database():
     import random
@@ -37,43 +285,16 @@ def seed_database():
     print(f"Version: {version}")
     
     if row_count("Subscription_Plans") == 0:
-        cols = [
-            'name', 'description', 'price_per_cycle', 'billing_cycle', 'max_users', 'features'
-        ]
-        subscription_plans = [
-            ('Starter Plan', 'Perfect for small institutions', 99.99, 'monthly', 500,
-                '{"facial_recognition": true, "basic_reporting": true, "email_support": true}'),
-            ('Professional Plan', 'For growing institutions', 199.99, 'monthly', 2000,
-                '{"facial_recognition": true, "advanced_reporting": true, "priority_support": true, "api_access": true}'),
-            ('Enterprise Plan', 'For large institutions', 499.99, 'annual', 10000,
-                '{"facial_recognition": true, "custom_reporting": true, "24/7_support": true, "api_access": true, "custom_integrations": true}')
-        ]
-        push_data(f"INSERT INTO Subscription_Plans ({comma_join(cols)}) VALUES ({colon_join(cols)})", zip_dict(cols, subscription_plans))
-        print(f"Added {len(subscription_plans)} subscription plans")
+        seed_subscription_plans()
 
     if row_count("Subscriptions") == 0:
-        cols = [
-            'plan_id', 'start_date', 'end_date', 'stripe_subscription_id'
-        ]
-        subscriptions = [
-            (1, date(2023, 1, 1), date(2023, 1, 31), "stripe_subscription_id_1"),
-            (2, date(2023, 2, 1), date(2023, 2, 28), "stripe_subscription_id_2"),
-            (3, date(2023, 3, 1), date(2023, 3, 31), "stripe_subscription_id_3")
-        ]
-        push_data(f"INSERT INTO Subscriptions ({comma_join(cols)}) VALUES ({colon_join(cols)})", zip_dict(cols, subscriptions))
-        print(f"Added {len(subscriptions)} subscriptions")
+        seed_subscriptions()
 
     if row_count("Institutions") == 0:
-        cols = [
-            "name", "address", "poc_name", "poc_phone", "poc_email", "subscription_id"
-        ]
-        institutions = [
-            ('University of Technology', '123 Campus Road, Tech City', 'Your Admin POC', '89 54987 954', 'https://utech.edu', 1),
-            ('City College', '456 College Ave, Metro City', 'My Admin POC', '549832168', 'https://citycollege.edu', 2),
-            ('University Test', '789 Test Street, Test City', 'Test Admin POC', '4578 5668 12', 'https://university.test.edu', 3)
-        ]
-        push_data(f"INSERT INTO Institutions ({comma_join(cols)}) VALUES ({colon_join(cols)})", zip_dict(cols, institutions))
-        print(f"Added {len(institutions)} institutions")
+        seed_institutions()
+
+    if row_count("Semesters") == 0:
+        seed_semesters(years=3, sem_per_year=4)
 
     if row_count("Users") == 0:
         cols = [
@@ -123,27 +344,7 @@ def seed_database():
         push_data(f"INSERT INTO Courses ({comma_join(cols)}) VALUES ({colon_join(cols)})", zip_dict(cols, courses))
         print(f"Added {len(courses)} courses")
     
-    # Assigning users to courses
-    course_lecturer_map = {}
-    with get_session() as s:
-        for course_id, course in enumerate(courses, 1):
-            institution_id = course[0]
-            possible_students = [user_id for user_id, user in enumerate(users, 1) if user[0] == institution_id and user[1] == "student"]
-            possible_lecturers = [user_id for user_id, user in enumerate(users, 1) if user[0] == institution_id and user[1] == "lecturer"]
-
-            cols = [
-                'course_id', 'user_id'
-            ]
-            # 80% chance student enrolls
-            chance_of_assignment = 0.8
-            for student_id in possible_students:
-                if random.random() > chance_of_assignment:
-                    continue
-                s.execute(text(f"INSERT INTO Course_Users ({comma_join(cols)}) VALUES ({colon_join(cols)})"), zip_dict(cols, [(course_id, student_id)]))
-            # Random lecturer assigned
-            lecturer_id = random.choice(possible_lecturers)
-            course_lecturer_map[course_id] = lecturer_id
-            s.execute(text(f"INSERT INTO Course_Users ({comma_join(cols)}) VALUES ({colon_join(cols)})"), zip_dict(cols, [(course_id, lecturer_id)]))
+    seed_assign_courses()
 
     if row_count("Venues") == 0:
         cols = [
@@ -164,25 +365,10 @@ def seed_database():
         print(f"Added {len(venues)} venues")
 
     if row_count("Classes") == 0:
-        cols = [
-            'course_id', 'venue_id', 'lecturer_id', 'start_time', 'end_time'
-        ]
-        classes = []
-        for course_id, course in enumerate(courses, 1):
-            institution_id = course[0]
-            possible_venues = [venue_id for venue_id, venue in enumerate(venues, 1) if venue[0] == institution_id]
-
-            for _ in range(5):
-                start_time = datetime.now() + timedelta(hours=random.randint(0, 7))
-                end_time = start_time + timedelta(hours=2)
-                lecturer_id = course_lecturer_map[course_id]
-                classes.append((course_id, random.choice(possible_venues), lecturer_id, start_time, end_time))
-        
-        push_data(f"INSERT INTO Classes ({comma_join(cols)}) VALUES ({colon_join(cols)}) ", zip_dict(cols, classes))
-        print(f"Added {len(classes)} classes")
+        seed_classes()
     
     if row_count("Attendance_Records") == 0:
-        pass # TODO: Have to pull and coordinate information
+        seed_attendance()
 
     if row_count("Announcements") == 0:
         cols = [

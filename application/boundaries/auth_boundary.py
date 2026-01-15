@@ -72,21 +72,32 @@ def register():
     """User registration"""
     institutions = []
     subscription_plans = []
-    # Allow pre-selecting a plan and role via query params (used by subscription CTA links)
-    # Accept preselected values from either GET query (when arriving from CTA) or from POST form (in case of validation errors)
     preselected_plan_id = request.args.get('selected_plan_id') or request.form.get('selected_plan_id')
     preselected_role = 'institution_admin'
 
     try:
         with get_session() as session:
+            # Get institutions
             inst_model = InstitutionModel(session)
             institutions_objs = inst_model.get_all()
-            institutions = [{'institution_id': inst.institution_id, 'name': inst.name} for inst in institutions_objs if getattr(inst, 'is_active', True)]
+            institutions = [{'institution_id': inst.institution_id, 'name': inst.name} 
+                          for inst in institutions_objs if getattr(inst, 'is_active', True)]
 
-            # Load subscription plans for institution admin registration selection
-            sub_model = SubscriptionModel(session)
-            plans = sub_model.get_all()
-            subscription_plans = [{'plan_id': p.plan_id, 'name': p.name, 'price': getattr(p, 'price_per_cycle', None), 'billing_cycle': getattr(p, 'billing_cycle', None)} for p in plans if getattr(p, 'is_active', True)]
+            # FIXED: Use SubscriptionPlanModel instead of SubscriptionModel
+            from application.entities2.subscription_plans import SubscriptionPlanModel
+            plan_model = SubscriptionPlanModel(session)
+            plans = plan_model.get_active_plans()  # or plan_model.get_all()
+            
+            # Adjust field names based on your SubscriptionPlan model
+            subscription_plans = [
+                {
+                    'plan_id': p.plan_id, 
+                    'name': p.name, 
+                    'price': getattr(p, 'price_per_cycle', None),
+                    'billing_cycle': getattr(p, 'billing_cycle', None)
+                } 
+                for p in plans
+            ]
     except Exception as e:
         current_app.logger.warning(f"Could not load institutions or subscription plans: {e}")
         institutions = []

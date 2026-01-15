@@ -132,6 +132,19 @@ class Notification(Base, BaseMixin):
     acknowledged = Column(Boolean, server_default="0")
 
 # =====================
+# REPORT SCHEDULE
+# =====================
+class Semester(Base, BaseMixin):
+    __tablename__ = "semesters"
+
+    semester_id = Column(Integer, primary_key=True)
+    institution_id = Column(Integer, ForeignKey("institutions.institution_id"), nullable=False, index=True)
+
+    name = Column(String(100), nullable=False)
+    start_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime, nullable=False)
+
+# =====================
 # COURSES
 # =====================
 class Course(Base, BaseMixin):
@@ -156,11 +169,12 @@ class Course(Base, BaseMixin):
 class CourseUser(Base, BaseMixin):
     __tablename__ = "course_users"
     table_args = (
-        UniqueConstraint("course_id", "user_id", "academic_year", name="uq_course_user_year"),
+        UniqueConstraint("course_id", "user_id", "semester_id", name="uq_course_user_year"),
     )
 
     course_id = Column(Integer, ForeignKey("courses.course_id"), primary_key=True)
     user_id = Column(Integer, ForeignKey("users.user_id"), primary_key=True)
+    semester_id = Column(Integer, ForeignKey("semesters.semester_id"), primary_key=True)
 
 # =====================
 # VENUE

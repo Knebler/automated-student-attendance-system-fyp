@@ -318,8 +318,18 @@ def timetable():
                 }
                 
             else:  # list view
-                # Get upcoming classes
-                upcoming_classes = class_model.get_upcoming_classes_for_lecturer(lecturer_id, current_date, course_filter, class_type_filter)
+                # Get upcoming classes WITH course filter
+                upcoming_classes = class_model.get_upcoming_classes_for_lecturer(
+                    lecturer_id, 
+                    current_date, 
+                    course_filter,  # Pass the course filter
+                    class_type_filter  # Pass the class type filter
+                )
+                
+                # Sort classes by start_time
+                upcoming_classes_list = list(upcoming_classes)
+                upcoming_classes_list.sort(key=lambda x: x.start_time if x.start_time else datetime.max)
+                
                 context = {
                     'view_type': 'list',
                     'upcoming_classes': [
@@ -333,7 +343,7 @@ def timetable():
                             'type': getattr(class_obj, 'class_type', 'Lecture'),
                             'time_slot': get_time_slot(class_obj.start_time) if class_obj.start_time else 'morning'
                         }
-                        for class_obj in upcoming_classes
+                        for class_obj in upcoming_classes_list
                     ],
                     'courses': [
                         {'code': course.code, 'name': course.name}
@@ -508,6 +518,7 @@ def generate_monthly_calendar(target_date, lecturer_id, course_filter=None, clas
     """Generate monthly calendar data with classes"""
     with get_session() as db_session:
         class_model = ClassModel(db_session)
+        course_model = CourseModel(db_session)
         
         # Get first day of month and last day of month
         first_day = date(target_date.year, target_date.month, 1)
@@ -526,9 +537,21 @@ def generate_monthly_calendar(target_date, lecturer_id, course_filter=None, clas
                 class_date = class_obj.start_time.date()
                 if class_date not in classes_by_date:
                     classes_by_date[class_date] = []
-                classes_by_date[class_date].append(class_obj)
+                
+                # Get course details for each class
+                course = course_model.get_by_id(class_obj.course_id) if class_obj.course_id else None
+                
+                classes_by_date[class_date].append({
+                    'id': class_obj.class_id,
+                    'course_code': course.code if course else 'N/A',
+                    'course_name': course.name if course else 'N/A',  # Add course name for title
+                    'type': getattr(class_obj, 'class_type', 'Lecture'),
+                    'time': f"{class_obj.start_time.strftime('%I:%M %p') if class_obj.start_time else 'N/A'}",
+                    'room': class_obj.venue.name if hasattr(class_obj, 'venue') and class_obj.venue else 'N/A',
+                    'time_slot': get_time_slot(class_obj.start_time) if class_obj.start_time else 'morning'
+                })
         
-        # Generate calendar grid
+        # Generate calendar grid (rest of the function remains the same)
         calendar_data = []
         
         # Find the first Sunday on or before the first day of month
@@ -546,17 +569,7 @@ def generate_monthly_calendar(target_date, lecturer_id, course_filter=None, clas
                     'date': current_day,
                     'day': current_day.day,
                     'in_month': current_day.month == target_date.month,
-                    'classes': [
-                        {
-                            'id': class_obj.class_id,
-                            'course_code': getattr(class_obj.course, 'code', 'N/A') if hasattr(class_obj, 'course') else 'N/A',
-                            'type': getattr(class_obj, 'class_type', 'Lecture'),
-                            'time': f"{class_obj.start_time.strftime('%I:%M %p') if class_obj.start_time else 'N/A'}",
-                            'room': class_obj.venue.name if hasattr(class_obj, 'venue') and class_obj.venue else 'N/A',
-                            'time_slot': get_time_slot(class_obj.start_time) if class_obj.start_time else 'morning'
-                        }
-                        for class_obj in day_classes
-                    ]
+                    'classes': day_classes  # Already formatted with course_name
                 })
                 current_day += timedelta(days=1)
             
@@ -568,6 +581,7 @@ def generate_weekly_data(target_date, lecturer_id, course_filter=None, class_typ
     """Generate weekly calendar data"""
     with get_session() as db_session:
         class_model = ClassModel(db_session)
+        course_model = CourseModel(db_session)
         
         # Get start of week (Sunday)
         week_start = target_date - timedelta(days=target_date.weekday() + 1)
@@ -581,14 +595,26 @@ def generate_weekly_data(target_date, lecturer_id, course_filter=None, class_typ
             lecturer_id, week_start, week_end, course_filter, class_type_filter
         )
         
-        # Group classes by date
+        # Group classes by date and format them
         classes_by_date = {}
         for class_obj in classes:
             if class_obj.start_time:
                 class_date = class_obj.start_time.date()
                 if class_date not in classes_by_date:
                     classes_by_date[class_date] = []
-                classes_by_date[class_date].append(class_obj)
+                
+                # Get course details for each class
+                course = course_model.get_by_id(class_obj.course_id) if class_obj.course_id else None
+                
+                classes_by_date[class_date].append({
+                    'id': class_obj.class_id,
+                    'course_code': course.code if course else 'N/A',
+                    'title': course.name if course else 'N/A',  # This is the title that was missing
+                    'type': getattr(class_obj, 'class_type', 'Lecture'),
+                    'time': f"{class_obj.start_time.strftime('%I:%M %p') if class_obj.start_time else 'N/A'} - {class_obj.end_time.strftime('%I:%M %p') if class_obj.end_time else 'N/A'}",
+                    'room': class_obj.venue.name if hasattr(class_obj, 'venue') and class_obj.venue else 'N/A',
+                    'time_slot': get_time_slot(class_obj.start_time) if class_obj.start_time else 'morning'
+                })
         
         # Generate week days data
         week_days = []
@@ -599,18 +625,7 @@ def generate_weekly_data(target_date, lecturer_id, course_filter=None, class_typ
             week_days.append({
                 'name': current_date.strftime('%a'),
                 'date': current_date.day,
-                'classes': [
-                    {
-                        'id': class_obj.class_id,
-                        'course_code': getattr(class_obj.course, 'code', 'N/A') if hasattr(class_obj, 'course') else 'N/A',
-                        'title': getattr(class_obj.course, 'name', 'N/A') if hasattr(class_obj, 'course') else 'N/A',
-                        'type': getattr(class_obj, 'class_type', 'Lecture'),
-                        'time': f"{class_obj.start_time.strftime('%I:%M %p') if class_obj.start_time else 'N/A'} - {class_obj.end_time.strftime('%I:%M %p') if class_obj.end_time else 'N/A'}",
-                        'room': class_obj.venue.name if hasattr(class_obj, 'venue') and class_obj.venue else 'N/A',
-                        'time_slot': get_time_slot(class_obj.start_time) if class_obj.start_time else 'morning'
-                    }
-                    for class_obj in day_classes
-                ]
+                'classes': day_classes  # Already formatted with title
             })
         
         return {

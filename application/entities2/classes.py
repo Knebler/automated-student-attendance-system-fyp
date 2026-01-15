@@ -218,6 +218,7 @@ class ClassModel(BaseEntity[Class]):
         """Get classes for a lecturer within a date range"""
         query = (
             self.session.query(Class)
+            .join(Course, Class.course_id == Course.course_id)  # Join with Course
             .filter(Class.lecturer_id == lecturer_id)
             .filter(Class.start_time >= start_date)
             .filter(Class.start_time <= end_date)

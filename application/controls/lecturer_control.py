@@ -13,7 +13,6 @@ from application.entities2.venue import VenueModel
 class LecturerControl:
     """Control class for lecturer business logic using ORM"""
     
-    @staticmethod
     def get_dashboard_data(app, lecturer_id: int, institution_id: int) -> Dict[str, Any]:
         """Get data for lecturer dashboard"""
         try:
@@ -87,7 +86,6 @@ class LecturerControl:
             }
 
     
-    @staticmethod
     def get_lecturer_courses(app, lecturer_id: int) -> Dict[str, Any]:
         """Get all courses taught by a lecturer"""
         try:
@@ -128,7 +126,6 @@ class LecturerControl:
                 'error': str(e)
             }
     
-    @staticmethod
     def get_lecturer_classes(app, lecturer_id: int, course_id: Optional[int] = None, 
                             status: Optional[str] = None) -> Dict[str, Any]:
         """Get classes for a lecturer with optional filters"""
@@ -200,7 +197,6 @@ class LecturerControl:
                 'error': str(e)
             }
     
-    @staticmethod
     def get_class_details_for_attendance(app, class_id: int, lecturer_id: int) -> Dict[str, Any]:
         """Get detailed class information for attendance management"""
         try:
@@ -292,7 +288,6 @@ class LecturerControl:
                 'error': str(e)
             }
     
-    @staticmethod
     def get_timetable_data(app, lecturer_id: int, view_type: str = 'monthly', 
                           target_date: Optional[date] = None) -> Dict[str, Any]:
         """Get timetable data for lecturer based on view type"""
@@ -418,7 +413,6 @@ class LecturerControl:
                 'error': str(e)
             }
     
-    @staticmethod
     def get_attendance_statistics(app, lecturer_id: int, course_id: Optional[int] = None, 
                                  start_date: Optional[date] = None, end_date: Optional[date] = None) -> Dict[str, Any]:
         """Get attendance statistics for lecturer's classes"""
@@ -558,7 +552,6 @@ class LecturerControl:
                 'error': str(e)
             }
     
-    @staticmethod
     def verify_lecturer_class_access(app, lecturer_id: int, class_id: int) -> bool:
         """Verify that lecturer has access to a specific class"""
         try:

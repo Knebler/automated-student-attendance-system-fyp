@@ -3,6 +3,766 @@
 {% block title %}Lecturer Timetable - AttendAI{% endblock %}
 
 {% block content %}
+<style>
+/* Lecturer Timetable Specific Styles */
+.lecturer-timetable {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.page-title {
+    font-size: 2.5rem;
+    font-weight: bold;
+    font-style: italic;
+    color: #2c3e50;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Calendar Header */
+.calendar-header {
+    padding: 1rem;
+}
+
+.calendar-title {
+    font-size: 1.75rem;
+    font-weight: bold;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.today-link {
+    color: #3498db;
+    text-decoration: underline;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+
+.today-link:hover {
+    opacity: 0.7;
+}
+
+.nav-arrow {
+    background: none;
+    border: 2px solid #3498db;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 1.5rem;
+    color: #3498db;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.nav-arrow:hover {
+    background-color: #3498db;
+    color: white;
+}
+
+.filter-icon {
+    font-size: 0.9rem;
+}
+
+/* Filter Panel */
+.filter-panel {
+    animation: slideDown 0.3s ease;
+}
+
+.filter-select {
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 0.75rem;
+    background-color: white;
+    width: 100%;
+}
+
+/* Monthly View Table */
+.calendar-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    background: white;
+}
+
+.calendar-table th {
+    background-color: #3498db;
+    color: white;
+    padding: 1rem;
+    text-align: center;
+    font-weight: 600;
+    border: 1px solid #e0e0e0;
+}
+
+.calendar-table td {
+    border: 1px solid #e0e0e0;
+    padding: 0.5rem;
+    vertical-align: top;
+    height: 140px;
+    background-color: #f8f9fa;
+    position: relative;
+}
+
+.calendar-day.other-month {
+    background-color: #f8fafc;
+    opacity: 0.6;
+}
+
+.calendar-day.today {
+    background-color: #e8f4fc;
+    border: 2px solid #3498db;
+}
+
+.date-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.date-number {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #2c3e50;
+}
+
+.today-badge {
+    background-color: #3498db;
+    color: white;
+    padding: 0.125rem 0.5rem;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
+/* Weekly View Styles */
+.calendar-weekly-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+}
+
+.weekly-day-header {
+    background-color: #3498db;
+    color: white;
+    padding: 1rem;
+    text-align: center;
+    font-weight: 600;
+    border: 1px solid #e0e0e0;
+}
+
+.weekly-day-cell {
+    background-color: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    min-height: 400px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.weekly-day-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    align-self: flex-start;
+}
+
+.weekly-no-classes {
+    margin-top: auto;
+    margin-bottom: auto;
+    text-align: center;
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    padding: 2rem 0;
+}
+
+/* Weekly Class Cards */
+.weekly-class-card {
+    width: 100%;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    color: white;
+    font-size: 0.85rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.weekly-class-card.morning {
+    background: linear-gradient(135deg, #e67e22, #d35400);
+}
+
+.weekly-class-card.afternoon {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+}
+
+.weekly-class-card.evening {
+    background: linear-gradient(135deg, #4a4a4a, #2c3e50);
+}
+
+.weekly-class-code {
+    font-weight: bold;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+}
+
+.weekly-class-title {
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.9;
+}
+
+.weekly-class-time,
+.weekly-class-location {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+    font-size: 0.75rem;
+}
+
+.weekly-class-icon {
+    font-size: 0.8rem;
+}
+
+.weekly-class-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-top: 0.5rem;
+}
+
+.weekly-btn-action {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: background-color 0.2s ease;
+}
+
+.weekly-btn-action:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* List View Styles */
+.list-view-container {
+    padding: 1rem;
+}
+
+.list-view-item {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    border-left: 4px solid;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.list-view-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.list-view-item.morning {
+    border-left-color: #e67e22;
+}
+
+.list-view-item.afternoon {
+    border-left-color: #3498db;
+}
+
+.list-view-item.evening {
+    border-left-color: #2c3e50;
+}
+
+.list-view-date {
+    font-weight: bold;
+    color: #2c3e50;
+    min-width: 100px;
+    font-size: 0.9rem;
+}
+
+.list-view-details {
+    flex: 1;
+    padding: 0 1rem;
+}
+
+.list-view-code {
+    font-weight: bold;
+    color: #2c3e50;
+    font-size: 1rem;
+}
+
+.list-view-title {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+    margin-bottom: 0.25rem;
+}
+
+.list-view-time,
+.list-view-room {
+    font-size: 0.8rem;
+    color: #7f8c8d;
+}
+
+.list-view-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.more-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    border-radius: 20px;
+    background: #3498db;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.more-btn:hover {
+    background: #2980b9;
+}
+
+/* Class Items (Monthly View) */
+.classes-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 100px;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+}
+
+.classes-container::-webkit-scrollbar {
+    width: 4px;
+}
+
+.classes-container::-webkit-scrollbar-thumb {
+    background: #bdc3c7;
+    border-radius: 2px;
+}
+
+.class-item {
+    background-color: white;
+    border-radius: 8px;
+    padding: 0.5rem;
+    border-left: 4px solid;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease;
+}
+
+.class-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+.class-item.morning {
+    border-left-color: #e67e22;
+}
+
+.class-item.afternoon {
+    border-left-color: #3498db;
+}
+
+.class-item.evening {
+    border-left-color: #2c3e50;
+}
+
+.class-badge {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.25rem;
+}
+
+.class-code {
+    font-weight: bold;
+    font-size: 0.8rem;
+    color: #2c3e50;
+}
+
+.class-type {
+    font-size: 0.7rem;
+    color: #7f8c8d;
+    background-color: #ecf0f1;
+    padding: 0.125rem 0.5rem;
+    border-radius: 10px;
+}
+
+.class-details {
+    font-size: 0.75rem;
+    color: #7f8c8d;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.25rem;
+}
+
+.class-actions {
+    display: flex;
+    gap: 0.25rem;
+    justify-content: flex-end;
+}
+
+.btn-action {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0.125rem;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.btn-action:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Legend */
+.legend {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 1rem;
+    border: 1px solid #e0e0e0;
+    margin-top: 2rem;
+}
+
+.legend-title {
+    font-weight: bold;
+    color: #2c3e50;
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.legend-badge {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+}
+
+.legend-badge.morning {
+    background-color: #e67e22;
+}
+
+.legend-badge.afternoon {
+    background-color: #3498db;
+}
+
+.legend-badge.evening {
+    background-color: #2c3e50;
+}
+
+/* Buttons */
+.btn-custom {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.2s ease;
+}
+
+.btn-custom:hover {
+    background: #2980b9;
+}
+
+.btn-outline-custom {
+    background: transparent;
+    color: #3498db;
+    border: 2px solid #3498db;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.btn-outline-custom:hover {
+    background: #3498db;
+    color: white;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .calendar-table td {
+        height: 120px;
+    }
+    
+    .calendar-weekly-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .weekly-day-header {
+        display: none;
+    }
+    
+    .weekly-day-cell::before {
+        content: attr(data-day);
+        font-weight: bold;
+        color: #2c3e50;
+        margin-bottom: 10px;
+        font-size: 1rem;
+        display: block;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 1.75rem;
+    }
+
+    .calendar-title {
+        font-size: 1.25rem;
+    }
+
+    .calendar-table th,
+    .calendar-table td {
+        padding: 0.25rem;
+        font-size: 0.8rem;
+    }
+
+    .calendar-table td {
+        height: 100px;
+    }
+
+    .date-number {
+        font-size: 0.9rem;
+    }
+
+    .weekly-day-cell {
+        min-height: 300px;
+        padding: 0.75rem;
+    }
+
+    .weekly-class-card {
+        padding: 0.5rem;
+        font-size: 0.8rem;
+    }
+
+    .list-view-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .list-view-actions {
+        align-self: flex-end;
+    }
+
+    .nav-arrow {
+        width: 35px;
+        height: 35px;
+        font-size: 1.25rem;
+    }
+    
+    .legend-item {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .calendar-table {
+        font-size: 0.7rem;
+    }
+
+    .calendar-table td {
+        height: 80px;
+    }
+
+    .classes-container {
+        max-height: 60px;
+    }
+
+    .class-item {
+        min-height: 50px;
+    }
+
+    .class-badge {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.125rem;
+    }
+
+    .class-actions {
+        position: absolute;
+        right: 0.25rem;
+        bottom: 0.25rem;
+    }
+
+    .legend {
+        padding: 0.75rem;
+    }
+
+    .legend-item {
+        font-size: 0.8rem;
+    }
+    
+    .filter-select {
+        font-size: 0.9rem;
+    }
+}
+
+/* Animations */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Utility Classes */
+.d-flex {
+    display: flex;
+}
+
+.justify-content-between {
+    justify-content: space-between;
+}
+
+.align-items-center {
+    align-items: center;
+}
+
+.gap-3 {
+    gap: 1rem;
+}
+
+.mb-4 {
+    margin-bottom: 1.5rem;
+}
+
+.mb-3 {
+    margin-bottom: 1rem;
+}
+
+.mb-2 {
+    margin-bottom: 0.5rem;
+}
+
+.mt-3 {
+    margin-top: 1rem;
+}
+
+.mt-4 {
+    margin-top: 1.5rem;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.py-4 {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+}
+
+.flex-wrap {
+    flex-wrap: wrap;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+/* Dropdown Styles */
+.dropdown-menu {
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.dropdown-item {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+/* Form Styles */
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+}
+
+.form-select {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    transition: border-color 0.15s ease-in-out;
+}
+
+.form-select:focus {
+    border-color: #3498db;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+/* Row/Column Layout */
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    margin-right: -15px;
+    margin-left: -15px;
+}
+
+.col-md-4 {
+    flex: 0 0 33.333333%;
+    max-width: 33.333333%;
+    padding-right: 15px;
+    padding-left: 15px;
+}
+
+.justify-content-end {
+    justify-content: flex-end;
+}
+
+.no-classes-indicator {
+    color: #7f8c8d;
+    font-size: 0.8rem;
+    text-align: center;
+    margin-top: 0.5rem;
+    font-style: italic;
+}
+</style>
+
 <div class="lecturer-timetable">
     <h1 class="page-title mb-4">My Timetable</h1>
 
@@ -12,22 +772,24 @@
             <div class="calendar-header mb-4">
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="d-flex align-items-center gap-3">
-                        <button class="nav-arrow" onclick="changePeriod(-1)">‹</button>
+                        <button class="nav-arrow" id="prevPeriod">‹</button>
                         <div class="text-center">
                             <h2 class="calendar-title mb-1" id="calendarTitle">
                                 {% if view_type == 'monthly' %}
                                     {{ current_month }} {{ current_year }}
-                                {% else %}
+                                {% elif view_type == 'weekly' %}
                                     {{ week_start }} - {{ week_end }}
+                                {% else %}
+                                    Upcoming Classes
                                 {% endif %}
                             </h2>
-                            <a href="#" onclick="goToToday()" class="today-link">Today</a>
+                            <a href="#" id="goToToday" class="today-link">Today</a>
                         </div>
-                        <button class="nav-arrow" onclick="changePeriod(1)">›</button>
+                        <button class="nav-arrow" id="nextPeriod">›</button>
                     </div>
                     
                     <div class="d-flex align-items-center gap-3">
-                        <button class="btn-custom" onclick="toggleFilter()">
+                        <button class="btn-custom" id="toggleFilter">
                             <span class="filter-icon">Filter</span>
                         </button>
                         <div class="dropdown">
@@ -35,9 +797,9 @@
                                 View: {{ view_type|capitalize }}
                             </button>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#" onclick="changeView('weekly')">Weekly View</a></li>
-                                <li><a class="dropdown-item" href="#" onclick="changeView('monthly')">Monthly View</a></li>
-                                <li><a class="dropdown-item" href="#" onclick="changeView('list')">List View</a></li>
+                                <li><a class="dropdown-item" href="#" data-view="weekly">Weekly View</a></li>
+                                <li><a class="dropdown-item" href="#" data-view="monthly">Monthly View</a></li>
+                                <li><a class="dropdown-item" href="#" data-view="list">List View</a></li>
                             </ul>
                         </div>
                     </div>
@@ -54,7 +816,9 @@
                                     <select class="form-select filter-select" id="courseFilter">
                                         <option value="all">All Courses</option>
                                         {% for course in courses %}
-                                        <option value="{{ course.code }}">{{ course.code }} - {{ course.name }}</option>
+                                        <option value="{{ course.code }}" {% if request.args.get('course') == course.code %}selected{% endif %}>
+                                            {{ course.code }} - {{ course.name }}
+                                        </option>
                                         {% endfor %}
                                     </select>
                                 </div>
@@ -62,25 +826,25 @@
                                     <label class="form-label">Class Type</label>
                                     <select class="form-select filter-select" id="typeFilter">
                                         <option value="all">All Types</option>
-                                        <option value="lecture">Lecture</option>
-                                        <option value="tutorial">Tutorial</option>
-                                        <option value="lab">Lab</option>
-                                        <option value="seminar">Seminar</option>
+                                        <option value="lecture" {% if request.args.get('type') == 'lecture' %}selected{% endif %}>Lecture</option>
+                                        <option value="tutorial" {% if request.args.get('type') == 'tutorial' %}selected{% endif %}>Tutorial</option>
+                                        <option value="lab" {% if request.args.get('type') == 'lab' %}selected{% endif %}>Lab</option>
+                                        <option value="seminar" {% if request.args.get('type') == 'seminar' %}selected{% endif %}>Seminar</option>
                                     </select>
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label">Time Slot</label>
                                     <select class="form-select filter-select" id="timeFilter">
                                         <option value="all">All Slots</option>
-                                        <option value="morning">Morning (AM)</option>
-                                        <option value="afternoon">Afternoon (Noon)</option>
-                                        <option value="evening">Evening (PM)</option>
+                                        <option value="morning" {% if request.args.get('time') == 'morning' %}selected{% endif %}>Morning (AM)</option>
+                                        <option value="afternoon" {% if request.args.get('time') == 'afternoon' %}selected{% endif %}>Afternoon (Noon)</option>
+                                        <option value="evening" {% if request.args.get('time') == 'evening' %}selected{% endif %}>Evening (PM)</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="d-flex justify-content-end gap-2">
-                                <button class="btn-outline-custom" onclick="clearFilters()">Clear</button>
-                                <button class="btn-custom" onclick="applyFilters()">Apply Filters</button>
+                                <button class="btn-outline-custom" id="clearFilters">Clear</button>
+                                <button class="btn-custom" id="applyFilters">Apply Filters</button>
                             </div>
                         </div>
                     </div>
@@ -103,45 +867,59 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for week in calendar_weeks %}
-                            <tr>
-                                {% for day in week %}
-                                <td class="calendar-day {% if day.date == today %}today{% endif %} {% if not day.in_month %}other-month{% endif %}">
-                                    <div class="date-header">
-                                        <span class="date-number">{{ day.day }}</span>
-                                        {% if day.date == today %}
-                                        <span class="today-badge">Today</span>
-                                        {% endif %}
-                                    </div>
-                                    
-                                    <div class="classes-container">
-                                        {% for class in day.classes %}
-                                        <div class="class-item {{ class.time_slot }}" 
-                                             data-course="{{ class.course_code }}"
-                                             data-type="{{ class.type }}">
-                                            <div class="class-badge">
-                                                <span class="class-code">{{ class.course_code }}</span>
-                                                <span class="class-type">{{ class.type }}</span>
-                                            </div>
-                                            <div class="class-details">
-                                                <small>{{ class.time }}</small>
-                                                <small>{{ class.room }}</small>
-                                            </div>
-                                            <div class="class-actions">
-                                                <button class="btn-action" onclick="viewClassDetails('{{ class.id }}')" title="View Details">
-                                                    👁️
-                                                </button>
-                                                <button class="btn-action" onclick="takeAttendance('{{ class.id }}')" title="Take Attendance">
-                                                    📋
-                                                </button>
-                                            </div>
+                            {% if calendar_weeks %}
+                                {% for week in calendar_weeks %}
+                                <tr>
+                                    {% for day in week %}
+                                    <td class="calendar-day {% if day.date == today %}today{% endif %} {% if not day.in_month %}other-month{% endif %}"
+                                        data-date="{{ day.date.isoformat() if day.date else '' }}">
+                                        <div class="date-header">
+                                            <span class="date-number">{{ day.day }}</span>
+                                            {% if day.date == today %}
+                                            <span class="today-badge">Today</span>
+                                            {% endif %}
                                         </div>
+
+                                        <div class="classes-container">
+                                            {% for class in day.classes %}
+                                            <div class="class-item {{ class.time_slot }}" 
+                                                 data-course="{{ class.course_code }}"
+                                                 data-type="{{ class.type|lower }}"
+                                                 data-time-slot="{{ class.time_slot }}"
+                                                 data-class-id="{{ class.id }}">
+                                                <div class="class-badge">
+                                                    <span class="class-code">{{ class.course_code }}</span>
+                                                    <span class="class-type">{{ class.type }}</span>
+                                                </div>
+                                                <div class="class-details">
+                                                    <small>{{ class.time }}</small>
+                                                    <small>{{ class.room }}</small>
+                                                </div>
+                                                <div class="class-actions">
+                                                    <button class="btn-action" data-action="view" data-class-id="{{ class.id }}" title="View Details">
+                                                        👁️
+                                                    </button>
+                                                    <button class="btn-action" data-action="attendance" data-class-id="{{ class.id }}" title="Take Attendance">
+                                                        📋
+                                                    </button>
+                                                </div>
+                                            </div>
                                         {% endfor %}
-                                    </div>
-                                </td>
+                                        </div>
+                                    </td>
+                                    {% endfor %}
+                                </tr>
                                 {% endfor %}
-                            </tr>
-                            {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">
+                                    <p>No classes scheduled for this month.</p>
+                                        {% if calendar_weeks is defined and calendar_weeks|length == 0 %}
+                                        <p class="small-text">Try selecting a different month or check your class schedule.</p>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
@@ -149,6 +927,7 @@
 
             <!-- Weekly View -->
             <div id="weeklyView" {% if view_type != 'weekly' %}style="display: none;"{% endif %}>
+                {% if week_days %}
                 <div class="calendar-weekly-grid">
                     <!-- Day Headers -->
                     <div class="weekly-day-header">Sun</div>
@@ -157,13 +936,12 @@
                     <div class="weekly-day-header">Wed</div>
                     <div class="weekly-day-header">Thu</div>
                     <div class="weekly-day-header">Fri</div>
-                    <div class="weekly-day-header">Sat</div>
-
+                    <div class="weekly-day-header">Sat</div>        
                     <!-- Day Cells -->
                     {% for day in week_days %}
                     <div class="weekly-day-cell" data-day="{{ day.name }} {{ day.date }}">
                         <div class="weekly-day-number">{{ day.date }}</div>
-                        
+            
                         {% if day.classes|length == 0 %}
                         <div class="weekly-no-classes">
                             No Classes<br>Scheduled
@@ -172,7 +950,9 @@
                             {% for class in day.classes %}
                             <div class="weekly-class-card {{ class.time_slot }}"
                                  data-course="{{ class.course_code }}"
-                                 data-type="{{ class.type }}">
+                                 data-type="{{ class.type|lower }}"
+                                 data-time-slot="{{ class.time_slot }}"
+                                 data-class-id="{{ class.id }}">
                                 <div class="weekly-class-code">{{ class.course_code }}</div>
                                 <div class="weekly-class-title">{{ class.title }}</div>
                                 <div class="weekly-class-time">
@@ -182,12 +962,12 @@
                                 <div class="weekly-class-location">
                                     <span class="weekly-class-icon">📍</span>
                                     {{ class.room }}
-                                </div>
+                                </div>      
                                 <div class="weekly-class-actions">
-                                    <button class="weekly-btn-action" onclick="viewClassDetails('{{ class.id }}')" title="View Details">
+                                    <button class="weekly-btn-action" data-action="view" data-class-id="{{ class.id }}" title="View Details">
                                         👁️
                                     </button>
-                                    <button class="weekly-btn-action" onclick="takeAttendance('{{ class.id }}')" title="Take Attendance">
+                                    <button class="weekly-btn-action" data-action="attendance" data-class-id="{{ class.id }}" title="Take Attendance">
                                         📋
                                     </button>
                                 </div>
@@ -197,29 +977,45 @@
                     </div>
                     {% endfor %}
                 </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <p>No classes scheduled for this week.</p>
+                    <p class="small-text">Try selecting a different week or check your class schedule.</p>
+                </div>
+                {% endif %}
             </div>
 
-            <!-- List View (Placeholder) -->
+            <!-- List View -->
             <div id="listView" {% if view_type != 'list' %}style="display: none;"{% endif %}>
-                <div class="list-view-container">
-                    <h4 class="mb-3">Upcoming Classes</h4>
-                    {% for class in upcoming_classes %}
-                    <div class="list-view-item {{ class.time_slot }}">
-                        <div class="list-view-date">{{ class.date }}</div>
-                        <div class="list-view-details">
-                            <div class="list-view-code">{{ class.course_code }}</div>
-                            <div class="list-view-title">{{ class.title }}</div>
-                            <div class="list-view-time">{{ class.time }}</div>
-                            <div class="list-view-room">{{ class.room }}</div>
-                        </div>
-                        <div class="list-view-actions">
-                            <button class="btn-custom more-btn" onclick="viewClassDetails('{{ class.id }}')">Details</button>
-                            <button class="btn-custom more-btn" onclick="takeAttendance('{{ class.id }}')">Attendance</button>
-                        </div>
+            {% if upcoming_classes %}
+            <div class="list-view-container">
+                <h4 class="mb-3">Upcoming Classes</h4>
+                {% for class in upcoming_classes %}
+                <div class="list-view-item {{ class.time_slot }}" 
+                     data-class-id="{{ class.id }}"
+                     data-course="{{ class.course_code }}"
+                     data-type="{{ class.type|lower }}"
+                     data-time-slot="{{ class.time_slot }}">
+                    <div class="list-view-date">{{ class.date }}</div>
+                    <div class="list-view-details">
+                        <div class="list-view-code">{{ class.course_code }}</div>
+                        <div class="list-view-title">{{ class.title }}</div>
+                        <div class="list-view-time">{{ class.time }}</div>
+                        <div class="list-view-room">{{ class.room }}</div>
                     </div>
-                    {% endfor %}
+                    <div class="list-view-actions">
+                        <button class="btn-custom more-btn" data-action="view" data-class-id="{{ class.id }}">Details</button>
+                        <button class="btn-custom more-btn" data-action="attendance" data-class-id="{{ class.id }}">Attendance</button>
+                    </div>
                 </div>
+                {% endfor %}
             </div>
+            {% else %}
+            <div class="text-center py-4">
+                <p>No upcoming classes scheduled.</p>
+            </div>
+            {% endif %}
+        </div>
             
             <!-- Legend -->
             <div class="legend mt-4">
@@ -243,749 +1039,361 @@
     </div>
 </div>
 
-<style>
-    /* Lecturer Timetable Specific Styles */
-    .lecturer-timetable {
-        max-width: 1400px;
-        margin: 0 auto;
-    }
-
-    .page-title {
-        font-size: 2.5rem;
-        font-weight: bold;
-        font-style: italic;
-        color: var(--text-dark);
-        border-bottom: 2px solid var(--border-color);
-        padding-bottom: 1rem;
-    }
-
-    /* Calendar Header */
-    .calendar-header {
-        padding: 1rem;
-    }
-
-    .calendar-title {
-        font-size: 1.75rem;
-        font-weight: bold;
-        color: var(--text-dark);
-        margin: 0;
-    }
-
-    .today-link {
-        color: var(--primary-dark);
-        text-decoration: underline;
-        font-size: 0.9rem;
-        cursor: pointer;
-        transition: opacity 0.3s ease;
-    }
-
-    .today-link:hover {
-        opacity: 0.7;
-    }
-
-    .nav-arrow {
-        background: none;
-        border: 2px solid var(--primary-dark);
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        font-size: 1.5rem;
-        color: var(--primary-dark);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s ease;
-    }
-
-    .nav-arrow:hover {
-        background-color: var(--primary-dark);
-        color: white;
-    }
-
-    .filter-icon {
-        font-size: 0.9rem;
-    }
-
-    /* Filter Panel */
-    .filter-panel {
-        animation: slideDown 0.3s ease;
-    }
-
-    .filter-select {
-        border: 2px solid var(--border-color);
-        border-radius: 8px;
-        padding: 0.75rem;
-        background-color: white;
-        width: 100%;
-    }
-
-    /* Monthly View Table */
-    .calendar-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.9rem;
-    }
-
-    .calendar-table th {
-        background-color: var(--primary-dark);
-        color: white;
-        padding: 1rem;
-        text-align: center;
-        font-weight: 600;
-        border: 1px solid var(--border-color);
-    }
-
-    .calendar-table td {
-        border: 1px solid var(--border-color);
-        padding: 0.5rem;
-        vertical-align: top;
-        height: 140px;
-        background-color: var(--primary-light);
-        position: relative;
-    }
-
-    .calendar-day.other-month {
-        background-color: #f8fafc;
-        opacity: 0.6;
-    }
-
-    .calendar-day.today {
-        background-color: #f0f9ff;
-    }
-
-    .date-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 0.5rem;
-        padding-bottom: 0.25rem;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    }
-
-    .date-number {
-        font-weight: bold;
-        font-size: 1.1rem;
-        color: var(--text-dark);
-    }
-
-    .today-badge {
-        background-color: var(--primary-dark);
-        color: white;
-        padding: 0.125rem 0.5rem;
-        border-radius: 10px;
-        font-size: 0.7rem;
-        font-weight: bold;
-    }
-
-    /* Weekly View Styles */
-    .calendar-weekly-grid {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 0;
-        border: 2px solid var(--border-color);
-        border-radius: 8px;
-        overflow: hidden;
-    }
-
-    .weekly-day-header {
-        background-color: var(--primary-dark);
-        color: white;
-        padding: 1rem;
-        text-align: center;
-        font-weight: 600;
-        border: 1px solid var(--border-color);
-    }
-
-    .weekly-day-cell {
-        background-color: var(--primary-light);
-        border: 1px solid var(--border-color);
-        min-height: 400px;
-        padding: 1rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .weekly-day-number {
-        font-size: 1.5rem;
-        font-weight: bold;
-        color: var(--text-dark);
-        margin-bottom: 1rem;
-        align-self: flex-start;
-    }
-
-    .weekly-no-classes {
-        margin-top: auto;
-        margin-bottom: auto;
-        text-align: center;
-        color: var(--text-light);
-        font-size: 0.9rem;
-        line-height: 1.4;
-    }
-
-    /* Weekly Class Cards */
-    .weekly-class-card {
-        width: 100%;
-        border-radius: 8px;
-        padding: 0.75rem;
-        margin-bottom: 0.75rem;
-        color: white;
-        font-size: 0.85rem;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .weekly-class-card.morning {
-        background-color: #e67e22;
-    }
-
-    .weekly-class-card.afternoon {
-        background-color: #0066ff;
-    }
-
-    .weekly-class-card.evening {
-        background-color: #4a4a4a;
-    }
-
-    .weekly-class-code {
-        font-weight: bold;
-        font-size: 0.95rem;
-        margin-bottom: 0.25rem;
-    }
-
-    .weekly-class-title {
-        font-size: 0.8rem;
-        margin-bottom: 0.5rem;
-        opacity: 0.9;
-    }
-
-    .weekly-class-time,
-    .weekly-class-location {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        margin-bottom: 0.25rem;
-        font-size: 0.75rem;
-    }
-
-    .weekly-class-icon {
-        font-size: 0.8rem;
-    }
-
-    .weekly-class-actions {
-        display: flex;
-        gap: 0.5rem;
-        justify-content: flex-end;
-        margin-top: 0.5rem;
-    }
-
-    .weekly-btn-action {
-        background: rgba(255, 255, 255, 0.2);
-        border: none;
-        border-radius: 4px;
-        color: white;
-        padding: 0.25rem 0.5rem;
-        cursor: pointer;
-        font-size: 0.8rem;
-        transition: background-color 0.2s ease;
-    }
-
-    .weekly-btn-action:hover {
-        background: rgba(255, 255, 255, 0.3);
-    }
-
-    /* List View Styles */
-    .list-view-container {
-        padding: 1rem;
-    }
-
-    .list-view-item {
-        background-color: var(--primary-light);
-        border-radius: 8px;
-        padding: 1rem;
-        margin-bottom: 0.75rem;
-        border-left: 4px solid;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .list-view-item.morning {
-        border-left-color: #e67e22;
-    }
-
-    .list-view-item.afternoon {
-        border-left-color: #0066ff;
-    }
-
-    .list-view-item.evening {
-        border-left-color: #4a4a4a;
-    }
-
-    .list-view-date {
-        font-weight: bold;
-        color: var(--text-dark);
-        min-width: 80px;
-    }
-
-    .list-view-details {
-        flex: 1;
-        padding: 0 1rem;
-    }
-
-    .list-view-code {
-        font-weight: bold;
-        color: var(--text-dark);
-    }
-
-    .list-view-title {
-        font-size: 0.9rem;
-        color: var(--text-light);
-    }
-
-    .list-view-time,
-    .list-view-room {
-        font-size: 0.8rem;
-        color: var(--text-light);
-    }
-
-    .list-view-actions {
-        display: flex;
-        gap: 0.5rem;
-    }
-
-    /* Class Items (Monthly View) */
-    .classes-container {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        max-height: 100px;
-        overflow-y: auto;
-    }
-
-    .class-item {
-        background-color: white;
-        border-radius: 8px;
-        padding: 0.5rem;
-        border-left: 4px solid;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .class-item.morning {
-        border-left-color: #e67e22;
-    }
-
-    .class-item.afternoon {
-        border-left-color: #0066ff;
-    }
-
-    .class-item.evening {
-        border-left-color: #4a4a4a;
-    }
-
-    .class-badge {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 0.25rem;
-    }
-
-    .class-code {
-        font-weight: bold;
-        font-size: 0.8rem;
-        color: var(--text-dark);
-    }
-
-    .class-type {
-        font-size: 0.7rem;
-        color: var(--text-light);
-        background-color: var(--primary-light);
-        padding: 0.125rem 0.5rem;
-        border-radius: 10px;
-    }
-
-    .class-details {
-        font-size: 0.75rem;
-        color: var(--text-light);
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 0.25rem;
-    }
-
-    .class-actions {
-        display: flex;
-        gap: 0.25rem;
-        justify-content: flex-end;
-    }
-
-    .btn-action {
-        background: none;
-        border: none;
-        cursor: pointer;
-        font-size: 0.9rem;
-        padding: 0.125rem;
-        border-radius: 4px;
-        transition: background-color 0.2s ease;
-    }
-
-    .btn-action:hover {
-        background-color: rgba(0, 0, 0, 0.1);
-    }
-
-    /* Legend */
-    .legend {
-        background-color: var(--primary-light);
-        border-radius: 10px;
-        padding: 1rem;
-        border: 1px solid var(--border-color);
-    }
-
-    .legend-title {
-        font-weight: bold;
-        color: var(--text-dark);
-        font-size: 1rem;
-    }
-
-    .legend-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .legend-badge {
-        width: 20px;
-        height: 20px;
-        border-radius: 4px;
-    }
-
-    .legend-badge.morning {
-        background-color: #e67e22;
-    }
-
-    .legend-badge.afternoon {
-        background-color: #0066ff;
-    }
-
-    .legend-badge.evening {
-        background-color: #4a4a4a;
-    }
-
-    /* Responsive */
-    @media (max-width: 1200px) {
-        .calendar-table td {
-            height: 120px;
-        }
-        
-        .calendar-weekly-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .weekly-day-header {
-            display: none;
-        }
-        
-        .weekly-day-cell::before {
-            content: attr(data-day);
-            font-weight: bold;
-            color: var(--text-dark);
-            margin-bottom: 10px;
-            font-size: 1rem;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .page-title {
-            font-size: 1.75rem;
-        }
-
-        .calendar-title {
-            font-size: 1.25rem;
-        }
-
-        .calendar-table th,
-        .calendar-table td {
-            padding: 0.25rem;
-            font-size: 0.8rem;
-        }
-
-        .calendar-table td {
-            height: 100px;
-        }
-
-        .date-number {
-            font-size: 0.9rem;
-        }
-
-        .weekly-day-cell {
-            min-height: 300px;
-            padding: 0.75rem;
-        }
-
-        .weekly-class-card {
-            padding: 0.5rem;
-            font-size: 0.8rem;
-        }
-
-        .list-view-item {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 0.5rem;
-        }
-
-        .list-view-actions {
-            align-self: flex-end;
-        }
-
-        .nav-arrow {
-            width: 35px;
-            height: 35px;
-            font-size: 1.25rem;
-        }
-    }
-
-    @media (max-width: 576px) {
-        .calendar-table {
-            font-size: 0.7rem;
-        }
-
-        .calendar-table td {
-            height: 80px;
-        }
-
-        .classes-container {
-            max-height: 60px;
-        }
-
-        .class-item {
-            min-height: 50px;
-        }
-
-        .class-badge {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 0.125rem;
-        }
-
-        .class-actions {
-            position: absolute;
-            right: 0.25rem;
-            bottom: 0.25rem;
-        }
-
-        .legend {
-            padding: 0.75rem;
-        }
-
-        .legend-item {
-            font-size: 0.8rem;
-        }
-    }
-
-    /* Animations */
-    @keyframes slideDown {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-</style>
-
-{% block scripts %}
 <script>
+document.addEventListener("DOMContentLoaded", () => {
     // View state
     let currentView = "{{ view_type|default('monthly') }}";
-    let currentDate = new Date();
+    let selectedDate = "{{ request.args.get('date', '') }}";
+    
+    // Navigation elements
+    const prevPeriodBtn = document.getElementById('prevPeriod');
+    const nextPeriodBtn = document.getElementById('nextPeriod');
+    const goToTodayBtn = document.getElementById('goToToday');
+    const toggleFilterBtn = document.getElementById('toggleFilter');
+    const applyFiltersBtn = document.getElementById('applyFilters');
+    const clearFiltersBtn = document.getElementById('clearFilters');
+    const filterPanel = document.getElementById('filterPanel');
+    
+    // View change handlers
+    document.querySelectorAll('[data-view]').forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            const viewType = item.dataset.view;
+            changeView(viewType);
+        });
+    });
+    
+    // Navigation handlers
+    prevPeriodBtn.addEventListener('click', () => navigatePeriod(-1));
+    nextPeriodBtn.addEventListener('click', () => navigatePeriod(1));
+    goToTodayBtn.addEventListener('click', goToToday);
+    toggleFilterBtn.addEventListener('click', toggleFilter);
+    applyFiltersBtn.addEventListener('click', applyFilters);
+    clearFiltersBtn.addEventListener('click', clearFilters);
+    
+    // Class action handlers
+    document.querySelectorAll('[data-action]').forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const action = button.dataset.action;
+            const classId = button.dataset.classId;
+            handleClassAction(action, classId);
+        });
+    });
+    
+    // Class item click handlers
+    document.querySelectorAll('.class-item, .weekly-class-card, .list-view-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            // Only trigger if not clicking on action buttons
+            if (!e.target.closest('[data-action]')) {
+                const classId = item.dataset.classId;
+                if (classId && classId !== 'None') {
+                    viewClassDetails(classId);
+                }
+            }
+        });
+    });
     
     function changeView(viewType) {
-        // Hide all views
-        document.getElementById('monthlyView').style.display = 'none';
-        document.getElementById('weeklyView').style.display = 'none';
-        document.getElementById('listView').style.display = 'none';
+        // Update URL with new view type
+        const url = new URL(window.location);
+        url.searchParams.set('view', viewType);
         
-        // Show selected view
-        document.getElementById(viewType + 'View').style.display = 'block';
-        
-        // Update dropdown button text
-        document.getElementById('viewToggleBtn').textContent = 'View: ' + 
-            viewType.charAt(0).toUpperCase() + viewType.slice(1);
-        
-        // Store current view
-        currentView = viewType;
-        
-        // Update URL parameter (for page refresh persistence)
-        updateUrlParam('view', viewType);
-        
-        // Reload data for the new view if needed
-        if (viewType === 'weekly' || viewType === 'monthly') {
-            loadCalendar();
-        }
-    }
-    
-    function changePeriod(delta) {
-        if (currentView === 'monthly') {
-            // Change month
-            currentDate.setMonth(currentDate.getMonth() + delta);
-        } else if (currentView === 'weekly') {
-            // Change week
-            currentDate.setDate(currentDate.getDate() + (delta * 7));
-        }
-        loadCalendar();
-    }
-    
-    function goToToday() {
-        currentDate = new Date();
-        loadCalendar();
-    }
-    
-    function loadCalendar() {
-        // This would typically make an AJAX request to update the calendar
-        const monthNames = ["January", "February", "March", "April", "May", "June",
-                          "July", "August", "September", "October", "November", "December"];
-        
-        if (currentView === 'monthly') {
-            const month = monthNames[currentDate.getMonth()];
-            const year = currentDate.getFullYear();
-            document.getElementById('calendarTitle').textContent = `${month} ${year}`;
-            
-            // In a real app, fetch monthly calendar data
-            console.log(`Loading monthly calendar for ${month} ${year}`);
-            
-        } else if (currentView === 'weekly') {
-            // Calculate week start and end dates
-            const weekStart = new Date(currentDate);
-            weekStart.setDate(currentDate.getDate() - currentDate.getDay());
-            
-            const weekEnd = new Date(weekStart);
-            weekEnd.setDate(weekStart.getDate() + 6);
-            
-            const options = { month: 'short', day: 'numeric' };
-            const startStr = weekStart.toLocaleDateString('en-US', options);
-            const endStr = weekEnd.toLocaleDateString('en-US', options);
-            
-            document.getElementById('calendarTitle').textContent = `${startStr} - ${endStr}`;
-            
-            // In a real app, fetch weekly calendar data
-            console.log(`Loading weekly calendar for ${startStr} to ${endStr}`);
+        // Keep date parameter if exists
+        if (selectedDate) {
+            url.searchParams.set('date', selectedDate);
         }
         
-        // Update URL parameters
-        updateUrlParam('date', currentDate.toISOString().split('T')[0]);
-    }
-    
-    function toggleFilter() {
-        const filterPanel = document.getElementById('filterPanel');
-        filterPanel.style.display = filterPanel.style.display === 'none' ? 'block' : 'none';
-    }
-    
-    function applyFilters() {
+        // Keep filter parameters
         const courseFilter = document.getElementById('courseFilter').value;
         const typeFilter = document.getElementById('typeFilter').value;
         const timeFilter = document.getElementById('timeFilter').value;
         
-        // Apply filters to current view
-        const viewElement = document.getElementById(currentView + 'View');
+        if (courseFilter !== 'all') url.searchParams.set('course', courseFilter);
+        if (typeFilter !== 'all') url.searchParams.set('type', typeFilter);
+        if (timeFilter !== 'all') url.searchParams.set('time', timeFilter);
         
-        // Filter class items based on current view
-        const classSelectors = currentView === 'monthly' ? '.class-item' : 
-                              currentView === 'weekly' ? '.weekly-class-card' : 
-                              '.list-view-item';
-        
-        viewElement.querySelectorAll(classSelectors).forEach(item => {
-            const course = item.dataset.course;
-            const type = item.dataset.type;
-            const timeSlot = item.classList.contains('morning') ? 'morning' : 
-                           item.classList.contains('afternoon') ? 'afternoon' : 'evening';
-            
-            const showCourse = courseFilter === 'all' || course === courseFilter;
-            const showType = typeFilter === 'all' || type === typeFilter;
-            const showTime = timeFilter === 'all' || timeSlot === timeFilter;
-            
-            item.style.display = (showCourse && showType && showTime) ? 'block' : 'none';
-        });
-        
-        // Also update "no classes" messages
-        updateNoClassesMessages();
-        
-        toggleFilter(); // Close filter panel
+        window.location.href = url.toString();
     }
     
-    function updateNoClassesMessages() {
-        // Update "no classes" visibility based on filters
-        const dayCells = document.querySelectorAll('.calendar-day, .weekly-day-cell');
-        dayCells.forEach(cell => {
-            const visibleClasses = cell.querySelectorAll('.class-item[style*="block"], .weekly-class-card[style*="block"]');
-            const noClassesElement = cell.querySelector('.no-classes, .weekly-no-classes');
-            
-            if (noClassesElement) {
-                noClassesElement.style.display = visibleClasses.length === 0 ? 'flex' : 'none';
-            }
-        });
+    function navigatePeriod(direction) {
+        const url = new URL(window.location);
+        
+        // Calculate new date based on current view
+        if (currentView === 'monthly') {
+            // Navigate months
+            const currentDate = selectedDate ? new Date(selectedDate) : new Date();
+            currentDate.setMonth(currentDate.getMonth() + direction);
+            url.searchParams.set('date', currentDate.toISOString().split('T')[0]);
+        } else if (currentView === 'weekly') {
+            // Navigate weeks
+            const currentDate = selectedDate ? new Date(selectedDate) : new Date();
+            currentDate.setDate(currentDate.getDate() + (direction * 7));
+            url.searchParams.set('date', currentDate.toISOString().split('T')[0]);
+        }
+        
+        window.location.href = url.toString();
+    }
+    
+    function goToToday(e) {
+        e.preventDefault();
+        const url = new URL(window.location);
+        url.searchParams.delete('date');
+        window.location.href = url.toString();
+    }
+    
+    function toggleFilter() {
+        filterPanel.style.display = filterPanel.style.display === 'none' ? 'block' : 'none';
+    }
+    
+    function applyFilters() {
+        const url = new URL(window.location);
+        const courseFilter = document.getElementById('courseFilter').value;
+        const typeFilter = document.getElementById('typeFilter').value;
+        const timeFilter = document.getElementById('timeFilter').value;
+        
+        // Update URL parameters
+        if (courseFilter !== 'all') {
+            url.searchParams.set('course', courseFilter);
+        } else {
+            url.searchParams.delete('course');
+        }
+        
+        if (typeFilter !== 'all') {
+            url.searchParams.set('type', typeFilter);
+        } else {
+            url.searchParams.delete('type');
+        }
+        
+        if (timeFilter !== 'all') {
+            url.searchParams.set('time', timeFilter);
+        } else {
+            url.searchParams.delete('time');
+        }
+        
+        // Apply client-side filtering for immediate feedback
+        applyClientSideFilters();
+        
+        // Close filter panel
+        filterPanel.style.display = 'none';
+        
+        // Optionally reload page for server-side filtering
+        // window.location.href = url.toString();
     }
     
     function clearFilters() {
+        const url = new URL(window.location);
+        url.searchParams.delete('course');
+        url.searchParams.delete('type');
+        url.searchParams.delete('time');
+        
+        // Reset filter dropdowns
         document.getElementById('courseFilter').value = 'all';
         document.getElementById('typeFilter').value = 'all';
         document.getElementById('timeFilter').value = 'all';
         
+        // Show all classes
+        showAllClasses();
+        
+        // Close filter panel
+        filterPanel.style.display = 'none';
+        
+        // Optionally reload page
+        // window.location.href = url.toString();
+    }
+    
+    function showAllClasses() {
         // Show all class items
-        const allClassItems = document.querySelectorAll('.class-item, .weekly-class-card, .list-view-item');
-        allClassItems.forEach(item => {
+        const classSelectors = '.class-item, .weekly-class-card, .list-view-item';
+        const classItems = document.querySelectorAll(classSelectors);
+        classItems.forEach(item => {
             item.style.display = 'block';
         });
         
-        // Update "no classes" messages
-        updateNoClassesMessages();
+        // Remove "no classes" indicators
+        document.querySelectorAll('.no-classes-indicator, .no-results').forEach(el => {
+            el.remove();
+        });
+        
+        // Restore "no classes scheduled" messages where appropriate
+        document.querySelectorAll('.weekly-day-cell').forEach(cell => {
+            const classes = cell.querySelectorAll('.weekly-class-card[style*="block"]');
+            if (classes.length === 0) {
+                const noClassesElement = cell.querySelector('.weekly-no-classes');
+                if (!noClassesElement) {
+                    const noClassesDiv = document.createElement('div');
+                    noClassesDiv.className = 'weekly-no-classes';
+                    noClassesDiv.innerHTML = 'No Classes<br>Scheduled';
+                    cell.appendChild(noClassesDiv);
+                }
+            }
+        });
+    }
+    
+    function applyClientSideFilters() {
+        const courseFilter = document.getElementById('courseFilter').value;
+        const typeFilter = document.getElementById('typeFilter').value;
+        const timeFilter = document.getElementById('timeFilter').value;
+        
+        console.log('Applying filters:', { courseFilter, typeFilter, timeFilter });
+        
+        // Get all class items
+        const classSelectors = '.class-item, .weekly-class-card, .list-view-item';
+        const classItems = document.querySelectorAll(classSelectors);
+        
+        let visibleCount = 0;
+        
+        classItems.forEach((item, index) => {
+            // Get data attributes with fallbacks
+            const course = item.dataset.course || '';
+            const type = item.dataset.type || '';
+            const timeSlot = item.dataset.timeSlot || getTimeSlotFromElement(item);
+            
+            console.log(`Item ${index}:`, { course, type, timeSlot });
+            
+            // Apply filters
+            const showCourse = courseFilter === 'all' || 
+                             (course && course.toLowerCase().includes(courseFilter.toLowerCase()));
+            
+            const showType = typeFilter === 'all' || 
+                           (type && type.toLowerCase().includes(typeFilter.toLowerCase()));
+            
+            const showTime = timeFilter === 'all' || 
+                           (timeSlot && timeSlot === timeFilter);
+            
+            const shouldShow = showCourse && showType && showTime;
+            
+            if (shouldShow) {
+                item.style.display = 'block';
+                visibleCount++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        console.log(`Visible after filtering: ${visibleCount} items`);
+        
+        // Update UI
+        updateFilteredUI(visibleCount);
+    }
+    
+    function getTimeSlotFromElement(element) {
+        if (element.classList.contains('morning')) return 'morning';
+        if (element.classList.contains('afternoon')) return 'afternoon';
+        if (element.classList.contains('evening')) return 'evening';
+        return '';
+    }
+    
+    function updateFilteredUI(visibleCount) {
+        // Update "no classes" indicators in monthly view
+        if (currentView === 'monthly') {
+            document.querySelectorAll('.calendar-day').forEach(cell => {
+                const visibleClasses = cell.querySelectorAll('.class-item[style*="block"]');
+                if (visibleClasses.length === 0) {
+                    // Add "no classes" indicator
+                    const existingIndicator = cell.querySelector('.no-classes-indicator');
+                    if (!existingIndicator) {
+                        const indicator = document.createElement('div');
+                        indicator.className = 'no-classes-indicator';
+                        indicator.textContent = 'No classes';
+                        cell.appendChild(indicator);
+                    }
+                } else {
+                    // Remove "no classes" indicator
+                    const existingIndicator = cell.querySelector('.no-classes-indicator');
+                    if (existingIndicator) {
+                        existingIndicator.remove();
+                    }
+                }
+            });
+        }
+        
+        // Update weekly view
+        if (currentView === 'weekly') {
+            document.querySelectorAll('.weekly-day-cell').forEach(cell => {
+                const visibleClasses = cell.querySelectorAll('.weekly-class-card[style*="block"]');
+                const noClassesElement = cell.querySelector('.weekly-no-classes');
+                
+                if (visibleClasses.length === 0) {
+                    if (!noClassesElement) {
+                        const noClassesDiv = document.createElement('div');
+                        noClassesDiv.className = 'weekly-no-classes';
+                        noClassesDiv.innerHTML = 'No Classes<br>Scheduled';
+                        cell.appendChild(noClassesDiv);
+                    }
+                } else if (noClassesElement) {
+                    noClassesElement.remove();
+                }
+            });
+        }
+        
+        // Update list view
+        if (currentView === 'list') {
+            const listContainer = document.querySelector('.list-view-container');
+            if (listContainer) {
+                const existingMessage = listContainer.querySelector('.filter-no-results');
+                if (visibleCount === 0) {
+                    if (!existingMessage) {
+                        const message = document.createElement('div');
+                        message.className = 'filter-no-results text-center py-4';
+                        message.innerHTML = '<p>No classes match the selected filters.</p>';
+                        listContainer.appendChild(message);
+                    }
+                } else if (existingMessage) {
+                    existingMessage.remove();
+                }
+            }
+        }
+    }
+    
+    function handleClassAction(action, classId) {
+        if (!classId || classId === 'None') {
+            console.warn('No class ID provided for action:', action);
+            return;
+        }
+        
+        if (action === 'view') {
+            viewClassDetails(classId);
+        } else if (action === 'attendance') {
+            takeAttendance(classId);
+        }
     }
     
     function viewClassDetails(classId) {
-        window.location.href = `/lecturer/class/${classId}`;
+        // Redirect to class management page with the class ID
+        window.location.href = `{{ url_for('institution_lecturer.manage_classes') }}?class_id=${classId}`;
     }
     
     function takeAttendance(classId) {
-        window.location.href = `/lecturer/attendance/${classId}`;
+        // Redirect to attendance management page with the class ID
+        window.location.href = `{{ url_for('institution_lecturer.manage_attendance') }}?class_id=${classId}`;
     }
     
-    function updateUrlParam(key, value) {
-        const url = new URL(window.location);
-        url.searchParams.set(key, value);
-        window.history.replaceState({}, '', url);
+    // Initialize based on URL parameters
+    function initFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        selectedDate = urlParams.get('date') || '';
+        
+        // Set filter values from URL
+        const courseFilter = urlParams.get('course') || 'all';
+        const typeFilter = urlParams.get('type') || 'all';
+        const timeFilter = urlParams.get('time') || 'all';
+        
+        document.getElementById('courseFilter').value = courseFilter;
+        document.getElementById('typeFilter').value = typeFilter;
+        document.getElementById('timeFilter').value = timeFilter;
+        
+        // Apply client-side filtering if filters are active
+        if (courseFilter !== 'all' || typeFilter !== 'all' || timeFilter !== 'all') {
+            // Wait a moment for DOM to be fully loaded
+            setTimeout(() => {
+                applyClientSideFilters();
+            }, 300);
+        }
     }
     
     // Initialize
-    document.addEventListener('DOMContentLoaded', function() {
-        // Check URL parameters for view type
-        const urlParams = new URLSearchParams(window.location.search);
-        const viewParam = urlParams.get('view');
-        
-        if (viewParam && ['monthly', 'weekly', 'list'].includes(viewParam)) {
-            changeView(viewParam);
-        } else {
-            changeView(currentView);
-        }
-        
-        // Check URL parameters for date
-        const dateParam = urlParams.get('date');
-        if (dateParam) {
-            currentDate = new Date(dateParam);
-        }
-        
-        loadCalendar();
-        
-        // Make class items clickable
-        document.querySelectorAll('.class-item, .weekly-class-card').forEach(item => {
-            item.addEventListener('click', function(e) {
-                if (!e.target.classList.contains('btn-action') && 
-                    !e.target.classList.contains('weekly-btn-action')) {
-                    const classId = this.dataset.id || 'demo';
-                    viewClassDetails(classId);
-                }
-            });
-        });
-    });
+    initFromUrl();
+});
 </script>
-{% endblock %}
 {% endblock %}

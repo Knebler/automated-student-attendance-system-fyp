@@ -293,5 +293,10 @@ def update_user_details(user_id):
             age=request.form.get('age')
         )
     return redirect(url_for('institution.view_user_details', user_id=user_id))
-    
+
+@institution_bp.route('/manage_appeals')
+@requires_roles('admin')
+def manage_appeals():
+    """Render the lecturer appeal-management page"""
+    return render_template('institution/admin/institution_admin_appeal_management.html')    
     

@@ -21,6 +21,7 @@
                 <li><a class="nav-link-custom" href="{{ url_for('institution.manage_attendance') }}">Manage Attendance</a></li>
                 <li><a class="nav-link-custom" href="{{ url_for('institution.manage_users') }}">Manage Users</a></li>
                 <li><a class="nav-link-custom" href="{{ url_for('institution.manage_classes') }}">Manage Classes</a></li>
+                <li><a class="nav-link-custom" href="{{ url_for('institution.manage_appeals') }}">Manage Appeals</a></li>
                 <li><a class="nav-link-custom" href="{{ url_for('institution.import_data') }}">Import Data</a></li>
             {% elif user_role == 'lecturer' %}
                 <!-- TODO: Implement proper routing for these sub pages -->
@@ -28,7 +29,6 @@
                 <li><a class="nav-link-custom" href="{{ url_for('institution_lecturer.timetable') }}">View Timetable</a></li>
                 <li><a class="nav-link-custom" href="{{ url_for('institution_lecturer.manage_attendance') }}">Manage Attendance</a></li>
                 <li><a class="nav-link-custom" href="{{ url_for('institution_lecturer.manage_classes') }}">Manage Classes/Rosters</a></li>
-                <li><a class="nav-link-custom" href="{{ url_for('institution_lecturer.manage_appeals') }}">Manage Appeals</a></li>
             {% elif user_role == 'student' %}
                 <!-- TODO: Implement proper routing for these sub pages -->
                 <li><a class="nav-link-custom" href="{{ url_for('student.dashboard') }}">Dashboard</a></li>

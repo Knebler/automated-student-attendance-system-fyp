@@ -11,10 +11,7 @@ def lecturer_dashboard():
     """Lecturer dashboard"""
     return render_template('institution/lecturer/lecturer_dashboard.html')
 
-@lecturer_bp.route('/manage_appeals')
-def manage_appeals():
-    """Render the lecturer appeal-management page"""
-    return render_template('institution/lecturer/lecturer_appeal_management.html')
+
 
 
 @lecturer_bp.route('/manage_attendance')

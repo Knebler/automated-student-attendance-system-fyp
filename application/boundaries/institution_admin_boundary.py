@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, session, current_app, fla
 from sqlalchemy.exc import IntegrityError
 from application.controls.attendance_control import AttendanceControl
 from application.controls.auth_control import requires_roles
-from application.entities2 import ClassModel, UserModel, InstitutionModel, SubscriptionModel, CourseModel, AttendanceRecordModel, CourseUserModel
+from application.entities2 import ClassModel, UserModel, InstitutionModel, SubscriptionModel, CourseModel, AttendanceRecordModel, CourseUserModel, VenueModel
 from database.base import get_session
 from database.models import *
 
@@ -231,10 +231,12 @@ def attendance_class_details(class_id):
         class_model = ClassModel(db_session)
         if not class_model.class_is_institution(class_id, session.get('institution_id')):
             return abort(401)
+        class_obj = class_model.get_by_id(class_id)
         context = {
             "class": class_model.admin_class_details(class_id),
             "records": class_model.get_attendance_records(class_id),
             "class_id": class_id,
+            "course_id": class_obj.course_id if class_obj else None,
             "course_name": class_model.get_course_name(class_id),
         }
     return render_template('institution/admin/institution_admin_attendance_management_class_details.html', **context)
@@ -310,9 +312,66 @@ def manage_appeals():
 @institution_bp.route('/student_class_attendance_details/<int:course_id>/<int:class_id>/<int:student_id>')  
 @requires_roles('admin')
 def student_class_attendance_details(course_id, class_id, student_id):
+    with get_session() as db_session:
+        class_model = ClassModel(db_session)
+        user_model = UserModel(db_session)
+        course_model = CourseModel(db_session)
+        venue_model = VenueModel(db_session)
+        attendance_model = AttendanceRecordModel(db_session)
+        
+        # Verify that the course belongs to the institution
+        if not course_model.get_by_id(course_id).institution_id == session.get('institution_id'):
+            return abort(401)
+        # Verify that the class belongs to the institution
+        if not class_model.class_is_institution(class_id, session.get('institution_id')):
+            return abort(401)
+        # Verify that the student is part of the institution
+        student = user_model.get_by_id(student_id)
+        if not student or student.institution_id != session.get('institution_id'):
+            return abort(401)
+        user = user_model.get_by_id(student_id)
+        student_details = user.as_sanitized_dict() if user else None
+        
+        course = course_model.get_by_id(course_id)
+        course_details = {
+            "course_id": course.course_id,
+            "name": course.name,
+        }
+        
+        venue = venue_model.get_by_id(class_model.get_by_id(class_id).venue_id)
+        venue_details = {
+            "venue_id": venue.venue_id,
+            "name": venue.name,
+        }
+
+
+        attendance_record = attendance_model.get_student_class_attendance(student_id, class_id)
+        record_details = {
+            "attendance_id": attendance_record.attendance_id if attendance_record else None,
+            "status": attendance_record.status if attendance_record else None,
+            "marked_by": attendance_record.marked_by if attendance_record else None,
+            "lecturer_id": attendance_record.lecturer_id if attendance_record else None,
+            "notes": attendance_record.notes if attendance_record else None,
+            "recorded_at": attendance_record.recorded_at if attendance_record else None,
+        }
+        class_details = class_model.get_by_id(class_id)
+        class_details = {
+            "class_id": class_details.class_id,
+            "start_time": class_details.start_time,
+            "end_time": class_details.end_time,
+            "lecturer_id": class_details.lecturer_id,
+            "lecturer_name": user_model.get_by_id(class_details.lecturer_id).name if user_model.get_by_id(class_details.lecturer_id) else "Unknown",
+        }
+        
+    
+        
     return render_template(
         'institution/admin/institution_admin_student_class_attendance_page.html',
-        course_id=course_id,
-        class_id=class_id,
-        student_id=student_id
+        course_details=course_details,
+        class_details=class_details,
+        student_id=student_id, 
+        student_details=student_details,
+        venue_details=venue_details,
+        record_details=record_details
+
     )

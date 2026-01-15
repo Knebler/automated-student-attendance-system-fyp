@@ -13,19 +13,19 @@
             <div class="detail-grid">
                 <div class="detail-item">
                     <span class="detail-label">Name:</span>
-                    <span class="detail-value">John Doe</span>
+                    <span class="detail-value">{{student_details.name}}</span>
                 </div>
                 <div class="detail-item">
                     <span class="detail-label">Student ID:</span>
-                    <span class="detail-value">S12345678</span>
+                    <span class="detail-value">{{student_details.user_id}}</span>
                 </div>
                 <div class="detail-item">
                     <span class="detail-label">Email:</span>
-                    <span class="detail-value">john.doe@university.edu</span>
+                    <span class="detail-value">{{student_details.email}}</span>
                 </div>
                 <div class="detail-item">
                     <span class="detail-label">Course:</span>
-                    <span class="detail-value">Computer Science</span>
+                    <span class="detail-value">{{course_details.name}}</span>
                 </div>
             </div>
         </div>
@@ -37,26 +37,37 @@
         <div class="card-body-custom">
             <div class="detail-grid">
                 <div class="detail-item">
-                    <span class="detail-label">Module:</span>
-                    <span class="detail-value">Advanced Database Systems - L001</span>
+                    <span class="detail-label">Class_ID:</span>
+                    <span class="detail-value">{{class_details.class_id}}</span>
                 </div>
                 <div class="detail-item">
                     <span class="detail-label">Date & Time:</span>
-                    <span class="detail-value">15 Jan 2026, 10:00 AM – 12:00 PM</span>
+                    <span class="detail-value">{{class_details.start_time}} - {{class_details.end_time}}</span>
                 </div>
                 <div class="detail-item">
                     <span class="detail-label">Venue:</span>
-                    <span class="detail-value">Room 301, Building A</span>
+                    <span class="detail-value">{{venue_details.name}}</span>
                 </div>
                 <div class="detail-item">
                     <span class="detail-label">Lecturer:</span>
-                    <span class="detail-value">Dr. Sarah Smith</span>
+                    <span class="detail-value">{{class_details.lecturer_name}}</span>
                 </div>
-
+                
                 <!-- Attendance Status -->
                 <div class="detail-item">
                     <span class="detail-label">Attendance Status:</span>
-                    <span class="status-chip status-present">✓ Present</span>
+                    {% if record_details.status == 'present' %}
+                        <span class="status-chip status-present">Present</span>
+                    {% elif record_details.status == 'late' %}
+                        <span class="status-chip status-late">Late</span>
+                    {% elif record_details.status == 'excused' %}
+                        <span class="status-chip status-excused">Excused</span>
+                    {% elif record_details.status == 'absent' %}
+                        <span class="status-chip status-absent">Absent</span>
+                    {% else %}
+                        <span class="status-unmarked">Unmarked</span>
+                    {% endif %}
+
                     <span class="status-timestamp">Updated: 15 Jan 2026, 10:15 AM</span>
                 </div>
             </div>
@@ -163,6 +174,24 @@
     background: #dcfce7;
     color: #166534;
     border: 1px solid #166534;
+}
+
+.status-late {
+    background: #fef3c7;
+    color: #b45309;
+    border: 1px solid #b45309;
+}
+
+.status-excused {
+    background: #ffedd5;
+    color: #5c5eff;
+    border: 1px solid #5c5eff;
+}
+
+.status-absent {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #991b1b;
 }
 
 .status-timestamp {

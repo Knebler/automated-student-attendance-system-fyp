@@ -59,7 +59,6 @@ def authenticate_user(email, password):
 class AuthControl:
     """Control class for authentication business logic with multi-role support"""
     
-    @staticmethod
     def authenticate_user(email, password):
         """Authenticate user based on their role/type using ORM"""
         with get_session() as db_session:
@@ -73,12 +72,10 @@ class AuthControl:
                 }
         return {'success': False, 'error': 'Invalid email or password'}
         
-    @staticmethod
     def get_user_by_email(app, email):
         """Convenience method returning a user dict (defaults to student-level lookup)."""
         return AuthControl.get_user_by_email_and_type(app, email, 'student')
 
-    @staticmethod
     def get_user_by_email_and_type(app, email, user_type):
         """Get user information using `users` table (UserModel). Returns a simple dict."""
         try:
@@ -95,7 +92,6 @@ class AuthControl:
             app.logger.error(f"Error getting user by email and type: {e}")
             return None
 
-    @staticmethod
     def register_institution(app, institution_data: dict):
         """Register an institution application.
         
@@ -197,7 +193,6 @@ class AuthControl:
             app.logger.exception(f"Error registering institution: {e}")
             return {'success': False, 'error': f'Registration failed: {str(e)}'}
      
-    @staticmethod
     def approve_institution_registration(app, subscription_id):
         """Activate a pending institution registration."""
         try:

@@ -9,18 +9,20 @@
     <div class="welcome-header">
         <div class="header-content">
             <h1 class="welcome-title">
-                Welcome <span class="lecturer-name">Temp</span>
+                Welcome <span class="lecturer-name">{{ lecturer_name }}</span>
             </h1>
             <div class="datetime-display">
-                <span class="time">07:48 AM</span>
+                <span class="time">{{ current_time }}</span>
                 <span class="separator">•</span>
-                <span class="date">25 November 2025</span>
+                <span class="date">{{ current_date }}</span>
             </div>
         </div>
 
-        <div class="notification-bell" title="Notifications">
+        <div class="notification-bell" title="Notifications" id="notificationBell">
             🔔
-            <span class="notification-badge">3</span>
+            {% if statistics and statistics.unread_notifications_count and statistics.unread_notifications_count > 0 %}
+            <span class="notification-badge">{{ statistics.unread_notifications_count }}</span>
+            {% endif %}
         </div>
     </div>
 
@@ -29,67 +31,62 @@
 
         <!-- Today's Classes -->
         <div class="card-custom">
-            <div class="card-header-custom">Today's Classes</div>
+            <div class="card-header-custom">
+                Today's Classes 
+                {% if today_classes|length > 0 %}
+                <span class="badge">{{ today_classes|length }}</span>
+                {% endif %}
+            </div>
             <div class="card-body-custom classes-list">
+                {% if today_classes %}
+                    {% for class in today_classes %}
+                    <div class="class-item {% if loop.first %}active{% endif %}">
+                        <div class="class-header">
+                            <div>
+                                <h3 class="class-code">{{ class.course_code }} - {{ class.section if class.section else 'T01' }}</h3>
+                                <p class="class-name">{{ class.course_name }}</p>
+                            </div>
+                        </div>
 
-                <!-- Class Item -->
-                <div class="class-item active">
-                    <div class="class-header">
-                        <div>
-                            <h3 class="class-code">CSCI251 - T01</h3>
-                            <p class="class-name">Advanced Programming</p>
+                        <div class="class-details">
+                            <div class="detail-item">🕐 {{ class.start_time }} – {{ class.end_time }}</div>
+                            <div class="detail-item">📍 {{ class.venue }}</div>
+                            {% if class.student_count %}
+                            <div class="detail-item">👥 {{ class.student_count }} students</div>
+                            {% endif %}
+                            {% if class.status == 'in_progress' %}
+                            <div class="detail-item status-badge in-progress">● In Progress</div>
+                            {% elif class.status == 'completed' %}
+                            <div class="detail-item status-badge completed">● Completed</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="class-actions">
+                            <button class="btn-custom btn-attendance" 
+                                    data-attendance-url="{{ url_for('institution_lecturer.manage_attendance', class_id=class.class_id) }}">
+                                {% if class.attendance_taken %}Update Attendance{% else %}Take Attendance{% endif %}
+                            </button>
+                            <button class="btn-custom btn-view" 
+                                    data-details-url="{{ url_for('institution_lecturer.manage_classes') }}?class_id={{ class.class_id }}">
+                                View Details
+                            </button>
                         </div>
                     </div>
-
-                    <div class="class-details">
-                        <div class="detail-item">🕐 08:30 AM – 11:30 AM</div>
-                        <div class="detail-item">📍 HQ BLK A | LAB A.5.17C</div>
+                    {% endfor %}
+                {% else %}
+                    <div class="no-classes-message">
+                        <p>🎉 No classes scheduled for today!</p>
+                        <p class="small-text">Check your timetable for upcoming classes.</p>
                     </div>
-
-                    <div class="class-actions">
-                        <button class="btn-custom btn-attendance">Take Attendance</button>
-                        <button class="btn-custom btn-view">View Roster</button>
-                    </div>
+                {% endif %}
+                
+                {% if today_classes %}
+                <div class="view-all-container">
+                    <a href="{{ url_for('institution_lecturer.timetable') }}?view=list" class="btn-custom btn-view-all">
+                        View All Classes
+                    </a>
                 </div>
-
-                <div class="class-item">
-                    <div class="class-header">
-                        <div>
-                            <h3 class="class-code">CSCI251 - T02</h3>
-                            <p class="class-name">Advanced Programming</p>
-                        </div>
-                    </div>
-
-                    <div class="class-details">
-                        <div class="detail-item">🕐 12:00 PM – 03:00 PM</div>
-                        <div class="detail-item">📍 HQ BLK A | LAB A.5.17C</div>
-                    </div>
-
-                    <div class="class-actions">
-                        <button class="btn-custom btn-attendance">Take Attendance</button>
-                        <button class="btn-custom btn-view">View Roster</button>
-                    </div>
-                </div>
-
-                <div class="class-item">
-                    <div class="class-header">
-                        <div>
-                            <h3 class="class-code">CSCI251 - L02</h3>
-                            <p class="class-name">Advanced Programming</p>
-                        </div>
-                    </div>
-
-                    <div class="class-details">
-                        <div class="detail-item">🕐 03:30 PM – 06:30 PM</div>
-                        <div class="detail-item">📍 HQ BLK A | LT A.1.17</div>
-                    </div>
-
-                    <div class="class-actions">
-                        <button class="btn-custom btn-attendance">Take Attendance</button>
-                        <button class="btn-custom btn-view">View Roster</button>
-                    </div>
-                </div>
-
+                {% endif %}
             </div>
         </div>
 
@@ -97,41 +94,33 @@
         <div class="card-custom">
             <div class="card-header-custom">Institution Announcements</div>
             <div class="card-body-custom announcements-list">
-
-                <div class="announcement-item">
-                    <div class="announcement-header">
-                        <h3>Happy 105th Anniversary 🎉</h3>
-                        <span>Nov 24, 2025</span>
+                {% if announcements %}
+                    {% for announcement in announcements %}
+                    <div class="announcement-item">
+                        <div class="announcement-header">
+                            <h3>{{ announcement.title }}</h3>
+                            <span>{{ announcement.date }}</span>
+                        </div>
+                        <p>{{ announcement.content }}</p>
+                        {% if announcement.requested_by_name %}
+                        <div class="announcement-footer">
+                            <small>Posted by: {{ announcement.requested_by_name }}</small>
+                        </div>
+                        {% endif %}
                     </div>
-                    <p>
-                        Celebrate our institution's 105th anniversary with events throughout the week.
-                    </p>
-                </div>
-
-                <div class="announcement-item">
-                    <div class="announcement-header">
-                        <h3>Enrollment Update</h3>
-                        <span>Nov 22, 2025</span>
+                    {% endfor %}
+                {% else %}
+                    <div class="no-announcements-message">
+                        <p>📢 No recent announcements</p>
+                        <p class="small-text">Check back later for updates.</p>
                     </div>
-                    <p>
-                        New enrollment guidelines are available. Please ensure records are updated.
-                    </p>
-                </div>
+                {% endif %}
 
-                <div class="announcement-item">
-                    <div class="announcement-header">
-                        <h3>System Maintenance</h3>
-                        <span>Nov 20, 2025</span>
-                    </div>
-                    <p>
-                        Scheduled maintenance on Sunday from 2 AM – 6 AM.
-                    </p>
-                </div>
-
+                {% if announcements %}
                 <div class="announcements-actions">
-                    <a href="#" class="btn-custom btn-view-all">View All</a>
+                    <a href="#" class="btn-custom btn-view-all">View All Announcements</a>
                 </div>
-
+                {% endif %}
             </div>
         </div>
 
@@ -187,6 +176,11 @@
     padding: 0.6rem;
     border-radius: 50%;
     cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.notification-bell:hover {
+    transform: scale(1.05);
 }
 
 .notification-badge {
@@ -204,6 +198,15 @@
     justify-content: center;
 }
 
+.badge {
+    background: var(--primary-dark);
+    color: white;
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    margin-left: 0.5rem;
+}
+
 /* Grid */
 .dashboard-grid {
     display: grid;
@@ -216,12 +219,18 @@
     background: white;
     border-radius: 14px;
     box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    overflow: hidden;
 }
 
 .card-header-custom {
     font-weight: 600;
     font-size: 1.1rem;
-    padding-bottom: 0.5rem;
+    padding: 1.25rem 1.25rem 0.5rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.card-body-custom {
+    padding: 1.25rem;
 }
 
 /* Classes */
@@ -251,55 +260,186 @@
 .class-code {
     font-weight: 600;
     color: var(--primary-dark);
+    margin: 0 0 0.25rem 0;
 }
 
 .class-name {
     font-size: 0.9rem;
     color: var(--text-light);
+    margin: 0;
 }
 
 .class-details {
     margin: 0.75rem 0;
     font-size: 0.9rem;
     color: var(--text-dark);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.status-badge {
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.status-badge.in-progress {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-badge.completed {
+    background: #d1fae5;
+    color: #065f46;
 }
 
 .class-actions {
     display: flex;
     gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.btn-custom {
+    padding: 0.5rem 1.4rem;
+    border-radius: 999px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
 }
 
 .btn-attendance {
     background: linear-gradient(135deg, var(--primary-dark), #2563eb);
     color: white;
-    border-radius: 999px;
-    padding: 0.5rem 1.4rem;
+}
+
+.btn-attendance:hover {
+    background: linear-gradient(135deg, #2563eb, var(--primary-dark));
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
 .btn-view {
     background: transparent;
     border: 1px solid var(--primary-dark);
     color: var(--primary-dark);
-    border-radius: 999px;
+}
+
+.btn-view:hover {
+    background: var(--primary-dark);
+    color: white;
 }
 
 /* Announcements */
+.announcements-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
 .announcement-item {
     background: #f8fafc;
     border-radius: 12px;
     padding: 1rem;
+    transition: all 0.2s ease;
+}
+
+.announcement-item:hover {
+    background: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
 .announcement-header {
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.announcement-header h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin: 0;
+    flex: 1;
+}
+
+.announcement-header span {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    white-space: nowrap;
+    margin-left: 1rem;
+}
+
+.announcement-item p {
     font-size: 0.9rem;
-    margin-bottom: 0.4rem;
+    color: var(--text-dark);
+    margin: 0 0 0.5rem 0;
+    line-height: 1.5;
+}
+
+.announcement-footer {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    border-top: 1px solid #e5e7eb;
+    padding-top: 0.5rem;
+    margin-top: 0.5rem;
 }
 
 .announcements-actions {
     text-align: center;
     margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.btn-view-all {
+    background: transparent;
+    border: 1px solid var(--text-light);
+    color: var(--text-dark);
+    font-size: 0.9rem;
+}
+
+.btn-view-all:hover {
+    background: #f1f5f9;
+    border-color: var(--text-dark);
+}
+
+.view-all-container {
+    text-align: center;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* No data messages */
+.no-classes-message,
+.no-announcements-message {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-light);
+}
+
+.no-classes-message p,
+.no-announcements-message p {
+    margin: 0.5rem 0;
+}
+
+.small-text {
+    font-size: 0.9rem;
+    opacity: 0.8;
 }
 
 /* Responsive */
@@ -307,20 +447,86 @@
     .dashboard-grid {
         grid-template-columns: 1fr;
     }
+    
+    .welcome-title {
+        font-size: 1.8rem;
+    }
+    
+    .class-details {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .class-actions {
+        flex-direction: column;
+    }
+    
+    .btn-custom {
+        width: 100%;
+    }
 }
 </style>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-    const updateDateTime = () => {
+    // Update time every minute
+    const updateTime = () => {
         const now = new Date();
-        document.querySelector(".time").textContent =
-            now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-        document.querySelector(".date").textContent =
-            now.toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" });
+        const timeElement = document.querySelector('.time');
+        if (timeElement) {
+            timeElement.textContent = now.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: true 
+            });
+        }
     };
-    updateDateTime();
-    setInterval(updateDateTime, 60000);
+    
+    updateTime();
+    setInterval(updateTime, 60000);
+    
+    // Add click handlers for class items
+    document.querySelectorAll('.class-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            // Don't trigger if clicking on buttons
+            if (!e.target.closest('.btn-custom')) {
+                const classId = item.dataset.classId;
+                if (classId) {
+                    window.location.href = `/lecturer/manage_attendance?class_id=${classId}`;
+                }
+            }
+        });
+    });
+    
+    // Add click handlers for attendance and view buttons
+    document.querySelectorAll('.btn-attendance').forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent class item click event
+            const url = button.dataset.attendanceUrl;
+            if (url) {
+                window.location.href = url;
+            }
+        });
+    });
+    
+    document.querySelectorAll('.btn-view').forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent class item click event
+            const url = button.dataset.detailsUrl;
+            if (url) {
+                window.location.href = url;
+            }
+        });
+    });
+    
+    // Notification bell click handler
+    const notificationBell = document.getElementById('notificationBell');
+    if (notificationBell) {
+        notificationBell.addEventListener('click', () => {
+            // In a real implementation, this would show notifications or redirect to notifications page
+            alert('Notifications feature coming soon!');
+        });
+    }
 });
 </script>
 {% endblock %}

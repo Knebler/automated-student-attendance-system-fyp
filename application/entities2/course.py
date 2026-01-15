@@ -39,3 +39,11 @@ class CourseModel(BaseEntity[Course]):
             .all()
         )
     
+    def get_by_user_id(self, user_id):
+        """Get courses for a specific user (lecturer)"""
+        return (
+            self.session.query(Course)
+            .join(CourseUser, CourseUser.course_id == Course.course_id)
+            .filter(CourseUser.user_id == user_id)
+            .all()
+        )

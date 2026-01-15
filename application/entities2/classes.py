@@ -130,3 +130,96 @@ class ClassModel(BaseEntity[Class]):
         )
         return result[0] if result else ""
     
+    def get_today_classes_for_lecturer(self, lecturer_id, today_date):
+        """Get today's classes for a specific lecturer"""
+        return (
+            self.session.query(Class)
+            .filter(Class.lecturer_id == lecturer_id)
+            .filter(func.date(Class.start_time) == today_date)
+            .order_by(Class.start_time)
+            .all()
+        )
+
+    def get_enrolled_students(self, class_id):
+        """Get students enrolled in a specific class"""
+        return (
+            self.session.query(User)
+            .join(CourseUser, CourseUser.user_id == User.user_id)
+            .join(Course, Course.course_id == CourseUser.course_id)
+            .join(Class, Class.course_id == Course.course_id)
+            .filter(Class.class_id == class_id)
+            .filter(User.role == 'student')
+            .all()
+        )
+
+    def get_enrolled_count(self, class_id):
+        """Get count of students enrolled in a class"""
+        return (
+            self.session.query(func.count(User.user_id))
+            .join(CourseUser, CourseUser.user_id == User.user_id)
+            .join(Course, Course.course_id == CourseUser.course_id)
+            .join(Class, Class.course_id == Course.course_id)
+            .filter(Class.class_id == class_id)
+            .filter(User.role == 'student')
+            .scalar() or 0
+        )
+
+    def get_attendance_statistics(self, course_id, lecturer_id, start_date, end_date):
+        """Get attendance statistics for a course"""
+        # This would calculate statistics like attendance trends, distribution, etc.
+        # Implementation depends on your specific statistics needs
+        return {
+            'attendance_trend': [],  # List of daily/weekly attendance percentages
+            'distribution': {  # Distribution of attendance performance
+                'excellent': 50,  # ≥90%
+                'good': 40,      # 80-89%
+                'average': 10    # 70-79%
+            },
+            'total_classes': 25,
+            'total_attendance': 85  # Percentage
+        }
+
+    def get_classes_for_course(self, course_id, lecturer_id):
+        """Get classes for a specific course taught by a lecturer"""
+        return (
+            self.session.query(Class)
+            .filter(Class.course_id == course_id)
+            .filter(Class.lecturer_id == lecturer_id)
+            .order_by(Class.start_time)
+            .all()
+        )
+
+    def get_upcoming_classes_for_lecturer(self, lecturer_id, from_date, course_filter=None, class_type_filter=None):
+        """Get upcoming classes for a lecturer"""
+        query = (
+            self.session.query(Class)
+            .filter(Class.lecturer_id == lecturer_id)
+            .filter(Class.start_time >= from_date)
+            .order_by(Class.start_time)
+        )
+    
+        if course_filter:
+            query = query.join(Course).filter(Course.code == course_filter)
+    
+        if class_type_filter:
+            query = query.filter(Class.class_type == class_type_filter)
+    
+        return query.all()
+
+    def get_classes_for_lecturer_in_date_range(self, lecturer_id, start_date, end_date, course_filter=None, class_type_filter=None):
+        """Get classes for a lecturer within a date range"""
+        query = (
+            self.session.query(Class)
+            .filter(Class.lecturer_id == lecturer_id)
+            .filter(Class.start_time >= start_date)
+            .filter(Class.start_time <= end_date)
+            .order_by(Class.start_time)
+        )
+    
+        if course_filter:
+            query = query.join(Course).filter(Course.code == course_filter)
+    
+        if class_type_filter:
+            query = query.filter(Class.class_type == class_type_filter)
+    
+        return query.all()

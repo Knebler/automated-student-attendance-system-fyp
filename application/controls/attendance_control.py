@@ -1,120 +1,120 @@
-from application.entities.attendance_record import AttendanceRecord
-from application.entities.session import Session
-from application.entities.student import Student
-from application.entities.course import Course
+# attendance_control.py (updated to use ORM only)
 from datetime import datetime, date, timedelta
+from database.base import get_session
+from application.entities2.classes import ClassModel
+from application.entities2.attendance_record import AttendanceRecordModel
+from application.entities2.course import CourseModel
+from application.entities2.user import UserModel
 
 class AttendanceControl:
-    """Control class for attendance business logic"""
+    """Control class for attendance business logic using ORM"""
     
     @staticmethod
-    def mark_attendance(app, session_id, student_id, status='present', 
-                       marked_by='system', lecturer_id=None, 
-                       captured_image_path=None, notes=None):
-        """Mark attendance for a student in a session"""
+    def mark_attendance(app, class_id, student_id, status='present', 
+                       marked_by='system', lecturer_id=None, notes=None):
+        """Mark attendance for a student in a class"""
         try:
-            attendance_data = {
-                'session_id': session_id,
-                'student_id': student_id,
-                'status': status,
-                'marked_by': marked_by,
-                'lecturer_id': lecturer_id,
-                'captured_image_path': captured_image_path,
-                'attendance_time': datetime.now().time(),
-                'notes': notes
-            }
-            
-            # Check if attendance already exists
-            existing_record = AttendanceRecord.get_model().get_by_session_and_student(app, session_id, student_id)
-            
-            if existing_record:
-                # Update existing record
-                updated_record = AttendanceRecord.update_attendance(app, existing_record.attendance_id, attendance_data)
-                attendance_id = updated_record.attendance_id if updated_record else None
-                message = f'Attendance updated to {status}'
-            else:
-                # Create new record
-                new_record = AttendanceRecord.mark_attendance(app, attendance_data)
-                attendance_id = new_record.attendance_id if new_record else None
-                message = f'Attendance marked as {status}'
-            
-            if attendance_id:
+            with get_session() as db_session:
+                attendance_model = AttendanceRecordModel(db_session)
+                
+                # Check if attendance already exists
+                existing_record = attendance_model.get_one(
+                    class_id=class_id, 
+                    student_id=student_id
+                )
+                
+                attendance_data = {
+                    'class_id': class_id,
+                    'student_id': student_id,
+                    'status': status,
+                    'marked_by': marked_by,
+                    'lecturer_id': lecturer_id,
+                    'notes': notes
+                }
+                
+                if existing_record:
+                    # Update existing record
+                    attendance_model.update(existing_record.attendance_id, **attendance_data)
+                    attendance_id = existing_record.attendance_id
+                    message = f'Attendance updated to {status}'
+                else:
+                    # Create new record
+                    new_record = attendance_model.create(**attendance_data)
+                    attendance_id = new_record.attendance_id
+                    message = f'Attendance marked as {status}'
+                
                 return {
                     'success': True,
                     'attendance_id': attendance_id,
                     'message': message
                 }
-            else:
-                return {
-                    'success': False,
-                    'error': 'Failed to mark attendance'
-                }
-            
+                
         except Exception as e:
+            app.logger.error(f"Error marking attendance: {e}")
             return {
                 'success': False,
                 'error': str(e)
             }
     
     @staticmethod
-    def get_session_attendance(app, session_id):
-        """Get attendance records for a specific session"""
+    def get_class_attendance(app, class_id):
+        """Get attendance records for a specific class"""
         try:
-            # Get session details using Session model
-            session_model = Session.get_model()
-            session = session_model.query.get(session_id)
-            
-            if not session:
-                return {'success': False, 'error': 'Session not found'}
-            
-            # Get attendance records using AttendanceRecord model
-            attendance_records = AttendanceRecord.get_model().get_by_session(app, session_id)
-            
-            # Prepare attendance records data
-            formatted_records = []
-            for record in attendance_records:
-                # Get student info
-                student = record.student if hasattr(record, 'student') else None
-                student_name = student.full_name if student else 'Unknown'
-                student_code = student.student_code if student else 'Unknown'
+            with get_session() as db_session:
+                class_model = ClassModel(db_session)
+                attendance_model = AttendanceRecordModel(db_session)
+                user_model = UserModel(db_session)
                 
-                formatted_records.append({
-                    'attendance_id': record.attendance_id,
-                    'student_id': record.student_id,
-                    'student_name': student_name,
-                    'student_code': student_code,
-                    'status': record.status,
-                    'marked_by': record.marked_by,
-                    'lecturer_id': record.lecturer_id,
-                    'attendance_time': str(record.attendance_time) if record.attendance_time else None,
-                    'notes': record.notes,
-                    'recorded_at': record.recorded_at.isoformat() if record.recorded_at else None
-                })
-            
-            # Get course details
-            course_model = Course.get_model() if hasattr(Course, 'get_model') else None
-            course = None
-            if course_model and hasattr(session, 'course_id'):
-                course = course_model.query.get(session.course_id)
-            
-            return {
-                'success': True,
-                'session': {
-                    'session_id': session.session_id,
-                    'course_id': session.course_id,
-                    'course_code': course.course_code if course else '',
-                    'course_name': course.course_name if course else '',
-                    'session_date': session.session_date.isoformat() if session.session_date else None,
-                    'session_topic': session.session_topic,
-                    'status': session.status,
-                    'venue_id': session.venue_id,
-                    'slot_id': session.slot_id,
-                    'lecturer_id': session.lecturer_id
-                },
-                'attendance_records': formatted_records
-            }
-            
+                # Get class details
+                class_obj = class_model.get_by_id(class_id)
+                if not class_obj:
+                    return {'success': False, 'error': 'Class not found'}
+                
+                # Get course details
+                course_model = CourseModel(db_session)
+                course = course_model.get_by_id(class_obj.course_id) if class_obj.course_id else None
+                
+                # Get attendance records
+                attendance_records = attendance_model.get_all(class_id=class_id)
+                
+                # Prepare attendance records data
+                formatted_records = []
+                for record in attendance_records:
+                    # Get student info
+                    student = user_model.get_by_id(record.student_id) if record.student_id else None
+                    
+                    formatted_records.append({
+                        'attendance_id': record.attendance_id,
+                        'student_id': record.student_id,
+                        'student_name': student.name if student else 'Unknown',
+                        'status': record.status,
+                        'marked_by': record.marked_by,
+                        'lecturer_id': record.lecturer_id,
+                        'notes': record.notes,
+                        'recorded_at': record.recorded_at.isoformat() if record.recorded_at else None
+                    })
+                
+                # Get lecturer info
+                lecturer = user_model.get_by_id(class_obj.lecturer_id) if class_obj.lecturer_id else None
+                
+                return {
+                    'success': True,
+                    'class': {
+                        'class_id': class_obj.class_id,
+                        'course_id': class_obj.course_id,
+                        'course_code': course.code if course else '',
+                        'course_name': course.name if course else '',
+                        'start_time': class_obj.start_time.isoformat() if class_obj.start_time else None,
+                        'end_time': class_obj.end_time.isoformat() if class_obj.end_time else None,
+                        'lecturer_id': class_obj.lecturer_id,
+                        'lecturer_name': lecturer.name if lecturer else '',
+                        'venue_id': class_obj.venue_id
+                    },
+                    'attendance_records': formatted_records
+                }
+                
         except Exception as e:
+            app.logger.error(f"Error getting class attendance: {e}")
             return {
                 'success': False,
                 'error': str(e)
@@ -124,144 +124,117 @@ class AttendanceControl:
     def get_student_attendance_summary(app, student_id, days=30):
         """Get attendance summary for a student"""
         try:
-            end_date = date.today()
-            start_date = end_date - timedelta(days=days)
-            
-            # Get all sessions within date range where student is enrolled
-            session_model = Session.get_model()
-            student_model = Student.get_model()
-            
-            # Get the student
-            student = student_model.query.get(student_id)
-            if not student:
+            with get_session() as db_session:
+                attendance_model = AttendanceRecordModel(db_session)
+                user_model = UserModel(db_session)
+                class_model = ClassModel(db_session)
+                course_model = CourseModel(db_session)
+                
+                # Get the student
+                student = user_model.get_by_id(student_id)
+                if not student:
+                    return {'success': False, 'error': 'Student not found'}
+                
+                # Calculate date range
+                end_date = date.today()
+                start_date = end_date - timedelta(days=days)
+                
+                # Get attendance records for the student within date range
+                # Note: This requires a more complex query to filter by date
+                # For now, get all records and filter in Python
+                all_records = attendance_model.get_all(student_id=student_id)
+                
+                # Filter by date (assuming Class has start_time)
+                attendance_records = []
+                for record in all_records:
+                    class_obj = class_model.get_by_id(record.class_id)
+                    if class_obj and class_obj.start_time:
+                        class_date = class_obj.start_time.date()
+                        if start_date <= class_date <= end_date:
+                            attendance_records.append(record)
+                
+                # Calculate summary
+                total_classes = len(attendance_records)
+                present_count = sum(1 for record in attendance_records if record.status == 'present')
+                absent_count = sum(1 for record in attendance_records if record.status == 'absent')
+                late_count = sum(1 for record in attendance_records if record.status == 'late')
+                excused_count = sum(1 for record in attendance_records if record.status == 'excused')
+                
+                attendance_rate = (present_count / total_classes * 100) if total_classes > 0 else 0
+                
+                # Prepare detailed records
+                detailed_records = []
+                for record in attendance_records:
+                    class_obj = class_model.get_by_id(record.class_id)
+                    if class_obj:
+                        course = course_model.get_by_id(class_obj.course_id) if class_obj.course_id else None
+                        lecturer = user_model.get_by_id(class_obj.lecturer_id) if class_obj.lecturer_id else None
+                        
+                        detailed_records.append({
+                            'attendance_id': record.attendance_id,
+                            'class_id': record.class_id,
+                            'status': record.status,
+                            'marked_by': record.marked_by,
+                            'notes': record.notes,
+                            'class_date': class_obj.start_time.date().isoformat() if class_obj.start_time else None,
+                            'class_start': class_obj.start_time.isoformat() if class_obj.start_time else None,
+                            'class_end': class_obj.end_time.isoformat() if class_obj.end_time else None,
+                            'course_code': course.code if course else '',
+                            'course_name': course.name if course else '',
+                            'lecturer_name': lecturer.name if lecturer else ''
+                        })
+                
                 return {
-                    'success': False,
-                    'error': 'Student not found'
-                }
-            
-            # Get attendance records for the student within date range
-            attendance_records = AttendanceRecord.get_by_student(app, student_id, start_date, end_date)
-            
-            # Calculate summary
-            total_sessions = len(attendance_records)
-            present_count = sum(1 for record in attendance_records if record.status == 'present')
-            absent_count = sum(1 for record in attendance_records if record.status == 'absent')
-            late_count = sum(1 for record in attendance_records if record.status == 'late')
-            excused_count = sum(1 for record in attendance_records if record.status == 'excused')
-            
-            attendance_rate = (present_count / total_sessions * 100) if total_sessions > 0 else 0
-            
-            # Prepare detailed records
-            detailed_records = []
-            for record in attendance_records:
-                # Get session info
-                session = record.session if hasattr(record, 'session') else None
-                session_date = session.session_date if session else None
-                session_topic = session.session_topic if session else None
-                
-                # Get course info if available
-                course_info = {}
-                if session and hasattr(session, 'course'):
-                    course = session.course
-                    course_info = {
-                        'course_code': course.course_code,
-                        'course_name': course.course_name
+                    'success': True,
+                    'student_info': {
+                        'student_id': student.user_id,
+                        'student_name': student.name,
+                        'email': student.email
+                    },
+                    'summary': {
+                        'total_classes': total_classes,
+                        'present_count': present_count,
+                        'absent_count': absent_count,
+                        'late_count': late_count,
+                        'excused_count': excused_count,
+                        'attendance_rate': round(attendance_rate, 2)
+                    },
+                    'attendance_records': detailed_records,
+                    'date_range': {
+                        'start_date': start_date.isoformat(),
+                        'end_date': end_date.isoformat(),
+                        'days': days
                     }
+                }
                 
-                detailed_records.append({
-                    'attendance_id': record.attendance_id,
-                    'session_id': record.session_id,
-                    'status': record.status,
-                    'marked_by': record.marked_by,
-                    'attendance_time': str(record.attendance_time) if record.attendance_time else None,
-                    'session_date': session_date.isoformat() if session_date else None,
-                    'session_topic': session_topic,
-                    **course_info
-                })
-            
-            return {
-                'success': True,
-                'student_info': {
-                    'student_id': student.student_id,
-                    'student_code': student.student_code,
-                    'full_name': student.full_name,
-                    'email': student.email
-                },
-                'summary': {
-                    'total_sessions': total_sessions,
-                    'present_count': present_count,
-                    'absent_count': absent_count,
-                    'late_count': late_count,
-                    'excused_count': excused_count,
-                    'attendance_rate': round(attendance_rate, 2)
-                },
-                'attendance_records': detailed_records
-            }
-            
         except Exception as e:
+            app.logger.error(f"Error getting student attendance summary: {e}")
             return {
                 'success': False,
                 'error': str(e)
             }
     
     @staticmethod
-    def get_today_sessions_attendance(app, lecturer_id=None):
-        """Get attendance for all sessions happening today"""
+    def get_today_classes_attendance(app, lecturer_id=None):
+        """Get attendance for all classes happening today"""
         try:
-            # Get today's sessions
-            today_sessions = Session.get_today_sessions(app, lecturer_id)
-            
-            result = []
-            for session in today_sessions:
-                # Get attendance for this session
-                attendance_data = AttendanceControl.get_session_attendance(app, session.session_id)
+            with get_session() as db_session:
+                class_model = ClassModel(db_session)
                 
-                if attendance_data['success']:
-                    result.append(attendance_data)
-                else:
-                    result.append({
-                        'session_id': session.session_id,
-                        'error': attendance_data.get('error', 'Failed to get attendance')
-                    })
-            
-            return {
-                'success': True,
-                'sessions': result
-            }
-            
+                # Get today's classes for the institution
+                # This needs to be implemented in ClassModel
+                # For now, return a placeholder
+                today = date.today()
+                
+                return {
+                    'success': True,
+                    'message': 'Today\'s classes attendance feature coming soon',
+                    'date': today.isoformat(),
+                    'lecturer_id': lecturer_id
+                }
+                
         except Exception as e:
-            return {
-                'success': False,
-                'error': str(e)
-            }
-
-    @staticmethod
-    def get_all_sessions_attendance(app, lecturer_id=None, course_id=None, start_date=None, end_date=None):
-        """Get attendance for all sessions in the system (or filtered by date/course/lecturer).
-
-        By default this returns all sessions that have taken place up to today (end_date default).
-        Each session's attendance payload is collected by calling get_session_attendance.
-        """
-        try:
-            # Get all sessions (default end_date to today so we get historical sessions)
-            all_sessions = Session.get_all_sessions(app, lecturer_id=lecturer_id, course_id=course_id, start_date=start_date, end_date=end_date)
-
-            result = []
-            for session_obj in all_sessions:
-                # For each session, fetch the attendance payload via existing helper
-                attendance_data = AttendanceControl.get_session_attendance(app, session_obj.session_id)
-
-                if attendance_data.get('success'):
-                    result.append(attendance_data)
-                else:
-                    result.append({'session_id': session_obj.session_id, 'error': attendance_data.get('error', 'Failed to get attendance')})
-
-            return {
-                'success': True,
-                'sessions': result
-            }
-
-        except Exception as e:
+            app.logger.error(f"Error getting today's classes attendance: {e}")
             return {
                 'success': False,
                 'error': str(e)
@@ -271,85 +244,120 @@ class AttendanceControl:
     def update_attendance_status(app, attendance_id, status, notes=None):
         """Update attendance status"""
         try:
-            update_data = {'status': status}
-            if notes is not None:
-                update_data['notes'] = notes
-            
-            updated_record = AttendanceRecord.update_attendance(app, attendance_id, update_data)
-            
-            if updated_record:
-                return {
-                    'success': True,
-                    'message': f'Attendance updated to {status}',
-                    'attendance': updated_record.to_dict()
-                }
-            else:
-                return {
-                    'success': False,
-                    'error': 'Failed to update attendance'
-                }
-            
+            with get_session() as db_session:
+                attendance_model = AttendanceRecordModel(db_session)
+                
+                update_data = {'status': status}
+                if notes is not None:
+                    update_data['notes'] = notes
+                
+                updated_record = attendance_model.update(attendance_id, **update_data)
+                
+                if updated_record:
+                    return {
+                        'success': True,
+                        'message': f'Attendance updated to {status}',
+                        'attendance': {
+                            'attendance_id': updated_record.attendance_id,
+                            'status': updated_record.status,
+                            'notes': updated_record.notes
+                        }
+                    }
+                else:
+                    return {
+                        'success': False,
+                        'error': 'Attendance record not found'
+                    }
+                
         except Exception as e:
+            app.logger.error(f"Error updating attendance status: {e}")
             return {
                 'success': False,
                 'error': str(e)
             }
-
-
-# Register dev actions for querying attendance (do this after functions are defined)
-try:
-    from application.boundaries.dev_actions import register_action
-
-    register_action(
-        'mark_attendance',
-        AttendanceControl.mark_attendance,
-        params=[
-            {'name': 'session_id', 'label': 'Session ID', 'placeholder': 'e.g. 123'},
-            {'name': 'student_id', 'label': 'Student ID', 'placeholder': 'e.g. 456'},
-            {'name': 'status', 'label': 'Status', 'placeholder': 'present, absent, late, excused'},
-            {'name': 'marked_by', 'label': 'Marked By', 'placeholder': 'system or lecturer'},
-            {'name': 'lecturer_id', 'label': 'Lecturer ID', 'placeholder': 'Optional'},
-            {'name': 'notes', 'label': 'Notes', 'placeholder': 'Optional notes'}
-        ],
-        description='Mark attendance for a student in a session'
-    )
-
-    register_action(
-        'get_session_attendance',
-        AttendanceControl.get_session_attendance,
-        params=[{'name': 'session_id', 'label': 'Session ID', 'placeholder': 'e.g. 123'}],
-        description='Get attendance records for a session'
-    )
-
-    register_action(
-        'get_student_attendance_summary',
-        AttendanceControl.get_student_attendance_summary,
-        params=[
-            {'name': 'student_id', 'label': 'Student ID', 'placeholder': 'e.g. 456'},
-            {'name': 'days', 'label': 'Days', 'placeholder': 'Number of days to summarize (default 30)'}
-        ],
-        description='Get attendance summary for a student'
-    )
-
-    register_action(
-        'get_today_sessions_attendance',
-        AttendanceControl.get_today_sessions_attendance,
-        params=[
-            {'name': 'lecturer_id', 'label': 'Lecturer ID', 'placeholder': 'Optional'}
-        ],
-        description='Get attendance for all sessions happening today'
-    )
-
-    register_action(
-        'update_attendance_status',
-        AttendanceControl.update_attendance_status,
-        params=[
-            {'name': 'attendance_id', 'label': 'Attendance ID', 'placeholder': 'e.g. 789'},
-            {'name': 'status', 'label': 'Status', 'placeholder': 'present, absent, late, excused'},
-            {'name': 'notes', 'label': 'Notes', 'placeholder': 'Optional notes'}
-        ],
-        description='Update attendance status'
-    )
-
-except Exception:
-    pass
+    
+    @staticmethod
+    def get_student_attendance_record(app, student_id, course_id=None, start_date=None, end_date=None):
+        """Get detailed attendance records for a student with filters"""
+        try:
+            with get_session() as db_session:
+                attendance_model = AttendanceRecordModel(db_session)
+                user_model = UserModel(db_session)
+                class_model = ClassModel(db_session)
+                course_model = CourseModel(db_session)
+                
+                # Get the student
+                student = user_model.get_by_id(student_id)
+                if not student:
+                    return {'success': False, 'error': 'Student not found'}
+                
+                # Get all attendance records for the student
+                all_records = attendance_model.get_all(student_id=student_id)
+                
+                # Apply filters
+                filtered_records = []
+                for record in all_records:
+                    class_obj = class_model.get_by_id(record.class_id)
+                    if not class_obj:
+                        continue
+                    
+                    # Filter by course
+                    if course_id and class_obj.course_id != course_id:
+                        continue
+                    
+                    # Filter by date
+                    if class_obj.start_time:
+                        class_date = class_obj.start_time.date()
+                        if start_date and class_date < start_date:
+                            continue
+                        if end_date and class_date > end_date:
+                            continue
+                    
+                    filtered_records.append(record)
+                
+                # Prepare detailed records
+                detailed_records = []
+                for record in filtered_records:
+                    class_obj = class_model.get_by_id(record.class_id)
+                    if class_obj:
+                        course = course_model.get_by_id(class_obj.course_id) if class_obj.course_id else None
+                        lecturer = user_model.get_by_id(class_obj.lecturer_id) if class_obj.lecturer_id else None
+                        
+                        detailed_records.append({
+                            'attendance_id': record.attendance_id,
+                            'class_id': record.class_id,
+                            'status': record.status,
+                            'marked_by': record.marked_by,
+                            'notes': record.notes,
+                            'recorded_at': record.recorded_at.isoformat() if record.recorded_at else None,
+                            'class_date': class_obj.start_time.date().isoformat() if class_obj.start_time else None,
+                            'class_start': class_obj.start_time.isoformat() if class_obj.start_time else None,
+                            'class_end': class_obj.end_time.isoformat() if class_obj.end_time else None,
+                            'course_id': class_obj.course_id,
+                            'course_code': course.code if course else '',
+                            'course_name': course.name if course else '',
+                            'lecturer_name': lecturer.name if lecturer else ''
+                        })
+                
+                return {
+                    'success': True,
+                    'student_info': {
+                        'student_id': student.user_id,
+                        'student_name': student.name,
+                        'email': student.email
+                    },
+                    'attendance_records': detailed_records,
+                    'filters_applied': {
+                        'course_id': course_id,
+                        'start_date': start_date.isoformat() if start_date else None,
+                        'end_date': end_date.isoformat() if end_date else None
+                    },
+                    'count': len(detailed_records)
+                }
+                
+        except Exception as e:
+            app.logger.error(f"Error getting student attendance record: {e}")
+            return {
+                'success': False,
+                'error': str(e)
+            }

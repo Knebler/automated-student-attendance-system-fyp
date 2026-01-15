@@ -28,19 +28,7 @@ class CourseControl:
                     }
                 
                 # Convert course object to dictionary
-                course_data = {
-                    'course_id': course_obj.course_id,
-                    'institution_id': course_obj.institution_id,
-                    'code': course_obj.code,
-                    'name': course_obj.name,
-                    'start_date': course_obj.start_date.isoformat() if course_obj.start_date else None,
-                    'end_date': course_obj.end_date.isoformat() if course_obj.end_date else None,
-                    'description': course_obj.description,
-                    'credits': course_obj.credits,
-                    'is_active': course_obj.is_active,
-                    'created_at': course_obj.created_at.isoformat() if hasattr(course_obj, 'created_at') and course_obj.created_at else None,
-                    'updated_at': course_obj.updated_at.isoformat() if hasattr(course_obj, 'updated_at') and course_obj.updated_at else None,
-                }
+                course_data = course_obj.as_sanitized_dict()
                 
                 return {
                     'success': True,

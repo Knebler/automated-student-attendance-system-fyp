@@ -9,21 +9,13 @@ attendance_bp = Blueprint('attendance', __name__)
 @attendance_bp.route('/mark', methods=['POST'])
 def mark_attendance():
     """Mark attendance for a student in a session"""
-    # Verify authentication
-    auth_result = AuthControl.verify_session(current_app, session)
-    
-    if not auth_result['success']:
-        return jsonify({
-            'success': False,
-            'error': 'Authentication required'
-        }), 401
-    
-    user_info = auth_result['user']
     data = request.get_json() or {}
+    role = session.get('role')
     
     # Get required parameters
-    session_id = data.get('session_id')
-    student_id = data.get('student_id') or user_info.get('user_id')  # Use logged-in user's ID if not specified
+    class_id = data.get('class_id')
+    user_id = session.get('user_id')
+    student_id = data.get('student_id') or user_id # Use logged-in user's ID if not specified
     status = data.get('status', 'present')
     
     # Optional parameters
@@ -31,20 +23,21 @@ def mark_attendance():
     lecturer_id = data.get('lecturer_id')
     captured_image_path = data.get('captured_image_path')
     notes = data.get('notes')
+
     
     # For lecturers marking attendance for students, use lecturer's ID
-    if user_info.get('user_type') in ['lecturer', 'teacher'] and not lecturer_id:
-        lecturer_id = user_info.get('user_id')
+    if role in ['lecturer', 'teacher'] and not lecturer_id:
+        lecturer_id = user_id
         marked_by = 'lecturer'
     
     # For students marking their own attendance
-    if user_info.get('user_type') == 'student':
+    if role== 'student':
         marked_by = 'system'
     
-    if not session_id:
+    if not class_id:
         return jsonify({
             'success': False,
-            'error': 'Session ID is required'
+            'error': 'Class ID is required'
         }), 400
     
     if not student_id:
@@ -53,9 +46,10 @@ def mark_attendance():
             'error': 'Student ID is required'
         }), 400
     
+    
     result = AttendanceControl.mark_attendance(
         app=current_app,
-        class_id=session_id,  # session_id is actually class_id in the new model
+        class_id=class_id,
         student_id=student_id,
         status=status,
         marked_by=marked_by,

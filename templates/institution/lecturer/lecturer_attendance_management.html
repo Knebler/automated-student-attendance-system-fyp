@@ -60,7 +60,7 @@ AttendAI{% endblock %} {% block content %}
             <option value="all">All Students</option>
             <option value="present">Present Only</option>
             <option value="absent">Absent Only</option>
-            <option value="pending">Pending Only</option>
+            <option value="late">Late Only</option>
           </select>
         </div>
 
@@ -74,11 +74,6 @@ AttendAI{% endblock %} {% block content %}
         <button class="btn-custom" onclick="toggleFaceRecognition()">
           <span class="btn-icon">📸</span>
           Face Recognition
-        </button>
-
-        <button class="btn-custom btn-success" onclick="saveAttendance()">
-          <span class="btn-icon">💾</span>
-          Save Attendance
         </button>
       </div>
     </div>
@@ -147,11 +142,9 @@ AttendAI{% endblock %} {% block content %}
           >Absent:
           <strong id="summaryAbsent">{{ stats.absent_students }}</strong></span
         >
-        <span class="summary-item pending"
-          >Pending:
-          <strong id="summaryPending"
-            >{{ stats.pending_students }}</strong
-          ></span
+        <span class="summary-item late"
+          >Late:
+          <strong id="summaryLate">{{ stats.late_students }}</strong></span
         >
       </div>
     </div>
@@ -159,7 +152,7 @@ AttendAI{% endblock %} {% block content %}
     <div class="students-grid" id="studentsGrid">
       {% for student in students %}
       <div
-        class="student-card card-custom"
+        class="student-card card-custom {{ student.status }}"
         data-id="{{ student.id }}"
         data-status="pending"
       >
@@ -168,7 +161,7 @@ AttendAI{% endblock %} {% block content %}
             {% if student.photo_url %}
             <img src="{{ student.photo_url }}" alt="{{ student.name }}" />
             {% else %}
-            <div class="student-photo-placeholder">{{ student.initials }}</div>
+            <div class="student-photo-placeholder">{{ student.name[0] }}</div>
             {% endif %}
           </div>
           <div class="student-info">
@@ -179,14 +172,18 @@ AttendAI{% endblock %} {% block content %}
         </div>
 
         <div class="student-status">
-          <span class="status-badge status-pending">Pending</span>
-          <span class="last-updated">—</span>
+          <span class="status-badge status-{{ student.status }}"
+            >{{ student.status }}</span
+          >
+          <span class="last-updated">
+            {{ student.recorded_at.strftime('%I:%M %p') }}</span
+          >
         </div>
 
         <div class="attendance-controls">
           <div class="attendance-buttons">
             <button
-              class="attendance-btn present"
+              class="attendance-btn present {{ 'active' if student.status == 'present' }}"
               onclick="markAttendance('{{ student.id }}', 'present')"
               title="Mark as Present"
             >
@@ -194,7 +191,7 @@ AttendAI{% endblock %} {% block content %}
               Present
             </button>
             <button
-              class="attendance-btn absent"
+              class="attendance-btn absent {{ 'active' if student.status == 'absent' }}"
               onclick="markAttendance('{{ student.id }}', 'absent')"
               title="Mark as Absent"
             >
@@ -202,7 +199,7 @@ AttendAI{% endblock %} {% block content %}
               Absent
             </button>
             <button
-              class="attendance-btn late"
+              class="attendance-btn late {{ 'active' if student.status == 'late' }}"
               onclick="markAttendance('{{ student.id }}', 'late')"
               title="Mark as Late"
             >
@@ -216,8 +213,8 @@ AttendAI{% endblock %} {% block content %}
               type="text"
               class="notes-input"
               placeholder="Add note..."
-              data-student-id="{{ student.id }}"
-              onchange="saveNote('{{ student.id }}', this.value)"
+              value="{{ student.notes }}"
+              oninput="saveNote('{{ student.id }}', this.value)"
             />
           </div>
         </div>
@@ -328,7 +325,7 @@ AttendAI{% endblock %} {% block content %}
   }
 
   .filter-select {
-    padding: 0.875rem 1rem;
+    padding: 0.875rem 3rem;
     border: 2px solid var(--border-color);
     border-radius: 50px;
     background-color: white;
@@ -386,7 +383,7 @@ AttendAI{% endblock %} {% block content %}
     color: #dc2626;
   }
 
-  .stat-icon.pending {
+  .stat-icon.late {
     color: #d97706;
   }
 
@@ -480,7 +477,7 @@ AttendAI{% endblock %} {% block content %}
     color: #dc2626;
   }
 
-  .summary-item.pending {
+  .summary-item.late {
     color: #d97706;
   }
 
@@ -512,7 +509,7 @@ AttendAI{% endblock %} {% block content %}
     border-left: 4px solid #d97706;
   }
 
-  .student-card.pending {
+  .student-card.late {
     border-left: 4px solid var(--text-light);
   }
 
@@ -546,6 +543,7 @@ AttendAI{% endblock %} {% block content %}
     font-size: 1.25rem;
     font-weight: bold;
     color: var(--primary-dark);
+    text-transform: uppercase;
   }
 
   .student-info h4 {
@@ -827,22 +825,6 @@ AttendAI{% endblock %} {% block content %}
 
 {% block scripts %}
 <script>
-  // Attendance data
-  let attendanceData = {};
-  let faceRecognitionActive = false;
-
-  // Initialize attendance data
-  document.addEventListener("DOMContentLoaded", function () {
-    // Initialize attendance data from server or localStorage
-    const savedData = localStorage.getItem(`attendance_${getClassId()}`);
-    if (savedData) {
-      attendanceData = JSON.parse(savedData);
-      loadAttendanceData();
-    }
-
-    updateCounts();
-  });
-
   function getClassId() {
     // Extract class ID from URL or use default
     const urlParams = new URLSearchParams(window.location.search);
@@ -882,35 +864,53 @@ AttendAI{% endblock %} {% block content %}
       minute: "2-digit",
     });
 
-    // Update attendance data
-    attendanceData[studentId] = {
-      status: status,
-      timestamp: now.toISOString(),
-      note: card.querySelector(".notes-input").value,
-    };
+    // Get CSRF token from meta tag
+    const csrfToken = `{{ csrf_token() }}`;
+    const classId = getClassId();
 
-    // Save to localStorage
-    saveAttendanceData();
-
-    // Update counts
-    updateCounts();
-
-    // Show confirmation
-    showToast(`Attendance marked as ${status} for student`, "success");
+    fetch(`{{ url_for('attendance.mark_attendance') }}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken,
+      },
+      body: JSON.stringify({
+        class_id: classId,
+        lecturer_id: "{{ user.user_id }}",
+        student_id: studentId,
+        status: status,
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          showToast(`Attendance marked as ${status} for student`, "success");
+        } else {
+          showToast(data.error || "Failed to mark attendance", "warning");
+        }
+      })
+      .catch((error) => {
+        console.error("Error marking attendance:", error);
+        showToast("An error occurred while marking attendance", "warning");
+      });
   }
 
   function saveNote(studentId, note) {
-    if (attendanceData[studentId]) {
-      attendanceData[studentId].note = note;
-      saveAttendanceData();
-    }
-  }
-
-  function saveAttendanceData() {
-    localStorage.setItem(
-      `attendance_${getClassId()}`,
-      JSON.stringify(attendanceData)
-    );
+    const csrfToken = `{{ csrf_token() }}`;
+    const classId = getClassId();
+    return fetch(`{{ url_for('attendance.mark_attendance') }}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken,
+      },
+      body: JSON.stringify({
+        class_id: classId,
+        lecturer_id: "{{ user.user_id }}",
+        student_id: studentId,
+        notes: note,
+      }),
+    }).then((response) => response.json());
   }
 
   function loadAttendanceData() {
@@ -998,6 +998,7 @@ AttendAI{% endblock %} {% block content %}
       ) {
         card.style.display = "block";
       } else {
+        console.log(card.classList);
         card.style.display = "none";
       }
     });
@@ -1027,7 +1028,7 @@ AttendAI{% endblock %} {% block content %}
 
     // Simulate recognizing some students
     const pendingCards = document.querySelectorAll(
-      ".student-card.pending, .student-card:not(.present):not(.absent):not(.late)"
+      ".student-card.late, .student-card:not(.present):not(.absent):not(.late)"
     );
     if (pendingCards.length > 0) {
       // Randomly mark some as present
@@ -1047,52 +1048,8 @@ AttendAI{% endblock %} {% block content %}
     }
   }
 
-  function saveAttendance() {
-    // In a real app, this would send data to the server
-    const dataToSave = {
-      class_id: getClassId(),
-      attendance: attendanceData,
-      timestamp: new Date().toISOString(),
-    };
-
-    console.log("Saving attendance:", dataToSave);
-
-    // Simulate API call
-    setTimeout(() => {
-      showToast("Attendance saved successfully!", "success");
-      // Clear localStorage after successful save
-      localStorage.removeItem(`attendance_${getClassId()}`);
-      attendanceData = {};
-    }, 1000);
-  }
-
   function refreshAttendance() {
-    // Clear local storage and reset
-    localStorage.removeItem(`attendance_${getClassId()}`);
-    attendanceData = {};
-
-    // Reset all cards
-    const cards = document.querySelectorAll(".student-card");
-    cards.forEach((card) => {
-      card.classList.remove("present", "absent", "late");
-      card.classList.add("pending");
-
-      const statusBadge = card.querySelector(".status-badge");
-      statusBadge.className = "status-badge status-pending";
-      statusBadge.textContent = "Pending";
-
-      const buttons = card.querySelectorAll(".attendance-btn");
-      buttons.forEach((btn) => btn.classList.remove("active"));
-
-      const lastUpdated = card.querySelector(".last-updated");
-      lastUpdated.textContent = "—";
-
-      const noteInput = card.querySelector(".notes-input");
-      if (noteInput) noteInput.value = "";
-    });
-
-    updateCounts();
-    showToast("Attendance refreshed", "info");
+    window.location.reload();
   }
 
   function showToast(message, type = "info") {

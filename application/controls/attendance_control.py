@@ -51,11 +51,12 @@ class AttendanceControl:
                     .filter(DBAttendanceRecord.student_id == student_id)
                     .first()
                 )
+
                 
                 if existing_record:
                     # Update existing record
-                    existing_record.status = AttendanceStatusEnum[status] if isinstance(status, str) else status
-                    existing_record.marked_by = MarkedByEnum[marked_by] if isinstance(marked_by, str) else marked_by
+                    existing_record.status = status
+                    existing_record.marked_by = marked_by
                     if lecturer_id:
                         existing_record.lecturer_id = lecturer_id
                     if notes is not None:
@@ -67,15 +68,15 @@ class AttendanceControl:
                         'success': True,
                         'attendance_id': existing_record.attendance_id,
                         'message': f'Attendance updated to {status}',
-                        'record': existing_record
+                        'record': existing_record.as_dict()
                     }
                 else:
                     # Create new record
                     new_record = DBAttendanceRecord(
                         class_id=class_id,
                         student_id=student_id,
-                        status=AttendanceStatusEnum[status] if isinstance(status, str) else status,
-                        marked_by=MarkedByEnum[marked_by] if isinstance(marked_by, str) else marked_by,
+                        status=status,
+                        marked_by=marked_by,
                         lecturer_id=lecturer_id,
                         notes=notes
                     )

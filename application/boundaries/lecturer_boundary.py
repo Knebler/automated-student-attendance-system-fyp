@@ -23,18 +23,13 @@ def manage_appeals():
 
 
 @lecturer_bp.route('/manage_attendance')
+@requires_roles('lecturer')
 def manage_attendance():
     """Render the lecturer attendance-management page"""
-    if session.get('role') not in ['lecturer', 'teacher']:
-        flash('Access denied. Lecturer privileges required.', 'danger')
-        return redirect(url_for('auth.login'))
-    
-    # Get class_id from query parameters
     class_id = request.args.get('class_id')
     if not class_id:
         flash('Class ID is required', 'warning')
         return redirect(url_for('institution_lecturer.manage_classes'))
-    
     try:
         class_id = int(class_id)
     except ValueError:
@@ -42,22 +37,17 @@ def manage_attendance():
         return redirect(url_for('institution_lecturer.manage_classes'))
     
     user_id = session.get('user_id')
-    
-    # Step 1: Get class by id
     class_result = ClassControl.get_class_by_id(class_id)
     if not class_result['success']:
         flash(class_result.get('error', 'Class not found'), 'danger')
         return redirect(url_for('institution_lecturer.manage_classes'))
-    
     class_data = class_result['class']
+
     course_id = class_data['course_id']
-    
-    # Step 2: Get course from the class
     course_result = CourseControl.get_course_by_id(course_id)
     if not course_result['success']:
         flash(course_result.get('error', 'Course not found'), 'danger')
         return redirect(url_for('institution_lecturer.manage_classes'))
-    
     course = course_result['course']
     
     # Step 3: Get all course_users who are students
@@ -111,20 +101,19 @@ def manage_attendance():
                 .first()
             )
             
-            students_data.append({
-                'id': student_id,
-                'name': student_info['name'],
-                'email': student_info.get('email', ''),
-                'id_number': student_info.get('id_number', str(student_id)),
-                'status': student_record.status.value if student_record else 'pending',
-                'photo_url': None,  # Add if you have photo storage
-                'initials': ''.join([name[0].upper() for name in student_info['name'].split()[:2]]) if student_info.get('name') else 'U'
-            })
-        
-        # Show message if records were created
-        if attendance_records_created > 0:
-            flash(f'Created {attendance_records_created} attendance record(s) for students', 'info')
-        
+            students_data.append(
+                {
+                    'id': student_id,
+                    'name': student_info['name'],
+                    'email': student_info.get('email', ''),
+                    'id_number': student_info.get('id_number', str(student_id)),
+                    'status': student_record.status if student_record else 'pending',
+                    'photo_url': None,
+                    'recorded_at': student_record.recorded_at if student_record else None,
+                    'notes': student_record.notes if student_record else None,
+                }
+            )
+   
         # Get attendance statistics
         total_students = len(students_data)
         present_count = sum(1 for s in students_data if s['status'] == 'present')
@@ -136,30 +125,16 @@ def manage_attendance():
         venue = db_session.query(Venue).filter(Venue.venue_id == class_data['venue_id']).first()
         venue_name = venue.name if venue else 'Room TBD'
         
-        # Format class data for template
+        # # Format class data for template
         class_info = {
             'id': class_data['class_id'],
             'course_code': course.get('code', 'N/A') if course else 'N/A',
             'section': 'A',  # Default section - adjust if you have section data
-            'date': class_data['start_time'].split('T')[0] if class_data['start_time'] else 'N/A',
+            'date': class_data['start_time'].strftime('%B %d, %Y'),
             'room': venue_name,
-            'time': f"{class_data['start_time']} - {class_data['end_time']}" if class_data.get('start_time') and class_data.get('end_time') else 'N/A'
+            'time': class_data['start_time'].strftime('%I:%M %p') + ' - ' + class_data['end_time'].strftime('%I:%M %p'),
         }
-        
-        # Format date and time better
-        if class_data.get('start_time'):
-            try:
-                start_dt = datetime.fromisoformat(class_data['start_time'].replace('Z', '+00:00'))
-                end_dt = datetime.fromisoformat(class_data['end_time'].replace('Z', '+00:00')) if class_data.get('end_time') else None
-                
-                class_info['date'] = start_dt.strftime('%B %d, %Y')
-                if end_dt:
-                    class_info['time'] = f"{start_dt.strftime('%I:%M %p')} - {end_dt.strftime('%I:%M %p')}"
-                else:
-                    class_info['time'] = start_dt.strftime('%I:%M %p')
-            except:
-                pass
-    
+
     context = {
         'user': {
             'user_id': user_id,

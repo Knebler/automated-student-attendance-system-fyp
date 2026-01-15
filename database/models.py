@@ -206,6 +206,7 @@ class Class(Base, BaseMixin):
     status = Column(ClassStatusEnum, server_default="scheduled")
     start_time = Column(DateTime, nullable=False)
     end_time = Column(DateTime, nullable=False)
+    
 
 # =====================
 # ATTENDANCE RECORDS

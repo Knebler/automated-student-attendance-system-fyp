@@ -8,41 +8,45 @@
 
     <!-- Classes Card -->
     <div class="card-custom mb-4">
-        <div class="card-header-custom">Classes</div>
+        <div class="card-header-custom">Classes ({{ classes|length }})</div>
         <div class="card-body-custom">
-        
+            {% if classes %}
+                {% for class in classes %}
                 <div class="class-row mb-3">
                     <div class="class-info">
                         <div class="info-group">
-                            <span><strong>Name:</strong> class/module.name</span>
-                            <span><strong>Date:</strong> classes.date </span>
+                            <span><strong>Module:</strong> {{ class.module_name }}</span>
+                            <span><strong>Date:</strong> {{ class.date.strftime('%d/%m/%Y %H:%M') if class.date else 'N/A' }}</span>
                         </div>
                         <div class="info-group">
-                            <span><strong>Venue:</strong>class.venue</span>
-                            <span><strong>Present:</strong>present.count</span>
+                            <span><strong>Venue:</strong> {{ class.venue }}</span>
+                            <span><strong>Lecturer:</strong> {{ class.lecturer }}</span>
                         </div>
                         <div class="info-group">
-                            <span><strong>Lecturer:</strong>lecturer.name</span>
-                            <span><strong>Absent:</strong>absent.count</span>
+                            <span><strong>Total:</strong> {{ class.total }}</span>
+                            <span><strong>Present:</strong> <span class="status-badge status-present">{{ class.present }}</span></span>
+                        </div>
+                        <div class="info-group">
+                            <span><strong>Absent:</strong> <span class="status-badge status-absent">{{ class.absent }}</span></span>
+                            <span><strong>Late:</strong> <span class="status-badge status-late">{{ class.late }}</span></span>
+                        </div>
+                        <div class="info-group">
+                            <span><strong>Excused:</strong> <span class="status-badge status-excused">{{ class.excused }}</span></span>
+                            <span><strong>Unmarked:</strong> <span class="status-badge status-unmarked">{{ class.unmarked }}</span></span>
                         </div>
                     </div>
-                    <button class="btn-custom details-btn">View Details</button>
+                    <a href="{{ url_for('institution.attendance_class_details', class_id=class.class_id) }}" class="btn-custom details-btn">View Details</a>
                 </div>
-     
-
+                {% endfor %}
+            {% else %}
                 <div class="class-row mb-3">
                     <div class="class-info">
                         <div class="info-group">
-                            <span>No sessions found for today</span>
+                            <span>No classes found</span>
                         </div>
                     </div>
                 </div>
-
-            <!-- Pagination -->
-            <div class="pagination">
-                <span>Page 1 of 1</span>
-                <span class="pagination-arrow">›</span>
-            </div>
+            {% endif %}
         </div>
     </div>
 
@@ -78,9 +82,43 @@
 
     .class-info {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 2rem;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1.5rem;
         flex: 1;
+    }
+
+    /* Status Badges */
+    .status-badge {
+        display: inline-block;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
+    .status-present {
+        background-color: #10b981;
+        color: white;
+    }
+
+    .status-absent {
+        background-color: #ef4444;
+        color: white;
+    }
+
+    .status-late {
+        background-color: #f59e0b;
+        color: white;
+    }
+
+    .status-excused {
+        background-color: #3b82f6;
+        color: white;
+    }
+
+    .status-unmarked {
+        background-color: #6b7280;
+        color: white;
     }
 
     .info-group {
@@ -160,6 +198,13 @@
     }
 
     /* Responsive Design */
+    @media (max-width: 1400px) {
+        .class-info {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+    }
+
     @media (max-width: 1024px) {
         .class-info {
             grid-template-columns: repeat(2, 1fr);

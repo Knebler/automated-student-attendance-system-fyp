@@ -168,11 +168,7 @@ def remove_user_from_course(user_id):
         return redirect(redirect_path)
     return redirect(url_for('institution.manage_users'))
 
-@institution_bp.route('/manage_attendance')
-@requires_roles('admin')
-def manage_attendance():
 
-    return render_template('institution/admin/institution_admin_attendance_management.html')
 
 
 @institution_bp.route('/manage_classes')
@@ -242,6 +238,17 @@ def attendance_class_details(class_id):
             "course_name": class_model.get_course_name(class_id),
         }
     return render_template('institution/admin/institution_admin_attendance_management_class_details.html', **context)
+
+
+@institution_bp.route('/manage_attendance')
+@requires_roles('admin')
+def manage_attendance():
+    institution_id = session.get('institution_id')
+    with get_session() as db_session:
+        class_model = ClassModel(db_session)
+        classes = class_model.get_all_classes_with_attendance(institution_id)
+
+    return render_template('institution/admin/institution_admin_attendance_management.html', classes=classes)
 
 
 @institution_bp.route('/attendance/reports')

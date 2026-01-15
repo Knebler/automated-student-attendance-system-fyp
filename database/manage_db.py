@@ -113,12 +113,13 @@ def seed_semesters(years: int, sem_per_year: int=4):
     semesters = []
     for inst_id in range(1, num_inst+1):
         for year in range(date.today().year, date.today().year + years):
+            months_per_sem = 12 // sem_per_year
             for q in range(1, sem_per_year + 1):
                 semesters.append(Semester(
                     institution_id=inst_id,
                     name=f"{year}-{q}",
-                    start_date=date(year, (q - 1) * 3 + 1, 1),
-                    end_date=date(year, q * 3, 28),
+                    start_date=date(year, (q - 1) * months_per_sem + 1, 1),
+                    end_date=date(year, q * months_per_sem, 28),
                 ))
     with get_session() as session:
         session.add_all(semesters)
@@ -181,27 +182,15 @@ def seed_assign_courses():
         session.commit()
         print(f"Created {len(bindings)} course_user bindings created.")
 
-def seed_classes():
+def seed_classes(classes_per_sem: int=5):
     with get_session() as session:
         courses = session.query(Course).all()
-        users = session.query(User).filter(User.role == "lecturer").all()
         venues = session.query(Venue).all()
-        semesters = session.query(Semester).all()
-
-        # Group lecturers by institution
-        inst_lecturers = {}
-        for u in users:
-            inst_lecturers.setdefault(u.institution_id, []).append(u)
 
         # Group venues by institution
         inst_venues = {}
         for v in venues:
             inst_venues.setdefault(v.institution_id, []).append(v)
-
-        # Group semesters by institution
-        inst_semesters = {}
-        for s in semesters:
-            inst_semesters.setdefault(s.institution_id, []).append(s)
 
         def random_datetime_in_semester(semester: Semester):
             delta = semester.end_date - semester.start_date
@@ -216,16 +205,33 @@ def seed_classes():
             inst_id = course.institution_id
 
             # Skip if institution has no lecturer or venue
-            lecturers: list[User] = inst_lecturers.get(inst_id, [])
+            lecturers: list[User] = (
+                session.query(User)
+                .join(CourseUser)
+                .filter(
+                    User.institution_id == inst_id,
+                    User.role == "lecturer", 
+                    CourseUser.course_id == course.course_id
+                )
+                .all()
+            )
             venue_list: list[Venue] = inst_venues.get(inst_id, [])
-            semesters: list[Semester] = inst_semesters.get(inst_id, [])
+            semesters: list[Semester] = (
+                session.query(Semester)
+                .select_from(CourseUser)
+                .join(Semester)
+                .filter(
+                    Semester.institution_id == inst_id,
+                    CourseUser.course_id == course.course_id,
+                )
+                .all()
+            )
             if not lecturers or not venue_list:
                 continue
             lecturer = random.choice(lecturers)
 
             for sem in semesters:
-                # 5 classes per course per sem
-                for _ in range(5):
+                for _ in range(classes_per_sem):
                     start = random_datetime_in_semester(sem)
                     end = start + timedelta(hours=2)
 
@@ -247,6 +253,7 @@ def seed_attendance():
     with get_session() as session:
         classes = session.query(Class).all()
         statuses = AttendanceStatusEnum.enums
+        statuses.remove("unmarked")
 
         for cls in classes:
             # Get students who should be in this class
@@ -260,15 +267,14 @@ def seed_attendance():
             attendance_records = []
 
             for cu in enrolled_students:
-                if random.random() < 0.8:  # 80% chance
-                    record = AttendanceRecord(
-                        class_id=cls.class_id,
-                        student_id=cu.user_id,
-                        status=random.choice(statuses),
-                        marked_by="lecturer",
-                        lecturer_id=cls.lecturer_id
-                    )
-                    attendance_records.append(record)
+                record = AttendanceRecord(
+                    class_id=cls.class_id,
+                    student_id=cu.user_id,
+                    status=random.choice(statuses),
+                    marked_by="lecturer",
+                    lecturer_id=cls.lecturer_id
+                )
+                attendance_records.append(record)
 
             # Add all attendance records for this class at once
             session.add_all(attendance_records)
@@ -377,7 +383,7 @@ def seed_database():
         print(f"Added {len(venues)} venues")
 
     if row_count("Classes") == 0:
-        seed_classes()
+        seed_classes(10)
     
     if row_count("Attendance_Records") == 0:
         seed_attendance()

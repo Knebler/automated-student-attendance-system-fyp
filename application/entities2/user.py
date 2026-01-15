@@ -1,5 +1,5 @@
 from .base_entity import BaseEntity
-from database.models import User
+from database.models import *
 from datetime import datetime
 from sqlalchemy import func
 
@@ -75,6 +75,33 @@ class UserModel(BaseEntity[User]):
             "lecturer_count": lecturer_count,
             "student_count": student_count,
         }
+    
+    def student_stats(self, student_id):
+        db_data = (
+            self.session
+            .query(
+                Semester.name,
+                Course.code,
+                Class.class_id,
+                func.coalesce(AttendanceRecord.status, "unmarked"),
+            )
+            .select_from(CourseUser)
+            .join(Semester, Semester.semester_id == CourseUser.semester_id)
+            .join(Course, Course.course_id == CourseUser.course_id)
+            .join(Class,  (Class.course_id == Course.course_id) & (Class.semester_id == CourseUser.semester_id))
+            .outerjoin(AttendanceRecord, AttendanceRecord.class_id == Class.class_id)
+            .filter(CourseUser.user_id == student_id)
+            .all()
+        )
+        student_data = {}
+        for row in db_data:
+            sem, course, class_id, status = row
+            if sem not in student_data:
+                student_data[sem] = {}
+            if course not in student_data[sem]:
+                student_data[sem][course] = {}
+            student_data[sem][course][class_id] = status
+        return student_data
 
     def delete(self, user_id) -> bool:
         user = self.get_by_id(user_id)

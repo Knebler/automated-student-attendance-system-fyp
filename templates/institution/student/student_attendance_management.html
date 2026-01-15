@@ -24,23 +24,19 @@
                     <div class="info-grid">
                         <div class="info-item">
                             <span class="info-label">Institution:</span>
-                            <span class="info-value">University of Technology</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Program:</span>
-                            <span class="info-value">Computer Science</span>
+                            <span class="info-value">{{term_info.institution_name}}</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">Term:</span>
-                            <span class="info-value">2026 Q4</span>
+                            <span class="info-value">{{term_info.semester_name}}</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">Student ID:</span>
-                            <span class="info-value">S1234567</span>
+                            <span class="info-value">{{term_info.student_id}}</span>
                         </div>
                         <div class="info-item highlight">
                             <span class="info-label">Minimum Requirement:</span>
-                            <span class="info-value">90%</span>
+                            <span class="info-value">{{term_info.cutoff}}%</span>
                         </div>
                     </div>
                 </div>
@@ -61,101 +57,43 @@
             <div class="card-header-custom">Monthly Attendance</div>
             <div class="card-body-custom">
                 <div class="months-grid">
+                    {% for report in monthly_report %}
                     <div class="month-item">
                         <div class="month-header">
-                            <h3 class="month-title">September 2026</h3>
+                            <h3 class="month-title">{{report.month}}</h3>
+                            {% if report.is_good %}
                             <span class="month-status good">On Track</span>
-                        </div>
-                        <div class="chart-container">
-                            <div class="chart" data-percent="90" data-absent="10"></div>
-                        </div>
-                        <div class="month-stats">
-                            <div class="stat">
-                                <span class="stat-label">Present:</span>
-                                <span class="stat-value present">90%</span>
-                            </div>
-                            <div class="stat">
-                                <span class="stat-label">Absent:</span>
-                                <span class="stat-value absent">10%</span>
-                            </div>
-                            <div class="stat">
-                                <span class="stat-label">Classes:</span>
-                                <span class="stat-value">20</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="month-item">
-                        <div class="month-header">
-                            <h3 class="month-title">October 2026</h3>
+                            {% else %}
                             <span class="month-status warning">At Risk</span>
+                            {% endif %}
                         </div>
                         <div class="chart-container">
-                            <div class="chart" data-percent="85" data-absent="15"></div>
+                            <div class="chart" data-percent="{{report.present_percent|round(1)}}" data-absent="{{report.absent_percent|round(1)}}"></div>
                         </div>
                         <div class="month-stats">
                             <div class="stat">
                                 <span class="stat-label">Present:</span>
-                                <span class="stat-value present">85%</span>
+                                <span class="stat-value present">{{report.present}}</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Late:</span>
+                                <span class="stat-value late">{{report.late}}</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Excused:</span>
+                                <span class="stat-value excused">{{report.excused}}</span>
                             </div>
                             <div class="stat">
                                 <span class="stat-label">Absent:</span>
-                                <span class="stat-value absent">15%</span>
+                                <span class="stat-value absent">{{report.absent}}</span>
                             </div>
                             <div class="stat">
                                 <span class="stat-label">Classes:</span>
-                                <span class="stat-value">22</span>
+                                <span class="stat-value">{{report.total_classes}}</span>
                             </div>
                         </div>
                     </div>
-
-                    <div class="month-item">
-                        <div class="month-header">
-                            <h3 class="month-title">November 2026</h3>
-                            <span class="month-status good">On Track</span>
-                        </div>
-                        <div class="chart-container">
-                            <div class="chart" data-percent="92" data-absent="8"></div>
-                        </div>
-                        <div class="month-stats">
-                            <div class="stat">
-                                <span class="stat-label">Present:</span>
-                                <span class="stat-value present">92%</span>
-                            </div>
-                            <div class="stat">
-                                <span class="stat-label">Absent:</span>
-                                <span class="stat-value absent">8%</span>
-                            </div>
-                            <div class="stat">
-                                <span class="stat-label">Classes:</span>
-                                <span class="stat-value">18</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="month-item">
-                        <div class="month-header">
-                            <h3 class="month-title">December 2026</h3>
-                            <span class="month-status good">On Track</span>
-                        </div>
-                        <div class="chart-container">
-                            <div class="chart" data-percent="94" data-absent="6"></div>
-                        </div>
-                        <div class="month-stats">
-                            <div class="stat">
-                                <span class="stat-label">Present:</span>
-                                <span class="stat-value present">94%</span>
-                            </div>
-                            <div class="stat">
-                                <span class="stat-label">Absent:</span>
-                                <span class="stat-value absent">6%</span>
-                            </div>
-                            <div class="stat">
-                                <span class="stat-label">Classes:</span>
-                                <span class="stat-value">15</span>
-                            </div>
-                        </div>
-                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -168,11 +106,11 @@
                 <div class="term-overview">
                     <div class="overall-stats">
                         <div class="chart-container large">
-                            <div class="chart" data-percent="88.5" data-absent="11.5"></div>
+                            <div class="chart" data-percent="{{overview.present_percent|round(1)}}" data-absent="{{overview.absent_percent|round(1)}}"></div>
                         </div>
                         <div class="overall-info">
                             <h3 class="overall-title">Term Attendance</h3>
-                            <div class="overall-percentage">88.5%</div>
+                            <div class="overall-percentage">{{overview.present_percent|round(1)}}%</div>
                             <div class="status-badge">
                                 <span class="status-dot"></span>
                                 <span class="status-text">Meeting Requirement</span>
@@ -180,11 +118,11 @@
                             <div class="overall-details">
                                 <div class="detail">
                                     <span class="detail-label">Present:</span>
-                                    <span class="detail-value">75/85 classes</span>
+                                    <span class="detail-value">{{overview.present}}</span>
                                 </div>
                                 <div class="detail">
                                     <span class="detail-label">Absent:</span>
-                                    <span class="detail-value">10/85 classes</span>
+                                    <span class="detail-value">{{overview.absent}}</span>
                                 </div>
                                 <div class="detail">
                                     <span class="detail-label">Required:</span>
@@ -198,28 +136,32 @@
                     <div class="absent-section">
                         <div class="section-header">
                             <h3 class="section-title">Absent Classes</h3>
-                            <span class="section-count">10 classes</span>
+                            <span class="section-count">{{classes|length}} classes</span>
                         </div>
 
                         <div class="absent-list">
+                            {% for class in classes %}
                             <div class="absent-item">
                                 <div class="absent-info">
                                     <div class="absent-class">
-                                        <strong>CSCI251 - T01</strong>
-                                        <span>Advanced Programming</span>
+                                        <div class="flex-column justify-between">
+                                            <strong>{{class.course_code}}</strong>
+                                            <span class="month-status warning">{{class.status|capitalize}}</span>
+                                        </div>
+                                        <span>{{class.course_name}}</span>
                                     </div>
                                     <div class="absent-details">
                                         <div class="detail">
-                                            <span class="detail-label">Date:</span>
-                                            <span class="detail-value">Nov 15, 2026 • 08:30-11:30</span>
+                                            <span class="detail-label">Date: </span>
+                                            <span class="detail-value">{{class.start_date.strftime('%b %d, %Y • %H:%M-%H:%M')}}</span>
                                         </div>
                                         <div class="detail">
                                             <span class="detail-label">Venue:</span>
-                                            <span class="detail-value">LAB A.5.17C</span>
+                                            <span class="detail-value">{{class.venue}}</span>
                                         </div>
                                         <div class="detail">
                                             <span class="detail-label">Lecturer:</span>
-                                            <span class="detail-value">Prof. Johnson</span>
+                                            <span class="detail-value">{{class.lecturer}}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -227,84 +169,7 @@
                                     <a href="{{ url_for('student.appeal_management') }}?class=CSCI251-T01&date=2026-11-15" class="btn-custom btn-appeal">Appeal</a>
                                 </div>
                             </div>
-
-                            <div class="absent-item">
-                                <div class="absent-info">
-                                    <div class="absent-class">
-                                        <strong>MATH202 - L03</strong>
-                                        <span>Calculus II</span>
-                                    </div>
-                                    <div class="absent-details">
-                                        <div class="detail">
-                                            <span class="detail-label">Date:</span>
-                                            <span class="detail-value">Nov 18, 2026 • 14:00-17:00</span>
-                                        </div>
-                                        <div class="detail">
-                                            <span class="detail-label">Venue:</span>
-                                            <span class="detail-value">LT B.2.01</span>
-                                        </div>
-                                        <div class="detail">
-                                            <span class="detail-label">Lecturer:</span>
-                                            <span class="detail-value">Dr. Smith</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="absent-actions">
-                                    <a href="{{ url_for('student.appeal_management') }}?class=MATH202-L03&date=2026-11-18" class="btn-custom btn-appeal">Appeal</a>
-                                </div>
-                            </div>
-
-                            <div class="absent-item">
-                                <div class="absent-info">
-                                    <div class="absent-class">
-                                        <strong>PHYS101 - T02</strong>
-                                        <span>Physics I</span>
-                                    </div>
-                                    <div class="absent-details">
-                                        <div class="detail">
-                                            <span class="detail-label">Date:</span>
-                                            <span class="detail-value">Nov 22, 2026 • 09:00-12:00</span>
-                                        </div>
-                                        <div class="detail">
-                                            <span class="detail-label">Venue:</span>
-                                            <span class="detail-value">SCI 301</span>
-                                        </div>
-                                        <div class="detail">
-                                            <span class="detail-label">Lecturer:</span>
-                                            <span class="detail-value">Dr. Brown</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="absent-actions">
-                                    <a href="{{ url_for('student.appeal_management') }}?class=PHYS101-T02&date=2026-11-22" class="btn-custom btn-appeal">Appeal</a>
-                                </div>
-                            </div>
-
-                            <div class="absent-item">
-                                <div class="absent-info">
-                                    <div class="absent-class">
-                                        <strong>CSCI251 - L02</strong>
-                                        <span>Advanced Programming</span>
-                                    </div>
-                                    <div class="absent-details">
-                                        <div class="detail">
-                                            <span class="detail-label">Date:</span>
-                                            <span class="detail-value">Nov 25, 2026 • 15:30-18:30</span>
-                                        </div>
-                                        <div class="detail">
-                                            <span class="detail-label">Venue:</span>
-                                            <span class="detail-value">LT A.1.17</span>
-                                        </div>
-                                        <div class="detail">
-                                            <span class="detail-label">Lecturer:</span>
-                                            <span class="detail-value">Prof. Johnson</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="absent-actions">
-                                    <a href="{{ url_for('student.appeal_management') }}?class=CSCI251-L02&date=2026-11-25" class="btn-custom btn-appeal">Appeal</a>
-                                </div>
-                            </div>
+                            {% endfor %}
                         </div>
 
                         <div class="view-all">
@@ -553,6 +418,14 @@
         color: #059669;
     }
 
+    .stat-value.late {
+        color: #c56c05;
+    }
+
+    .stat-value.excused {
+        color: #e2e605;
+    }
+
     .stat-value.absent {
         color: #dc2626;
     }
@@ -675,7 +548,7 @@
         border: 1px solid var(--border-color);
         border-radius: 8px;
         padding: 1rem;
-        display: flex;
+        /* display: flex; */
         justify-content: space-between;
         align-items: center;
         transition: all 0.3s ease;
@@ -710,7 +583,7 @@
 
     .absent-details {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(1, auto);
         gap: 1rem;
     }
 

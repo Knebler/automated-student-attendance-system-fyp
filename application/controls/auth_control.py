@@ -22,7 +22,6 @@ def requires_roles(roles):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            print("Checking roles...")
             # Normalize roles to a list
             # Check if user is logged in and has an allowed role
             if 'role' not in session or session.get('role') not in roles:

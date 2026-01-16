@@ -165,8 +165,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="absent-actions">
-                                    <a href="{{ url_for('student.appeal_management') }}?class=CSCI251-T01&date=2026-11-15" class="btn-custom btn-appeal">Appeal</a>
+                                    <a href="{{ url_for('student.appeal_form', attendance_record_id=class.attendance_id) }}" class="btn-custom btn-appeal">Appeal</a>
                                 </div>
                             </div>
                             {% endfor %}

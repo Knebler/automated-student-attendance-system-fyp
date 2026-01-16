@@ -22,7 +22,7 @@
                         class="form-control" 
                         id="student_name" 
                         name="student_name" 
-                        value="John Doe" 
+                        value="{{ student_name }}" 
                         readonly
                     >
                 </div>
@@ -34,7 +34,7 @@
                         class="form-control" 
                         id="student_id" 
                         name="student_id" 
-                        value="UOW1234567" 
+                        value="{{ student_id }}" 
                         readonly
                     >
                 </div>
@@ -49,31 +49,25 @@
                         class="form-control" 
                         id="module_code" 
                         name="module_code" 
-                        value="CSIT321" 
+                        value="{{course_code}}-{{ course_name }}" 
                         readonly
                     >
                 </div>
 
                 <div class="form-group mb-3">
-                    <label for="class_date">Class Date</label>
+                    <label for="class_id">Class ID:</label>
                     <input 
-                        type="date" 
+                        type="text" 
                         class="form-control" 
-                        id="class_date" 
-                        name="class_date"
+                        id="class_id" 
+                        name="class_id" 
+                        value="{{class_id}}" 
+                        readonly
                     >
                 </div>
 
-                <div class="form-group mb-3">
-                    <label for="class_time">Class Time</label>
-                    <input 
-                        type="time" 
-                        class="form-control" 
-                        id="class_time" 
-                        name="class_time"
-                    >
-                </div>
 
+    
                 <!-- Appeal Reason -->
                 <h5 class="mt-4 mb-3">Appeal Details</h5>
 
@@ -89,22 +83,7 @@
                     ></textarea>
                 </div>
 
-                <!-- File Upload -->
-                <div class="form-group mb-4">
-                    <label for="supporting_document">
-                        Supporting Document (optional)
-                    </label>
-                    <input 
-                        type="file" 
-                        class="form-control" 
-                        id="supporting_document" 
-                        name="supporting_document"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                    >
-                    <small class="form-text text-muted">
-                        Accepted formats: PDF, JPG, PNG (e.g., medical certificate, email proof).
-                    </small>
-                </div>
+               
 
                 <!-- Submit -->
                 <div class="text-end">

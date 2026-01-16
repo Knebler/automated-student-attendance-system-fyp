@@ -281,6 +281,36 @@ def seed_attendance():
 
         session.commit()
         print(f"Created {len(attendance_records)} attendance records.")
+        
+def seed_appeals():
+    with get_session() as session:
+        attendance_records = (
+            session.query(AttendanceRecord)
+            .filter(AttendanceRecord.status.in_(["absent", "late"]))
+            .all()
+        )
+        appeal_reasons = [
+            "I was sick that day.",
+            "There was a family emergency.",
+            "I had technical issues with the attendance system.",
+            "I was attending a university-approved event.",
+            "I had a valid excuse from my lecturer."
+        ]
+
+        appeals = []
+        for record in attendance_records:
+            if random.random() < 0.25:  # 25% chance to create an appeal
+                appeal = AttendanceAppeal(
+                    attendance_id=record.attendance_id,
+                    student_id=record.student_id,
+                    reason=random.choice(appeal_reasons),
+                    status="pending",
+                )
+                appeals.append(appeal)
+
+        session.add_all(appeals)
+        session.commit()
+        print(f"Created {len(appeals)} appeals.")
 
 def seed_database():
     import random
@@ -387,6 +417,9 @@ def seed_database():
     
     if row_count("Attendance_Records") == 0:
         seed_attendance()
+    
+    if row_count("Attendance_Appeals") == 0:
+        seed_appeals()
 
     if row_count("Announcements") == 0:
         cols = [

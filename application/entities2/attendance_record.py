@@ -1,5 +1,5 @@
 from .base_entity import BaseEntity
-from database.models import AttendanceRecord, Class, User
+from database.models import AttendanceRecord, Class, User, Course
 from typing import List, Optional, Dict
 from datetime import datetime, date
 
@@ -91,3 +91,17 @@ class AttendanceRecordModel(BaseEntity[AttendanceRecord]):
         
         self.session.commit()
         return records
+    
+    def student_get_attendance_for_appeal(self, attendance_record_id: int):
+        """Get attendance record details for appeal"""
+        headers = ["student_id", "student_name", "course_name", "course_code", "class_id"]
+        data = (
+            self.session.query(User.user_id, User.name, Course.name, Course.code, Class.class_id)
+            .select_from(AttendanceRecord)
+            .join(Class, AttendanceRecord.class_id == Class.class_id)
+            .join(Course, Class.course_id == Course.course_id)
+            .join(User, AttendanceRecord.student_id == User.user_id)
+            .filter(AttendanceRecord.attendance_id == attendance_record_id)
+            .one()
+        )
+        return dict(zip(headers, data))

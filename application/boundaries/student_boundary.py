@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, session, redirect, url_for, flash, current_app, request
 from application.controls.auth_control import AuthControl, requires_roles
 from application.controls.attendance_control import AttendanceControl
-from application.entities2 import ClassModel, SemesterModel, UserModel
+from application.entities2 import ClassModel, SemesterModel, UserModel, AttendanceRecordModel
 from pprint import pprint
 from datetime import date
 
@@ -105,14 +105,22 @@ def class_checkin_face():
 @requires_roles('student')
 def appeal_management():
     """Student appeal management"""
-    return render_template('institution/student/student_appeal_management.html', user=session.get('user'))
+    return render_template('institution/student/student_appeal_management.html')
 
 
-@student_bp.route('/appeal/form', endpoint='appeal_form')
+@student_bp.route('/appeal/form/<int:attendance_record_id>', endpoint='appeal_form')
 @requires_roles('student')
-def appeal_form():
+def appeal_form(attendance_record_id):
     """Show appeal form"""
-    return render_template('institution/student/student_appeal_management_appeal_form.html', user=session.get('user'))
+    with get_session() as db_session:
+        ar_model = AttendanceRecordModel(db_session)
+        record = ar_model.get_by_id(attendance_record_id)  # Ensure record exists
+        if record.student_id != session.get('user_id'):
+            flash("You are not authorized to appeal this record.", "error")
+            return redirect(url_for('student.appeal_management'))
+        data = ar_model.student_get_attendance_for_appeal(attendance_record_id)
+        
+    return render_template('institution/student/student_appeal_management_appeal_form.html', **data)
 
 
 @student_bp.route('/absent-records', endpoint='absent_records')

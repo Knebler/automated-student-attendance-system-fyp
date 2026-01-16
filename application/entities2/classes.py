@@ -101,13 +101,13 @@ class ClassModel(BaseEntity[Class]):
 
     def student_attendance_absent_late(self, user_id):
         headers = [
-            "class_id", "course_code", "course_name", "start_date", "venue", "lecturer", "status"
+            "class_id", "course_code", "course_name", "start_date", "venue", "lecturer", "attendance_id", "status"
         ]
         Lecturer = aliased(User)
         data = (
             self.session
             .query(Class.class_id, Course.code, Course.name, Class.start_time, Venue.name, Lecturer.name
-                   , func.coalesce(AttendanceRecord.status, "unmarked"))
+                   , AttendanceRecord.attendance_id, func.coalesce(AttendanceRecord.status, "unmarked"))
             .select_from(Semester)
             .join(CourseUser, Semester.semester_id == CourseUser.semester_id)
             .join(User, CourseUser.user_id == User.user_id)

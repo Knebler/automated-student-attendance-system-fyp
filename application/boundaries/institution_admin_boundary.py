@@ -375,3 +375,62 @@ def student_class_attendance_details(course_id, class_id, student_id):
         record_details=record_details
 
     )
+
+@institution_bp.route('/student_class_attendance_details/<int:course_id>/<int:class_id>/<int:student_id>', methods=['POST'])
+@requires_roles('admin')
+def update_student_class_attendance(course_id, class_id, student_id):
+    """Update attendance status for a specific student in a class"""
+    with get_session() as db_session:
+        class_model = ClassModel(db_session)
+        user_model = UserModel(db_session)
+        course_model = CourseModel(db_session)
+        attendance_model = AttendanceRecordModel(db_session)
+        
+        # Verify that the course belongs to the institution
+        if not course_model.get_by_id(course_id).institution_id == session.get('institution_id'):
+            return abort(401)
+        # Verify that the class belongs to the institution
+        if not class_model.class_is_institution(class_id, session.get('institution_id')):
+            return abort(401)
+        # Verify that the student is part of the institution
+        student = user_model.get_by_id(student_id)
+        if not student or student.institution_id != session.get('institution_id'):
+            return abort(401)
+        
+        # Get the new attendance status from the form
+        new_status = request.form.get('attendance')
+        notes = request.form.get('notes', '')
+        
+        # Validate status
+        valid_statuses = ['present', 'absent', 'late', 'excused']
+        if new_status not in valid_statuses:
+            flash('Invalid attendance status', 'error')
+            return redirect(url_for('institution.attendance_class_details', class_id=class_id))
+        
+        # Check if attendance record exists
+        attendance_record = attendance_model.get_student_class_attendance(student_id, class_id)
+        
+        if attendance_record:
+            # Update existing record
+            attendance_model.update(
+                attendance_record.attendance_id,
+                status=new_status,
+                marked_by='lecturer',
+                lecturer_id=session.get('user_id'),
+                notes=notes
+            )
+            flash(f'Attendance updated to {new_status.capitalize()}', 'success')
+            return redirect(url_for('institution.attendance_class_details', class_id=class_id))
+        else:
+            # No record exists - create a new one
+            attendance_model.create(
+                class_id=class_id,
+                student_id=student_id,
+                status=new_status,
+                marked_by='lecturer',
+                lecturer_id=session.get('user_id'),
+                notes=notes
+            )
+            flash(f'Attendance marked as {new_status.capitalize()}', 'success')
+            return redirect(url_for('institution.attendance_class_details', class_id=class_id))
+            

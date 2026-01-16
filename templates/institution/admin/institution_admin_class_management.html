@@ -9,11 +9,15 @@
     <div class="card-custom mb-4">
         <div class="card-header-custom">Search & Filter</div>
         <div class="card-body-custom">
+            <!-- search section -->
             <div class="search-section">
                 <div class="search-filters mb-3">
-                    <input type="text" class="search-input" placeholder="Search by class name, ID, or lecturer...">
-                    <input type="text" class="filter-input" placeholder="Filter by status...">
-                    <button class="btn-custom btn-search">Search</button>
+                    <input id="searchInput" type="text" class="search-input" placeholder="Search by class name, ID, or lecturer..."> 
+                    <select id="statusFilter" class="filter-select">
+                        <option value="">All Status</option>
+                        <option value="ACTIVE">Active</option>
+                        <option value="INACTIVE">Suspended</option>
+                    </select>
                 </div>
             </div>
         </div>
@@ -33,9 +37,10 @@
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
+
+                    <tbody id="userTableBody">
                         {% for course in courses %}
-                        <tr>
+                        <tr class="course-row" data-name="{{ course[1] }}" data-code="{{ course[2] }}" data-lecturer="{{ course[3] }}" data-status="{% if course[4] %}ACTIVE{% else %}INACTIVE{% endif %}">
                             <td>{{ course[1] }}</td>
                             <td>{{ course[2] }}</td>
                             <td>{{ course[3] }}</td>
@@ -63,6 +68,11 @@
         margin: 0 auto;
     }
 
+        /* .class-management {
+        max-width: 1400px;
+        margin: 0 auto;
+    } */
+
     .page-title {
         font-size: 2.5rem;
         font-weight: bold;
@@ -72,39 +82,25 @@
         padding-bottom: 1rem;
     }
 
-    /* Search Section */
-    .search-section {
+     /* Search Section */
+     .search-filters {
+        display: flex;
+        gap: 1rem;
         width: 100%;
     }
 
-    .search-filters {
-        display: flex;
-        gap: 1rem;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-
     .search-input,
-    .filter-input {
+    .filter-select {
         flex: 1;
-        min-width: 200px;
-        padding: 0.75rem 1rem;
-        border: 1px solid var(--border-color);
-        border-radius: 4px;
+        min-width: 350px;
+        padding: 0.75rem 1.25rem;
+        border-radius: 20px;
         font-size: 0.9rem;
         background-color: white;
     }
 
-    .search-input::placeholder,
-    .filter-input::placeholder {
-        color: var(--text-light);
-    }
-
-    .btn-search {
-        padding: 0.75rem 2rem;
-        border-radius: 25px;
-        font-size: 0.9rem;
-        white-space: nowrap;
+    .filter-select {
+        cursor: pointer;
     }
 
     /* Table Styles */
@@ -238,5 +234,68 @@
             font-size: 0.8rem;
         }
     }
-</style>
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        const statusFilter = document.getElementById('statusFilter');
+        const tableBody = document.getElementById('userTableBody');
+        const rows = tableBody.getElementsByTagName('tr');
+
+        function filterTable() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const selectedStatus = statusFilter.value;
+
+            let visibleCount = 0;
+
+            for (let row of rows) {
+                if (row.id === 'noResultsMessage') continue;
+
+                const name = row.getAttribute('data-name')?.toLowerCase() || '';
+                const code = row.getAttribute('data-code')?.toLowerCase() || '';
+                const lecturer = row.getAttribute('data-lecturer')?.toLowerCase() || '';
+                const status = row.getAttribute('data-status') || '';
+
+                const matchesSearch =
+                    searchTerm === '' ||
+                    name.includes(searchTerm) ||
+                    code.includes(searchTerm) ||
+                    lecturer.includes(searchTerm);
+
+                const matchesStatus =
+                    selectedStatus === '' || status === selectedStatus;
+
+                if (matchesSearch && matchesStatus) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+
+            // Remove old "no results" row
+            const existingMessage = document.getElementById('noResultsMessage');
+            if (existingMessage) existingMessage.remove();
+
+            // Show "No Results" only when filtering finished
+            if (visibleCount === 0) {
+                const messageRow = document.createElement('tr');
+                messageRow.id = 'noResultsMessage';
+                messageRow.innerHTML =
+                    '<td colspan="5" style="text-align:center; padding:2rem; color:#6b7280;">No classes found.</td>';
+                tableBody.appendChild(messageRow);
+            }
+        }
+
+        searchInput.addEventListener('input', filterTable);
+        statusFilter.addEventListener('change', filterTable);
+
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') filterTable();
+        });
+    });
+    </script>
+
+
 {% endblock %}

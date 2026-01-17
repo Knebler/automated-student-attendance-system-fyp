@@ -62,7 +62,6 @@ def mark_attendance():
             'error': 'Student ID is required'
         }), 400
 
-    print("appplication my", current_app)
     
     result = AttendanceControl.mark_attendance(
         current_app, 

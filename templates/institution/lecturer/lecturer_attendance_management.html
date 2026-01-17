@@ -1,31 +1,28 @@
 {% extends "layouts/base.html" %} {% block title %}Attendance Management -
 AttendAI{% endblock %} {% block content %}
 <div class="attendance-management">
-    <h1 class="page-title mb-4">Attendance Management</h1>
+  <h1 class="page-title mb-4">Attendance Management</h1>
 
-    <!-- Class Info Card -->
-    <div class="class-info-card mb-4">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h2 class="class-code">{{ class.course_code }} - {{ class.id }}</h2>
-                <div class="class-details">
-                    <span class="class-detail-item">
-                        <span class="detail-icon">📅</span>
-                        {{ class.date }}
-                    </span>
-                    <span class="class-detail-item">
-                        <span class="detail-icon">📍</span>
-                        {{ class.room }}
-                    </span>
-                    <span class="class-detail-item">
-                        <span class="detail-icon">🕐</span>
-                        {{ class.time }}
-                    </span>
-                </div>
-            </div>
-            <div>
-                <a href="{{ url_for('institution_lecturer.manage_classes', class_id=class.id) }}" class="btn-outline-custom">Class Details</a>
-            </div>
+  <!-- Class Info Card -->
+  <div class="class-info-card mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h2 class="class-code">
+          {{ class.course_code }} - {{ class.section }}
+        </h2>
+        <div class="class-details">
+          <span class="class-detail-item">
+            <span class="detail-icon">📅</span>
+            {{ class.date }}
+          </span>
+          <span class="class-detail-item">
+            <span class="detail-icon">📍</span>
+            {{ class.room }}
+          </span>
+          <span class="class-detail-item">
+            <span class="detail-icon">🕐</span>
+            {{ class.time }}
+          </span>
         </div>
       </div>
       <div>
@@ -178,9 +175,7 @@ AttendAI{% endblock %} {% block content %}
           <span class="status-badge status-{{ student.status }}"
             >{{ student.status }}</span
           >
-          <span class="last-updated">
-            {{ student.recorded_at.strftime('%I:%M %p') }}</span
-          >
+          <span class="last-updated"> {{ student.recorded_at }}</span>
         </div>
 
         <div class="attendance-controls">
@@ -834,42 +829,41 @@ AttendAI{% endblock %} {% block content %}
     return urlParams.get("class_id") || "default";
   }
 
-  function addToSummaryCount(status, count) {
-    summary[status].textContent = parseInt(summary[status].textContent) + count;
-  }
-
-  function markAttendance(studentId, status, oldStatus) {
+  function markAttendance(studentId, status) {
     // Update student card
-    const card = document.querySelector(
-      `.student-card[data-id="${studentId}"]`
-    );
-    if (!card) return;
+    // const card = document.querySelector(
+    //   `.student-card[data-id="${studentId}"]`
+    // );
+    // if (!card) return;
 
-    // Remove existing status classes
-    card.classList.remove("present", "absent", "late", "pending");
-    card.classList.add(status);
+    // // Remove existing status classes
+    // card.classList.remove("present", "absent", "late", "pending");
+    // card.classList.add(status);
 
-    // Update status badge
-    const statusBadge = card.querySelector(".status-badge");
-    statusBadge.className = `status-badge status-${status}`;
-    statusBadge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+    // // Update status badge
+    // const statusBadge = card.querySelector(".status-badge");
+    // statusBadge.className = `status-badge status-${status}`;
+    // statusBadge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
 
-    // Update button states
-    const buttons = card.querySelectorAll(".attendance-btn");
-    buttons.forEach((btn) => {
-      btn.classList.remove("active");
-      if (btn.classList.contains(status)) {
-        btn.classList.add("active");
-      }
-    });
+    // // Update button states
+    // const buttons = card.querySelectorAll(".attendance-btn");
+    // buttons.forEach((btn) => {
+    //   btn.classList.remove("active");
+    //   if (btn.classList.contains(status)) {
+    //     btn.classList.add("active");
+    //   }
+    // });
 
-    // Update last updated time
-    const lastUpdated = card.querySelector(".last-updated");
-    const now = new Date();
-    lastUpdated.textContent = now.toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    // // Update last updated time
+    // const lastUpdated = card.querySelector(".last-updated");
+    // const now = new Date();
+    // lastUpdated.textContent = now.toLocaleTimeString([], {
+    //   day: "2-digit",
+    //   month: "long",
+    //   year: "numeric",
+    //   hour: "2-digit",
+    //   minute: "2-digit",
+    // });
 
     // Get CSRF token from meta tag
     const csrfToken = `{{ csrf_token() }}`;
@@ -895,7 +889,6 @@ AttendAI{% endblock %} {% block content %}
         } else {
           showToast(data.error || "Failed to mark attendance", "warning");
         }
-
         refreshAttendance();
       })
       .catch((error) => {

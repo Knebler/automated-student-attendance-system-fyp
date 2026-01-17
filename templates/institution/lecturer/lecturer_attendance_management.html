@@ -1,28 +1,31 @@
 {% extends "layouts/base.html" %} {% block title %}Attendance Management -
 AttendAI{% endblock %} {% block content %}
 <div class="attendance-management">
-  <h1 class="page-title mb-4">Attendance Management</h1>
+    <h1 class="page-title mb-4">Attendance Management</h1>
 
-  <!-- Class Info Card -->
-  <div class="class-info-card mb-4">
-    <div class="d-flex justify-content-between align-items-center">
-      <div>
-        <h2 class="class-code">
-          {{ class.course_code }} - {{ class.section }}
-        </h2>
-        <div class="class-details">
-          <span class="class-detail-item">
-            <span class="detail-icon">📅</span>
-            {{ class.date }}
-          </span>
-          <span class="class-detail-item">
-            <span class="detail-icon">📍</span>
-            {{ class.room }}
-          </span>
-          <span class="class-detail-item">
-            <span class="detail-icon">🕐</span>
-            {{ class.time }}
-          </span>
+    <!-- Class Info Card -->
+    <div class="class-info-card mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="class-code">{{ class.course_code }} - {{ class.id }}</h2>
+                <div class="class-details">
+                    <span class="class-detail-item">
+                        <span class="detail-icon">📅</span>
+                        {{ class.date }}
+                    </span>
+                    <span class="class-detail-item">
+                        <span class="detail-icon">📍</span>
+                        {{ class.room }}
+                    </span>
+                    <span class="class-detail-item">
+                        <span class="detail-icon">🕐</span>
+                        {{ class.time }}
+                    </span>
+                </div>
+            </div>
+            <div>
+                <a href="{{ url_for('institution_lecturer.manage_classes', class_id=class.id) }}" class="btn-outline-custom">Class Details</a>
+            </div>
         </div>
       </div>
       <div>

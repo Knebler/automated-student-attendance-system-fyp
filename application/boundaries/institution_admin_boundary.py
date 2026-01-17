@@ -304,9 +304,6 @@ def attendance_reports():
                 .filter(func.date(Class.start_time) <= today)
                 .all()
             )
-
-            for cls in weekly_classes:
-                print('my class', cls.as_dict())
             
             weekly_stats = calculate_period_stats(
                 db_session, weekly_classes, user_model, 'weekly'

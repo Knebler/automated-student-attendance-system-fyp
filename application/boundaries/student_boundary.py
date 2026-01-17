@@ -1,11 +1,12 @@
 from flask import Blueprint, render_template, session, redirect, url_for, flash, current_app, request
 from application.controls.auth_control import AuthControl, requires_roles
 from application.controls.attendance_control import AttendanceControl
-from application.entities2 import ClassModel, SemesterModel, UserModel, AttendanceRecordModel
+from application.entities2 import ClassModel, SemesterModel, UserModel, AttendanceRecordModel, AttendanceAppealModel
 from pprint import pprint
 from datetime import date
 
 from database.base import get_session
+from database.models import AttendanceAppealStatusEnum
 
 student_bp = Blueprint('student', __name__)
 
@@ -105,7 +106,17 @@ def class_checkin_face():
 @requires_roles('student')
 def appeal_management():
     """Student appeal management"""
-    return render_template('institution/student/student_appeal_management.html')
+    with get_session() as db_session:
+        appeal_model = AttendanceAppealModel(db_session)
+        appeals = appeal_model.student_appeals(student_id=session.get('user_id'))
+        context = {
+            "filters": {
+                "modules": set(appeal["course_code"] for appeal in appeals),
+                "statuses": AttendanceAppealStatusEnum.enums,
+            },
+            "appeals": appeals,
+        }
+    return render_template('institution/student/student_appeal_management.html', **context)
 
 
 @student_bp.route('/appeal/form/<int:attendance_record_id>', endpoint='appeal_form')

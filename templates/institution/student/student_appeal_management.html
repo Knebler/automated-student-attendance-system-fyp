@@ -18,8 +18,9 @@
                     <label class="form-label">Module</label>
                     <select class="form-select" name="module">
                         <option value="">All Modules</option>
-                        <option value="CSIT321">CSIT321</option>
-                        <option value="CSIT314">CSIT314</option>
+                        {% for module in filters.modules %}
+                        <option value="{{module}}">{{module}}</option>
+                        {% endfor %}
                     </select>
                 </div>
 
@@ -27,9 +28,9 @@
                     <label class="form-label">Status</label>
                     <select class="form-select" name="status">
                         <option value="">All Statuses</option>
-                        <option value="pending">Pending</option>
-                        <option value="approved">Approved</option>
-                        <option value="rejected">Rejected</option>
+                        {% for status in filters.statuses %}
+                        <option value="{{status}}">{{status|capitalize}}</option>
+                        {% endfor %}
                     </select>
                 </div>
 
@@ -47,36 +48,32 @@
 
     <!-- Appeals Table -->
     <div class="card-custom">
-        <div class="card-header-custom">
+        <div class="card-header-custom justify-content-between">
             Submitted Appeals
+            <button class="btn-primary text-end">New Appeal</button>
         </div>
 
         <div class="card-body-custom p-0">
             <table class="table table-hover mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Student</th>
-                        <th>Student ID</th>
                         <th>Module</th>
                         <th>Class Date</th>
                         <th>Reason</th>
-                        <th>Document</th>
                         <th>Status</th>
-                        <th class="text-end">Actions</th>
                     </tr>
                 </thead>
 
                 <tbody>
+                    {% if appeals %}
                     {% for appeal in appeals %}
                     <tr>
-                        <td>{{ appeal.student_name }}</td>
-                        <td>{{ appeal.student_id }}</td>
-                        <td>{{ appeal.module_code }}</td>
+                        <td>{{ appeal.module }}</td>
                         <td>{{ appeal.class_date }}</td>
                         <td class="text-truncate" style="max-width: 250px;">
                             {{ appeal.reason }}
                         </td>
-                        <td>
+                        <!-- <td>
                             {% if appeal.document_path %}
                                 <a href="{{ url_for('attendance.download_document', appeal_id=appeal.id) }}" class="btn btn-sm btn-outline-secondary">
                                     View
@@ -84,7 +81,7 @@
                             {% else %}
                                 <span class="text-muted">—</span>
                             {% endif %}
-                        </td>
+                        </td> -->
                         <td>
                             {% if appeal.status == 'pending' %}
                                 <span class="badge bg-warning text-dark">Pending</span>
@@ -94,28 +91,15 @@
                                 <span class="badge bg-danger">Rejected</span>
                             {% endif %}
                         </td>
-                        <td class="text-end">
-                            {% if appeal.status == 'pending' %}
-                                <form method="POST" action="{{ url_for('attendance.update_appeal_status', appeal_id=appeal.id) }}" class="d-inline">
-                                    <input type="hidden" name="action" value="approve">
-                                    <button class="btn btn-sm btn-success">Approve</button>
-                                </form>
-                                <form method="POST" action="{{ url_for('attendance.update_appeal_status', appeal_id=appeal.id) }}" class="d-inline">
-                                    <input type="hidden" name="action" value="reject">
-                                    <button class="btn btn-sm btn-danger">Reject</button>
-                                </form>
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
                     </tr>
+                    {% endfor %}
                     {% else %}
                     <tr>
                         <td colspan="8" class="text-center py-4 text-muted">
                             No appeals found
                         </td>
                     </tr>
-                    {% endfor %}
+                    {% endif %}
                 </tbody>
             </table>
         </div>

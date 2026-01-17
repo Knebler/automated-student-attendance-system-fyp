@@ -108,6 +108,10 @@ def appeal_management():
     """Student appeal management"""
     with get_session() as db_session:
         appeal_model = AttendanceAppealModel(db_session)
+        class_model = ClassModel(db_session)
+        absent_late = class_model.student_attendance_absent_late(session.get('user_id'))
+        
+        
         appeals = appeal_model.student_appeals(student_id=session.get('user_id'))
         context = {
             "filters": {
@@ -115,6 +119,7 @@ def appeal_management():
                 "statuses": AttendanceAppealStatusEnum.enums,
             },
             "appeals": appeals,
+            "absent_late": absent_late,
         }
     return render_template('institution/student/student_appeal_management.html', **context)
 

@@ -117,6 +117,7 @@ def manage_attendance():
             if not existing_record:
                 # Use AttendanceControl to create attendance record
                 result = AttendanceControl.mark_attendance(
+                    current_app,
                     class_id=class_id,
                     student_id=student_id,
                     status='unmarked',
@@ -147,7 +148,7 @@ def manage_attendance():
                     'id_number': student_info.get('id_number', str(student_id)),
                     'status': student_record.status if student_record else 'pending',
                     'photo_url': None,
-                    'recorded_at': student_record.recorded_at if student_record else None,
+                    'recorded_at': student_record.recorded_at.strftime('%d %B %Y %I:%M %p') if student_record else None,
                     'notes': student_record.notes if student_record else None,
                 }
             )

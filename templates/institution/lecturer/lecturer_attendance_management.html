@@ -175,9 +175,7 @@ AttendAI{% endblock %} {% block content %}
           <span class="status-badge status-{{ student.status }}"
             >{{ student.status }}</span
           >
-          <span class="last-updated">
-            {{ student.recorded_at.strftime('%I:%M %p') }}</span
-          >
+          <span class="last-updated"> {{ student.recorded_at }} </span>
         </div>
 
         <div class="attendance-controls">

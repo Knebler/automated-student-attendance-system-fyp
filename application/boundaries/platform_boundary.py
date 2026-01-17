@@ -41,10 +41,7 @@ def platform_dashboard():
 @requires_roles('platform_manager')
 def pending_registrations():
     """List pending registration requests for review (platform manager view)"""
-    auth_result = AuthControl.verify_session(current_app, session)
-    if not auth_result['success'] or auth_result['user'].get('user_type') != 'platform_manager':
-        flash('Access denied. Platform manager privileges required.', 'danger')
-        return redirect(url_for('auth.login'))
+
 
     try:
         cursor = BaseEntity.get_db_connection(current_app)
@@ -53,7 +50,7 @@ def pending_registrations():
     except Exception:
         rows = []
 
-    return render_template('platmanager/platform_manager_subscription_management_pending_registrations.html', user=auth_result['user'], requests=rows)
+    return render_template('platmanager/platform_manager_subscription_management_pending_registrations.html', requests=rows)
 
 
 @platform_bp.route('/pending-registrations/approve/<int:unreg_user_id>', methods=['POST'])
@@ -356,3 +353,9 @@ def performance_management():
 def settings_management():
     """Platform manager - settings"""
     return render_template('platmanager/platform_manager_settings_management.html')
+
+@platform_bp.route('/create')
+@requires_roles('platform_manager')
+def subscription_profile_creator():
+    """Subscription profile creation page"""
+    return render_template('platmanager/platform_manager_subscription_management_profile_creator.html')

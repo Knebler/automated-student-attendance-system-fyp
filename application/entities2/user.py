@@ -62,6 +62,25 @@ class UserModel(BaseEntity[User]):
             count_data[idx] = perc_change(count_data[idx], count_data[idx - 1])
         return dict(zip(headers, count_data))
 
+    def pm_retrieve_page(self, page: int, per_page: int, **filters):
+        headers = ["user_id", "name", "email", "role", "institution_name", "is_active"]
+        q = (
+            self.session
+            .query(User.user_id, User.name, User.email, User.role, Institution.name, User.is_active)
+            .join(Institution, Institution.institution_id == User.institution_id)
+            .filter_by(**filters)
+        )
+        total = q.count()
+        items = q.offset((page - 1) * per_page).limit(per_page).all()
+
+        return {
+            "items": self.add_headers(headers, items),
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "pages": (total + per_page - 1) // per_page
+        }
+
     def admin_user_stats(self, institution_id):
         base_filter = self.session.query(User).filter(User.institution_id == institution_id)
         user_count = base_filter.count()

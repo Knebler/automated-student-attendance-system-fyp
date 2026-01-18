@@ -106,37 +106,23 @@ def reject_registration(subscription_id):
 @requires_roles('platform_manager')
 def user_management():
     """Platform manager - user management"""
-    PER_PAGE = 5
     with get_session() as session:
         user_model = UserModel(session)
-        inst_model = InstitutionModel(session)
-        page = int(request.args.get('page', 1))
-        paginated_info = user_model.get_paginated(page, PER_PAGE)
-        users = paginated_info.pop('items')
-        def get_info(user: User):
-            info = user.as_sanitized_dict()
-            name_split = user.name.split(' ')
-            if len(name_split) > 1:
-                info['initials'] = name_split[0][0] + name_split[-1][0]
-            else:
-                info['initials'] = name_split[0][:2]
-            info['institution'] = inst_model.get_by_id(user.institution_id).name
-            return info
         context = {
             "overview_stats": user_model.pm_user_stats(),
-            "users": [
-                get_info(user) for user in users
-            ],
-            "table": {
-                "start": (page-1)*PER_PAGE + 1,
-                "end": min(page * PER_PAGE, paginated_info['total']),
-                "total": paginated_info['total'],
-                "pages": paginated_info['pages'],
-                "page": page,
-            },
         }
     return render_template('platmanager/platform_manager_user_management.html', **context)
 
+
+@platform_bp.route('/users/retrieve', methods=['GET'])
+@requires_roles('platform_manager')
+def retrieve_paginated_users():
+    """Retrieve paginated user information"""
+    page = int(request.args.get('page', 1))
+    per_page = int(request.args.get('per_page', 5))
+    with get_session() as session:
+        user_model = UserModel(session)
+        return jsonify(user_model.pm_retrieve_page(page, per_page))
 
 @platform_bp.route('/subscriptions')
 @requires_roles('platform_manager')

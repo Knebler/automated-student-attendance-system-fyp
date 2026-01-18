@@ -84,70 +84,25 @@ def testimonial_detail(testimonial_id):
         related_testimonials=related_testimonials
     )
 
-@main_bp.route('/submit-testimonial', methods=['GET', 'POST'])
-@requires_roles('student' or 'lecturer' or 'admin' or 'platform_manager')
-def submit_testimonial():
-    """Page for submitting a new testimonial"""
-    if request.method == 'POST':
-        # Get user info from verified session
-        user = session.get('user')
-        user_id = user.get('user_id')
-        institution_id = user.get('institution_id')
-        
-        # Get form data
-        title = request.form.get('title')
-        description = request.form.get('description')
-        rating = request.form.get('rating', type=int)
-        
-        # Validate required fields
-        if not all([title, description, rating]):
-            flash('Please fill in all required fields', 'error')
-            return redirect(url_for('main.submit_testimonial'))
-        
-        # Validate rating range
-        if rating < 1 or rating > 5:
-            flash('Rating must be between 1 and 5', 'error')
-            return redirect(url_for('main.submit_testimonial'))
-        
-        # Create testimonial
-        result = TestimonialControl.create_testimonial(
-            current_app,
-            user_id=user_id,
-            institution_id=institution_id,
-            title=title,
-            description=description,
-            rating=rating,
-            status='pending'  # Needs admin approval
+@main_bp.route('/testimonial/form')
+@requires_roles(['student', 'lecturer', 'admin'])
+def testimonial_form():
+    with get_session() as db_session:
+        testimonial_model = TestimonialModel(db_session)
+        user_model = UserModel(db_session)
+        user_id = session.get('user_id')
+        institution_id = session.get('institution_id')
+        role = session.get('role')
+        user_name = user_model.get_by_id(user_id).name if user_id else "Unknown"
+        institution_name = InstitutionModel(db_session).get_by_id(institution_id).name if institution_id else "Unknown"
+
+        return render_template(
+            'unregistered/testimonial_submission.html',
+            user_name=user_name,
+            institution_name=institution_name,
+            role=role
         )
         
-        if result['success']:
-            flash('Thank you for your testimonial! It has been submitted for review.', 'success')
-            return redirect(url_for('main.testimonials'))
-        else:
-            flash(f'Error submitting testimonial: {result.get("error", "Unknown error")}', 'error')
-            return redirect(url_for('main.submit_testimonial'))
-    
-    # GET request - show form
-    return render_template('unregistered/submit_testimonial.html')
-
-@main_bp.route('/testimonial-stats')
-def testimonial_stats():
-    """API endpoint to get testimonial statistics (could be used for AJAX)"""
-    result = TestimonialControl.get_testimonial_stats(current_app)
-    
-    if result['success']:
-        return {
-            'success': True,
-            'stats': result['stats'],
-            'timestamp': datetime.datetime.now().isoformat()
-        }
-    else:
-        return {
-            'success': False,
-            'error': result.get('error', 'Unknown error'),
-            'timestamp': datetime.datetime.now().isoformat()
-        }, 500
-
 @main_bp.route('/init-db')
 def init_database():
     """Initialize database tables (for development only)"""

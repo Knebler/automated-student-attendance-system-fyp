@@ -1,1 +1,95 @@
-Dis is Submission Form
+{% extends "layouts/base.html" %}
+
+{% block title %}Testimonial Submission{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card-custom">
+        <div class="card-header-custom">
+            Testimonial Submission Form
+        </div>
+
+        <div class="card-body-custom">
+            <form method="POST" action="{{ url_for('main.submit_testimonial') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <!-- User Information -->
+                <h5 class="mb-3">User Details</h5>
+
+                <div class="form-group mb-3">
+                    <label for="user_name">User Name</label>
+                    <input 
+                        type="text" 
+                        class="form-control" 
+                        id="user_name" 
+                        name="user_name" 
+                        value="{{ user_name }}" 
+                        readonly
+                    >
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="institution">Institution</label>
+                    <input 
+                        type="text" 
+                        class="form-control" 
+                        id="institution" 
+                        name="institution" 
+                        value="{{ institution_name }}" 
+                        readonly
+                    >
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="role">Role</label>
+                    <input 
+                        type="text" 
+                        class="form-control" 
+                        id="role" 
+                        name="role" 
+                        value="{{ role }}" 
+                        readonly
+                    >
+                </div>
+
+
+                <!-- Rating 1-5 with stars-->
+
+                <div class="form-group mb-3">
+                    <label for="rating">Rating</label>
+                    <select class="form-control" id="rating" name="rating" required>
+                        <option value="" disabled selected>Select your rating</option>
+                        <option value="1">1 - Very Poor</option>
+                        <option value="2">2 - Poor</option>
+                        <option value="3">3 - Average</option>
+                        <option value="4">4 - Good</option>
+                        <option value="5">5 - Excellent</option>
+                    </select>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="feedback_details">Feedback Details</label>
+                    <textarea 
+                        class="form-control" 
+                        id="feedback_details" 
+                        name="feedback_details" 
+                        rows="5"
+                        placeholder="Please provide your feedback here."
+                        required
+                    ></textarea>
+                </div>
+
+               
+
+                <!-- Submit -->
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary">
+                        Submit Feedback
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

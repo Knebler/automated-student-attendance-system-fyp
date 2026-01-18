@@ -102,6 +102,33 @@ def testimonial_form():
             institution_name=institution_name,
             role=role
         )
+@main_bp.route('/testimonial/form/submit', methods=['POST'])
+@requires_roles(['student', 'lecturer', 'admin'])
+def submit_testimonial():
+    with get_session() as db_session:
+        testimonial_model = TestimonialModel(db_session)
+        user_id = session.get('user_id')
+        feedback_details = request.form.get('feedback_details')
+        rating = request.form.get('rating')
+        institution_id = session.get('institution_id')
+        
+        # Generate summary from first 100 characters of feedback
+        summary = feedback_details[:100] + '...' if len(feedback_details) > 100 else feedback_details
+        
+        new_testimonial = Testimonial(
+            user_id=user_id,
+            institution_id=institution_id,
+            summary=summary,
+            content=feedback_details,
+            rating=int(rating),
+            status='pending',
+            date_submitted=datetime.now()
+        )
+        db_session.add(new_testimonial)
+        db_session.commit()
+        
+        flash('Thank you for your testimonial! It will be reviewed before being published.', 'success')
+        return redirect(url_for('main.testimonials'))
         
 @main_bp.route('/init-db')
 def init_database():

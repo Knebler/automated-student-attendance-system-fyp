@@ -365,7 +365,37 @@
 
 <!-- Testimonials Grid -->
 <div class="testimonials-grid">
-    
+    {% if testimonials and testimonials|length > 0 %}
+        {% for testimonial in testimonials %}
+        <a href="{{ url_for('main.testimonial_detail', testimonial_id=testimonial.id) }}" class="testimonial-card">
+            <div class="testimonial-quote">"</div>
+            <div class="testimonial-content">
+                <div class="testimonial-rating">
+                    {% for i in range(testimonial.rating) %}
+                    <span class="star">★</span>
+                    {% endfor %}
+                    {% for i in range(5 - testimonial.rating) %}
+                    <span class="star" style="color: #e5e7eb;">★</span>
+                    {% endfor %}
+                </div>
+                <p class="testimonial-text">"{{ testimonial.summary or testimonial.content[:150] + '...' }}"</p>
+                <div class="testimonial-author">
+                    <div class="author-name">{{ testimonial.user_name }}</div>
+                    <div class="author-role">{{ testimonial.user_role|title }} at {{ testimonial.institution_name }}</div>
+                </div>
+            </div>
+            <span class="read-more-btn">Read Full Story →</span>
+        </a>
+        {% endfor %}
+    {% else %}
+        <div style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+            <h3 style="color: var(--text-light); margin-bottom: 1rem;">No testimonials available yet</h3>
+            <p style="color: var(--text-light);">Be the first to share your experience with AttendAI!</p>
+            {% if session.user %}
+                <a href="{{ url_for('main.submit_testimonial') }}" class="btn-custom" style="margin-top: 1rem;">Submit a Testimonial</a>
+            {% endif %}
+        </div>
+    {% endif %}
 </div>
 
 <!-- Stats Section -->
@@ -373,19 +403,19 @@
     <h2 style="font-size: 2rem; color: var(--text-dark); margin-bottom: 2rem;">Trusted by Organizations Worldwide</h2>
     <div class="stats-grid">
         <div class="stat-item">
-            <h3>{{ stats.institutions }}+</h3>
+            <h3>200+</h3>
             <p>Educational Institutions</p>
         </div>
         <div class="stat-item">
-            <h3>{{ stats.satisfaction }}%</h3>
+            <h3>95%</h3>
             <p>Customer Satisfaction</p>
         </div>
         <div class="stat-item">
-            <h3>{{ stats.users }}+</h3>
+            <h3>10,000+</h3>
             <p>Students & Employees</p>
         </div>
         <div class="stat-item">
-            <h3>{{ stats.attendance_increase }}%</h3>
+            <h3>15%</h3>
             <p>Avg. Attendance Increase</p>
         </div>
     </div>

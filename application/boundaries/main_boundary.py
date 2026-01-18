@@ -4,6 +4,16 @@ from application.controls.testimonial_control import TestimonialControl
 from application.controls.auth_control import AuthControl, requires_roles
 from application.boundaries.dev_actions import register_action
 import datetime
+from flask import Blueprint, render_template, request, session, current_app, flash, redirect, url_for, abort
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func
+from application.controls.attendance_control import AttendanceControl
+from application.controls.auth_control import requires_roles
+from application.entities2 import ClassModel, UserModel, InstitutionModel, SubscriptionModel, CourseModel, AttendanceRecordModel, CourseUserModel, VenueModel, TestimonialModel
+from database.base import get_session
+from database.models import *
+from datetime import date, datetime, timedelta
+from collections import defaultdict
 
 main_bp = Blueprint('main', __name__)
 
@@ -34,9 +44,10 @@ def subscriptions():
 
 @main_bp.route('/testimonials')
 def testimonials():
-
-    
-    return 'dis testimonials'
+    with get_session() as db_session:
+        testimonial_model = TestimonialModel(db_session)
+        testimonial_detail = testimonial_model.testimonials()
+    return render_template('unregistered/testimonials.html', testimonials=testimonial_detail)
 
 @main_bp.route('/testimonials/<int:testimonial_id>')
 def testimonial_detail(testimonial_id):

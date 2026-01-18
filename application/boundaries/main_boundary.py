@@ -51,81 +51,37 @@ def testimonials():
 
 @main_bp.route('/testimonials/<int:testimonial_id>')
 def testimonial_detail(testimonial_id):
-    """Detailed testimonial page"""
-    # Get the specific testimonial
-    result = TestimonialControl.get_testimonial_by_id(current_app, testimonial_id)
-    
-    if not result['success']:
-        flash('Testimonial not found', 'error')
-        return redirect(url_for('main.testimonials'))
-    
-    testimonial = result['testimonial']
-    
-    # Get related testimonials (same institution or similar rating)
-    related_result = TestimonialControl.get_public_testimonials(
-        current_app,
-        institution_id=testimonial.get('institution_id'),
-        limit=3
-    )
-    
-    related_testimonials = []
-    if related_result['success']:
-        # Filter out the current testimonial
-        related_testimonials = [
-            t for t in related_result['testimonials'] 
-            if t.get('testimonial_id') != testimonial_id
-        ][:3]
-    
-    # Sample related testimonials as fallback
-    if not related_testimonials:
-        related_testimonials = [
-            {
-                'title': 'Excellent Attendance System',
-                'description': 'This platform has completely transformed how we track attendance. The facial recognition feature is incredibly accurate and saves us so much time.',
-                'user_name': 'Dr. Sarah Johnson',
-                'display_name': 'Dr. Sarah J.',
-                'rating': 5
-            },
-            {
-                'title': 'Great for Large Classes',
-                'description': 'Managing attendance for 200+ students was a nightmare before. Now it\'s automated and efficient. Highly recommended!',
-                'user_name': 'Michael Chen',
-                'display_name': 'Michael C.',
-                'rating': 4
-            },
-            {
-                'title': 'Very Reliable',
-                'description': 'The system rarely has any downtime and the reporting features are comprehensive. It has made administrative tasks much easier.',
-                'user_name': 'Robert Williams',
-                'display_name': 'Robert W.',
-                'rating': 5
-            }
-        ]
-    
-    # Prepare detailed testimonial data for template
-    detailed_testimonial = {
-        'title': testimonial.get('title', 'How AttendAI Transformed Our Attendance Tracking'),
-        'description': testimonial.get('description', ''),
-        'user_name': testimonial.get('user_name', 'Test User'),
-        'author_role': 'Director of Human Resources',  # Could store this in user profile
-        'author_organization': testimonial.get('author_organization', 'HelloWorld University'),
-        'rating': testimonial.get('rating', 5),
-        'date_submitted': testimonial.get('date_submitted', datetime.datetime.now().strftime('%B %d, %Y'))
-    }
-    
-    # Prepare results data
-    results_data = [
-        {'value': '85%', 'label': 'Reduction in administrative time'},
-        {'value': '99.7%', 'label': 'Attendance accuracy rate'},
-        {'value': '23%', 'label': 'Increase in overall attendance'},
-        {'value': '4.8/5', 'label': 'Faculty satisfaction score'}
-    ]
+    with get_session() as db_session:
+        testimonial_model = TestimonialModel(db_session)
+        testimonial = testimonial_model.get_by_id(testimonial_id)
+        if not testimonial or testimonial.status != 'approved':
+            abort(404)
+        user_model = UserModel(db_session)
+        user = user_model.get_by_id(testimonial.user_id)
+        institution_model = InstitutionModel(db_session)
+        institution = institution_model.get_by_id(user.institution_id) if user else None
+        
+        testimonial_info = {
+            "id": testimonial.testimonial_id,
+            "summary": testimonial.summary,
+            "content": testimonial.content,
+            "rating": testimonial.rating,
+            "date_submitted": testimonial.date_submitted.strftime("%d %b %Y"),
+            "user_name": user.name if user else "Unknown",
+            "user_role": user.role if user else "Unknown",
+            "institution_name": institution.name if institution else "Unknown"
+        }
+        
+        # Get random related testimonials
+        related_testimonials = testimonial_model.get_random_testimonials(
+            exclude_id=testimonial_id, 
+            limit=3
+        )
     
     return render_template(
-        'unregistered/testimonialdetails.html',
-        testimonial=detailed_testimonial,
-        related_testimonials=related_testimonials,
-        results=results_data
+        'unregistered/testimonialdetails.html', 
+        testimonial=testimonial_info,
+        related_testimonials=related_testimonials
     )
 
 @main_bp.route('/submit-testimonial', methods=['GET', 'POST'])

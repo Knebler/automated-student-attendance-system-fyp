@@ -366,102 +366,66 @@
 
 <!-- Author Section -->
 <div class="author-section">
-    <div class="author-section">
-    <div class="author-avatar-placeholder" style="width: 80px; height: 80px; border-radius: 50%; background-color: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--text-light); border: 3px solid white;">
+    <div class="author-avatar-placeholder" style="width: 80px; height: 80px; border-radius: 50%; background-color: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--text-light); border: 3px solid white; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
         {{ testimonial.user_name[:2]|upper }}
     </div>
     <div class="author-info">
         <div class="author-name">{{ testimonial.user_name }}</div>
-        <div class="author-title">{{ testimonial.author_role }}</div>
-        <div class="author-organization">{{ testimonial.author_organization }}</div>
+        <div class="author-title">{{ testimonial.user_role|title }} at {{ testimonial.institution_name }}</div>
         <div class="testimonial-rating">
             {% for i in range(testimonial.rating) %}
             <span class="star">★</span>
             {% endfor %}
+            {% for i in range(5 - testimonial.rating) %}
+            <span class="star" style="color: #e5e7eb;">★</span>
+            {% endfor %}
         </div>
     </div>
-</div>
 </div>
 
 <!-- Testimonial Content -->
 <div class="testimonial-content">
-    <p>When I first joined HelloWorld University as Director of HR, I was shocked to discover that our attendance tracking was still being done manually. Professors were spending 15-20 minutes at the start of each class taking roll calls, administrative staff were manually entering data into spreadsheets, and we had no real-time visibility into attendance patterns. The process was not only time-consuming but also prone to errors, with proxy attendance becoming a significant concern.</p>
-
-    <p>After researching several solutions, we chose AttendAI for its comprehensive feature set and proven track record in educational institutions. The implementation process was remarkably smooth - their team worked closely with our IT department to ensure seamless integration with our existing student information system. Within two weeks, we had the system up and running across all departments.</p>
-
-    <p>The impact was immediate and transformative. Professors reported saving an average of 12 hours per month on administrative tasks. The AI-powered face recognition system virtually eliminated proxy attendance, which had been a persistent problem affecting academic integrity. But perhaps the most significant benefit was the data insights we gained. For the first time, we could identify attendance patterns in real-time and intervene proactively with students who were at risk.</p>
-
-    <p>One particularly compelling case involved a sophomore computer science student whose attendance had dropped to 65%. Our old system would have flagged this at the end of the semester, far too late for meaningful intervention. With AttendAI's predictive analytics, we identified the pattern in Week 4 of the semester. Our academic advisors reached out, discovered the student was struggling with transportation issues, and arranged for remote access to lectures. The student finished the semester with 92% attendance and a B+ average.</p>
-
-    <p>The reporting features have also been invaluable for accreditation purposes. We can now generate comprehensive attendance reports for any time period with a few clicks, complete with analytics on trends, patterns, and correlations with academic performance. This has significantly reduced the administrative burden during accreditation cycles.</p>
-
-    <p>What truly sets AttendAI apart is their exceptional customer support. Whenever we've had questions or needed assistance with custom configurations, their team has been responsive, knowledgeable, and genuinely invested in our success. They've implemented several feature requests based on our feedback, demonstrating their commitment to continuous improvement.</p>
+    <p>{{ testimonial.content | safe }}</p>
 </div>
 
-<!-- Results Section -->
-<div class="results-section">
-    <h3>Key Results Achieved with AttendAI</h3>
-    <div class="results-grid">
-        <div class="result-item">
-            <div class="result-value">85%</div>
-            <div class="result-label">Reduction in administrative time</div>
-        </div>
-        <div class="result-item">
-            <div class="result-value">99.7%</div>
-            <div class="result-label">Attendance accuracy rate</div>
-        </div>
-        <div class="result-item">
-            <div class="result-value">23%</div>
-            <div class="result-label">Increase in overall attendance</div>
-        </div>
-        <div class="result-item">
-            <div class="result-value">4.8/5</div>
-            <div class="result-label">Faculty satisfaction score</div>
-        </div>
-    </div>
-</div>
-
-<!-- Gallery Section -->
-<div class="gallery-section">
-    <h3>Implementation & Results</h3>
-    <div class="gallery-grid">
-        <div class="gallery-item">Dashboard Screenshot</div>
-        <div class="gallery-item">Implementation Team</div>
-        <div class="gallery-item">Results Presentation</div>
-    </div>
-</div>
 
 <!-- Related Testimonials -->
 <div class="related-section">
     <h3>More Success Stories</h3>
     <div class="related-grid">
-        <a href="#" class="related-card">
-            <div class="related-author">Dr. Sarah Johnson</div>
-            <div class="related-excerpt">"The predictive analytics helped us identify at-risk students weeks before exams and provide timely interventions..."</div>
-            <div class="read-more">Read Full Story →</div>
-        </a>
-        <a href="#" class="related-card">
-            <div class="related-author">Michael Chen</div>
-            <div class="related-excerpt">"Implementation was seamless, and their support team was incredibly helpful throughout the process..."</div>
-            <div class="read-more">Read Full Story →</div>
-        </a>
-        <a href="#" class="related-card">
-            <div class="related-author">Robert Williams</div>
-            <div class="related-excerpt">"The ROI was apparent within the first month. We've saved over 200 administrative hours this semester alone..."</div>
-            <div class="read-more">Read Full Story →</div>
-        </a>
+        {% if related_testimonials and related_testimonials|length > 0 %}
+            {% for related in related_testimonials %}
+            <a href="{{ url_for('main.testimonial_detail', testimonial_id=related.id) }}" class="related-card">
+                <div class="testimonial-rating" style="margin-bottom: 0.75rem;">
+                    {% for i in range(related.rating) %}
+                    <span class="star">★</span>
+                    {% endfor %}
+                    {% for i in range(5 - related.rating) %}
+                    <span class="star" style="color: #e5e7eb;">★</span>
+                    {% endfor %}
+                </div>
+                <div class="related-author">{{ related.user_name }}</div>
+                <div style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.75rem;">{{ related.user_role|title }} at {{ related.institution_name }}</div>
+                <div class="related-excerpt">"{{ related.summary or related.content[:150] + '...' }}"</div>
+                <div class="read-more">Read Full Story →</div>
+            </a>
+            {% endfor %}
+        {% else %}
+            <div style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
+                <p style="color: var(--text-light);">No other testimonials available at the moment.</p>
+            </div>
+        {% endif %}
     </div>
 </div>
 
 <!-- CTA Section -->
 <div class="cta-section">
     <h3>Ready to Transform Your Attendance Management?</h3>
-    <p>Like HelloWorld University, you can achieve significant improvements in efficiency, accuracy, and student outcomes with AttendAI. Start your free trial today and experience the difference.</p>
+    <p>Like {{ testimonial.institution_name }}, you can achieve significant improvements in efficiency, accuracy, and student outcomes with AttendAI. Start your free trial today and experience the difference.</p>
     {% if not session.user %}
         <a class="btn-custom" href="{{ url_for('auth.register') }}" style="margin-right: 1rem;">Start Free Trial</a>
         <a class="btn-custom btn-outline-custom" href="{{ url_for('main.subscriptions') }}">View Pricing</a>
     {% else %}
-
         <a class="btn-custom btn-outline-custom" href="{{ url_for('main.features') }}">Explore Features</a>
     {% endif %}
 </div>

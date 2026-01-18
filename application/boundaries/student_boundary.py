@@ -104,11 +104,17 @@ def appeal_management():
             flash('Please log in to manage appeals', 'warning')
             return redirect(url_for('auth.login'))
         
+        # Get filter parameters from request
+        module_filter = request.args.get('module', '')
+        status_filter = request.args.get('status', '')
+        date_filter = request.args.get('date', '')
+        
         appeal_data = StudentControl.get_student_appeals(
+            current_app,
             user_id, 
-            module_filter='module', 
-            status_filter='status', 
-            date_filter='date'
+            module_filter=module_filter, 
+            status_filter=status_filter, 
+            date_filter=date_filter
         )
         
         return render_template('institution/student/student_appeal_management.html', **appeal_data)

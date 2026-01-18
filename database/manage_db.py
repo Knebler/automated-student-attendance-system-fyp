@@ -56,21 +56,18 @@ def seed_subscriptions():
                 plan_id=1,
                 start_date=date(2023, 1, 1),
                 end_date=date(2029, 1, 31),
-                status="active",  # Added status field
                 stripe_subscription_id="stripe_subscription_id_1"
             ),
             Subscription(
                 plan_id=2,
                 start_date=date(2023, 2, 1),
                 end_date=date(2029, 2, 28),
-                status="active",  # Added status field
                 stripe_subscription_id="stripe_subscription_id_2"
             ),
             Subscription(
                 plan_id=3,
                 start_date=date(2023, 3, 1),
                 end_date=date(2029, 3, 31),
-                status="active",  # Added status field
                 stripe_subscription_id="stripe_subscription_id_3"
             )
         ]

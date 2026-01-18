@@ -27,7 +27,6 @@ MarkedByEnum = Enum("system", "lecturer", name="marked_by_enum")
 ReportScheduleEnum = Enum("one", "daily", "weekly", "monthly", name="report_schedule_enum")
 TestimonialStatusEnum = Enum("pending", "approved", "rejected", name="testimonial_status_enum")
 AttendanceAppealStatusEnum = Enum("pending", "approved", "rejected", name="attendance_appeal_status_enum")
-SubscriptionStatusEnum = Enum("active", "suspended", "pending", "expired", name="subscription_status_enum")
 
 # =====================
 # SUBSCRIPTION
@@ -54,7 +53,7 @@ class Subscription(Base, BaseMixin):
 
     start_date = Column(DateTime, nullable=False)
     end_date = Column(DateTime)
-    status = Column(SubscriptionStatusEnum, nullable=False, server_default="pending")
+    is_active = Column(Boolean, server_default="1")
     stripe_subscription_id = Column(String(255), unique=True)
     created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
 

@@ -56,30 +56,74 @@ class SubscriptionModel(BaseEntity[Subscription]):
 
     def count_by_status(self, status: str = 'active') -> int:
         """Count subscriptions by status.
-    
+        
         Args:
             status: 'active', 'suspended', 'pending', 'expired', or 'all'
-    
+        
         Returns:
             Number of subscriptions with the given status
+            
+        Note: 
+        - 'active': is_active=True AND (end_date is null OR end_date in future)
+        - 'suspended': is_active=False
+        - 'pending': is_active=False AND end_date is null
+        - 'expired': end_date is in past
         """
+        now = datetime.now()
+        
         if status == 'all':
             return self.session.query(Subscription).count()
-    
-        # Now we can directly query by status enum
-        return (
-            self.session.query(Subscription)
-            .filter(Subscription.status == status)
-            .count()
-        )
+        elif status == 'active':
+            return (
+                self.session.query(Subscription)
+                .filter(
+                    Subscription.is_active == True,
+                    or_(
+                        Subscription.end_date.is_(None),
+                        Subscription.end_date >= now
+                    )
+                )
+                .count()
+            )
+        elif status == 'suspended':
+            return (
+                self.session.query(Subscription)
+                .filter(Subscription.is_active == False)
+                .count()
+            )
+        elif status == 'pending':
+            # Pending subscriptions are inactive with no end date (not yet activated)
+            return (
+                self.session.query(Subscription)
+                .filter(
+                    Subscription.is_active == False,
+                    Subscription.end_date.is_(None)
+                )
+                .count()
+            )
+        elif status == 'expired':
+            # Expired subscriptions have end_date in the past
+            return (
+                self.session.query(Subscription)
+                .filter(
+                    Subscription.end_date.isnot(None),
+                    Subscription.end_date < now
+                )
+                .count()
+            )
+        else:
+            return 0  # Invalid status
 
     def get_pending_subscriptions(self) -> List[Dict[str, Any]]:
         """Get all pending subscription requests with institution details."""
         from application.entities2.institution import InstitutionModel
-    
+        
         pending_subs = (
             self.session.query(Subscription)
-            .filter(Subscription.status == 'pending')  # Changed from is_active check
+            .filter(
+                Subscription.is_active == False,
+                Subscription.end_date.is_(None)
+            )
             .order_by(Subscription.created_at.desc())
             .all()
         )
@@ -133,27 +177,29 @@ class SubscriptionModel(BaseEntity[Subscription]):
         reviewer_id: Optional[int] = None
     ) -> bool:
         """Update subscription status.
-    
+        
         Returns True if successful, False otherwise.
         """
         subscription = self.get_by_id(subscription_id)
         if not subscription:
             return False
-    
-        # Update status
-        subscription.status = new_status
-    
-        # Handle end date based on status
+        
         if new_status == 'active':
+            subscription.is_active = True
             # Set end date to 1 year from now if not set
             if not subscription.end_date:
                 subscription.end_date = datetime.now() + timedelta(days=365)
+        elif new_status == 'suspended':
+            subscription.is_active = False
         elif new_status == 'expired':
+            subscription.is_active = False
             # Optionally set end date to past if not set
             if not subscription.end_date:
                 subscription.end_date = datetime.now() - timedelta(days=1)
-        # For 'suspended' and 'pending', we don't modify end_date
-    
+        elif new_status == 'pending':
+            subscription.is_active = False
+            subscription.end_date = None
+        
         try:
             self.session.commit()
             return True

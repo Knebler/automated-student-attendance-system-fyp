@@ -1,10 +1,13 @@
 from flask import Blueprint, render_template, request, session, current_app, flash, redirect, url_for, abort
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func
 from application.controls.attendance_control import AttendanceControl
 from application.controls.auth_control import requires_roles
 from application.entities2 import ClassModel, UserModel, InstitutionModel, SubscriptionModel, CourseModel, AttendanceRecordModel, CourseUserModel, VenueModel
 from database.base import get_session
 from database.models import *
+from datetime import date, datetime, timedelta
+from collections import defaultdict
 
 institution_bp = Blueprint('institution', __name__)
 
@@ -257,17 +260,189 @@ def manage_attendance():
 @requires_roles('admin')
 def attendance_reports():
     """Show attendance reports view (admin view)"""
-    # Build a reports overview using today's sessions (or overall reports later)
-    result = AttendanceControl.get_today_sessions_attendance(current_app)
-    if not result.get('success'):
-        flash(result.get('error') or 'Failed to load attendance reports', 'danger')
-        return redirect(url_for('institution.manage_attendance'))
+    institution_id = session.get('institution_id')
+    
+    try:
+        with get_session() as db_session:
+            attendance_model = AttendanceRecordModel(db_session)
+            course_model = CourseModel(db_session)
+            user_model = UserModel(db_session)
+            
+            # Get all courses for this institution
+            courses = course_model.get_all(institution_id=institution_id)
+            course_ids = [c.course_id for c in courses] if courses else []
+            
+            if not course_ids:
+                return render_template(
+                    'institution/admin/institution_admin_attendance_management_report.html',
+                    daily_report={'present_pct': 0, 'absent_pct': 0, 'total_students': 0, 'trending_absentees': []},
+                    weekly_report={'present_pct': 0, 'absent_pct': 0, 'total_classes': 0, 'trending_absentees': []},
+                    monthly_report={'present_pct': 0, 'absent_pct': 0, 'total_sessions': 0, 'trending_absentees': []}
+                )
+            
+            # Calculate Daily Report (today)
+            today = date.today()
+            daily_classes = (
+                db_session.query(Class)
+                .join(Course, Class.course_id == Course.course_id)
+                .filter(Course.institution_id == institution_id)
+                .filter(func.date(Class.start_time) == today)
+                .all()
+            )
+            
+            daily_stats = calculate_period_stats(
+                db_session, daily_classes, user_model, 'daily'
+            )
+            
+            # Calculate Weekly Report (last 7 days)
+            week_start = today - timedelta(days=6)
+            weekly_classes = (
+                db_session.query(Class)
+                .join(Course, Class.course_id == Course.course_id)
+                .filter(Course.institution_id == institution_id)
+                .filter(func.date(Class.start_time) >= week_start)
+                .filter(func.date(Class.start_time) <= today)
+                .all()
+            )
+            
+            weekly_stats = calculate_period_stats(
+                db_session, weekly_classes, user_model, 'weekly'
+            )
+            
+            # Calculate Monthly Report (last 30 days)
+            month_start = today - timedelta(days=29)
+            monthly_classes = (
+                db_session.query(Class)
+                .join(Course, Class.course_id == Course.course_id)
+                .filter(Course.institution_id == institution_id)
+                .filter(func.date(Class.start_time) >= month_start)
+                .filter(func.date(Class.start_time) <= today)
+                .all()
+            )
+            
+            monthly_stats = calculate_period_stats(
+                db_session, monthly_classes, user_model, 'monthly'
+            )
+            
+            context = {
+                'daily_report': daily_stats,
+                'weekly_report': weekly_stats,
+                'monthly_report': monthly_stats
+            }
+            
+        return render_template(
+            'institution/admin/institution_admin_attendance_management_report.html',
+            **context
+        )
+        
+    except Exception as e:
+        current_app.logger.error(f"Error loading attendance reports: {e}")
+        flash('Error loading attendance reports', 'danger')
+        return render_template(
+            'institution/admin/institution_admin_attendance_management_report.html',
+            daily_report={'present_pct': 0, 'absent_pct': 0, 'total_students': 0, 'trending_absentees': []},
+            weekly_report={'present_pct': 0, 'absent_pct': 0, 'total_classes': 0, 'trending_absentees': []},
+            monthly_report={'present_pct': 0, 'absent_pct': 0, 'total_sessions': 0, 'trending_absentees': []}
+        )
 
-    # result['sessions'] is a list of session attendance payloads
-    return render_template(
-        'institution/admin/institution_admin_attendance_management_report.html',
-        sessions=result.get('sessions')
+
+def calculate_period_stats(db_session, classes, user_model, period_type):
+    """Calculate attendance statistics for a period"""
+    
+    if not classes:
+        return {
+            'present_pct': 0,
+            'absent_pct': 0,
+            'total_students': 0,
+            'total_classes': 0,
+            'total_sessions': 0,
+            'trending_absentees': []
+        }
+    
+    class_ids = [c.class_id for c in classes]
+    
+    # Get all attendance records for these classes
+    attendance_records = (
+        db_session.query(AttendanceRecord)
+        .filter(AttendanceRecord.class_id.in_(class_ids))
+        .all()
     )
+    
+    # Get all unique students who should have attended
+    student_ids = set()
+    for cls in classes:
+        # Get students enrolled in the course
+        course_students = (
+            db_session.query(CourseUser.user_id)
+            .filter(CourseUser.course_id == cls.course_id)
+            .all()
+        )
+        student_ids.update([s[0] for s in course_students])
+    
+    student_ids = list(student_ids)
+    total_students = len(student_ids)
+    
+    # Calculate attendance statistics
+    # Count present/late and absent records
+    present_count = sum(1 for r in attendance_records if r.status in ['present', 'late'])
+    absent_count = sum(1 for r in attendance_records if r.status == 'absent')
+    
+    # Calculate total possible attendances (classes * students)
+    total_possible = len(classes) * total_students if total_students > 0 else 0
+    
+    # Calculate percentages based on marked records (present + absent)
+    marked_records = present_count + absent_count
+    if marked_records > 0:
+        present_pct = round((present_count / marked_records) * 100)
+        absent_pct = round((absent_count / marked_records) * 100)
+    else:
+        present_pct = absent_pct = 0
+    
+    # Calculate trending absentees (students with most absences)
+    student_absences = defaultdict(int)
+    student_names = {}
+    
+    for record in attendance_records:
+        if record.status == 'absent':
+            student_absences[record.student_id] += 1
+            if record.student_id not in student_names:
+                student = user_model.get_by_id(record.student_id)
+                student_names[record.student_id] = student.name if student else f"Student {record.student_id}"
+    
+    # Sort by absences and get top 3
+    sorted_absentees = sorted(
+        student_absences.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )[:3]
+    
+    trending_absentees = []
+    for student_id, absences in sorted_absentees:
+        student_name = student_names.get(student_id, f"Student {student_id}")
+        if period_type == 'daily':
+            trending_absentees.append({
+                'name': student_name,
+                'count': f"{absences} day{'s' if absences > 1 else ''}"
+            })
+        elif period_type == 'weekly':
+            trending_absentees.append({
+                'name': student_name,
+                'count': f"{absences} class{'es' if absences > 1 else ''}"
+            })
+        else:  # monthly
+            trending_absentees.append({
+                'name': student_name,
+                'count': f"{absences} session{'s' if absences > 1 else ''}"
+            })
+    
+    return {
+        'present_pct': present_pct,
+        'absent_pct': absent_pct,
+        'total_students': total_students,
+        'total_classes': len(classes),
+        'total_sessions': len(classes),
+        'trending_absentees': trending_absentees
+    }
     
 
 # user edit page

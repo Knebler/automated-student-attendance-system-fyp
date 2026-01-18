@@ -13,9 +13,9 @@
             <div class="card-header-custom">Daily Report</div>
             <div class="card-body-custom">
                 <div class="chart-container mb-4">
-                    <div class="donut-chart daily">
+                    <div class="donut-chart daily" id="dailyChart">
                         <div class="chart-center">
-                            <span class="chart-percentage">90%</span>
+                            <span class="chart-percentage">{{ daily_report.present_pct }}%</span>
                             <span class="chart-label">Present</span>
                         </div>
                     </div>
@@ -24,35 +24,33 @@
                 <div class="stats mb-4">
                     <div class="stat-row">
                         <span class="stat-label">Present:</span>
-                        <span class="stat-value">90%</span>
+                        <span class="stat-value">{{ daily_report.present_pct }}%</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Absent:</span>
-                        <span class="stat-value">10%</span>
+                        <span class="stat-value">{{ daily_report.absent_pct }}%</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Total Students:</span>
-                        <span class="stat-value">250</span>
+                        <span class="stat-value">{{ daily_report.total_students }}</span>
                     </div>
                 </div>
 
                 <div class="trending-section">
                     <h3 class="section-title mb-3">Trending Absentees</h3>
                     <div class="trending-content">
-                        {% for s in sessions|default([]) %}
-                        <div class="trending-item mb-2">
-                            <span class="student-name">Session {{ s.get('session', {}).get('session_id', '') }}</span>
-                            <span class="absent-count">{{ s.get('attendance_records')|length }} records</span>
-                        </div>
-                        {% endfor %}
-                        <div class="trending-item mb-2">
-                            <span class="student-name">Jane Doe</span>
-                            <span class="absent-count">2 days</span>
-                        </div>
-                        <div class="trending-item">
-                            <span class="student-name">Robert Johnson</span>
-                            <span class="absent-count">2 days</span>
-                        </div>
+                        {% if daily_report.trending_absentees %}
+                            {% for absentee in daily_report.trending_absentees %}
+                            <div class="trending-item {% if not loop.last %}mb-2{% endif %}">
+                                <span class="student-name">{{ absentee.name }}</span>
+                                <span class="absent-count">{{ absentee.count }}</span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="trending-item">
+                                <span class="student-name">No absentees today</span>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -63,9 +61,9 @@
             <div class="card-header-custom">Weekly Report</div>
             <div class="card-body-custom">
                 <div class="chart-container mb-4">
-                    <div class="donut-chart weekly">
+                    <div class="donut-chart weekly" id="weeklyChart">
                         <div class="chart-center">
-                            <span class="chart-percentage">85%</span>
+                            <span class="chart-percentage">{{ weekly_report.present_pct }}%</span>
                             <span class="chart-label">Present</span>
                         </div>
                     </div>
@@ -74,33 +72,33 @@
                 <div class="stats mb-4">
                     <div class="stat-row">
                         <span class="stat-label">Present:</span>
-                        <span class="stat-value">85%</span>
+                        <span class="stat-value">{{ weekly_report.present_pct }}%</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Absent:</span>
-                        <span class="stat-value">5%</span>
+                        <span class="stat-value">{{ weekly_report.absent_pct }}%</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Total Classes:</span>
-                        <span class="stat-value">35</span>
+                        <span class="stat-value">{{ weekly_report.total_classes }}</span>
                     </div>
                 </div>
 
                 <div class="trending-section">
                     <h3 class="section-title mb-3">Trending Absentees</h3>
                     <div class="trending-content">
-                        <div class="trending-item mb-2">
-                            <span class="student-name">John Smith</span>
-                            <span class="absent-count">5 classes</span>
-                        </div>
-                        <div class="trending-item mb-2">
-                            <span class="student-name">Sarah Wilson</span>
-                            <span class="absent-count">4 classes</span>
-                        </div>
-                        <div class="trending-item">
-                            <span class="student-name">Michael Brown</span>
-                            <span class="absent-count">3 classes</span>
-                        </div>
+                        {% if weekly_report.trending_absentees %}
+                            {% for absentee in weekly_report.trending_absentees %}
+                            <div class="trending-item {% if not loop.last %}mb-2{% endif %}">
+                                <span class="student-name">{{ absentee.name }}</span>
+                                <span class="absent-count">{{ absentee.count }}</span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="trending-item">
+                                <span class="student-name">No absentees this week</span>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -111,9 +109,9 @@
             <div class="card-header-custom">Monthly Report</div>
             <div class="card-body-custom">
                 <div class="chart-container mb-4">
-                    <div class="donut-chart monthly">
+                    <div class="donut-chart monthly" id="monthlyChart">
                         <div class="chart-center">
-                            <span class="chart-percentage">85%</span>
+                            <span class="chart-percentage">{{ monthly_report.present_pct }}%</span>
                             <span class="chart-label">Present</span>
                         </div>
                     </div>
@@ -122,33 +120,33 @@
                 <div class="stats mb-4">
                     <div class="stat-row">
                         <span class="stat-label">Present:</span>
-                        <span class="stat-value">85%</span>
+                        <span class="stat-value">{{ monthly_report.present_pct }}%</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Absent:</span>
-                        <span class="stat-value">5%</span>
+                        <span class="stat-value">{{ monthly_report.absent_pct }}%</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Total Sessions:</span>
-                        <span class="stat-value">150</span>
+                        <span class="stat-value">{{ monthly_report.total_sessions }}</span>
                     </div>
                 </div>
 
                 <div class="trending-section">
                     <h3 class="section-title mb-3">Trending Absentees</h3>
                     <div class="trending-content">
-                        <div class="trending-item mb-2">
-                            <span class="student-name">John Smith</span>
-                            <span class="absent-count">12 sessions</span>
-                        </div>
-                        <div class="trending-item mb-2">
-                            <span class="student-name">Emily Davis</span>
-                            <span class="absent-count">8 sessions</span>
-                        </div>
-                        <div class="trending-item">
-                            <span class="student-name">David Lee</span>
-                            <span class="absent-count">7 sessions</span>
-                        </div>
+                        {% if monthly_report.trending_absentees %}
+                            {% for absentee in monthly_report.trending_absentees %}
+                            <div class="trending-item {% if not loop.last %}mb-2{% endif %}">
+                                <span class="student-name">{{ absentee.name }}</span>
+                                <span class="absent-count">{{ absentee.count }}</span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="trending-item">
+                                <span class="student-name">No absentees this month</span>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -210,25 +208,10 @@
         border: 2px solid var(--border-color);
     }
 
-    .donut-chart.daily {
-        background: conic-gradient(
-            #e63946 0deg 36deg,
-            var(--primary-dark) 36deg 360deg
-        );
-    }
-
-    .donut-chart.weekly {
-        background: conic-gradient(
-            #e63946 0deg 54deg,
-            var(--primary-dark) 54deg 360deg
-        );
-    }
-
+    .donut-chart.daily,
+    .donut-chart.weekly,
     .donut-chart.monthly {
-        background: conic-gradient(
-            #e63946 0deg 54deg,
-            var(--primary-dark) 54deg 360deg
-        );
+        background: var(--primary-light);
     }
 
     .donut-chart::before {
@@ -375,4 +358,62 @@
         }
     }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Report data from server
+        const reports = {
+            daily: {
+                present_pct: {{ daily_report.present_pct }},
+                absent_pct: {{ daily_report.absent_pct }}
+            },
+            weekly: {
+                present_pct: {{ weekly_report.present_pct }},
+                absent_pct: {{ weekly_report.absent_pct }}
+            },
+            monthly: {
+                present_pct: {{ monthly_report.present_pct }},
+                absent_pct: {{ monthly_report.absent_pct }}
+            }
+        };
+
+        // Generate donut chart
+        function generateDonutChart(chartElement, presentPct, absentPct) {
+            if (!chartElement) return;
+
+            // Calculate degrees for absent (red) portion
+            // absent_pct is percentage of total records, but we want it as percentage of 360 degrees
+            const totalPct = presentPct + absentPct;
+            if (totalPct === 0) {
+                chartElement.style.background = 'conic-gradient(var(--primary-dark) 0deg 360deg)';
+                return;
+            }
+
+            // Calculate the angle for absent portion
+            const absentDegrees = (absentPct / totalPct) * 360;
+            const presentDegrees = 360 - absentDegrees;
+
+            // Create conic gradient: absent (red) from 0 to absentDegrees, present (dark) from absentDegrees to 360
+            chartElement.style.background = `conic-gradient(
+                #e63946 0deg ${absentDegrees}deg,
+                var(--primary-dark) ${absentDegrees}deg 360deg
+            )`;
+        }
+
+        // Generate all charts
+        const dailyChart = document.getElementById('dailyChart');
+        const weeklyChart = document.getElementById('weeklyChart');
+        const monthlyChart = document.getElementById('monthlyChart');
+
+        if (dailyChart) {
+            generateDonutChart(dailyChart, reports.daily.present_pct, reports.daily.absent_pct);
+        }
+        if (weeklyChart) {
+            generateDonutChart(weeklyChart, reports.weekly.present_pct, reports.weekly.absent_pct);
+        }
+        if (monthlyChart) {
+            generateDonutChart(monthlyChart, reports.monthly.present_pct, reports.monthly.absent_pct);
+        }
+    });
+</script>
 {% endblock %}

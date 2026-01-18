@@ -16,7 +16,6 @@ from application.entities2.subscription_plans import SubscriptionPlanModel
 class PlatformControl:
     """Control class for platform manager business logic"""
     
-    @staticmethod
     def get_subscription_statistics() -> Dict[str, Any]:
         """Get subscription statistics for platform manager dashboard."""
         try:
@@ -56,7 +55,6 @@ class PlatformControl:
                 'error': f'Error fetching statistics: {str(e)}'
             }
     
-    @staticmethod
     def get_institutions_with_filters(
         search: str = '',
         status: str = '',
@@ -103,7 +101,6 @@ class PlatformControl:
                 'error': f'Error fetching institutions: {str(e)}'
             }
     
-    @staticmethod
     def get_subscription_requests(limit: int = 5) -> Dict[str, Any]:
         """Get pending subscription requests."""
         try:
@@ -128,7 +125,6 @@ class PlatformControl:
                 'error': f'Error fetching subscription requests: {str(e)}'
             }
     
-    @staticmethod
     def create_institution_profile(institution_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new institution profile with subscription."""
         try:
@@ -220,7 +216,6 @@ class PlatformControl:
                 'error': f'Error creating institution: {str(e)}'
             }
     
-    @staticmethod
     def update_subscription_status(
         subscription_id: int,
         new_status: str,
@@ -231,15 +226,15 @@ class PlatformControl:
             valid_statuses = ['active', 'suspended', 'pending', 'expired']
             if new_status not in valid_statuses:
                 return {
-                    'success': False,
-                    'error': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'
+                'success': False,
+                'error': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'
                 }
-            
+
             with get_session() as db_session:
                 subscription_model = SubscriptionModel(db_session)
                 institution_model = InstitutionModel(db_session)
                 user_model = UserModel(db_session)
-                
+
                 # Get subscription
                 subscription = subscription_model.get_by_id(subscription_id)
                 if not subscription:
@@ -274,9 +269,9 @@ class PlatformControl:
                     'message': f'Subscription status updated to {new_status}',
                     'subscription_id': subscription_id,
                     'new_status': new_status,
-                    'is_active': subscription.is_active
+                    'is_active': (new_status == 'active')  # For backward compatibility
                 }
-                
+            
         except Exception as e:
             if 'db_session' in locals():
                 db_session.rollback()
@@ -285,7 +280,6 @@ class PlatformControl:
                 'error': f'Error updating subscription status: {str(e)}'
             }
     
-    @staticmethod
     def process_subscription_request(
         request_id: int,
         action: str,
@@ -358,7 +352,6 @@ class PlatformControl:
                 'error': f'Error processing subscription request: {str(e)}'
             }
     
-    @staticmethod
     def get_institution_details(institution_id: int) -> Dict[str, Any]:
         """Get detailed information about an institution."""
         try:
@@ -391,7 +384,6 @@ class PlatformControl:
                     'subscription': institution_data['subscription'],
                     'plan': institution_data['plan'],
                     'admin_users': [user.as_sanitized_dict() for user in admin_users] if admin_users else [],
-                    'subscription_status': subscription.status if subscription else 'none',
                     'is_active': subscription.is_active if subscription else False
                 }
                 
@@ -401,7 +393,6 @@ class PlatformControl:
                 'error': f'Error fetching institution details: {str(e)}'
             }
     
-    @staticmethod
     def update_institution_profile(
         institution_id: int,
         update_data: Dict[str, Any]
@@ -460,7 +451,6 @@ class PlatformControl:
                 'error': f'Error updating institution profile: {str(e)}'
             }
     
-    @staticmethod
     def get_platform_dashboard_stats() -> Dict[str, Any]:
         """Get comprehensive statistics for platform manager dashboard."""
         try:
@@ -747,16 +737,12 @@ class PlatformControl:
                     status = 'approved'
                     status_message = 'Registration approved and active'
                 else:
-                    # Check if it's pending or rejected
-                    # We'll treat inactive subscriptions without an end date as pending
                     if subscription['end_date'] is None:
-                        status = 'pending'
-                        status_message = 'Registration pending approval'
-                    else:
-                        # If it has an end date but is inactive, it might be suspended or rejected
-                        # For simplicity, we'll call it 'inactive'
                         status = 'inactive'
                         status_message = 'Registration not active'
+                    else:
+                        status = 'pending'
+                        status_message = 'Registration pending approval'
             
                 return {
                     'success': True,

@@ -1219,7 +1219,7 @@
 
     // JavaScript functions for actions
     function viewInstitutionDetails(institutionId) {
-        fetch(`/api/institutions/${institutionId}`)
+        fetch(`/platform/api/institutions/${institutionId}`)
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
@@ -1246,7 +1246,6 @@
                                     <div class="detail-section">
                                         <h4>Subscription Information</h4>
                                         <p><strong>Plan:</strong> ${data.plan ? data.plan.name : 'None'}</p>
-                                        <p><strong>Status:</strong> <span class="status-badge ${data.subscription.status}">${data.subscription.status}</span></p>
                                         <p><strong>Start Date:</strong> ${new Date(data.subscription.start_date).toLocaleDateString()}</p>
                                         <p><strong>End Date:</strong> ${new Date(data.subscription.end_date).toLocaleDateString()}</p>
                                         <p><strong>Active:</strong> ${data.subscription.is_active ? 'Yes' : 'No'}</p>
@@ -1298,7 +1297,7 @@
 
     function updateSubscriptionStatus(subscriptionId, newStatus, institutionName) {
         if (confirm(`Are you sure you want to ${newStatus} subscription for "${institutionName}"?`)) {
-            fetch(`/api/subscriptions/${subscriptionId}/update-status`, {
+            fetch(`api/subscriptions/${subscriptionId}/update-status`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

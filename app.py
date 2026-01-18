@@ -8,6 +8,7 @@ from sqlalchemy import create_engine, text
 from datetime import timedelta
 import stripe
 from application import create_app
+from application.boundaries.platform_boundary import platform_bp
 
 from database.models import Base
 
@@ -102,7 +103,8 @@ def create_flask_app(config_name='default'):
     
     # Initialize application with BCE structure
     create_app(app)
-    
+    csrf.exempt(platform_bp)
+
     return app
 
 if __name__ == '__main__':

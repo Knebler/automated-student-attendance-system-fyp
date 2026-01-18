@@ -3,246 +3,6 @@
 {% block title %}Student Dashboard - AttendAI{% endblock %}
 
 {% block content %}
-<div class="student-dashboard">
-    <!-- Welcome Header -->
-    <div class="welcome-header mb-4">
-        <div class="header-content">
-            <h1 class="welcome-title">Welcome <span class="student-name">Temp</span>!</h1>
-            <div class="datetime-display">
-                <span class="time">07:48AM</span>
-                <span class="separator">|</span>
-                <span class="date">25 November 2025</span>
-            </div>
-        </div>
-        <div class="notification-bell">
-            <span class="notification-icon">🔔</span>
-            <span class="notification-badge">3</span>
-        </div>
-    </div>
-
-    <!-- Dashboard Grid -->
-    <div class="dashboard-grid">
-        <!-- Student Profile & Stats Card -->
-        <div class="card-custom">
-            <div class="card-header-custom">Student Profile</div>
-            <div class="card-body-custom">
-                <div class="profile-content">
-                    <div class="profile-image mb-3">
-                        <div class="avatar-placeholder">
-                            <span class="avatar-icon">👤</span>
-                        </div>
-                    </div>
-                    <div class="profile-info mb-4">
-                        <div class="info-item mb-2">
-                            <span class="info-label">Name:</span>
-                            <span class="info-value">Temp</span>
-                        </div>
-                        <div class="info-item mb-2">
-                            <span class="info-label">Student ID:</span>
-                            <span class="info-value">S1234567</span>
-                        </div>
-                        <div class="info-item mb-2">
-                            <span class="info-label">Program:</span>
-                            <span class="info-value">Computer Science</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Year:</span>
-                            <span class="info-value">Year 2</span>
-                        </div>
-                    </div>
-                    
-                    <div class="stats-container">
-                        <div class="stat-item text-center mb-4">
-                            <div class="stat-value">92%</div>
-                            <div class="stat-label">Overall Attendance</div>
-                        </div>
-                        <div class="stat-breakdown">
-                            <div class="breakdown-item">
-                                <span class="breakdown-label">Present:</span>
-                                <span class="breakdown-value">46/50</span>
-                            </div>
-                            <div class="breakdown-item">
-                                <span class="breakdown-label">Absent:</span>
-                                <span class="breakdown-value">4/50</span>
-                            </div>
-                            <div class="breakdown-item">
-                                <span class="breakdown-label">Late:</span>
-                                <span class="breakdown-value">2/50</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="profile-actions mt-4">
-                        <button class="btn-custom btn-manage">Manage Profile</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Today's Classes Card -->
-        <div class="card-custom">
-            <div class="card-header-custom">Today's Classes</div>
-            <div class="card-body-custom">
-                <div class="classes-list">
-                    <div class="class-item mb-3">
-                        <div class="class-header">
-                            <h3 class="class-code">CSCI251 - T01</h3>
-                            <h4 class="class-name">Advanced Programming</h4>
-                        </div>
-                        <div class="class-details">
-                            <div class="detail-item">
-                                <span class="detail-icon">🕐</span>
-                                <span class="detail-text">08:30AM - 11:30AM</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-icon">📍</span>
-                                <span class="detail-text">HQ BLK A | LAB A.5.17C</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-icon">👨‍🏫</span>
-                                <span class="detail-text">Prof. Johnson</span>
-                            </div>
-                        </div>
-                        <div class="class-status">
-                            <span class="status upcoming">Upcoming</span>
-                        </div>
-                        <div class="class-actions">
-                            <button class="btn-custom btn-checkin">Check In</button>
-                            <button class="btn-custom btn-view">View Details</button>
-                        </div>
-                    </div>
-
-                    <div class="class-item mb-3">
-                        <div class="class-header">
-                            <h3 class="class-code">CSCI251 - T02</h3>
-                            <h4 class="class-name">Advanced Programming</h4>
-                        </div>
-                        <div class="class-details">
-                            <div class="detail-item">
-                                <span class="detail-icon">🕐</span>
-                                <span class="detail-text">12:00PM - 03:00PM</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-icon">📍</span>
-                                <span class="detail-text">HQ BLK A | LAB A.5.17C</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-icon">👨‍🏫</span>
-                                <span class="detail-text">Prof. Johnson</span>
-                            </div>
-                        </div>
-                        <div class="class-status">
-                            <span class="status upcoming">Upcoming</span>
-                        </div>
-                        <div class="class-actions">
-                            <button class="btn-custom btn-checkin">Check In</button>
-                            <button class="btn-custom btn-view">View Details</button>
-                        </div>
-                    </div>
-
-                    <div class="class-item">
-                        <div class="class-header">
-                            <h3 class="class-code">CSCI251 - L02</h3>
-                            <h4 class="class-name">Advanced Programming</h4>
-                        </div>
-                        <div class="class-details">
-                            <div class="detail-item">
-                                <span class="detail-icon">🕐</span>
-                                <span class="detail-text">03:30PM - 06:30PM</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-icon">📍</span>
-                                <span class="detail-text">HQ BLK A | LT A.1.17</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-icon">👨‍🏫</span>
-                                <span class="detail-text">Prof. Johnson</span>
-                            </div>
-                        </div>
-                        <div class="class-status">
-                            <span class="status completed">Completed</span>
-                        </div>
-                        <div class="class-actions">
-                            <button class="btn-custom btn-view-attendance">View Attendance</button>
-                            <button class="btn-custom btn-view">View Details</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Announcements & Quick Links Card -->
-        <div class="card-custom">
-            <div class="card-header-custom">Announcements & Quick Links</div>
-            <div class="card-body-custom">
-                <!-- Announcements Section -->
-                <div class="announcements-list mb-4">
-                    <div class="announcement-item mb-3">
-                        <div class="announcement-header">
-                            <h3 class="announcement-title">105th Anniversary Celebration</h3>
-                            <span class="announcement-date">Nov 24, 2025</span>
-                        </div>
-                        <div class="announcement-content">
-                            <p>Join us for special events celebrating our institution's 105th anniversary throughout this week.</p>
-                        </div>
-                    </div>
-
-                    <div class="announcement-item mb-3">
-                        <div class="announcement-header">
-                            <h3 class="announcement-title">Exam Schedule Released</h3>
-                            <span class="announcement-date">Nov 22, 2025</span>
-                        </div>
-                        <div class="announcement-content">
-                            <p>Final exam schedules for Semester 2 are now available. Check your timetable for details.</p>
-                        </div>
-                    </div>
-
-                    <div class="announcement-item mb-4">
-                        <div class="announcement-header">
-                            <h3 class="announcement-title">Library Extended Hours</h3>
-                            <span class="announcement-date">Nov 20, 2025</span>
-                        </div>
-                        <div class="announcement-content">
-                            <p>The main library will have extended opening hours during exam period (8AM - 11PM).</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Quick Links Section -->
-                <div class="quick-links">
-                    <div class="links-title mb-3">Quick Access</div>
-                    <div class="links-grid">
-                        <a href="{{ url_for('student.attendance') }}" class="link-item">
-                            <span class="link-icon">📊</span>
-                            <span class="link-text">My Attendance</span>
-                        </a>
-                        <a href="{{ url_for('student.class_checkin') }}" class="link-item">
-                            <span class="link-icon">📱</span>
-                            <span class="link-text">Class Check-In</span>
-                        </a>
-                        <a href="{{ url_for('student.appeal_management') }}" class="link-item">
-                            <span class="link-icon">📝</span>
-                            <span class="link-text">Submit Appeal</span>
-                        </a>
-                        <a href="#" class="link-item">
-                            <span class="link-icon">📚</span>
-                            <span class="link-text">Study Materials</span>
-                        </a>
-                        <a href="#" class="link-item">
-                            <span class="link-icon">📅</span>
-                            <span class="link-text">Timetable</span>
-                        </a>
-                        <a href="#" class="link-item">
-                            <span class="link-icon">🏫</span>
-                            <span class="link-text">Campus Map</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <style>
     /* Student Dashboard Styles - Matched to Lecturer Dashboard */
     .student-dashboard {
@@ -255,21 +15,24 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding-bottom: 1.5rem;
-        border-bottom: 2px solid var(--border-color);
         margin-bottom: 2rem;
+        position: relative;
     }
 
-    .header-content {
-        flex: 1;
+    .welcome-header::after {
+        content: "";
+        position: absolute;
+        bottom: -10px;
+        left: 0;
+        width: 140px;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary-dark), #3b82f6);
+        border-radius: 4px;
     }
 
     .welcome-title {
-        font-size: 2.5rem;
-        font-weight: bold;
-        font-style: italic;
-        color: var(--text-dark);
-        margin-bottom: 0.5rem;
+        font-size: 2.2rem;
+        font-weight: 700;
     }
 
     .student-name {
@@ -277,56 +40,74 @@
     }
 
     .datetime-display {
-        font-size: 1.1rem;
+        margin-top: 0.3rem;
         color: var(--text-light);
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
+        font-size: 0.95rem;
     }
 
-    .time {
-        font-weight: 600;
-        color: var(--text-dark);
-    }
-
-    .separator {
-        opacity: 0.5;
-    }
-
-    .date {
-        font-weight: 500;
-    }
-
-    /* Notification Bell - Matched */
     .notification-bell {
         position: relative;
-        cursor: pointer;
         font-size: 1.5rem;
-        padding: 0.5rem;
+        background: #f1f5f9;
+        padding: 0.6rem;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+
+    .notification-bell:hover {
+        transform: scale(1.05);
     }
 
     .notification-badge {
         position: absolute;
-        top: -5px;
-        right: -5px;
-        background-color: #dc2626;
+        top: -6px;
+        right: -6px;
+        background: #dc2626;
         color: white;
-        font-size: 0.75rem;
-        font-weight: bold;
         width: 20px;
         height: 20px;
         border-radius: 50%;
+        font-size: 0.75rem;
         display: flex;
         align-items: center;
         justify-content: center;
     }
 
-    /* Dashboard Grid - Matched */
+    .badge {
+        background: var(--primary-dark);
+        color: white;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        margin-left: 0.5rem;
+    }
+
+    /* Grid */
     .dashboard-grid {
         display: grid;
         grid-template-columns: 1.2fr 1fr 1fr;
         gap: 1.5rem;
         align-items: start;
+    }
+
+    /* Cards */
+    .card-custom {
+        background: white;
+        border-radius: 14px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+        overflow: hidden;
+    }
+
+    .card-header-custom {
+        font-weight: 600;
+        font-size: 1.1rem;
+        padding: 1.25rem 1.25rem 0.5rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .card-body-custom {
+        padding: 1.25rem;
     }
 
     /* Student Profile Card */
@@ -427,11 +208,26 @@
         color: var(--text-dark);
     }
 
+    /* Buttons */
     .btn-manage {
         width: 100%;
         padding: 0.75rem;
         border-radius: 25px;
         font-size: 0.9rem;
+        text-decoration: none;
+        display: block;
+        text-align: center;
+        background: var(--primary-dark);
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-manage:hover {
+        background: #2563eb;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
     }
 
     /* Classes List - Matched to Lecturer Style */
@@ -442,120 +238,129 @@
     }
 
     .class-item {
-        background-color: var(--primary-light);
-        border: 1px solid var(--border-color);
-        border-radius: 10px;
+        background: #f8fafc;
+        border-radius: 12px;
         padding: 1.25rem;
-        transition: all 0.3s ease;
+        transition: all 0.25s ease;
+    }
+
+    .class-item.active {
+        border-left: 4px solid var(--primary-dark);
     }
 
     .class-item:hover {
-        background-color: #f1f5f9;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    .class-header {
-        margin-bottom: 1rem;
-        text-align: center;
+        background: white;
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.08);
     }
 
     .class-code {
-        font-size: 1.25rem;
-        font-weight: bold;
+        font-weight: 600;
         color: var(--primary-dark);
-        margin-bottom: 0.25rem;
+        margin: 0 0 0.25rem 0;
     }
 
     .class-name {
-        font-size: 1rem;
-        color: var(--text-dark);
-        font-weight: 500;
+        font-size: 0.9rem;
+        color: var(--text-light);
+        margin: 0;
     }
 
     .class-details {
+        margin: 0.75rem 0;
+        font-size: 0.9rem;
+        color: var(--text-dark);
         display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 1rem;
     }
 
     .detail-item {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        font-size: 0.9rem;
-        color: var(--text-dark);
+        gap: 0.4rem;
     }
 
-    .detail-icon {
-        font-size: 1rem;
-        opacity: 0.8;
-        min-width: 20px;
+    .status-badge {
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
     }
 
-    .class-status {
-        text-align: center;
-        margin-bottom: 1rem;
-    }
-
-    .status {
-        display: inline-block;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-    }
-
-    .status.upcoming {
-        background-color: #fef3c7;
+    .status-badge.in-progress {
+        background: #fef3c7;
         color: #92400e;
-        border: 1px solid #f59e0b;
     }
 
-    .status.completed {
-        background-color: #d1fae5;
+    .status-badge.completed {
+        background: #d1fae5;
         color: #065f46;
-        border: 1px solid #10b981;
+    }
+
+    .status-badge.present {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-badge.absent {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .status-badge.late {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .status-badge.excused {
+        background: #e0e7ff;
+        color: #3730a3;
+    }
+
+    .status-badge.unmarked {
+        background: #f3f4f6;
+        color: #6b7280;
     }
 
     .class-actions {
         display: flex;
         gap: 0.75rem;
-        justify-content: center;
+        margin-top: 1rem;
     }
 
-    .btn-checkin,
-    .btn-view,
-    .btn-view-attendance {
-        padding: 0.5rem 1.25rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
+    .btn-custom {
+        padding: 0.5rem 1.4rem;
+        border-radius: 999px;
+        font-weight: 500;
+        font-size: 0.9rem;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
     }
 
     .btn-checkin {
-        background-color: var(--primary-dark);
+        background: linear-gradient(135deg, var(--primary-dark), #2563eb);
         color: white;
     }
 
-    .btn-view-attendance {
-        background-color: #10b981;
-        color: white;
-        border: none;
-    }
-
-    .btn-view-attendance:hover {
-        background-color: #059669;
+    .btn-checkin:hover {
+        background: linear-gradient(135deg, #2563eb, var(--primary-dark));
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
     }
 
     .btn-view {
-        background-color: white;
-        color: var(--primary-dark);
+        background: transparent;
         border: 1px solid var(--primary-dark);
+        color: var(--primary-dark);
     }
 
     .btn-view:hover {
-        background-color: var(--primary-dark);
+        background: var(--primary-dark);
         color: white;
     }
 
@@ -567,47 +372,75 @@
     }
 
     .announcement-item {
-        background-color: var(--primary-light);
-        border: 1px solid var(--border-color);
-        border-radius: 10px;
-        padding: 1.25rem;
-        transition: all 0.3s ease;
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 1rem;
+        transition: all 0.2s ease;
     }
 
     .announcement-item:hover {
-        background-color: #f1f5f9;
+        background: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
 
     .announcement-header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: 0.75rem;
+        margin-bottom: 0.5rem;
     }
 
     .announcement-title {
-        font-size: 1.1rem;
-        font-weight: bold;
-        color: var(--primary-dark);
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin: 0;
         flex: 1;
     }
 
     .announcement-date {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         color: var(--text-light);
-        margin-left: 1rem;
         white-space: nowrap;
+        margin-left: 1rem;
     }
 
     .announcement-content {
         font-size: 0.9rem;
         color: var(--text-dark);
+        margin: 0 0 0.5rem 0;
         line-height: 1.5;
+    }
+
+    .announcements-actions {
+        text-align: center;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .btn-view-all {
+        background: transparent;
+        border: 1px solid var(--text-light);
+        color: var(--text-dark);
+        font-size: 0.9rem;
+    }
+
+    .btn-view-all:hover {
+        background: #f1f5f9;
+        border-color: var(--text-dark);
+    }
+
+    .view-all-container {
+        text-align: center;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e5e7eb;
     }
 
     /* Quick Links */
     .quick-links {
-        border-top: 1px solid var(--border-color);
+        border-top: 1px solid #e5e7eb;
         padding-top: 1.5rem;
     }
 
@@ -625,8 +458,8 @@
     }
 
     .link-item {
-        background-color: var(--primary-light);
-        border: 1px solid var(--border-color);
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
         border-radius: 8px;
         padding: 1rem;
         text-decoration: none;
@@ -639,7 +472,7 @@
     }
 
     .link-item:hover {
-        background-color: #f1f5f9;
+        background: #f1f5f9;
         transform: translateY(-2px);
         text-decoration: none;
         color: var(--text-dark);
@@ -655,10 +488,32 @@
         text-align: center;
     }
 
+    /* No data messages */
+    .no-classes-message,
+    .no-announcements-message {
+        text-align: center;
+        padding: 2rem;
+        color: var(--text-light);
+    }
+
+    .no-classes-message p,
+    .no-announcements-message p {
+        margin: 0.5rem 0;
+    }
+
+    .small-text {
+        font-size: 0.9rem;
+        opacity: 0.8;
+    }
+
     /* Responsive Design - Matched to Lecturer Dashboard */
     @media (max-width: 1024px) {
         .dashboard-grid {
             grid-template-columns: 1fr 1fr;
+        }
+        
+        .links-grid {
+            grid-template-columns: repeat(2, 1fr);
         }
     }
 
@@ -670,7 +525,7 @@
         }
 
         .welcome-title {
-            font-size: 1.75rem;
+            font-size: 1.8rem;
         }
 
         .datetime-display {
@@ -681,13 +536,16 @@
             grid-template-columns: 1fr;
         }
 
+        .class-details {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
         .class-actions {
             flex-direction: column;
         }
-
-        .btn-checkin,
-        .btn-view,
-        .btn-view-attendance {
+        
+        .btn-custom {
             width: 100%;
         }
 
@@ -729,81 +587,321 @@
     }
 </style>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Update time and date dynamically - Matched to Lecturer Dashboard
-        function updateDateTime() {
-            const now = new Date();
-            
-            // Format time
-            const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: true };
-            const time = now.toLocaleTimeString('en-US', timeOptions).toUpperCase();
-            
-            // Format date
-            const dateOptions = { day: 'numeric', month: 'long', year: 'numeric' };
-            const date = now.toLocaleDateString('en-US', dateOptions);
-            
-            // Update display
-            document.querySelector('.time').textContent = time;
-            document.querySelector('.date').textContent = date;
-        }
+<div class="student-dashboard">
+    <!-- Welcome Header -->
+    <div class="welcome-header">
+        <div class="header-content">
+            <h1 class="welcome-title">
+                Welcome <span class="student-name">{{ student_name }}</span>
+            </h1>
+            <div class="datetime-display">
+                <span class="time">{{ current_time }}</span>
+                <span class="separator">•</span>
+                <span class="date">{{ current_date }}</span>
+            </div>
+        </div>
 
-        // Update immediately and then every minute
-        updateDateTime();
-        setInterval(updateDateTime, 60000);
+        <div class="notification-bell" title="Notifications" id="notificationBell">
+            🔔
+            {% if statistics and statistics.unread_notifications_count and statistics.unread_notifications_count > 0 %}
+            <span class="notification-badge">{{ statistics.unread_notifications_count }}</span>
+            {% endif %}
+        </div>
+    </div>
 
-        // Notification bell click - Matched to Lecturer Dashboard
-        document.querySelector('.notification-bell').addEventListener('click', function() {
-            alert('You have 3 new notifications');
-            // In a real app, this would show a notification dropdown
-        });
+    <!-- Dashboard Grid -->
+    <div class="dashboard-grid">
+        <!-- Student Profile & Stats Card -->
+        <div class="card-custom">
+            <div class="card-header-custom">Student Profile</div>
+            <div class="card-body-custom">
+                <div class="profile-content">
+                    <div class="profile-image mb-3">
+                        <div class="avatar-placeholder">
+                            <span class="avatar-icon">👤</span>
+                        </div>
+                    </div>
+                    <div class="profile-info mb-4">
+                        <div class="info-item mb-2">
+                            <span class="info-label">Name:</span>
+                            <span class="info-value">{{ student_info.name if student_info else 'Temp' }}</span>
+                        </div>
+                        <div class="info-item mb-2">
+                            <span class="info-label">Student ID:</span>
+                            <span class="info-value">{{ student_info.student_id if student_info else 'S1234567' }}</span>
+                        </div>
+                        <div class="info-item mb-2">
+                            <span class="info-label">Program:</span>
+                            <span class="info-value">{{ student_info.program if student_info else 'Computer Science' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Year:</span>
+                            <span class="info-value">{{ student_info.year if student_info else 'Year 2' }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-container">
+                        <div class="stat-item text-center mb-4">
+                            <div class="stat-value">{{ "%.1f"|format(statistics.overall_attendance) if statistics and statistics.overall_attendance else '92' }}%</div>
+                            <div class="stat-label">Overall Attendance</div>
+                        </div>
+                        <div class="stat-breakdown">
+                            <div class="breakdown-item">
+                                <span class="breakdown-label">Present:</span>
+                                <span class="breakdown-value">{{ statistics.present_count if statistics else '46' }}/{{ statistics.total_classes if statistics else '50' }}</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <span class="breakdown-label">Absent:</span>
+                                <span class="breakdown-value">{{ statistics.absent_count if statistics else '4' }}/{{ statistics.total_classes if statistics else '50' }}</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <span class="breakdown-label">Late:</span>
+                                <span class="breakdown-value">{{ statistics.late_count if statistics else '2' }}/{{ statistics.total_classes if statistics else '50' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="profile-actions mt-4">
+                        <a href="{{ url_for('student.profile') }}" class="btn-custom btn-manage">Manage Profile</a>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        // Check-in button functionality
-        document.querySelectorAll('.btn-checkin').forEach(button => {
-            button.addEventListener('click', function() {
-                const classCode = this.closest('.class-item').querySelector('.class-code').textContent;
-                alert(`Checking in for ${classCode}\n\nPlease ensure you are in the correct classroom.`);
+        <!-- Today's Classes Card -->
+        <div class="card-custom">
+            <div class="card-header-custom">
+                Today's Classes 
+                {% if today_classes|length > 0 %}
+                <span class="badge">{{ today_classes|length }}</span>
+                {% endif %}
+            </div>
+            <div class="card-body-custom classes-list">
+                {% if today_classes %}
+                    {% for class in today_classes %}
+                    <div class="class-item {% if class.status == 'in_progress' %}active{% endif %}">
+                        <div class="class-header">
+                            <div>
+                                <h3 class="class-code">{{ class.course_code }} - {{ class.section if class.section else 'T01' }}</h3>
+                                <p class="class-name">{{ class.course_name }}</p>
+                            </div>
+                        </div>
+
+                        <div class="class-details">
+                            <div class="detail-item">🕐 {{ class.start_time }} – {{ class.end_time }}</div>
+                            <div class="detail-item">📍 {{ class.venue }}</div>
+                            <div class="detail-item">👨‍🏫 {{ class.lecturer_name }}</div>
+                            {% if class.status == 'in_progress' %}
+                            <div class="detail-item status-badge in-progress">● In Progress</div>
+                            {% elif class.status == 'completed' %}
+                            <div class="detail-item status-badge completed">● Completed</div>
+                            {% endif %}
+                            {% if class.attendance_taken %}
+                            <div class="detail-item status-badge 
+                                {% if class.attendance_status == 'present' %}present
+                                {% elif class.attendance_status == 'absent' %}absent
+                                {% elif class.attendance_status == 'late' %}late
+                                {% elif class.attendance_status == 'excused' %}excused
+                                {% else %}unmarked{% endif %}">
+                                {{ class.attendance_status|title }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="class-actions">
+                            {% if class.status == 'upcoming' or class.status == 'in_progress' %}
+                            <button class="btn-custom btn-checkin" data-class-id="{{ class.class_id }}">
+                                {% if class.attendance_taken %}Update Check-in{% else %}Check In{% endif %}
+                            </button>
+                            {% endif %}
+                            <button class="btn-custom btn-view" data-class-id="{{ class.class_id }}">
+                                View Details
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="no-classes-message">
+                        <p>🎉 No classes scheduled for today!</p>
+                        <p class="small-text">Check your timetable for upcoming classes.</p>
+                    </div>
+                {% endif %}
                 
-                // Simulate check-in process
+                {% if today_classes %}
+                <div class="view-all-container">
+                    <a href="{{ url_for('student.attendance_history') }}" class="btn-custom btn-view-all">
+                        View Attendance History
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Announcements & Quick Links Card -->
+        <div class="card-custom">
+            <div class="card-header-custom">Announcements & Quick Links</div>
+            <div class="card-body-custom">
+                <!-- Announcements Section -->
+                <div class="announcements-list mb-4">
+                    {% if announcements %}
+                        {% for announcement in announcements %}
+                        <div class="announcement-item mb-3">
+                            <div class="announcement-header">
+                                <h3 class="announcement-title">{{ announcement.title }}</h3>
+                                <span class="announcement-date">{{ announcement.date }}</span>
+                            </div>
+                            <div class="announcement-content">
+                                <p>{{ announcement.content }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="no-announcements-message">
+                            <p>📢 No recent announcements</p>
+                            <p class="small-text">Check back later for updates.</p>
+                        </div>
+                    {% endif %}
+                    
+                    {% if announcements %}
+                    <div class="announcements-actions">
+                        <a href="#" class="btn-custom btn-view-all">View All Announcements</a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Quick Links Section -->
+                <div class="quick-links">
+                    <div class="links-title mb-3">Quick Access</div>
+                    <div class="links-grid">
+                        <a href="{{ url_for('student.attendance') }}" class="link-item">
+                            <span class="link-icon">📊</span>
+                            <span class="link-text">My Attendance</span>
+                        </a>
+                        <a href="#" class="link-item" id="checkInLink">
+                            <span class="link-icon">📱</span>
+                            <span class="link-text">Class Check-In</span>
+                        </a>
+                        <a href="{{ url_for('student.appeal_management') }}" class="link-item">
+                            <span class="link-icon">📝</span>
+                            <span class="link-text">Submit Appeal</span>
+                        </a>
+                        <a href="{{ url_for('student.attendance_history') }}" class="link-item">
+                            <span class="link-icon">📚</span>
+                            <span class="link-text">Attendance History</span>
+                        </a>
+                        <a href="{{ url_for('student.absent_records') }}" class="link-item">
+                            <span class="link-icon">📅</span>
+                            <span class="link-text">Absent Records</span>
+                        </a>
+                        <a href="{{ url_for('student.profile') }}" class="link-item">
+                            <span class="link-icon">🏫</span>
+                            <span class="link-text">My Profile</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    // Update time every minute (like lecturer dashboard)
+    const updateTime = () => {
+        const now = new Date();
+        const timeElement = document.querySelector('.time');
+        if (timeElement) {
+            timeElement.textContent = now.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: true 
+            });
+        }
+    };
+    
+    updateTime();
+    setInterval(updateTime, 60000);
+    
+    // Notification bell click handler
+    const notificationBell = document.getElementById('notificationBell');
+    if (notificationBell) {
+        notificationBell.addEventListener('click', () => {
+            alert('Notifications feature coming soon!');
+        });
+    }
+    
+    // Check-in button functionality
+    document.querySelectorAll('.btn-checkin').forEach(button => {
+        button.addEventListener('click', function() {
+            const classId = this.dataset.classId;
+            const classCode = this.closest('.class-item').querySelector('.class-code').textContent;
+            
+            // Show check-in modal or process directly
+            const checkInMethod = confirm(`Check in for ${classCode}?\n\nPlease ensure you are in the correct classroom.`);
+            
+            if (checkInMethod) {
+                // Simulate API call to check-in
                 button.textContent = 'Checking In...';
                 button.disabled = true;
                 
+                // In a real implementation, you would make an API call here
                 setTimeout(() => {
                     alert(`Successfully checked in for ${classCode}!`);
                     button.textContent = 'Checked In';
                     button.style.backgroundColor = '#10b981';
+                    button.disabled = true;
                     
-                    // Update status
-                    const statusElement = this.closest('.class-item').querySelector('.status');
-                    statusElement.textContent = 'Checked In';
-                    statusElement.className = 'status completed';
-                }, 2000);
-            });
-        });
-
-        // View buttons
-        document.querySelectorAll('.btn-view').forEach(button => {
-            button.addEventListener('click', function() {
-                const classCode = this.closest('.class-item').querySelector('.class-code').textContent;
-                alert(`Viewing details for ${classCode}`);
-                // In a real app, this would navigate to class details page
-            });
-        });
-
-        // View attendance button
-        document.querySelectorAll('.btn-view-attendance').forEach(button => {
-            button.addEventListener('click', function() {
-                const classCode = this.closest('.class-item').querySelector('.class-code').textContent;
-                alert(`Viewing attendance record for ${classCode}`);
-                // In a real app, this would navigate to attendance page
-            });
-        });
-
-        // Manage profile button
-        document.querySelector('.btn-manage').addEventListener('click', function() {
-            alert('Navigating to profile management');
-            // In a real app, this would navigate to profile page
+                    // Update attendance status display
+                    const statusElement = this.closest('.class-item').querySelector('.status-badge');
+                    if (statusElement) {
+                        statusElement.textContent = 'Present';
+                        statusElement.className = 'detail-item status-badge present';
+                    }
+                }, 1500);
+            }
         });
     });
+    
+    // View details button
+    document.querySelectorAll('.btn-view').forEach(button => {
+        button.addEventListener('click', function() {
+            const classId = this.dataset.classId;
+            const classCode = this.closest('.class-item').querySelector('.class-code').textContent;
+            
+            // In a real implementation, this would navigate to class details or show a modal
+            alert(`Viewing details for ${classCode}\n\nClass ID: ${classId}`);
+        });
+    });
+    
+    // Check-in quick link
+    const checkInLink = document.getElementById('checkInLink');
+    if (checkInLink) {
+        checkInLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Find the first upcoming class to check into
+            const upcomingClass = document.querySelector('.class-item:not(.completed) .btn-checkin');
+            if (upcomingClass) {
+                upcomingClass.click();
+            } else {
+                alert('No upcoming classes available for check-in.');
+            }
+        });
+    }
+    
+    // Add click handlers for class items (like lecturer dashboard)
+    document.querySelectorAll('.class-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            // Don't trigger if clicking on buttons
+            if (!e.target.closest('.btn-custom')) {
+                const classId = item.dataset.classId;
+                if (classId) {
+                    // Navigate to class details or attendance view
+                    alert('Class details view coming soon!');
+                }
+            }
+        });
+    });
+});
 </script>
 {% endblock %}

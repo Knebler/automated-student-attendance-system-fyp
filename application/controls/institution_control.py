@@ -440,7 +440,6 @@ class InstitutionControl:
                     {'user_id': user_id, 'course_id': course_id}
                 )
             elif role == 'lecturer':
-                print(user_id, course_id)
                 BaseEntity.execute_query(
                     app,
                     "DELETE FROM Course_Lecturers WHERE lecturer_id = :user_id AND course_id = :course_id",

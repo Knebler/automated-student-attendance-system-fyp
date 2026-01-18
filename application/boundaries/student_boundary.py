@@ -1,12 +1,7 @@
 from flask import Blueprint, render_template, session, redirect, url_for, flash, current_app, request
 from application.controls.auth_control import AuthControl, requires_roles
-from application.controls.attendance_control import AttendanceControl
-from application.entities2 import ClassModel, SemesterModel, UserModel, AttendanceRecordModel, AttendanceAppealModel
-from pprint import pprint
-from datetime import date
-
+from application.controls.student_control import StudentControl
 from database.base import get_session
-from database.models import AttendanceAppealStatusEnum
 
 student_bp = Blueprint('student', __name__)
 
@@ -14,196 +9,203 @@ student_bp = Blueprint('student', __name__)
 @requires_roles('student')
 def dashboard():
     """Main dashboard route"""
-    return render_template('institution/student/student_dashboard.html')
-
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            flash('Please log in to access the dashboard', 'warning')
+            return redirect(url_for('auth.login'))
+        
+        # Get all dashboard data including announcements
+        dashboard_data = StudentControl.get_dashboard_data(user_id)
+        
+        if not dashboard_data.get('success'):
+            flash(dashboard_data.get('error', 'Error loading dashboard'), 'danger')
+            return render_template('institution/student/student_dashboard.html')
+        
+        # Prepare context similar to lecturer dashboard
+        context = {
+            'student_name': dashboard_data.get('student', {}).get('name', 'Student'),
+            'student_info': dashboard_data.get('student', {}),
+            'today_classes': dashboard_data.get('today_classes', []),
+            'announcements': dashboard_data.get('announcements', []),
+            'current_time': dashboard_data.get('current_time', ''),
+            'current_date': dashboard_data.get('current_date', ''),
+            'statistics': dashboard_data.get('statistics', {})
+        }
+        
+        return render_template('institution/student/student_dashboard.html', **context)
+        
+    except Exception as e:
+        current_app.logger.error(f"Error loading student dashboard: {e}")
+        flash('An error occurred while loading your dashboard', 'danger')
+        return render_template('institution/student/student_dashboard.html')
+    
 @student_bp.route('/profile')
 @requires_roles('student')
 def profile():
     """User profile route"""
-    return render_template('institution/student/student_profile_management.html')
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            flash('Please log in to access your profile', 'warning')
+            return redirect(url_for('auth.login'))
+        
+        profile_data = StudentControl.get_student_profile(user_id)
+        return render_template('institution/student/student_profile_management.html', **profile_data)
+        
+    except Exception as e:
+        current_app.logger.error(f"Error loading student profile: {e}")
+        flash('An error occurred while loading your profile', 'danger')
+        return render_template('institution/student/student_profile_management.html')
 
 @student_bp.route('/attendance')
 @requires_roles('student')
 def attendance():
     """Student attendance overview"""
-    good_attendance_cutoff = 0.9
-    uid = session.get('user_id')
-    with get_session() as db_session:
-        class_model = ClassModel(db_session)
-        sem_model = SemesterModel(db_session)
-        term_info = sem_model.get_current_semester_info()
-        term_info["student_id"] = uid
-        term_info["cutoff"] = good_attendance_cutoff * 100
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            flash('Please log in to view attendance', 'warning')
+            return redirect(url_for('auth.login'))
         
-        def analyse_report(report):
-            y, m = report["year"], report["month"]
-            p, a, l, e = report["p"], report["a"], report["l"], report["e"]
-            total = report["total_classes"]
-            present_percent = p + a + l / total * 100
-            return {
-                "month": date(y, m, 1).strftime("%B %Y"),
-                "present": p,
-                "absent": a,
-                "late": l,
-                "excused": e,
-                "present_percent": present_percent,
-                "absent_percent": a / total * 100,
-                "total_classes": total,
-                "is_good": present_percent >= good_attendance_cutoff
-            }
-        monthly_report = [analyse_report(report) for report in class_model.student_attendance_monthly(uid, 4)]
+        attendance_data = StudentControl.get_student_attendance(user_id)
+        return render_template('institution/student/student_attendance_management.html', **attendance_data)
         
-        term_stats = sem_model.student_dashboard_term_attendance(uid)
-        p, a, l, e = term_stats.get("present", 0), term_stats.get("absent", 0), term_stats.get("late", 0), term_stats.get("excused", 0)
-        marked = p + a + l + e
-
-        context = {
-            "term_info": term_info,
-            "monthly_report": monthly_report,
-            "overview": {
-                "present_percent": (p + l + e) / marked * 100 if marked > 0 else 100.0,
-                "absent_percent": a / marked * 100 if marked > 0 else 100.0,
-                "present": p + l + e,
-                "absent": a,
-                "total": sum(term_stats.values()),
-            },
-            "classes": class_model.student_attendance_absent_late(uid),
-        }
-    return render_template('institution/student/student_attendance_management.html', **context)
-
+    except Exception as e:
+        current_app.logger.error(f"Error loading student attendance: {e}")
+        flash('An error occurred while loading attendance data', 'danger')
+        return render_template('institution/student/student_attendance_management.html')
 
 @student_bp.route('/attendance/history')
 @requires_roles('student')
 def attendance_history():
     """Attendance history route"""
-    return render_template('institution/student/student_attendance_management_history.html',
-                           user=session.get('user'))
-
-
-@student_bp.route('/attendance/checkin')
-@requires_roles('student')
-def class_checkin():
-    """Student class check-in view"""
-    return render_template('institution/student/student_class_checkin.html',
-                           user=session.get('user'))
-
-
-@student_bp.route('/attendance/checkin/face')
-@requires_roles('student')
-def class_checkin_face():
-    """Student class check-in (face capture)"""
-    # Allow frontend to pass a session_id via query string for context (e.g. ?session_id=123)
-    session_id = request.args.get('session_id')
-    user_id = session.get('user_id')
-
-    return render_template('institution/student/student_class_checkin_face.html',
-                           user=session.get('user'),
-                           session_id=session_id,
-                           user_id=user_id)
-
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            flash('Please log in to view attendance history', 'warning')
+            return redirect(url_for('auth.login'))
+        
+        history_data = StudentControl.get_attendance_history(user_id)
+        return render_template('institution/student/student_attendance_management_history.html', **history_data)
+        
+    except Exception as e:
+        current_app.logger.error(f"Error loading attendance history: {e}")
+        flash('An error occurred while loading attendance history', 'danger')
+        return render_template('institution/student/student_attendance_management_history.html')
 
 @student_bp.route('/appeal')
 @requires_roles('student')
 def appeal_management():
     """Student appeal management"""
-    with get_session() as db_session:
-        appeal_model = AttendanceAppealModel(db_session)
-        class_model = ClassModel(db_session)
-        absent_late = class_model.student_attendance_absent_late(session.get('user_id'))
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            flash('Please log in to manage appeals', 'warning')
+            return redirect(url_for('auth.login'))
         
+        appeal_data = StudentControl.get_student_appeals(user_id)
+        return render_template('institution/student/student_appeal_management.html', **appeal_data)
         
-        appeals = appeal_model.student_appeals(student_id=session.get('user_id'))
-        context = {
-            "filters": {
-                "modules": set(appeal["course_code"] for appeal in appeals),
-                "statuses": AttendanceAppealStatusEnum.enums,
-            },
-            "appeals": appeals,
-            "absent_late": absent_late,
-        }
-    return render_template('institution/student/student_appeal_management.html', **context)
-
+    except Exception as e:
+        current_app.logger.error(f"Error loading appeal management: {e}")
+        flash('An error occurred while loading appeal data', 'danger')
+        return render_template('institution/student/student_appeal_management.html')
 
 @student_bp.route('/appeal/form/<int:attendance_record_id>', endpoint='appeal_form')
 @requires_roles('student')
 def appeal_form(attendance_record_id):
     """Show appeal form"""
-    with get_session() as db_session:
-        ar_model = AttendanceRecordModel(db_session)
-        record = ar_model.get_by_id(attendance_record_id)  # Ensure record exists
-        if record.student_id != session.get('user_id'):
-            flash("You are not authorized to appeal this record.", "error")
-            return redirect(url_for('student.appeal_management'))
-        appeal = AttendanceAppealModel(db_session).get_one(attendance_id=attendance_record_id)
-        if appeal:
-            flash("An appeal for this attendance record already exists.", "error")
-            return redirect(url_for('student.appeal_management'))
-        data = {
-            "attendance_record_id": attendance_record_id,
-            **ar_model.student_get_attendance_for_appeal(attendance_record_id),
-        }
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            flash('Please log in to submit an appeal', 'warning')
+            return redirect(url_for('auth.login'))
         
-    return render_template('institution/student/student_appeal_management_appeal_form.html', **data)
+        # Check if user can appeal this record
+        can_appeal = StudentControl.can_appeal_record(user_id, attendance_record_id)
+        if not can_appeal.get('can_appeal'):
+            flash(can_appeal.get('message', 'Cannot appeal this record'), 'error')
+            return redirect(url_for('student.appeal_management'))
+        
+        form_data = StudentControl.get_appeal_form_data(user_id, attendance_record_id)
+        return render_template('institution/student/student_appeal_management_appeal_form.html', **form_data)
+        
+    except Exception as e:
+        current_app.logger.error(f"Error loading appeal form: {e}")
+        flash('An error occurred while loading the appeal form', 'danger')
+        return redirect(url_for('student.appeal_management'))
 
 @student_bp.route('/appeal/form/<int:attendance_record_id>/submit', methods=['POST'], endpoint='appeal_form_submit')
 @requires_roles('student')
 def appeal_form_submit(attendance_record_id):
     """Handle appeal form submission"""
-    reason = request.form.get('appeal_reason', '').strip()
-    user_id = session.get('user_id')
-    with get_session() as db_session:
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            flash('Please log in to submit an appeal', 'warning')
+            return redirect(url_for('auth.login'))
+        
+        reason = request.form.get('appeal_reason', '').strip()
+        
         if not reason:
             flash("Appeal reason cannot be empty.", "error")
             return redirect(url_for('student.appeal_form', attendance_record_id=attendance_record_id))
-        ar_model = AttendanceRecordModel(db_session)
-        appeal_model = AttendanceAppealModel(db_session)
-        record = ar_model.get_by_id(attendance_record_id)  # Ensure record exists
-        if record.student_id != user_id:
-            flash("You are not authorized to appeal this record.", "error")
-            return redirect(url_for('student.appeal_management'))
-        existing_appeal = appeal_model.get_one(attendance_id=attendance_record_id)
-        if existing_appeal:
-            flash("An appeal for this attendance record already exists.", "error")
-            return redirect(url_for('student.appeal_management'))
         
-        appeal_model.create(
-            attendance_id=attendance_record_id,
-            student_id=user_id,
-            reason=reason,
-        )
-    flash("Your appeal has been submitted successfully.", "success")
-    return redirect(url_for('student.appeal_management'))
+        result = StudentControl.submit_appeal(user_id, attendance_record_id, reason)
+        
+        if result.get('success'):
+            flash(result.get('message', 'Your appeal has been submitted successfully.'), 'success')
+            return redirect(url_for('student.appeal_management'))
+        else:
+            flash(result.get('error', 'Failed to submit appeal'), 'error')
+            return redirect(url_for('student.appeal_form', attendance_record_id=attendance_record_id))
+            
+    except Exception as e:
+        current_app.logger.error(f"Error submitting appeal: {e}")
+        flash('An error occurred while submitting your appeal', 'danger')
+        return redirect(url_for('student.appeal_management'))
 
 @student_bp.route('/appeal/retract/<int:appeal_id>', endpoint='appeal_retract')
 @requires_roles('student')
 def appeal_retract(appeal_id):
     """Handle appeal retraction"""
-    user_id = session.get('user_id')
-    with get_session() as db_session:
-        appeal_model = AttendanceAppealModel(db_session)
-        appeal = appeal_model.get_one(appeal_id=appeal_id)
-        if not appeal:
-            flash("Appeal does not exist.", "error")
-            return redirect(url_for('student.appeal_management'))
-        if appeal.student_id != user_id:
-            flash("You are not authorized to retract this appeal.", "error")
-            return redirect(url_for('student.appeal_management'))
-        if appeal.status != "pending":
-            flash("Only pending appeals can be retracted.", "error")
-            return redirect(url_for('student.appeal_management'))
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            flash('Please log in to retract appeals', 'warning')
+            return redirect(url_for('auth.login'))
         
-        appeal_model.delete(appeal.appeal_id)
-    flash("Your appeal has been retracted successfully.", "success")
-    return redirect(url_for('student.appeal_management'))
+        result = StudentControl.retract_appeal(user_id, appeal_id)
+        
+        if result.get('success'):
+            flash(result.get('message', 'Your appeal has been retracted successfully.'), 'success')
+        else:
+            flash(result.get('error', 'Failed to retract appeal'), 'error')
+            
+        return redirect(url_for('student.appeal_management'))
+        
+    except Exception as e:
+        current_app.logger.error(f"Error retracting appeal: {e}")
+        flash('An error occurred while retracting your appeal', 'danger')
+        return redirect(url_for('student.appeal_management'))
 
 @student_bp.route('/absent-records', endpoint='absent_records')
 @requires_roles('student')
 def absent_records():
-    """View all absent records (stub)"""
-    # For now reuse the attendance history template as a placeholder
-    return render_template('institution/student/student_attendance_management_history.html',
-                            user=session.get('user'),
-                            summary={},
-                            records=[])
+    """View all absent records"""
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            flash('Please log in to view absent records', 'warning')
+            return redirect(url_for('auth.login'))
+        
+        absent_data = StudentControl.get_absent_records(user_id)
+        return render_template('institution/student/student_attendance_management_history.html', **absent_data)
+        
+    except Exception as e:
+        current_app.logger.error(f"Error loading absent records: {e}")
+        flash('An error occurred while loading absent records', 'danger')
+        return render_template('institution/student/student_attendance_management_history.html')
 
 # TODO: Add more student-specific routes and functionalities as needed

@@ -90,7 +90,7 @@
                 <div class="card-header-custom">
                     <div class="header-content">
                         <span>Users Information</span>
-                        <span class="user-count">Showing {{ table.start }}-{{ table.end }} of {{ table.total }} users</span>
+                        <span class="user-count" id="userCount">Loading...</span>
                     </div>
                 </div>
                 <div class="card-body-custom">
@@ -107,63 +107,28 @@
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                {% for user in users %}
+                            <tbody id="usersTableBody">
                                 <tr>
-                                    <td>
-                                        <div class="user-info">
-                                            <div class="user-avatar">{{ user.initials }}</div>
-                                            <div class="user-details">
-                                                <div class="user-name">{{ user.name }}</div>
-                                                <div class="user-email">{{ user.email }}</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>{{ user.user_id }}</td>
-                                    <td>
-                                        <span class="role-badge {{ user.role }}">{{ user.role }}</span>
-                                    </td>
-                                    <td>{{ user.institution }}</td>
-                                    <td>
-                                        {% if user.is_active %}
-                                        <span class="status-badge active">Active</span>
-                                        {% else %}
-                                        <span class="status-badge suspended">Suspended</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <div class="action-buttons">
-                                            <button class="btn-action btn-view" title="View Details">
-                                                <span class="action-icon">👁️</span>
-                                            </button>
-                                            <button class="btn-action btn-edit" title="Edit User">
-                                                <span class="action-icon">✏️</span>
-                                            </button>
-                                            <button class="btn-action btn-activate" title="Activate User">
-                                                <span class="action-icon">✅</span>
-                                            </button>
-                                        </div>
-                                    </td>
+                                    <td colspan="6" class="loading">Loading users...</td>
                                 </tr>
-                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
 
                     <!-- Pagination -->
                     <div class="pagination-section">
-                        <div class="pagination-info">
-                            Showing {{ table.start }}-{{ table.end }} of {{ table.total }} users
+                        <div class="pagination-info" id="paginationInfo">
+                            Loading...
                         </div>
                         <div class="pagination-controls">
-                            <a class="btn-custom btn-outline-custom btn-prev" disabled>Previous</a>
+                            <button class="btn-custom btn-outline-custom btn-prev" id="btnPrev" disabled>Previous</button>
                             <span class="page-numbers">
                                 Page 
-                                <span class="page-current">{{ table.page }}</span>
+                                <span class="page-current" id="currentPage">1</span>
                                 /
-                                <a href="#" class="page-link">{{ table.pages }}</a>
+                                <span class="page-link" id="totalPages">1</span>
                             </span>
-                            <a href="/platform/users?page={{ table.page + 1 }}" class="btn-custom btn-outline-custom btn-next">Next</a>
+                            <button class="btn-custom btn-outline-custom btn-next" id="btnNext" disabled>Next</button>
                         </div>
                     </div>
                 </div>
@@ -171,6 +136,150 @@
         </div>
     </div>
 </div>
+
+<script>
+let currentPage = 1;
+const perPage = 5;
+
+// Get initials from name
+function getInitials(name) {
+    return name
+        .split(' ')
+        .map(word => word[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
+}
+
+// Fetch users data
+async function fetchUsers(page) {
+    try {
+        const response = await fetch(`/platform/users/retrieve?page=${page}&per_page=${perPage}`);
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch users');
+        }
+        
+        const data = await response.json();
+        renderUsers(data);
+        updatePagination(data);
+        currentPage = page;
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        document.getElementById('usersTableBody').innerHTML = `
+            <tr>
+                <td colspan="6" class="error">Failed to load users. Please try again.</td>
+            </tr>
+        `;
+    }
+}
+
+// Render users in table
+function renderUsers(data) {
+    const tbody = document.getElementById('usersTableBody');
+    
+    if (data.items.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="loading">No users found.</td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = data.items.map(user => `
+        <tr>
+            <td>
+                <div class="user-info">
+                    <div class="user-avatar">${getInitials(user.name)}</div>
+                    <div class="user-details">
+                        <div class="user-name">${user.name}</div>
+                        <div class="user-email">${user.email}</div>
+                    </div>
+                </div>
+            </td>
+            <td>${user.user_id}</td>
+            <td>
+                <span class="role-badge ${user.role}">${user.role}</span>
+            </td>
+            <td>${user.institution_name}</td>
+            <td>
+                <span class="status-badge ${user.is_active ? 'active' : 'suspended'}">
+                    ${user.is_active ? 'Active' : 'Suspended'}
+                </span>
+            </td>
+            <td>
+                <div class="action-buttons">
+                    <button class="btn-action btn-view" title="View Details" onclick="viewUser(${user.user_id})">
+                        <span class="action-icon">👁️</span>
+                    </button>
+                    <button class="btn-action btn-edit" title="Edit User" onclick="editUser(${user.user_id})">
+                        <span class="action-icon">✏️</span>
+                    </button>
+                    <button class="btn-action btn-activate" title="Activate User" onclick="activateUser(${user.user_id})">
+                        <span class="action-icon">✅</span>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Update pagination controls
+function updatePagination(data) {
+    const start = (data.page - 1) * data.per_page + 1;
+    const end = Math.min(data.page * data.per_page, data.total);
+    
+    // Update user count
+    document.getElementById('userCount').textContent = 
+        `Showing ${start}-${end} of ${data.total} users`;
+    
+    // Update pagination info
+    document.getElementById('paginationInfo').textContent = 
+        `Showing ${start}-${end} of ${data.total} users`;
+    
+    // Update page numbers
+    document.getElementById('currentPage').textContent = data.page;
+    document.getElementById('totalPages').textContent = data.pages;
+    
+    // Update button states
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+    
+    btnPrev.disabled = data.page === 1;
+    btnNext.disabled = data.page === data.pages;
+}
+
+// Action button handlers (implement as needed)
+function viewUser(userId) {
+    console.log('View user:', userId);
+    // Implement view logic
+}
+
+function editUser(userId) {
+    console.log('Edit user:', userId);
+    // Implement edit logic
+}
+
+function activateUser(userId) {
+    console.log('Activate user:', userId);
+    // Implement activate logic
+}
+
+// Event listeners
+document.getElementById('btnPrev').addEventListener('click', () => {
+    if (currentPage > 1) {
+        fetchUsers(currentPage - 1);
+    }
+});
+
+document.getElementById('btnNext').addEventListener('click', () => {
+    fetchUsers(currentPage + 1);
+});
+
+// Initial load
+fetchUsers(1);
+</script>
 
 <style>
     /* Platform Manager User Management Specific Styles */
@@ -617,7 +726,8 @@
         text-align: center;
     }
 
-    .btn-prev[disabled] {
+    .btn-prev[disabled],
+    .btn-next[disabled] {
         opacity: 0.5;
         cursor: not-allowed;
     }

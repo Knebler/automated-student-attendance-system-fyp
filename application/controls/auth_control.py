@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, date
 import bcrypt
 import secrets
 from functools import wraps
-from flask import flash, redirect, url_for, session
+from flask import flash, redirect, url_for, session, jsonify, request
 from sqlalchemy.exc import IntegrityError
 
 from database.base import get_session
@@ -27,6 +27,30 @@ def requires_roles(roles):
             if 'role' not in session or session.get('role') not in roles:
                 flash('Access denied.', 'danger')
                 return redirect(url_for('auth.login'))
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+def requires_roles_api(*allowed_roles):
+    """API version of requires_roles that returns JSON instead of redirecting."""
+    if isinstance(allowed_roles, str):
+        allowed_roles = [allowed_roles]
+    
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            # Get role from session
+            user_role = session.get('role') or session.get('user_type')
+            
+            # Check if user is logged in and has an allowed role
+            if not user_role or user_role not in allowed_roles:
+                return jsonify({
+                    'success': False,
+                    'error': 'Access denied. Insufficient permissions.',
+                    'required_roles': list(allowed_roles),
+                    'user_role': user_role
+                }), 403
+            
             return f(*args, **kwargs)
         return decorated_function
     return decorator

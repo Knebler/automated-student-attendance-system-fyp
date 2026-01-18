@@ -104,7 +104,13 @@ def appeal_management():
             flash('Please log in to manage appeals', 'warning')
             return redirect(url_for('auth.login'))
         
-        appeal_data = StudentControl.get_student_appeals(user_id)
+        appeal_data = StudentControl.get_student_appeals(
+            user_id, 
+            module_filter='module', 
+            status_filter='status', 
+            date_filter='date'
+        )
+        
         return render_template('institution/student/student_appeal_management.html', **appeal_data)
         
     except Exception as e:
@@ -207,5 +213,3 @@ def absent_records():
         current_app.logger.error(f"Error loading absent records: {e}")
         flash('An error occurred while loading absent records', 'danger')
         return render_template('institution/student/student_attendance_management_history.html')
-
-# TODO: Add more student-specific routes and functionalities as needed

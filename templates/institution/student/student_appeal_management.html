@@ -18,9 +18,18 @@
                     <label class="form-label">Module</label>
                     <select class="form-select" name="module">
                         <option value="">All Modules</option>
+                        {% if filters and filters.modules %}
                         {% for module in filters.modules %}
-                        <option value="{{module}}">{{module}}</option>
+                        <option value="{{module}}" {% if request.args.get('module') == module %}selected{% endif %}>
+                            {{module}}
+                        </option>
                         {% endfor %}
+                        {% else %}
+                        <!-- Default modules if filters not available -->
+                        <option value="COMP101">COMP101</option>
+                        <option value="COMP102">COMP102</option>
+                        <option value="COMP103">COMP103</option>
+                        {% endif %}
                     </select>
                 </div>
 
@@ -28,15 +37,24 @@
                     <label class="form-label">Status</label>
                     <select class="form-select" name="status">
                         <option value="">All Statuses</option>
+                        {% if filters and filters.statuses %}
                         {% for status in filters.statuses %}
-                        <option value="{{status}}">{{status|capitalize}}</option>
+                        <option value="{{status}}" {% if request.args.get('status') == status %}selected{% endif %}>
+                            {{status|capitalize}}
+                        </option>
                         {% endfor %}
+                        {% else %}
+                        <!-- Default statuses if filters not available -->
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                        {% endif %}
                     </select>
                 </div>
 
                 <div class="col-md-3">
                     <label class="form-label">Date</label>
-                    <input type="date" class="form-control" name="date">
+                    <input type="date" class="form-control" name="date" value="{{ request.args.get('date', '') }}">
                 </div>
 
                 <div class="col-md-3 text-end">
@@ -50,7 +68,13 @@
     <div class="card-custom mb-4">
         <div class="card-header-custom justify-content-between">
             Classes Eligible for Appeal
-            <span class="badge bg-secondary">{{ absent_late|length if absent_late else 0 }}</span>
+            <span class="badge bg-secondary">
+                {% if absent_late %}
+                    {{ absent_late|length }}
+                {% else %}
+                    0
+                {% endif %}
+            </span>
         </div>
         
         <div class="card-body-custom p-0">
@@ -65,7 +89,7 @@
                 </thead>
 
                 <tbody>
-                    {% if absent_late %}
+                    {% if absent_late and absent_late|length > 0 %}
                     {% for record in absent_late %}
                     <tr>
                         <td>{{ record.course_code }} - {{ record.course_name }}</td>
@@ -116,10 +140,10 @@
                 </thead>
 
                 <tbody>
-                    {% if appeals %}
+                    {% if appeals and appeals|length > 0 %}
                     {% for appeal in appeals %}
                     <tr>
-                        <td>{{ appeal.module }}</td>
+                        <td>{{ appeal.module or appeal.course_code }}</td>
                         <td>{{ appeal.class_date }}</td>
                         <td class="text-truncate" style="max-width: 250px;">
                             {{ appeal.reason }}

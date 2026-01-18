@@ -17,120 +17,52 @@
     <div class="checkin-grid">
         <!-- Upcoming Classes -->
         <div class="card-custom">
-            <div class="card-header-custom">Upcoming Classes</div>
+            <div class="card-header-custom">Upcoming Classessss</div>
             <div class="card-body-custom">
                 <div class="class-list">
-                    <div class="class-item" data-class="CSCI251-T01">
-                        <div class="class-header">
-                            <span class="class-name">CSCI251 - Advanced Programming</span>
-                            <span class="class-time">08:30-11:30</span>
-                        </div>
-                        <div class="class-details">
-                            <div class="detail">
-                                <span class="detail-label">Date:</span>
-                                <span class="detail-value">Dec 02, 2026</span>
-                            </div>
-                            <div class="detail">
-                                <span class="detail-label">Venue:</span>
-                                <span class="detail-value">LAB A.5.17C</span>
-                            </div>
-                            <div class="detail">
-                                <span class="detail-label">Lecturer:</span>
-                                <span class="detail-value">Prof. Johnson</span>
-                            </div>
-                        </div>
-                    </div>
+                {% for c in upcoming_classes %}
+                    <div class="class-item"
+                        data-name="{{ c.course_code }} - {{ c.course_name }}"
+                        data-date="{{ c.date }}"
+                        data-time="{{ c.start_time }}-{{ c.end_time }}"
+                        data-venue="{{ c.venue }}"
+                        data-lecturer="{{ c.lecturer }}">
 
-                    <div class="class-item" data-class="MATH202-L03">
                         <div class="class-header">
-                            <span class="class-name">MATH202 - Calculus II</span>
-                            <span class="class-time">14:00-17:00</span>
+                            <span class="class-name">{{ c.course_code }} - {{ c.course_name }}</span>
+                            <span class="class-time">{{ c.start_time }}-{{ c.end_time }}</span>
                         </div>
-                        <div class="class-details">
-                            <div class="detail">
-                                <span class="detail-label">Date:</span>
-                                <span class="detail-value">Dec 03, 2026</span>
-                            </div>
-                            <div class="detail">
-                                <span class="detail-label">Venue:</span>
-                                <span class="detail-value">LT B.2.01</span>
-                            </div>
-                            <div class="detail">
-                                <span class="detail-label">Lecturer:</span>
-                                <span class="detail-value">Dr. Smith</span>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div class="class-item" data-class="PHYS101-T02">
-                        <div class="class-header">
-                            <span class="class-name">PHYS101 - Physics I</span>
-                            <span class="class-time">09:00-12:00</span>
-                        </div>
                         <div class="class-details">
                             <div class="detail">
                                 <span class="detail-label">Date:</span>
-                                <span class="detail-value">Dec 04, 2026</span>
+                                <span class="detail-value">{{ c.date }}</span>
                             </div>
                             <div class="detail">
                                 <span class="detail-label">Venue:</span>
-                                <span class="detail-value">SCI 301</span>
+                                <span class="detail-value">{{ c.venue }}</span>
                             </div>
                             <div class="detail">
                                 <span class="detail-label">Lecturer:</span>
-                                <span class="detail-value">Dr. Brown</span>
+                                <span class="detail-value">{{ c.lecturer }}</span>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="class-item" data-class="CSCI251-L02">
-                        <div class="class-header">
-                            <span class="class-name">CSCI251 - Advanced Programming</span>
-                            <span class="class-time">15:30-18:30</span>
-                        </div>
-                        <div class="class-details">
-                            <div class="detail">
-                                <span class="detail-label">Date:</span>
-                                <span class="detail-value">Dec 05, 2026</span>
-                            </div>
-                            <div class="detail">
-                                <span class="detail-label">Venue:</span>
-                                <span class="detail-value">LT A.1.17</span>
-                            </div>
-                            <div class="detail">
-                                <span class="detail-label">Lecturer:</span>
-                                <span class="detail-value">Prof. Johnson</span>
-                            </div>
-                        </div>
                     </div>
-
-                    <div class="class-item" data-class="ENGL101-T01">
-                        <div class="class-header">
-                            <span class="class-name">ENGL101 - Academic Writing</span>
-                            <span class="class-time">10:00-13:00</span>
-                        </div>
-                        <div class="class-details">
-                            <div class="detail">
-                                <span class="detail-label">Date:</span>
-                                <span class="detail-value">Dec 06, 2026</span>
-                            </div>
-                            <div class="detail">
-                                <span class="detail-label">Venue:</span>
-                                <span class="detail-value">HUM 205</span>
-                            </div>
-                            <div class="detail">
-                                <span class="detail-label">Lecturer:</span>
-                                <span class="detail-value">Prof. Davis</span>
-                            </div>
-                        </div>
-                    </div>
+                    {% else %}
+                        <p>No upcoming classes.</p>
+                    {% endfor %}
                 </div>
+
+     
+             
 
                 <div class="view-more">
                     <a href="#" class="view-more-link">View More Upcoming Classes →</a>
                 </div>
             </div>
         </div>
+
 
         <!-- Ongoing Class -->
         <div class="card-custom">
@@ -764,49 +696,6 @@
         const manualCheckinButton = document.getElementById('manualCheckinButton');
         const graceTimer = document.getElementById('graceTimer');
 
-        // Sample class data
-        const classData = {
-            'CSCI251-T01': {
-                name: 'CSCI251 - Advanced Programming',
-                date: 'Dec 02, 2026',
-                time: '08:30-11:30',
-                venue: 'LAB A.5.17C',
-                lecturer: 'Prof. Johnson',
-                status: 'Active'
-            },
-            'MATH202-L03': {
-                name: 'MATH202 - Calculus II',
-                date: 'Dec 03, 2026',
-                time: '14:00-17:00',
-                venue: 'LT B.2.01',
-                lecturer: 'Dr. Smith',
-                status: 'Active'
-            },
-            'PHYS101-T02': {
-                name: 'PHYS101 - Physics I',
-                date: 'Dec 04, 2026',
-                time: '09:00-12:00',
-                venue: 'SCI 301',
-                lecturer: 'Dr. Brown',
-                status: 'Active'
-            },
-            'CSCI251-L02': {
-                name: 'CSCI251 - Advanced Programming',
-                date: 'Dec 05, 2026',
-                time: '15:30-18:30',
-                venue: 'LT A.1.17',
-                lecturer: 'Prof. Johnson',
-                status: 'Active'
-            },
-            'ENGL101-T01': {
-                name: 'ENGL101 - Academic Writing',
-                date: 'Dec 06, 2026',
-                time: '10:00-13:00',
-                venue: 'HUM 205',
-                lecturer: 'Prof. Davis',
-                status: 'Active'
-            }
-        };
 
         // Handle class selection
         classItems.forEach(item => {
@@ -818,8 +707,8 @@
                 this.classList.add('selected');
                 
                 // Get class data
-                const classId = this.getAttribute('data-class');
-                const data = classData[classId];
+                const data = this.dataset;
+
                 
                 if (data) {
                     // Update displayed class info

@@ -317,38 +317,29 @@ def seed_testimonials():
         testimonials = []
         
         testimonial_data = [
-            # Institution 1 testimonials
             (1, 4, "The automated attendance system has revolutionized how we track student participation. It's accurate, fast, and saves us countless hours of manual work.", "Revolutionary attendance tracking", 5, "approved"),
-            (1, 10, "As a student, I appreciate how seamless the facial recognition system is. No more forgetting to sign attendance sheets!", "Seamless and convenient", 5, "approved"),
-            (1, 11, "The system works great most of the time, but occasionally has issues with lighting conditions. Overall, it's a significant improvement over the old system.", "Works great with minor issues", 4, "approved"),
-            (1, 12, "I was skeptical at first, but the attendance system has proven to be reliable and efficient. Highly recommend it!", "Reliable and efficient", 5, "approved"),
-            (1, 13, "Good system, but the mobile app could use some improvements. Desktop version is excellent though.", "Desktop version excellent", 4, "pending"),
+            (1, 11, "The automated attendance system has significantly improved how attendance is handled in our classes. Compared to manual roll calls or sign-in sheets, the process is much faster and reduces disruption during lessons. Most of the time, students are marked correctly without any intervention, which helps both lecturers and students focus more on learning rather than administration.\n\nThat said, there are occasional challenges, particularly when classes are held in rooms with poor or inconsistent lighting. In those situations, facial recognition may take slightly longer or require repositioning. While this does not happen often, it can be noticeable during early morning or evening sessions.\n\nOverall, despite these minor issues, the system is a huge improvement over traditional methods. The benefits in efficiency, accuracy, and time savings far outweigh the occasional inconvenience, and with further optimization, it has the potential to be nearly flawless.",
+            "Works great with minor issues", 4, "approved"),
+            (2, 16, "The system delivers exactly what it promises in terms of core functionality. Attendance marking is reliable, and the facial recognition works consistently across most environments. From a practical standpoint, it has reduced administrative workload and eliminated many common attendance-related disputes.\n\nOne area that could be improved is the user interface. While it is functional and easy to understand, the design feels somewhat dated compared to newer platforms. A more modern layout and visual enhancements would improve the overall user experience, especially for students who interact with the system frequently.\n\nDespite this, the strength of the platform lies in its performance and stability. It rarely experiences downtime, handles large class sizes well, and provides accurate records. For institutions prioritizing reliability over aesthetics, this system performs exceptionally well.",
+            "Solid functionality", 4, "approved"),
+            (3, 18, "Overall, the attendance system performs reliably and meets our expectations for daily academic operations. Facial recognition is generally accurate, and attendance records are updated correctly without requiring manual corrections. This has greatly reduced errors compared to older attendance methods.\n\nDuring peak hours, such as when multiple large classes start at the same time, the system can become slightly slower. Processing may take a few extra seconds, which can be noticeable but does not disrupt classes significantly. These delays are infrequent and usually resolve quickly.\n\nIn summary, the system is dependable and effective for regular use. The minor performance slowdowns during peak periods are manageable and do not overshadow the overall advantages. With improved scalability, the system could easily support even larger institutions without issue.",
+            "Works well with minor delays", 4, "approved"),
             
-            # Institution 2 testimonials
-            (2, 6, "This platform has streamlined our entire attendance process. The reporting features are particularly impressive.", "Streamlined attendance process", 5, "approved"),
-            (2, 15, "The facial recognition is incredibly accurate. It's made attending classes so much easier and faster.", "Incredibly accurate", 5, "approved"),
-            (2, 16, "A solid system that does what it promises. The interface could be more modern, but functionality is top-notch.", "Solid functionality", 4, "approved"),
-            (2, 17, "I love how I can check my attendance record anytime. The transparency is great!", "Great transparency", 5, "pending"),
             
-            # Institution 3 testimonials
-            (3, 8, "Implementing this system was one of the best decisions we've made. Student engagement has improved measurably.", "Best decision for engagement", 5, "approved"),
-            (3, 9, "The analytics and reporting capabilities help us identify at-risk students early. Invaluable tool for educators.", "Invaluable analytics tool", 5, "approved"),
-            (3, 18, "Works well overall. Sometimes the system is slow during peak hours, but that's a minor issue.", "Works well with minor delays", 4, "approved"),
-            (3, 19, "The attendance appeals process is straightforward and fair. Makes it easy to handle special circumstances.", "Fair appeals process", 4, "approved"),
-            (3, 20, "Great system! The facial recognition is fast and accurate. Much better than manual attendance.", "Fast and accurate", 5, "pending"),
         ]
         
         users = session.query(User).all()
         for user in users:
-            testimonial = Testimonial(
-                institution_id=user.institution_id,
-                user_id=user.user_id,
-                content=random.choice(testimonial_data)[2],
-                summary=random.choice(testimonial_data)[3],
-                rating=random.choice(testimonial_data)[4],
-                status=random.choice(testimonial_data)[5],
-            )
-            testimonials.append(testimonial)
+            if random.random() < 0.3:  # Only 30% of users get testimonials
+                testimonial = Testimonial(
+                    institution_id=user.institution_id,
+                    user_id=user.user_id,
+                    content=random.choice(testimonial_data)[2],
+                    summary=random.choice(testimonial_data)[3],
+                    rating=random.choice(testimonial_data)[4],
+                    status=random.choice(testimonial_data)[5],
+                )
+                testimonials.append(testimonial)
             
         
         

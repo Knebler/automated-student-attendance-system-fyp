@@ -2,64 +2,221 @@
 {% block title %}Institution Profile - AttendAI{% endblock %}
 
 {% block content %}
+<div class="dashboard-admin">
+    <h1 class="page-title mb-4">Institution Profile</h1>
 
-<div class="institution-card">
-  <h1 class="institution-name">institution.name</h1>
+    <!-- Main Card -->
+    <div class="card-custom">
+        <div class="card-header-custom">
+            <h2 class="institution-name">{{ institution.institution_name }}</h2>
+        </div>
+        <div class="card-body-custom">
+            
+            <!-- Institution Details Section -->
+            <div class="section-container mb-4">
+                <h3 class="section-title mb-3">Institution Details</h3>
+                <div class="info-box">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Institution Name:</span>
+                            <span class="info-value">{{ institution.institution_name }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Address:</span>
+                            <span class="info-value">{{ institution.address }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Phone Number:</span>
+                            <span class="info-value">{{ institution.phone_number }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-  <div class="institution-info">
-    <h2>Institution Details</h2>
-    <p><strong>Address:</strong> institution.address</p>
-    <p><strong>Phone:</strong>institution.phone</p>
-  </div>
+            <!-- Point of Contact Section -->
+            <div class="section-container">
+                <h3 class="section-title mb-3">Point of Contact</h3>
+                <div class="info-box">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Contact Name:</span>
+                            <span class="info-value">{{ institution.point_of_contact }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Contact Email:</span>
+                            <span class="info-value">{{ institution.email }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-  <div class="contact-info">
-    <h2>Point of Contact</h2>
-    <p><strong>Name:</strong> institution.point_of_contact</p>
-    <p><strong>Email:</strong>institution.email</p>
-  </div>
+            <!-- Action Button -->
+            <div class="action-section mt-4">
+                <a href="{{ url_for('institution.institution_dashboard') }}" class="btn-custom btn-outline">Back to Dashboard</a>
+            </div>
+
+        </div>
+    </div>
 </div>
 
 <style>
-    .institution-card {
-  max-width: 700px;
-  margin: 40px auto;
-  padding: 25px 30px;
-  background: #0f172a;
-  border-radius: 12px;
-  border: 1px solid #333;
-  color: #eaeaea;
-  font-family: Arial, Helvetica, sans-serif;
-}
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
 
-.institution-name {
-  margin: 0 0 20px 0;
-  font-size: 28px;
-  font-weight: bold;
-  text-align: center;
-  color: #ffffff;
-}
+    .dashboard-admin {
+        max-width: 1200px;
+        margin: auto;
+        padding: 20px;
+        font-family: 'Montserrat', sans-serif;
+    }
 
-.institution-info, .contact-info {
-  margin-bottom: 20px;
-}
+    .page-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        color: #001641;
+        font-family: 'Montserrat', sans-serif;
+    }
 
-.institution-info h2, .contact-info h2 {
-  font-size: 20px;
-  margin-bottom: 10px;
-  color: #7dc4ff;
-}
+    .mb-4 {
+        margin-bottom: 1.5rem;
+    }
 
-.institution-info p, .contact-info p {
-  margin: 6px 0;
-  font-size: 16px;
-  line-height: 1.4;
-}
+    .mb-3 {
+        margin-bottom: 1rem;
+    }
 
-strong {
-  font-weight: 600;
-}
+    .mt-4 {
+        margin-top: 1.5rem;
+    }
+
+    .card-custom {
+        background: #f8fafc;
+        border: 2px solid #001641;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: none;
+    }
+
+    .card-header-custom {
+        background: #001641;
+        padding: 1.25rem 1.5rem;
+        border-bottom: 2px solid #001641;
+    }
+
+    .institution-name {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin: 0;
+        color: #FFFFFF;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    .section-container {
+        background: #001641;
+        border-radius: 8px;
+        padding: 1.5rem;
+        border: 2px solid #001641;
+    }
+
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #FFFFFF;
+        margin: 0;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .info-box {
+        background: #FFFFFF;
+        border: 2px solid #001641;
+        border-radius: 8px;
+        padding: 1.5rem;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.25rem;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .info-label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #001641;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .info-value {
+        font-size: 1rem;
+        color: #001641;
+        font-weight: 500;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .action-section {
+        display: flex;
+        justify-content: flex-start;
+        gap: 1rem;
+        padding-top: 1.5rem;
+        border-top: 2px solid #001641;
+    }
+
+    .btn-custom {
+        display: inline-block;
+        padding: 0.625rem 1.25rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        text-align: center;
+        text-decoration: none;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .btn-outline {
+        background: transparent;
+        border: 2px solid #001641;
+        color: #001641;
+    }
+
+    .btn-outline:hover {
+        background: #001641;
+        color: #FFFFFF;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 22, 65, 0.3);
+    }
+
+    @media (max-width: 768px) {
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .dashboard-admin {
+            padding: 10px;
+        }
+
+        .card-body-custom {
+            padding: 1.25rem;
+        }
+
+        .section-container {
+            padding: 1rem;
+        }
+    }
 </style>
-
-
 
 {% endblock %}

@@ -208,7 +208,24 @@ def module_details(course_id):
 @requires_roles('admin')
 def institution_profile():
     """Render the institution profile page for admins"""
-    return render_template('institution/admin/institution_admin_institution_profile.html',)
+    with get_session() as db_session:
+        institution_model = InstitutionModel(db_session)
+        institution_id = session.get('institution_id')
+        institution = institution_model.get_one(institution_id=institution_id)
+        
+        # Convert to dict to avoid DetachedInstanceError
+        institution_data = {
+            "institution_name": institution.name if institution else "",
+            "address": institution.address if institution else "",
+            "phone_number": institution.poc_phone if institution else "",
+            "point_of_contact": institution.poc_name if institution else "",
+            "email": institution.poc_email if institution else "",
+        }
+        
+        context = {
+            "institution": institution_data,
+        }
+    return render_template('institution/admin/institution_admin_institution_profile.html', **context)
 
 
 @institution_bp.route('/import_data')

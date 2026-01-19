@@ -1,9 +1,8 @@
 from .base_entity import BaseEntity
 from database.models import *
-from datetime import date
+from datetime import date, datetime
 from sqlalchemy import func
 from typing import List, Optional
-from datetime import datetime, date
 
 class SemesterModel(BaseEntity[Semester]):
     """Entity for Semester model with custom methods"""
@@ -20,18 +19,18 @@ class SemesterModel(BaseEntity[Semester]):
     
     def get_current_semester(self, institution_id: int) -> Optional[Semester]:
         """Get the current active semester for an institution"""
-        today = date.today()
+        today = datetime.now().date()
         
         return self.session.query(Semester)\
             .filter(
                 Semester.institution_id == institution_id,
-                Semester.start_date <= today,
-                Semester.end_date >= today
+                func.date(Semester.start_date) <= today,
+                func.date(Semester.end_date) >= today
             )\
             .first()
     
     def create_semester(self, institution_id: int, name: str, 
-                       start_date: date, end_date: date) -> Semester:
+                       start_date: datetime, end_date: datetime) -> Semester:
         """Create a new semester"""
         semester = Semester(
             institution_id=institution_id,
@@ -45,7 +44,7 @@ class SemesterModel(BaseEntity[Semester]):
     
     def get_upcoming_semesters(self, institution_id: int) -> List[Semester]:
         """Get upcoming semesters (starting in the future)"""
-        today = date.today()
+        today = datetime.now()
         
         return self.session.query(Semester)\
             .filter(
@@ -57,7 +56,7 @@ class SemesterModel(BaseEntity[Semester]):
     
     def get_past_semesters(self, institution_id: int) -> List[Semester]:
         """Get past semesters"""
-        today = date.today()
+        today = datetime.now()
         
         return self.session.query(Semester)\
             .filter(
@@ -72,26 +71,34 @@ class SemesterModel(BaseEntity[Semester]):
         return self.session.query(Semester)\
             .filter(
                 Semester.institution_id == institution_id,
-                Semester.start_date <= target_date,
-                Semester.end_date >= target_date
+                func.date(Semester.start_date) <= target_date,
+                func.date(Semester.end_date) >= target_date
             )\
             .first()
+    
     def get_current_semester_info(self):
+        """Get current semester info with institution name"""
         headers = ["institution_name", "semester_name"]
+        today = datetime.now().date()
+        
         data = (
             self.session
             .query(Institution.name, Semester.name)
             .select_from(Semester)
             .join(Institution, Institution.institution_id == Semester.institution_id)
             .filter(
-                (Semester.start_date <= date.today()) &
-                (Semester.end_date >= date.today())
+                (func.date(Semester.start_date) <= today) &
+                (func.date(Semester.end_date) >= today)
             )
             .first()
         )
-        return dict(zip(headers, data))
+        
+        if data:
+            return dict(zip(headers, data))
+        return {}
     
     def student_dashboard_term_attendance(self, student_id):
+        """Get student attendance summary for current semester"""
         return dict(
             self.session
             .query(
@@ -105,8 +112,7 @@ class SemesterModel(BaseEntity[Semester]):
                 (AttendanceRecord.class_id == Class.class_id) & (AttendanceRecord.student_id == CourseUser.user_id)
             )
             .filter(CourseUser.user_id == student_id)
-            .filter(Semester.start_date <= func.now(), Semester.end_date >= func.now())
+            .filter(func.date(Semester.start_date) <= func.now(), func.date(Semester.end_date) >= func.now())
             .group_by(func.coalesce(AttendanceRecord.status, "unmarked"))
             .all()
         )
-

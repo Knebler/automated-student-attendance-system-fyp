@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, session, redirect, url_for, flash, current_app, request
+from flask import Blueprint, render_template, session, redirect, url_for, flash, current_app, request, jsonify
 from application.controls.auth_control import AuthControl, requires_roles
 from application.controls.student_control import StudentControl
 from database.base import get_session
@@ -77,6 +77,17 @@ def attendance():
         current_app.logger.error(f"Error loading student attendance: {e}")
         flash('An error occurred while loading attendance data', 'danger')
         return render_template('institution/student/student_attendance_management.html')
+    
+@student_bp.route('/attendance/statistics')
+def attendance_statistics():
+    """Get attendance statistics as JSON for JavaScript"""
+    if 'user_id' not in session or session.get('user_role') != 'student':
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    
+    user_id = session['user_id']
+    stats = StudentControl.get_attendance_statistics(user_id)
+    
+    return jsonify(stats)
 
 @student_bp.route('/attendance/history')
 @requires_roles('student')

@@ -4,9 +4,11 @@ from application.entities2.attendance_record import AttendanceRecordModel
 from application.entities2.attendance_appeal import AttendanceAppealModel
 from application.entities2.user import UserModel
 from application.entities2.course import CourseModel
+from application.entities2.venue import VenueModel
+from application.entities2.announcement import AnnouncementModel  # NEW: Import AnnouncementModel
 from datetime import datetime, date, timedelta
 from database.base import get_session
-from database.models import AttendanceAppealStatusEnum, AttendanceRecord
+from database.models import AttendanceAppealStatusEnum, AttendanceRecord, Class, Course, CourseUser, User, Venue, User as UserModelDB
 from sqlalchemy import or_, func, and_, extract
 import math
 
@@ -20,6 +22,7 @@ class StudentControl:
                 user_model = UserModel(db_session)
                 semester_model = SemesterModel(db_session)
                 class_model = ClassModel(db_session)
+                announcement_model = AnnouncementModel(db_session)  # NEW: Add announcement model
                 
                 # Get basic student info
                 student = user_model.get_by_id(user_id)
@@ -190,9 +193,6 @@ class StudentControl:
                 student = user_model.get_by_id(user_id)
                 if not student:
                     return {'error': 'Student not found', 'success': False}
-                
-                # Get all attendance records for the student
-                from database.models import AttendanceRecord, Class, Course, User, Venue
                 
                 # Build base query
                 base_query = (
@@ -633,6 +633,7 @@ class StudentControl:
                 class_model = ClassModel(db_session)
                 semester_model = SemesterModel(db_session)
                 attendance_model = AttendanceRecordModel(db_session)
+                announcement_model = AnnouncementModel(db_session)  # NEW: Add announcement model
                 
                 # Get student info
                 student = user_model.get_by_id(user_id)
@@ -643,11 +644,7 @@ class StudentControl:
                 current_time = datetime.now()
                 current_date = date.today()
                 
-                # Get today's classes
-                # First, get student's enrolled courses for current semester
-                from database.models import CourseUser, Semester, Course, Class, Venue, User as UserModelDB
-                
-                # Get current semester
+                # Get current semester - FIXED: Added institution_id parameter
                 current_semester = semester_model.get_current_semester(student.institution_id)
                 if not current_semester:
                     today_classes = []
@@ -714,15 +711,29 @@ class StudentControl:
                 present_percent = ((p + l + e) / marked * 100) if marked > 0 else 0
                 absent_percent = (a / marked * 100) if marked > 0 else 0
                 
-                # Get student program info (you might need to add this to your User model)
-                # For now, use placeholder or extend your model
-                program_info = {
-                    'program': getattr(student, 'program', 'Computer Science'),
-                    'year': getattr(student, 'year', 'Year 2')
-                }
-                
-                # Get recent announcements (placeholder - implement AnnouncementModel as needed)
-                announcements = []  # You'll need to implement AnnouncementModel similar to lecturer
+                # Get recent announcements for the student's institution
+                try:
+                    announcements = announcement_model.get_recent_announcements(
+                        institution_id=student.institution_id, 
+                        limit=3
+                    )
+                    
+                    # Format announcements similar to lecturer_control.py
+                    formatted_announcements = []
+                    for announcement in announcements:
+                        # Get the user who created the announcement
+                        requested_by = user_model.get_by_id(announcement.requested_by_user_id) if announcement.requested_by_user_id else None
+                        
+                        formatted_announcements.append({
+                            'title': announcement.title,
+                            'date': announcement.date_posted.strftime('%b %d, %Y') if announcement.date_posted else 'N/A',
+                            'content': announcement.content,
+                            'author': requested_by.name if requested_by else 'Unknown'
+                        })
+                except Exception as e:
+                    # If there's an error getting announcements, log it and return empty list
+                    print(f"Error getting announcements for student dashboard: {e}")
+                    formatted_announcements = []
                 
                 return {
                     'success': True,
@@ -730,12 +741,10 @@ class StudentControl:
                         'name': student.name,
                         'email': student.email,
                         'student_id': f"S{student.user_id:07d}",
-                        'program': program_info['program'],
-                        'year': program_info['year'],
                         'institution_id': student.institution_id
                     },
                     'today_classes': today_classes,
-                    'announcements': announcements,
+                    'announcements': formatted_announcements,  # UPDATED: Now has actual announcements
                     'statistics': {
                         'overall_attendance': round(present_percent, 1),
                         'present_count': p + l + e,
@@ -757,22 +766,25 @@ class StudentControl:
         """Get all courses a student is enrolled in"""
         try:
             with get_session() as db_session:
-                from application.entities2.course import CourseModel
-                from database.models import CourseUser, Semester
-                
+                user_model = UserModel(db_session)
                 course_model = CourseModel(db_session)
-                
-                # Get current semester
                 semester_model = SemesterModel(db_session)
-                current_semester = semester_model.get_current_semester()
+                
+                # Get student to get institution_id
+                student = user_model.get_by_id(user_id)
+                if not student:
+                    return []
+                
+                # Get current semester - FIXED: Added institution_id parameter
+                current_semester = semester_model.get_current_semester(student.institution_id)
                 
                 if not current_semester:
                     return []
                 
                 # Get courses where student is enrolled in current semester
                 courses = (
-                    db_session.query(CourseModel(db_session).model)
-                    .join(CourseUser, CourseUser.course_id == CourseModel(db_session).model.course_id)
+                    db_session.query(course_model.model)
+                    .join(CourseUser, CourseUser.course_id == course_model.model.course_id)
                     .filter(CourseUser.user_id == user_id)
                     .filter(CourseUser.semester_id == current_semester.semester_id)
                     .all()
@@ -797,40 +809,35 @@ class StudentControl:
         """Get classes for a student within a date range"""
         try:
             with get_session() as db_session:
-                from application.entities2.classes import ClassModel
-                from application.entities2.course import CourseModel
-                from application.entities2.user import UserModel
-                from application.entities2.venue import VenueModel
-                from database.models import CourseUser, Semester
-                
+                user_model = UserModel(db_session)
                 class_model = ClassModel(db_session)
                 course_model = CourseModel(db_session)
-                user_model = UserModel(db_session)
                 venue_model = VenueModel(db_session)
                 semester_model = SemesterModel(db_session)
                 
-                # Get current semester
-                current_semester = semester_model.get_current_semester()
+                # Get student to get institution_id
+                student = user_model.get_by_id(student_id)
+                if not student:
+                    return []
+                
+                # Get current semester - FIXED: Added institution_id parameter
+                current_semester = semester_model.get_current_semester(student.institution_id)
                 
                 if not current_semester:
                     return []
                 
-                # Get classes where student is enrolled
-                from sqlalchemy import and_
-                
                 # Base query to get classes for student
                 classes = (
-                    db_session.query(ClassModel(db_session).model)
-                    .join(CourseModel(db_session).model, 
-                          ClassModel(db_session).model.course_id == CourseModel(db_session).model.course_id)
-                    .join(CourseUser, CourseUser.course_id == CourseModel(db_session).model.course_id)
+                    db_session.query(class_model.model)
+                    .join(course_model.model, class_model.model.course_id == course_model.model.course_id)
+                    .join(CourseUser, CourseUser.course_id == course_model.model.course_id)
                     .filter(CourseUser.user_id == student_id)
                     .filter(CourseUser.semester_id == current_semester.semester_id)
                     .filter(and_(
-                        ClassModel(db_session).model.start_time >= start_date,
-                        ClassModel(db_session).model.start_time <= end_date
+                        class_model.model.start_time >= start_date,
+                        class_model.model.start_time <= end_date
                     ))
-                    .order_by(ClassModel(db_session).model.start_time)
+                    .order_by(class_model.model.start_time)
                     .all()
                 )
                 
@@ -888,40 +895,37 @@ class StudentControl:
         """Get upcoming classes for a student"""
         try:
             with get_session() as db_session:
-                from application.entities2.classes import ClassModel
-                from application.entities2.course import CourseModel
-                from application.entities2.user import UserModel
-                from application.entities2.venue import VenueModel
-                from database.models import CourseUser, Semester
-                from sqlalchemy import and_
-                
+                user_model = UserModel(db_session)
                 class_model = ClassModel(db_session)
                 course_model = CourseModel(db_session)
-                user_model = UserModel(db_session)
                 venue_model = VenueModel(db_session)
                 semester_model = SemesterModel(db_session)
                 
                 if not current_date:
                     current_date = date.today()
                 
-                # Get current semester
-                current_semester = semester_model.get_current_semester()
+                # Get student to get institution_id
+                student = user_model.get_by_id(student_id)
+                if not student:
+                    return []
+                
+                # Get current semester - FIXED: Added institution_id parameter
+                current_semester = semester_model.get_current_semester(student.institution_id)
                 
                 if not current_semester:
                     return []
                 
                 # Get upcoming classes (from current date onward)
                 classes = (
-                    db_session.query(ClassModel(db_session).model)
-                    .join(CourseModel(db_session).model, 
-                          ClassModel(db_session).model.course_id == CourseModel(db_session).model.course_id)
-                    .join(CourseUser, CourseUser.course_id == CourseModel(db_session).model.course_id)
+                    db_session.query(class_model.model)
+                    .join(course_model.model, class_model.model.course_id == course_model.model.course_id)
+                    .join(CourseUser, CourseUser.course_id == course_model.model.course_id)
                     .filter(CourseUser.user_id == student_id)
                     .filter(CourseUser.semester_id == current_semester.semester_id)
                     .filter(and_(
-                        ClassModel(db_session).model.start_time >= current_date
+                        class_model.model.start_time >= current_date
                     ))
-                    .order_by(ClassModel(db_session).model.start_time)
+                    .order_by(class_model.model.start_time)
                     .all()
                 )
                 
@@ -973,13 +977,18 @@ class StudentControl:
         """Get timetable data for student based on view type"""
         try:
             with get_session() as db_session:
-                from application.entities2.classes import ClassModel
-                from application.entities2.course import CourseModel
-                from application.entities2.user import UserModel
-                from application.entities2.venue import VenueModel
+                user_model = UserModel(db_session)
                 
                 if not target_date:
                     target_date = date.today()
+                
+                # Get student to get institution_id
+                student = user_model.get_by_id(student_id)
+                if not student:
+                    return {
+                        'success': False,
+                        'error': 'Student not found'
+                    }
                 
                 if view_type == 'monthly':
                     # Generate monthly calendar
@@ -1091,4 +1100,78 @@ class StudentControl:
             return {
                 'success': False,
                 'error': str(e)
+            }
+        
+    def get_attendance_statistics(user_id):
+        """Get comprehensive attendance statistics for student"""
+        try:
+            with get_session() as db_session:
+                user_model = UserModel(db_session)
+                semester_model = SemesterModel(db_session)
+                class_model = ClassModel(db_session)
+                
+                # Get student info
+                student = user_model.get_by_id(user_id)
+                if not student:
+                    return {'error': 'Student not found', 'success': False}
+                
+                # Get current semester
+                current_semester = semester_model.get_current_semester(student.institution_id)
+                if not current_semester:
+                    return {
+                        'success': False,
+                        'error': 'No active semester found'
+                    }
+                
+                # Get attendance statistics
+                term_stats = semester_model.student_dashboard_term_attendance(user_id)
+                p = term_stats.get("present", 0)
+                a = term_stats.get("absent", 0)
+                l = term_stats.get("late", 0)
+                e = term_stats.get("excused", 0)
+                unmarked = term_stats.get("unmarked", 0)
+                
+                marked = p + a + l + e
+                total = marked + unmarked
+                
+                # Calculate percentages
+                present_percent = ((p + l + e) / marked * 100) if marked > 0 else 0
+                absent_percent = (a / marked * 100) if marked > 0 else 0
+                
+                # Get cutoff requirement from institution or use default
+                required_percent = 90  # Default requirement
+                
+                # Determine status
+                is_meeting_requirement = present_percent >= required_percent
+                
+                return {
+                    'success': True,
+                    'statistics': {
+                        'overall_percent': round(present_percent, 1),
+                        'present_count': p + l + e,
+                        'absent_count': a,
+                        'late_count': l,
+                        'excused_count': e,
+                        'marked_count': marked,
+                        'unmarked_count': unmarked,
+                        'total_count': total,
+                        'required_percent': required_percent,
+                        'is_meeting_requirement': is_meeting_requirement,
+                        'present_percent': round(present_percent, 1),
+                        'absent_percent': round(absent_percent, 1)
+                    },
+                    'term_info': {
+                        'semester_name': current_semester.name,
+                        'semester_id': current_semester.semester_id
+                    },
+                    'student_info': {
+                        'student_id': student.user_id,
+                        'name': student.name
+                    }
+                }
+                
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Error getting attendance statistics: {str(e)}'
             }

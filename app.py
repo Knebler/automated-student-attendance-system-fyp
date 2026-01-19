@@ -9,6 +9,7 @@ from datetime import timedelta
 import stripe
 from application import create_app
 from application.boundaries.platform_boundary import platform_bp
+from application.boundaries.student_boundary import student_bp
 
 from database.models import Base
 
@@ -104,6 +105,7 @@ def create_flask_app(config_name='default'):
     # Initialize application with BCE structure
     create_app(app)
     csrf.exempt(platform_bp)
+    csrf.exempt(student_bp)
 
     return app
 

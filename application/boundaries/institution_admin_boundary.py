@@ -543,6 +543,80 @@ def manage_appeals():
         
     return render_template('institution/admin/institution_admin_appeal_management.html', appeals=appeals)  
 
+@institution_bp.route('/manage_appeals/<int:appeal_id>/view')
+@requires_roles('admin')
+def view_appeal(appeal_id):
+    """View detailed information about a specific appeal"""
+    institution_id = session.get('institution_id')
+    
+    with get_session() as db_session:
+        appeal_model = AttendanceAppealModel(db_session)
+        course_model = CourseModel(db_session)
+        appeal = appeal_model.get_appeal_with_details(appeal_id)
+        
+        # Verify the appeal belongs to this institution
+        if appeal:
+            # Check if the course belongs to this institution
+            course = course_model.get_one(code=appeal['course_code'])
+            if course and course.institution_id != institution_id:
+                abort(403)
+        else:
+            flash("Appeal not found", "error")
+            return redirect(url_for('institution.manage_appeals'))
+    
+    return render_template(
+        'institution/admin/institution_admin_view_appeal.html',
+        appeal=appeal
+    )
+
+@institution_bp.route('/manage_appeals/<int:appeal_id>/process', methods=['POST'])
+@requires_roles('admin')
+def process_appeal(appeal_id):
+    """Process an appeal (approve or reject)"""
+    institution_id = session.get('institution_id')
+    action = request.form.get('action')
+    
+    if action not in ['approve', 'reject']:
+        flash("Invalid action", "error")
+        return redirect(url_for('institution.view_appeal', appeal_id=appeal_id))
+    
+    with get_session() as db_session:
+        appeal_model = AttendanceAppealModel(db_session)
+        attendance_model = AttendanceRecordModel(db_session)
+        course_model = CourseModel(db_session)
+        
+        # Get appeal details
+        appeal = appeal_model.get_appeal_with_details(appeal_id)
+        
+        if not appeal:
+            flash("Appeal not found", "error")
+            return redirect(url_for('institution.manage_appeals'))
+        
+        # Verify the appeal belongs to this institution
+        course = course_model.get_one(code=appeal['course_code'])
+        if not course or course.institution_id != institution_id:
+            abort(403)
+        
+        # Check if appeal is already processed
+        if appeal['status'] != 'pending':
+            flash(f"This appeal has already been {appeal['status']}", "error")
+            return redirect(url_for('institution.view_appeal', appeal_id=appeal_id))
+        
+        # Update appeal status
+        new_status = 'approved' if action == 'approve' else 'rejected'
+        appeal_model.update_status(appeal_id, new_status)
+        
+        # If approved, update the attendance record to 'present'
+        if action == 'approve':
+            attendance_record = attendance_model.get_by_id(appeal['attendance_id'])
+            if attendance_record:
+                attendance_record.status = 'present'
+                db_session.commit()
+        
+        flash(f"Appeal has been {new_status} successfully", "success")
+    
+    return redirect(url_for('institution.manage_appeals'))
+
 @institution_bp.route('/student_class_attendance_details/<int:course_id>/<int:class_id>/<int:student_id>')  
 @requires_roles('admin')
 def student_class_attendance_details(course_id, class_id, student_id):

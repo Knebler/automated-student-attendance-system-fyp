@@ -35,7 +35,6 @@
                             <th>Student Name</th>
                             <th>Class</th>
                             <th>Date</th>
-                            <th>Reason</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -49,7 +48,7 @@
                                 <td>{{ appeal.student_name }}</td>
                                 <td>{{ appeal.class_name }}</td>
                                 <td>{{ appeal.class_date_str }}</td>
-                                <td>{{ appeal.reason[:60] }}{% if appeal.reason|length > 60 %}...{% endif %}</td>
+                                
                                 <td>
                                     {% if appeal.status == 'pending' %}
                                         <span class="status pending">Pending</span>
@@ -60,7 +59,7 @@
                                     {% endif %}
                                 </td>
                                 <td class="actions-cell">
-                                    <button class="btn-manage" onclick="viewAppeal({{ appeal.appeal_id }})">Review</button>
+                                    <a href="{{ url_for('institution.view_appeal', appeal_id=appeal.appeal_id) }}" class="btn-manage">Review</a>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -76,28 +75,49 @@
 </div>
 
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+
     /* Class Management Specific Styles */
     .class-management {
         max-width: 1400px;
         margin: 0 auto;
+        padding: 20px;
+        font-family: 'Montserrat', sans-serif;
     }
-
-        /* .class-management {
-        max-width: 1400px;
-        margin: 0 auto;
-    } */
 
     .page-title {
-        font-size: 2.5rem;
-        font-weight: bold;
-        font-style: italic;
-        color: var(--text-dark);
-        border-bottom: 2px solid var(--border-color);
-        padding-bottom: 1rem;
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        color: #001641;
+        font-family: 'Montserrat', sans-serif;
     }
 
-     /* Search Section */
-     .search-filters {
+    .card-custom {
+        background: #FFFFFF;
+        border-radius: 12px;
+        border: 2px solid #001641;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header-custom {
+        padding: 1rem 1.25rem;
+        font-weight: 700;
+        font-size: 1.1rem;
+        background: #001641;
+        color: #FFFFFF;
+        border-bottom: 2px solid #001641;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .card-body-custom {
+        padding: 1.25rem;
+        background: #f8fafc;
+    }
+
+    /* Search Section */
+    .search-filters {
         display: flex;
         gap: 1rem;
         width: 100%;
@@ -106,11 +126,22 @@
     .search-input,
     .filter-select {
         flex: 1;
-        min-width: 350px;
+        min-width: 200px;
         padding: 0.75rem 1.25rem;
-        border-radius: 20px;
+        border-radius: 8px;
         font-size: 0.9rem;
-        background-color: white;
+        background-color: #FFFFFF;
+        border: 2px solid #001641;
+        color: #001641;
+        font-family: 'Montserrat', sans-serif;
+        transition: all 0.2s ease;
+    }
+
+    .search-input:focus,
+    .filter-select:focus {
+        outline: none;
+        border-color: #001641;
+        box-shadow: 0 0 0 3px rgba(0, 22, 65, 0.1);
     }
 
     .filter-select {
@@ -120,17 +151,18 @@
     /* Table Styles */
     .table-responsive {
         overflow-x: auto;
+        background: #FFFFFF;
+        border-radius: 8px;
     }
 
     .classes-table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 1rem;
     }
 
     .classes-table thead {
-        background-color: var(--primary-dark);
-        color: white;
+        background-color: #001641;
+        color: #FFFFFF;
     }
 
     .classes-table th {
@@ -138,7 +170,7 @@
         text-align: left;
         font-weight: 600;
         font-size: 0.9rem;
-        border-bottom: 2px solid var(--border-color);
+        font-family: 'Montserrat', sans-serif;
     }
 
     .classes-table td {
@@ -146,6 +178,8 @@
         border-bottom: 1px solid #e5e7eb;
         font-size: 0.9rem;
         vertical-align: middle;
+        color: #001641;
+        font-family: 'Montserrat', sans-serif;
     }
 
     .classes-table tbody tr:last-child td {
@@ -153,7 +187,7 @@
     }
 
     .classes-table tbody tr:hover {
-        background-color: var(--primary-light);
+        background-color: #f8fafc;
     }
 
     /* Status Badges */
@@ -161,38 +195,39 @@
         font-weight: 600;
         font-size: 0.85rem;
         padding: 0.25rem 0.75rem;
-        border-radius: 20px;
+        border-radius: 6px;
         display: inline-block;
+        font-family: 'Montserrat', sans-serif;
     }
 
     .status.active {
-        color: #059669;
-        background-color: #f0fdf4;
-        border: 1px solid #059669;
+        color: #166534;
+        background-color: #dcfce7;
+        border: 1px solid #166534;
     }
 
     .status.inactive {
-        color: #dc2626;
-        background-color: #fef2f2;
-        border: 1px solid #dc2626;
+        color: #991b1b;
+        background-color: #fee2e2;
+        border: 1px solid #991b1b;
     }
 
     .status.pending {
         color: #d97706;
-        background-color: #fffbeb;
+        background-color: #fef3c7;
         border: 1px solid #d97706;
     }
 
     .status.approved {
-        color: #059669;
-        background-color: #f0fdf4;
-        border: 1px solid #059669;
+        color: #166534;
+        background-color: #dcfce7;
+        border: 1px solid #166534;
     }
 
     .status.rejected {
-        color: #dc2626;
-        background-color: #fef2f2;
-        border: 1px solid #dc2626;
+        color: #991b1b;
+        background-color: #fee2e2;
+        border: 1px solid #991b1b;
     }
 
     /* Action Buttons */
@@ -201,22 +236,41 @@
     }
 
     .btn-manage {
-        padding: 0.5rem 1.5rem;
-        border-radius: 20px;
+        padding: 0.5rem 1.25rem;
+        border-radius: 6px;
         font-size: 0.85rem;
-        background-color: var(--primary-dark);
-        color: white;
-        border: none;
+        background-color: #001641;
+        color: #FFFFFF;
+        border: 2px solid #001641;
         cursor: pointer;
-        transition: all 0.3s ease;
+        font-weight: 600;
+        font-family: 'Montserrat', sans-serif;
+        transition: all 0.2s ease;
     }
 
     .btn-manage:hover {
-        background-color: #1e293b;
+        background-color: #FFFFFF;
+        color: #001641;
+        transform: scale(1.05);
     }
 
     /* Responsive Design */
+    @media (max-width: 1024px) {
+        .search-filters {
+            flex-direction: column;
+        }
+
+        .search-input,
+        .filter-select {
+            min-width: 100%;
+        }
+    }
+
     @media (max-width: 768px) {
+        .class-management {
+            padding: 10px;
+        }
+
         .page-title {
             font-size: 1.75rem;
         }
@@ -224,15 +278,6 @@
         .search-filters {
             flex-direction: column;
             align-items: stretch;
-        }
-
-        .search-input,
-        .filter-input {
-            min-width: 100%;
-        }
-
-        .btn-search {
-            width: 100%;
         }
 
         .classes-table {
@@ -266,7 +311,7 @@
             font-size: 0.8rem;
         }
     }
-    </style>
+</style>
 
 <script>
     // Search and filter functionality
@@ -300,13 +345,6 @@
         searchInput.addEventListener('input', filterTable);
         statusFilter.addEventListener('change', filterTable);
     });
-    
-    function viewAppeal(appealId) {
-        // Placeholder for appeal review functionality
-        alert('Appeal review functionality for Appeal #' + appealId + ' will be implemented here');
-        // In production, this would navigate to a detailed appeal review page
-        // window.location.href = '/institution/manage_appeals/' + appealId + '/review';
-    }
 </script>
 
 {% endblock %}

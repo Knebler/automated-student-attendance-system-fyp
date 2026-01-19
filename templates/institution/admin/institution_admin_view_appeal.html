@@ -1,0 +1,424 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}View Appeal - AttendAI{% endblock %}
+
+{% block content %}
+<div class="appeal-details">
+    <div class="page-header mb-4">
+        <a href="{{ url_for('institution.manage_appeals') }}" class="back-link">
+            <span>← Back to Appeals</span>
+        </a>
+        <h1 class="page-title">Appeal Details</h1>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} mb-4">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if appeal %}
+    <div class="appeal-container">
+        <!-- Appeal Status Card -->
+        <div class="card-custom mb-4">
+            <div class="card-header-custom">Appeal Status</div>
+            <div class="card-body-custom">
+                <div class="status-section">
+                    <div class="status-item">
+                        <span class="status-label">Current Status:</span>
+                        {% if appeal.status == 'pending' %}
+                            <span class="status pending">Pending Review</span>
+                        {% elif appeal.status == 'approved' %}
+                            <span class="status approved">Approved</span>
+                        {% elif appeal.status == 'rejected' %}
+                            <span class="status rejected">Rejected</span>
+                        {% endif %}
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Appeal ID:</span>
+                        <span class="status-value">#{{ appeal.appeal_id }}</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Submitted:</span>
+                        <span class="status-value">{{ appeal.created_at }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Information Card -->
+        <div class="card-custom mb-4">
+            <div class="card-header-custom">Student Information</div>
+            <div class="card-body-custom">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Student Name:</span>
+                        <span class="info-value">{{ appeal.student_name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Student Email:</span>
+                        <span class="info-value">{{ appeal.student_email }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Class Information Card -->
+        <div class="card-custom mb-4">
+            <div class="card-header-custom">Class Information</div>
+            <div class="card-body-custom">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Class ID:</span>
+                        <span class="info-value">#{{ appeal.class_id }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Course Code:</span>
+                        <span class="info-value">{{ appeal.course_code }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Course Name:</span>
+                        <span class="info-value">{{ appeal.course_name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Class Date:</span>
+                        <span class="info-value">{{ appeal.class_date_str }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Class Time:</span>
+                        <span class="info-value">{{ appeal.start_time }} - {{ appeal.end_time }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Current Attendance Status:</span>
+                        <span class="info-value status-{{ appeal.attendance_status }}">{{ appeal.attendance_status|title }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Appeal Reason Card -->
+        <div class="card-custom mb-4">
+            <div class="card-header-custom">Appeal Reason</div>
+            <div class="card-body-custom">
+                <div class="reason-box">
+                    {{ appeal.reason }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        {% if appeal.status == 'pending' %}
+        <div class="action-section">
+            <form method="POST" action="{{ url_for('institution.process_appeal', appeal_id=appeal.appeal_id) }}" class="action-form" onsubmit="return confirmAction(event)">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" id="actionInput">
+                <div class="button-group">
+                    <button type="button" class="btn-reject" onclick="setAction('reject')">
+                        Reject Appeal
+                    </button>
+                    <button type="button" class="btn-approve" onclick="setAction('approve')">
+                        Approve Appeal
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% else %}
+        <div class="action-section">
+            <div class="info-message">
+                This appeal has already been {{ appeal.status }}.
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="card-custom">
+        <div class="card-body-custom">
+            <p style="text-align: center; padding: 2rem;">Appeal not found.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+
+    .appeal-details {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .back-link {
+        display: inline-block;
+        color: #001641;
+        text-decoration: none;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        transition: color 0.2s ease;
+    }
+
+    .back-link:hover {
+        color: #003285;
+    }
+
+    .page-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #001641;
+        margin: 0;
+    }
+
+    .alert {
+        padding: 1rem 1.25rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        font-weight: 500;
+    }
+
+    .alert-success {
+        background-color: #dcfce7;
+        color: #166534;
+        border: 1px solid #166534;
+    }
+
+    .alert-error {
+        background-color: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #991b1b;
+    }
+
+    .appeal-container {
+        background: transparent;
+    }
+
+    .card-custom {
+        background: #FFFFFF;
+        border-radius: 12px;
+        border: 2px solid #001641;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header-custom {
+        padding: 1rem 1.25rem;
+        font-weight: 700;
+        font-size: 1.1rem;
+        background: #001641;
+        color: #FFFFFF;
+        border-bottom: 2px solid #001641;
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+        background: #f8fafc;
+    }
+
+    .status-section {
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .status-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .status-label,
+    .info-label {
+        font-weight: 600;
+        color: #001641;
+        font-size: 0.9rem;
+    }
+
+    .status-value,
+    .info-value {
+        font-size: 1rem;
+        color: #001641;
+    }
+
+    .status {
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.4rem 1rem;
+        border-radius: 6px;
+        display: inline-block;
+        width: fit-content;
+    }
+
+    .status.pending {
+        color: #d97706;
+        background-color: #fef3c7;
+        border: 1px solid #d97706;
+    }
+
+    .status.approved {
+        color: #166534;
+        background-color: #dcfce7;
+        border: 1px solid #166534;
+    }
+
+    .status.rejected {
+        color: #991b1b;
+        background-color: #fee2e2;
+        border: 1px solid #991b1b;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .status-absent {
+        color: #991b1b;
+        font-weight: 600;
+    }
+
+    .status-present {
+        color: #166534;
+        font-weight: 600;
+    }
+
+    .status-late {
+        color: #d97706;
+        font-weight: 600;
+    }
+
+    .reason-box {
+        background: #FFFFFF;
+        padding: 1.5rem;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        color: #001641;
+        line-height: 1.6;
+        font-size: 1rem;
+        white-space: pre-wrap;
+    }
+
+    .action-section {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: #FFFFFF;
+        border-radius: 12px;
+        border: 2px solid #001641;
+    }
+
+    .action-form {
+        width: 100%;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    .btn-approve,
+    .btn-reject {
+        padding: 0.875rem 2rem;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        font-family: 'Montserrat', sans-serif;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 2px solid;
+        min-width: 180px;
+    }
+
+    .btn-approve {
+        background-color: #166534;
+        color: #FFFFFF;
+        border-color: #166534;
+    }
+
+    .btn-approve:hover {
+        background-color: #15803d;
+        border-color: #15803d;
+        transform: scale(1.02);
+    }
+
+    .btn-reject {
+        background-color: #991b1b;
+        color: #FFFFFF;
+        border-color: #991b1b;
+    }
+
+    .btn-reject:hover {
+        background-color: #b91c1c;
+        border-color: #b91c1c;
+        transform: scale(1.02);
+    }
+
+    .info-message {
+        text-align: center;
+        padding: 1rem;
+        color: #001641;
+        font-weight: 500;
+        font-size: 1rem;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .appeal-details {
+            padding: 10px;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+        }
+
+        .status-section {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .button-group {
+            flex-direction: column-reverse;
+        }
+
+        .btn-approve,
+        .btn-reject {
+            width: 100%;
+        }
+    }
+</style>
+
+<script>
+    function setAction(action) {
+        document.getElementById('actionInput').value = action;
+        document.querySelector('.action-form').submit();
+    }
+
+    function confirmAction(event) {
+        const action = document.getElementById('actionInput').value;
+        const message = action === 'approve' 
+            ? 'Are you sure you want to approve this appeal? This will update the student\'s attendance record.'
+            : 'Are you sure you want to reject this appeal?';
+        
+        return confirm(message);
+    }
+</script>
+
+{% endblock %}

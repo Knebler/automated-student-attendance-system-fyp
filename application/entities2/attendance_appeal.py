@@ -181,6 +181,7 @@ class AttendanceAppealModel(BaseEntity[AttendanceAppeal]):
                 'created_at': appeal.created_at.strftime("%d %b %Y %H:%M") if appeal.created_at else "N/A",
                 'attendance_id': record.attendance_id,
                 'attendance_status': record.status,
+                'class_id': class_obj.class_id,
                 'course_code': course.code,
                 'course_name': course.name,
                 'class_date': class_obj.start_time.date() if class_obj.start_time else None,

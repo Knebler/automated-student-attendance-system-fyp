@@ -129,8 +129,6 @@ def view_user_details(user_id):
         user_details["courses"] = course_model.admin_view_courses(user_id)
         user_details["possible_courses"] = [row.as_dict() for row in course_model.get_all(institution_id=inst_id)]
         user_details["possible_semesters"] = [row.as_dict() for row in sem_model.get_all(institution_id=inst_id)]
-    from pprint import pprint
-    pprint(user_details)
     return render_template(
         'institution/admin/institution_admin_user_management_user_details.html',
         user_details=user_details,

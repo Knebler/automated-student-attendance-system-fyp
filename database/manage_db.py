@@ -411,18 +411,18 @@ def seed_database():
 
     if row_count("Courses") == 0:
         cols = [
-            'institution_id', 'code', 'name', 'description', 'credits', 'start_date', 'end_date'
+            'institution_id', 'code', 'name', 'description', 'credits'
         ]
         courses = [
-            (1, 'CS101', 'Introduction to Programming', 'Basic programming concepts using Python', 3, date(2023, 1, 1), date(2023, 6, 30)),
-            (1, 'MATH201', 'Calculus I', 'Differential and integral calculus', 4, date(2023, 7, 1), date(2023, 12, 31)),
-            (1, 'CS301', 'Database Systems', 'Relational database design and SQL', 3, date(2023, 1, 1), date(2023, 6, 30)),
-            (2, 'BUS101', 'Business Fundamentals', 'Introduction to business concepts', 3, date(2023, 1, 1), date(2023, 6, 30)),
-            (2, 'ECON101', 'Microeconomic Theory', 'Basic concepts of microeconomics', 3, date(2023, 7, 1), date(2023, 12, 31)),
-            (2, 'ECON201', 'Macroeconomic Theory', 'Basic concepts of macroeconomics', 3, date(2023, 1, 1), date(2023, 6, 30)),
-            (3, 'PHYS101', 'Physics I', 'Basic concepts of physics', 3, date(2023, 1, 1), date(2023, 6, 30)),
-            (3, 'CHEM101', 'Chemistry I', 'Basic concepts of chemistry', 3, date(2023, 7, 1), date(2023, 12, 31)),
-            (3, 'BIO101', 'Biology I', 'Basic concepts of biology', 3, date(2023, 1, 1), date(2023, 6, 30)),
+            (1, 'CS101', 'Introduction to Programming', 'Basic programming concepts using Python', 3),
+            (1, 'MATH201', 'Calculus I', 'Differential and integral calculus', 4),
+            (1, 'CS301', 'Database Systems', 'Relational database design and SQL', 3),
+            (2, 'BUS101', 'Business Fundamentals', 'Introduction to business concepts', 3),
+            (2, 'ECON101', 'Microeconomic Theory', 'Basic concepts of microeconomics', 3),
+            (2, 'ECON201', 'Macroeconomic Theory', 'Basic concepts of macroeconomics', 3),
+            (3, 'PHYS101', 'Physics I', 'Basic concepts of physics', 3),
+            (3, 'CHEM101', 'Chemistry I', 'Basic concepts of chemistry', 3),
+            (3, 'BIO101', 'Biology I', 'Basic concepts of biology', 3),
         ]
         push_data(f"INSERT INTO Courses ({comma_join(cols)}) VALUES ({colon_join(cols)})", zip_dict(cols, courses))
         print(f"Added {len(courses)} courses")

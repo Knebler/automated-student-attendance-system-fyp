@@ -3,183 +3,6 @@
 {% block title %}My Attendance - AttendAI{% endblock %}
 
 {% block content %}
-<div class="student-attendance-management">
-    <!-- Page Header -->
-    <div class="page-header mb-4">
-        <h1 class="page-title">My Attendance</h1>
-        <div class="breadcrumb">
-            <a href="{{ url_for('student.dashboard') }}">Dashboard</a> / 
-            <span>My Attendance</span>
-        </div>
-    </div>
-
-    <!-- Attendance Grid -->
-    <div class="attendance-grid">
-        <!-- Left Column -->
-        <div class="left-column">
-            <!-- Term Information Card -->
-            <div class="card-custom mb-4">
-                <div class="card-header-custom">Term Information</div>
-                <div class="card-body-custom">
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <span class="info-label">Institution:</span>
-                            <span class="info-value">{{term_info.institution_name}}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Term:</span>
-                            <span class="info-value">{{term_info.semester_name}}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Student ID:</span>
-                            <span class="info-value">{{term_info.student_id}}</span>
-                        </div>
-                        <div class="info-item highlight">
-                            <span class="info-label">Minimum Requirement:</span>
-                            <span class="info-value">{{term_info.cutoff}}%</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- View History Card -->
-            <div class="card-custom">
-                <div class="card-header-custom">Attendance History</div>
-                <div class="card-body-custom">
-                    <p class="history-description mb-3">View detailed attendance records for all your classes and terms.</p>
-                    <a href="{{ url_for('student.attendance_history') }}" class="btn-custom btn-history">View Attendance History</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Middle Column - Monthly Statistics -->
-        <div class="card-custom">
-            <div class="card-header-custom">Monthly Attendance</div>
-            <div class="card-body-custom">
-                <div class="months-grid">
-                    {% for report in monthly_report %}
-                    <div class="month-item">
-                        <div class="month-header">
-                            <h3 class="month-title">{{report.month}}</h3>
-                            {% if report.is_good %}
-                            <span class="month-status good">On Track</span>
-                            {% else %}
-                            <span class="month-status warning">At Risk</span>
-                            {% endif %}
-                        </div>
-                        <div class="chart-container">
-                            <div class="chart" data-percent="{{report.present_percent|round(1)}}" data-absent="{{report.absent_percent|round(1)}}"></div>
-                        </div>
-                        <div class="month-stats">
-                            <div class="stat">
-                                <span class="stat-label">Present:</span>
-                                <span class="stat-value present">{{report.present}}</span>
-                            </div>
-                            <div class="stat">
-                                <span class="stat-label">Late:</span>
-                                <span class="stat-value late">{{report.late}}</span>
-                            </div>
-                            <div class="stat">
-                                <span class="stat-label">Excused:</span>
-                                <span class="stat-value excused">{{report.excused}}</span>
-                            </div>
-                            <div class="stat">
-                                <span class="stat-label">Absent:</span>
-                                <span class="stat-value absent">{{report.absent}}</span>
-                            </div>
-                            <div class="stat">
-                                <span class="stat-label">Classes:</span>
-                                <span class="stat-value">{{report.total_classes}}</span>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Right Column - Term Overview -->
-        <div class="card-custom">
-            <div class="card-header-custom">Term Overview</div>
-            <div class="card-body-custom">
-                <!-- Overall Attendance -->
-                <div class="term-overview">
-                    <div class="overall-stats">
-                        <div class="chart-container large">
-                            <div class="chart" data-percent="{{overview.present_percent|round(1)}}" data-absent="{{overview.absent_percent|round(1)}}"></div>
-                        </div>
-                        <div class="overall-info">
-                            <h3 class="overall-title">Term Attendance</h3>
-                            <div class="overall-percentage">{{overview.present_percent|round(1)}}%</div>
-                            <div class="status-badge">
-                                <span class="status-dot"></span>
-                                <span class="status-text">Meeting Requirement</span>
-                            </div>
-                            <div class="overall-details">
-                                <div class="detail">
-                                    <span class="detail-label">Present:</span>
-                                    <span class="detail-value">{{overview.present}}</span>
-                                </div>
-                                <div class="detail">
-                                    <span class="detail-label">Absent:</span>
-                                    <span class="detail-value">{{overview.absent}}</span>
-                                </div>
-                                <div class="detail">
-                                    <span class="detail-label">Required:</span>
-                                    <span class="detail-value">≥90%</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Absent Classes -->
-                    <div class="absent-section">
-                        <div class="section-header">
-                            <h3 class="section-title">Absent Classes</h3>
-                            <span class="section-count">{{classes|length}} classes</span>
-                        </div>
-
-                        <div class="absent-list">
-                            {% for class in classes %}
-                            <div class="absent-item">
-                                <div class="absent-info">
-                                    <div class="absent-class">
-                                        <div class="flex-column justify-between">
-                                            <strong>{{class.course_code}}</strong>
-                                            <span class="month-status warning">{{class.status|capitalize}}</span>
-                                        </div>
-                                        <span>{{class.course_name}}</span>
-                                    </div>
-                                    <div class="absent-details">
-                                        <div class="detail">
-                                            <span class="detail-label">Date: </span>
-                                            <span class="detail-value">{{class.start_date.strftime('%b %d, %Y • %H:%M-%H:%M')}}</span>
-                                        </div>
-                                        <div class="detail">
-                                            <span class="detail-label">Venue:</span>
-                                            <span class="detail-value">{{class.venue}}</span>
-                                        </div>
-                                        <div class="detail">
-                                            <span class="detail-label">Lecturer:</span>
-                                            <span class="detail-value">{{class.lecturer}}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                    <a href="{{ url_for('student.appeal_form', attendance_record_id=class.attendance_id) }}" class="btn-custom btn-appeal">Appeal</a>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-
-                        <div class="view-all">
-                            <a href="{{ url_for('student.appeal_management') }}" class="view-all-link">View All Absent Records →</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 <style>
     /* Student Attendance Management Specific Styles */
@@ -714,6 +537,183 @@
     }
 </style>
 
+<div class="student-attendance-management">
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <h1 class="page-title">My Attendance</h1>
+        <div class="breadcrumb">
+            <a href="{{ url_for('student.dashboard') }}">Dashboard</a> / 
+            <span>My Attendance</span>
+        </div>
+    </div>
+
+    <!-- Attendance Grid -->
+    <div class="attendance-grid">
+        <!-- Left Column -->
+        <div class="left-column">
+            <!-- Term Information Card -->
+            <div class="card-custom mb-4">
+                <div class="card-header-custom">Term Information</div>
+                <div class="card-body-custom">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Institution:</span>
+                            <span class="info-value">{{term_info.institution_name}}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Term:</span>
+                            <span class="info-value">{{term_info.semester_name}}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Student ID:</span>
+                            <span class="info-value">{{term_info.student_id}}</span>
+                        </div>
+                        <div class="info-item highlight">
+                            <span class="info-label">Minimum Requirement:</span>
+                            <span class="info-value">{{term_info.cutoff}}%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View History Card -->
+            <div class="card-custom">
+                <div class="card-header-custom">Attendance History</div>
+                <div class="card-body-custom">
+                    <p class="history-description mb-3">View detailed attendance records for all your classes and terms.</p>
+                    <a href="{{ url_for('student.attendance_history') }}" class="btn-custom btn-history">View Attendance History</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Middle Column - Monthly Statistics -->
+        <div class="card-custom">
+            <div class="card-header-custom">Monthly Attendance</div>
+            <div class="card-body-custom">
+                <div class="months-grid">
+                    {% for report in monthly_report %}
+                    <div class="month-item">
+                        <div class="month-header">
+                            <h3 class="month-title">{{report.month}}</h3>
+                            {% if report.is_good %}
+                            <span class="month-status good">On Track</span>
+                            {% else %}
+                            <span class="month-status warning">At Risk</span>
+                            {% endif %}
+                        </div>
+                        <div class="chart-container">
+                            <div class="chart" data-percent="{{report.present_percent|round(1)}}" data-absent="{{report.absent_percent|round(1)}}"></div>
+                        </div>
+                        <div class="month-stats">
+                            <div class="stat">
+                                <span class="stat-label">Present:</span>
+                                <span class="stat-value present">{{report.present}}</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Late:</span>
+                                <span class="stat-value late">{{report.late}}</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Excused:</span>
+                                <span class="stat-value excused">{{report.excused}}</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Absent:</span>
+                                <span class="stat-value absent">{{report.absent}}</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Classes:</span>
+                                <span class="stat-value">{{report.total_classes}}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Term Overview -->
+        <div class="card-custom">
+            <div class="card-header-custom">Term Overview</div>
+            <div class="card-body-custom">
+                <!-- Overall Attendance -->
+                <div class="term-overview">
+                    <div class="overall-stats">
+                        <div class="chart-container large">
+                            <div class="chart" id="overall-chart" data-percent="{{overview.present_percent|round(1)}}" data-absent="{{overview.absent_percent|round(1)}}"></div>
+                        </div>
+                        <div class="overall-info">
+                            <h3 class="overall-title">Term Attendance</h3>
+                            <div class="overall-percentage" id="overall-percentage">{{overview.present_percent|round(1)}}%</div>
+                            <div class="status-badge" id="status-badge">
+                                <span class="status-dot" id="status-dot"></span>
+                                <span class="status-text" id="status-text">Loading status...</span>
+                            </div>
+                            <div class="overall-details">
+                                <div class="detail">
+                                    <span class="detail-label">Present:</span>
+                                    <span class="detail-value" id="present-count">{{overview.present}}</span>
+                                </div>
+                                <div class="detail">
+                                    <span class="detail-label">Absent:</span>
+                                    <span class="detail-value" id="absent-count">{{overview.absent}}</span>
+                                </div>
+                                <div class="detail">
+                                    <span class="detail-label">Required:</span>
+                                    <span class="detail-value" id="required-percent">≥{{term_info.cutoff}}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Absent Classes -->
+                    <div class="absent-section">
+                        <div class="section-header">
+                            <h3 class="section-title">Absent Classes</h3>
+                            <span class="section-count">{{classes|length}} classes</span>
+                        </div>
+
+                        <div class="absent-list">
+                            {% for class in classes %}
+                            <div class="absent-item">
+                                <div class="absent-info">
+                                    <div class="absent-class">
+                                        <div class="flex-column justify-between">
+                                            <strong>{{class.course_code}}</strong>
+                                            <span class="month-status warning">{{class.status|capitalize}}</span>
+                                        </div>
+                                        <span>{{class.course_name}}</span>
+                                    </div>
+                                    <div class="absent-details">
+                                        <div class="detail">
+                                            <span class="detail-label">Date: </span>
+                                            <span class="detail-value">{{class.start_date.strftime('%b %d, %Y • %H:%M-%H:%M')}}</span>
+                                        </div>
+                                        <div class="detail">
+                                            <span class="detail-label">Venue:</span>
+                                            <span class="detail-value">{{class.venue}}</span>
+                                        </div>
+                                        <div class="detail">
+                                            <span class="detail-label">Lecturer:</span>
+                                            <span class="detail-value">{{class.lecturer}}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <a href="{{ url_for('student.appeal_form', attendance_record_id=class.attendance_id) }}" class="btn-custom btn-appeal">Appeal</a>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="view-all">
+                            <a href="{{ url_for('student.appeal_management') }}" class="view-all-link">View All Absent Records →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Function to create circular progress chart
@@ -766,16 +766,109 @@
             }, 100);
         }
         
-        // Initialize all charts
+        // Initialize all monthly charts
         document.querySelectorAll('.chart').forEach(chart => {
-            const container = chart.closest('.chart-container');
-            const presentPercent = parseFloat(chart.getAttribute('data-percent'));
-            const absentPercent = parseFloat(chart.getAttribute('data-absent'));
-            
-            if (container && !isNaN(presentPercent) && !isNaN(absentPercent)) {
-                createProgressChart(container, presentPercent, absentPercent);
+            if (chart.id !== 'overall-chart') {
+                const container = chart.closest('.chart-container');
+                const presentPercent = parseFloat(chart.getAttribute('data-percent'));
+                const absentPercent = parseFloat(chart.getAttribute('data-absent'));
+                
+                if (container && !isNaN(presentPercent) && !isNaN(absentPercent)) {
+                    createProgressChart(container, presentPercent, absentPercent);
+                }
             }
         });
+        
+        // Fetch attendance statistics from API
+        function fetchAttendanceStatistics() {
+            fetch("{{ url_for('student.attendance_statistics') }}")
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        updateDynamicContent(data.statistics);
+                        updateOverallChart(data.statistics);
+                    } else {
+                        console.error('Error fetching statistics:', data.error);
+                        updateFallbackContent();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching attendance statistics:', error);
+                    updateFallbackContent();
+                });
+        }
+        
+        // Update dynamic content with fetched statistics
+        function updateDynamicContent(stats) {
+            // Update overall percentage
+            const overallPercentage = document.getElementById('overall-percentage');
+            if (overallPercentage) {
+                overallPercentage.textContent = `${stats.overall_percent}%`;
+            }
+            
+            // Update counts
+            const presentCount = document.getElementById('present-count');
+            if (presentCount) {
+                presentCount.textContent = stats.present_count;
+            }
+            
+            const absentCount = document.getElementById('absent-count');
+            if (absentCount) {
+                absentCount.textContent = stats.absent_count;
+            }
+            
+            const requiredPercent = document.getElementById('required-percent');
+            if (requiredPercent) {
+                requiredPercent.textContent = `≥${stats.required_percent}%`;
+            }
+            
+            // Update status badge
+            updateStatusBadge(stats.overall_percent, stats.required_percent, stats.is_meeting_requirement);
+        }
+        
+        // Update fallback content if API fails
+        function updateFallbackContent() {
+            const presentPercent = parseFloat("{{overview.present_percent|round(1)}}") || 0;
+            const requiredPercent = parseInt("{{term_info.cutoff}}") || 90;
+            
+            updateStatusBadge(presentPercent, requiredPercent, presentPercent >= requiredPercent);
+        }
+        
+        // Update overall chart with fetched data
+        function updateOverallChart(stats) {
+            const overallChartContainer = document.querySelector('#overall-chart').closest('.chart-container');
+            if (overallChartContainer && !isNaN(stats.overall_percent) && !isNaN(stats.absent_percent)) {
+                createProgressChart(overallChartContainer, stats.overall_percent, stats.absent_percent);
+            }
+        }
+        
+        // Update status badge based on attendance
+        function updateStatusBadge(presentPercent, requiredPercent, isMeetingRequirement) {
+            const statusBadge = document.getElementById('status-badge');
+            const statusDot = document.getElementById('status-dot');
+            const statusText = document.getElementById('status-text');
+            
+            if (!statusBadge || !statusDot || !statusText) return;
+            
+            if (isMeetingRequirement) {
+                statusBadge.style.backgroundColor = '#d1fae5';
+                statusBadge.style.color = '#065f46';
+                statusBadge.style.borderColor = '#10b981';
+                statusDot.style.backgroundColor = '#059669';
+                statusText.textContent = 'Meeting Requirement';
+            } else {
+                statusBadge.style.backgroundColor = '#fef2f2';
+                statusBadge.style.color = '#dc2626';
+                statusBadge.style.borderColor = '#dc2626';
+                statusDot.style.backgroundColor = '#dc2626';
+                statusText.textContent = `Below Requirement (${presentPercent.toFixed(1)}% vs ${requiredPercent}%)`;
+            }
+        }
         
         // Appeal button functionality
         document.querySelectorAll('.btn-appeal').forEach(button => {
@@ -812,33 +905,20 @@
             }
         });
         
-        // Update overall status based on attendance
-        function updateOverallStatus() {
-            const overallPercent = 88.5;
-            const requiredPercent = 90;
-            const statusBadge = document.querySelector('.status-badge');
+        // Initialize overall chart with template data
+        const overallChart = document.getElementById('overall-chart');
+        if (overallChart) {
+            const overallContainer = overallChart.closest('.chart-container');
+            const presentPercent = parseFloat(overallChart.getAttribute('data-percent')) || 0;
+            const absentPercent = parseFloat(overallChart.getAttribute('data-absent')) || 0;
             
-            if (overallPercent >= requiredPercent) {
-                statusBadge.innerHTML = `
-                    <span class="status-dot"></span>
-                    <span class="status-text">Meeting Requirement</span>
-                `;
-                statusBadge.style.backgroundColor = '#d1fae5';
-                statusBadge.style.color = '#065f46';
-                statusBadge.style.borderColor = '#10b981';
-            } else {
-                statusBadge.innerHTML = `
-                    <span class="status-dot" style="background-color: #dc2626;"></span>
-                    <span class="status-text">Below Requirement</span>
-                `;
-                statusBadge.style.backgroundColor = '#fef2f2';
-                statusBadge.style.color = '#dc2626';
-                statusBadge.style.borderColor = '#dc2626';
+            if (overallContainer && !isNaN(presentPercent) && !isNaN(absentPercent)) {
+                createProgressChart(overallContainer, presentPercent, absentPercent);
             }
         }
         
-        // Initialize
-        updateOverallStatus();
+        // Fetch dynamic statistics
+        fetchAttendanceStatistics();
     });
 </script>
 {% endblock %}

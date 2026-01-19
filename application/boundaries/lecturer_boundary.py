@@ -408,7 +408,7 @@ def manage_classes():
                         'course_id': course.course_id,
                         'code': course.code,
                         'name': course.name,
-                        'is_active': course.is_active
+                        'is_active': True
                     }
                     for course in courses
                 ],

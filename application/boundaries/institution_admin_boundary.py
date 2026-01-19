@@ -3,7 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
 from application.controls.attendance_control import AttendanceControl
 from application.controls.auth_control import requires_roles
-from application.entities2 import ClassModel, UserModel, InstitutionModel, SubscriptionModel, CourseModel, AttendanceRecordModel, CourseUserModel, VenueModel, AttendanceAppealModel
+from application.entities2 import *
 from database.base import get_session
 from database.models import *
 from datetime import date, datetime, timedelta
@@ -115,20 +115,20 @@ def delete_user(user_id):
 @institution_bp.route('/manage_users/<int:user_id>/view', methods=['GET'])
 @requires_roles('admin')
 def view_user_details(user_id):
+    inst_id = session.get('institution_id')
     with get_session() as db_session:
         user_model = UserModel(db_session)
         course_model = CourseModel(db_session)
+        sem_model = SemesterModel(db_session)
         target_user = user_model.get_by_id(user_id)
         # Should admins be able to view other admins?
         if target_user.role == 'admin' or target_user.institution_id != session.get('institution_id'):
             return abort(401)
         user = user_model.get_by_id(user_id)
         user_details = user.as_sanitized_dict() if user else None
-        courses = course_model.get_by_user_id(user_id=user_id)
-        user_details["courses"] = [course.__dict__.copy() for course in courses]
-
-        possible_courses = course_model.get_unenrolled(user_id=user_id)
-        user_details["possible_courses"] = [course.as_dict() for course in possible_courses]
+        user_details["courses"] = course_model.admin_view_courses(user_id)
+        user_details["possible_courses"] = [row.as_dict() for row in course_model.get_all(institution_id=inst_id)]
+        user_details["possible_semesters"] = [row.as_dict() for row in sem_model.get_all(institution_id=inst_id)]
     return render_template(
         'institution/admin/institution_admin_user_management_user_details.html',
         user_details=user_details,
@@ -147,7 +147,7 @@ def add_user_to_course(user_id):
             if target_user.role == 'admin' or target_user.institution_id != session.get('institution_id'):
                 return abort(401)
             cu_model = CourseUserModel(db_session)
-            cu_model.assign(user_id=user_id, course_id=request.form.get('course_id'))
+            cu_model.assign(user_id=user_id, course_id=request.form.get('course_id'), semester_id=request.form.get('semester_id'))
     except IntegrityError as e:
         flash("User already assigned to course", "error")
     redirect_path = request.form.get("redirect")
@@ -165,7 +165,7 @@ def remove_user_from_course(user_id):
             return abort(401)
 
         cu_model = CourseUserModel(db_session)
-        cu_model.unassign(user_id=user_id, course_id=request.form.get('course_id'))
+        cu_model.unassign(user_id=user_id, course_id=request.form.get('course_id'), semester_id=request.form.get('semester_id'))
     redirect_path = request.form.get("redirect")
     if redirect_path:
         return redirect(redirect_path)

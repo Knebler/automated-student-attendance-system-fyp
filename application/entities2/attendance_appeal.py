@@ -1,6 +1,7 @@
 from .base_entity import BaseEntity
 from typing import List, Optional, Dict, Any
 from datetime import datetime, date
+from sqlalchemy.orm import aliased
 from database.models import *
 
 class AttendanceAppealModel(BaseEntity[AttendanceAppeal]):
@@ -52,6 +53,39 @@ class AttendanceAppealModel(BaseEntity[AttendanceAppeal]):
         
         return appeals
     
+    def admin_appeal_details(self, institution_id: int, **filters):
+        """Get all appeals with detailed information for admin"""
+        Lecturers = aliased(User)
+        headers = [
+            "id", "status", "reason", "created_at", "lecturer",
+            "student_id", "student_email", "course_code", "course_name", "class_date"
+        ]
+        data = (
+            self.session
+            .query(
+                AttendanceAppeal.appeal_id, 
+                AttendanceAppeal.status,
+                AttendanceAppeal.reason,
+                AttendanceAppeal.created_at,
+                Lecturers.name,
+                User.user_id,
+                User.email,
+                Course.code,
+                Course.name,
+                Class.start_time,
+            )
+            .select_from(AttendanceAppeal)
+            .join(AttendanceRecord, AttendanceRecord.attendance_id == AttendanceAppeal.attendance_id)
+            .join(Class, AttendanceRecord.class_id == Class.class_id)
+            .join(Course, Class.course_id == Course.course_id)
+            .join(User, AttendanceAppeal.student_id == User.user_id)
+            .join(Lecturers, Lecturers.user_id == Class.lecturer_id)
+            .filter(User.institution_id == institution_id)
+            .filter_by(**filters)
+            .all()
+        )
+        return self.add_headers(headers, data)
+
     def get_one(self, attendance_id: Optional[int] = None, appeal_id: Optional[int] = None) -> Optional[AttendanceAppeal]:
         """Get an appeal by attendance_id or appeal_id"""
         if attendance_id:

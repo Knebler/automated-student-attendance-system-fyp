@@ -109,7 +109,7 @@ class LecturerControl:
                         'credits': course.credits,
                         'start_date': course.start_date.strftime('%Y-%m-%d') if course.start_date else None,
                         'end_date': course.end_date.strftime('%Y-%m-%d') if course.end_date else None,
-                        'is_active': course.is_active,
+                        'is_active': True,
                         'active_classes_count': len(active_classes)
                     })
                 

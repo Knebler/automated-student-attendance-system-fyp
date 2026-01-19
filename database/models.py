@@ -137,11 +137,14 @@ class Notification(Base, BaseMixin):
 # =====================
 class Semester(Base, BaseMixin):
     __tablename__ = "semesters"
+    __table_args__ = (
+        UniqueConstraint("institution_id", "name", name="uq_institution_name"),
+    )
 
     semester_id = Column(Integer, primary_key=True)
     institution_id = Column(Integer, ForeignKey("institutions.institution_id"), nullable=False, index=True)
 
-    name = Column(String(100), nullable=False)
+    name = Column(String(100), nullable=False) # Make unique per institution
     start_date = Column(DateTime, nullable=False)
     end_date = Column(DateTime, nullable=False)
 
@@ -150,17 +153,17 @@ class Semester(Base, BaseMixin):
 # =====================
 class Course(Base, BaseMixin):
     __tablename__ = "courses"
+    __table_args__ = (
+        UniqueConstraint("institution_id", "code", name="uq_institution_code"),
+    )
 
     course_id = Column(Integer, primary_key=True)
     institution_id = Column(Integer, ForeignKey("institutions.institution_id"), nullable=False, index=True)
 
     code = Column(String(50), nullable=False, index=True)
     name = Column(String(150), nullable=False)
-    start_date = Column(DateTime, index=True)
-    end_date = Column(DateTime, index=True)
     description = Column(Text)
     credits = Column(Integer)
-    is_active = Column(Boolean, server_default="1")
 
     institution = relationship("Institution", back_populates="courses")
 
@@ -173,7 +176,7 @@ class Course(Base, BaseMixin):
 # =====================
 class CourseUser(Base, BaseMixin):
     __tablename__ = "course_users"
-    table_args = (
+    __table_args__ = (
         UniqueConstraint("course_id", "user_id", "semester_id", name="uq_course_user_year"),
     )
 
@@ -220,7 +223,7 @@ class Class(Base, BaseMixin):
 # =====================
 class AttendanceRecord(Base, BaseMixin):
     __tablename__ = "attendance_records"
-    table_args = (
+    __table_args__ = (
         UniqueConstraint("class_id", "student_id", name="uq_attendance_class_student"),
     )
 

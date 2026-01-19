@@ -111,6 +111,7 @@
                             <tr>
                                 <th>Code</th>
                                 <th>Class Name</th>
+                                <th>Semester</th>
                                 <th>Date Start</th>
                                 <th>Date End</th>
                                 <th>Actions</th>
@@ -121,8 +122,9 @@
                             <tr>
                                 <td>{{ course.code }}</td>
                                 <td>{{ course.name }}</td>
-                                <td>{{ course.start_date.strftime('%d %b %Y') }}</td>
-                                <td>{{ course.end_date.strftime('%d %b %Y') }}</td>
+                                <td>{{ course.semester_name }}</td>
+                                <td>{{ course.start_date.strftime('%b %Y') }}</td>
+                                <td>{{ course.end_date.strftime('%b %Y') }}</td>
                                 <td>
                                     <div class="table-actions">
                                         <button class="btn-custom btn-view">View</button>
@@ -131,6 +133,7 @@
                                             <input type="hidden" name="redirect" value="{{ redirect_path }}">
                                             <input type="hidden" name="user_role" value="{{ user_details.role }}">
                                             <input type="hidden" name="course_id" value="{{ course.course_id }}">
+                                            <input type="hidden" name="semester_id" value="{{ course.semester_id }}">
                                             <button class="btn-custom btn-remove">Remove</button>
                                         </form>
                                     </div>
@@ -147,6 +150,14 @@
                                     </select>
                                 </td>
                                 <td id="courses-name"></td>
+                                <td id="courses-sem">
+                                    <select class="select-semesters" id="semesters">
+                                        <option value="">Select a semester</option>
+                                        {% for sem in user_details.possible_semesters %}
+                                        <option value="{{ sem.name }}">{{ sem.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
                                 <td id="courses-start"></td>
                                 <td id="courses-end"></td>
                                 <td>
@@ -155,8 +166,9 @@
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <input type="hidden" name="redirect" value="{{ redirect_path }}">
                                             <input type="hidden" name="user_role" value="{{ user_details.role }}">
+                                            <input type="hidden" name="semester_id" id="sem-id">
                                             <input type="hidden" name="course_id" id="course-id">
-                                            <button class="btn-custom btn-add">Add class</button>
+                                            <button class="btn-custom btn-add" id="add-class-btn" disabled>Add class</button>
                                         </form>
                                     </div>
                                 </td>
@@ -179,29 +191,62 @@
 <script id="course-data" type="application/json">
     {{ user_details.possible_courses|tojson }}
 </script>
+<script id="sem-data" type="application/json">
+    {{ user_details.possible_semesters|tojson }}
+</script>
 
 <script>
 const courseMap = JSON.parse(document.getElementById('course-data').textContent);
-const options = { day: '2-digit', month: 'short', year: 'numeric' };
+const semMap = JSON.parse(document.getElementById('sem-data').textContent);
+const options = { month: 'short', year: 'numeric' };
 function formatDate(date) {
     return new Date(date).toLocaleDateString('en-GB', options);
 }
-function updateSelectedCourse(course_id, course_name, start_date_str, end_date_str) {
-    document.getElementById('course-id').value = course_id;
-    document.getElementById('courses-name').innerText = course_name;
-    document.getElementById('courses-start').innerText = start_date_str;
-    document.getElementById('courses-end').innerText = end_date_str;
-}
-document.getElementById('courses').addEventListener('change', function() {
+
+const courseId = document.getElementById('course-id');
+const courseName = document.getElementById('courses-name');
+const courseSem = document.getElementById('courses-sem');
+const semId = document.getElementById('sem-id');
+const courseStart = document.getElementById('courses-start');
+const courseEnd = document.getElementById('courses-end');
+const addClassBtn = document.getElementById('add-class-btn');
+
+const courseInput = document.getElementById('courses');
+const semInput = document.getElementById('semesters');
+
+courseInput.addEventListener('change', function() {
     const courseCode = this.value;
     const selectedCourse = courseMap.filter(course => course.code == courseCode);
     if (selectedCourse.length == 0) {
-        updateSelectedCourse('', '', '', '');
+        courseId.value = '';
+        courseName.innerText = '';
     } else {
-        const course = selectedCourse[0];
-        updateSelectedCourse(course.course_id, course.name, formatDate(course.start_date), formatDate(course.end_date));
+        courseId.value = selectedCourse[0].course_id;
+        courseName.innerText = selectedCourse[0].name;
     }
 });
+semInput.addEventListener('change', function() {
+    const semester = this.value;
+    const selectedSem = semMap.filter(sem => sem.name == semester);
+    if (selectedSem.length == 0) {
+        semId.value = '';
+        courseStart.innerText = '';
+        courseEnd.innerText = '';
+    } else {
+        semId.value = selectedSem[0].semester_id;
+        courseStart.innerText = formatDate(selectedSem[0].start_date);
+        courseEnd.innerText = formatDate(selectedSem[0].end_date);
+    }
+})
+function checkNewClassOptionsSelected() {
+    if (courseId.value.trim() !== '' && semId.value.trim() !== '') {
+        addClassBtn.disabled = false;
+    } else {
+        addClassBtn.disabled = true;
+    }
+}
+courseInput.addEventListener('change', checkNewClassOptionsSelected);
+semInput.addEventListener('change', checkNewClassOptionsSelected);
 </script>
 
 

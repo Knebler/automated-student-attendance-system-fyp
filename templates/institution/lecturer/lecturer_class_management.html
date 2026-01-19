@@ -787,7 +787,6 @@
                         Actions
                     </button>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#" onclick="editClass('{{ current_class.id }}')">Edit Class Details</a></li>
                         <li><a class="dropdown-item" href="#" onclick="duplicateClass('{{ current_class.id }}')">Duplicate Class</a></li>
                         <li><a class="dropdown-item" href="#" onclick="exportRoster('{{ current_class.id }}')">Export Roster</a></li>
                         <li><hr class="dropdown-divider"></li>
@@ -1165,15 +1164,6 @@
         window.location.href = "{{ url_for('institution_lecturer.manage_classes') }}";
     }
     
-    function editClass(classId) {
-    if (!classId) {
-        showToast('No class selected', 'warning');
-        return;
-    }
-    // This would typically open a modal or redirect to an edit page
-    console.log('Editing class:', classId);
-    showToast('Edit class functionality coming soon', 'info');
-    }
     
     function duplicateClass() {
         if (confirm('Duplicate this class with all its settings?')) {

@@ -752,3 +752,343 @@ class StudentControl:
                 
         except Exception as e:
             return {'error': f'Error loading dashboard data: {str(e)}', 'success': False}
+        
+    def get_student_courses(user_id):
+        """Get all courses a student is enrolled in"""
+        try:
+            with get_session() as db_session:
+                from application.entities2.course import CourseModel
+                from database.models import CourseUser, Semester
+                
+                course_model = CourseModel(db_session)
+                
+                # Get current semester
+                semester_model = SemesterModel(db_session)
+                current_semester = semester_model.get_current_semester()
+                
+                if not current_semester:
+                    return []
+                
+                # Get courses where student is enrolled in current semester
+                courses = (
+                    db_session.query(CourseModel(db_session).model)
+                    .join(CourseUser, CourseUser.course_id == CourseModel(db_session).model.course_id)
+                    .filter(CourseUser.user_id == user_id)
+                    .filter(CourseUser.semester_id == current_semester.semester_id)
+                    .all()
+                )
+                
+                return [
+                    {
+                        'course_id': course.course_id,
+                        'code': course.code,
+                        'name': course.name,
+                        'description': course.description,
+                        'credits': course.credits
+                    }
+                    for course in courses
+                ]
+                
+        except Exception as e:
+            print(f"Error getting student courses: {e}")
+            return []
+
+    def get_student_classes_in_date_range(student_id, start_date, end_date, course_filter=None, class_type_filter=None):
+        """Get classes for a student within a date range"""
+        try:
+            with get_session() as db_session:
+                from application.entities2.classes import ClassModel
+                from application.entities2.course import CourseModel
+                from application.entities2.user import UserModel
+                from application.entities2.venue import VenueModel
+                from database.models import CourseUser, Semester
+                
+                class_model = ClassModel(db_session)
+                course_model = CourseModel(db_session)
+                user_model = UserModel(db_session)
+                venue_model = VenueModel(db_session)
+                semester_model = SemesterModel(db_session)
+                
+                # Get current semester
+                current_semester = semester_model.get_current_semester()
+                
+                if not current_semester:
+                    return []
+                
+                # Get classes where student is enrolled
+                from sqlalchemy import and_
+                
+                # Base query to get classes for student
+                classes = (
+                    db_session.query(ClassModel(db_session).model)
+                    .join(CourseModel(db_session).model, 
+                          ClassModel(db_session).model.course_id == CourseModel(db_session).model.course_id)
+                    .join(CourseUser, CourseUser.course_id == CourseModel(db_session).model.course_id)
+                    .filter(CourseUser.user_id == student_id)
+                    .filter(CourseUser.semester_id == current_semester.semester_id)
+                    .filter(and_(
+                        ClassModel(db_session).model.start_time >= start_date,
+                        ClassModel(db_session).model.start_time <= end_date
+                    ))
+                    .order_by(ClassModel(db_session).model.start_time)
+                    .all()
+                )
+                
+                # Apply course filter if specified
+                if course_filter and course_filter != 'all':
+                    classes = [c for c in classes if c.course and c.course.code == course_filter]
+                
+                # Apply class type filter if specified
+                if class_type_filter and class_type_filter != 'all':
+                    classes = [c for c in classes if getattr(c, 'class_type', 'Lecture').lower() == class_type_filter.lower()]
+                
+                # Format classes
+                formatted_classes = []
+                for class_obj in classes:
+                    course = course_model.get_by_id(class_obj.course_id) if class_obj.course_id else None
+                    venue = venue_model.get_by_id(class_obj.venue_id) if class_obj.venue_id else None
+                    lecturer = user_model.get_by_id(class_obj.lecturer_id) if class_obj.lecturer_id else None
+                    
+                    # Determine time slot
+                    time_slot = 'morning'
+                    if class_obj.start_time:
+                        hour = class_obj.start_time.hour
+                        if hour < 12:
+                            time_slot = 'morning'
+                        elif hour < 17:
+                            time_slot = 'afternoon'
+                        else:
+                            time_slot = 'evening'
+                    
+                    formatted_classes.append({
+                        'id': class_obj.class_id,
+                        'course_id': class_obj.course_id,
+                        'course_code': course.code if course else 'N/A',
+                        'course_name': course.name if course else 'N/A',
+                        'title': course.name if course else 'N/A',
+                        'type': getattr(class_obj, 'class_type', 'Lecture'),
+                        'start_time': class_obj.start_time,
+                        'end_time': class_obj.end_time,
+                        'time': f"{class_obj.start_time.strftime('%I:%M %p') if class_obj.start_time else 'N/A'} - {class_obj.end_time.strftime('%I:%M %p') if class_obj.end_time else 'N/A'}",
+                        'room': venue.name if venue else 'N/A',
+                        'venue_id': class_obj.venue_id,
+                        'lecturer': lecturer.name if lecturer else 'N/A',
+                        'lecturer_id': class_obj.lecturer_id,
+                        'status': class_obj.status,
+                        'time_slot': time_slot
+                    })
+                
+                return formatted_classes
+                
+        except Exception as e:
+            print(f"Error getting student classes: {e}")
+            return []
+
+    def get_upcoming_classes(student_id, current_date=None, course_filter=None, class_type_filter=None):
+        """Get upcoming classes for a student"""
+        try:
+            with get_session() as db_session:
+                from application.entities2.classes import ClassModel
+                from application.entities2.course import CourseModel
+                from application.entities2.user import UserModel
+                from application.entities2.venue import VenueModel
+                from database.models import CourseUser, Semester
+                from sqlalchemy import and_
+                
+                class_model = ClassModel(db_session)
+                course_model = CourseModel(db_session)
+                user_model = UserModel(db_session)
+                venue_model = VenueModel(db_session)
+                semester_model = SemesterModel(db_session)
+                
+                if not current_date:
+                    current_date = date.today()
+                
+                # Get current semester
+                current_semester = semester_model.get_current_semester()
+                
+                if not current_semester:
+                    return []
+                
+                # Get upcoming classes (from current date onward)
+                classes = (
+                    db_session.query(ClassModel(db_session).model)
+                    .join(CourseModel(db_session).model, 
+                          ClassModel(db_session).model.course_id == CourseModel(db_session).model.course_id)
+                    .join(CourseUser, CourseUser.course_id == CourseModel(db_session).model.course_id)
+                    .filter(CourseUser.user_id == student_id)
+                    .filter(CourseUser.semester_id == current_semester.semester_id)
+                    .filter(and_(
+                        ClassModel(db_session).model.start_time >= current_date
+                    ))
+                    .order_by(ClassModel(db_session).model.start_time)
+                    .all()
+                )
+                
+                # Apply course filter if specified
+                if course_filter and course_filter != 'all':
+                    classes = [c for c in classes if c.course and c.course.code == course_filter]
+                
+                # Apply class type filter if specified
+                if class_type_filter and class_type_filter != 'all':
+                    classes = [c for c in classes if getattr(c, 'class_type', 'Lecture').lower() == class_type_filter.lower()]
+                
+                # Format classes for list view
+                formatted_classes = []
+                for class_obj in classes:
+                    course = course_model.get_by_id(class_obj.course_id) if class_obj.course_id else None
+                    venue = venue_model.get_by_id(class_obj.venue_id) if class_obj.venue_id else None
+                    lecturer = user_model.get_by_id(class_obj.lecturer_id) if class_obj.lecturer_id else None
+                    
+                    # Determine time slot
+                    time_slot = 'morning'
+                    if class_obj.start_time:
+                        hour = class_obj.start_time.hour
+                        if hour < 12:
+                            time_slot = 'morning'
+                        elif hour < 17:
+                            time_slot = 'afternoon'
+                        else:
+                            time_slot = 'evening'
+                    
+                    formatted_classes.append({
+                        'id': class_obj.class_id,
+                        'course_code': course.code if course else 'N/A',
+                        'title': course.name if course else 'N/A',
+                        'date': class_obj.start_time.strftime('%B %d, %Y') if class_obj.start_time else 'N/A',
+                        'time': f"{class_obj.start_time.strftime('%I:%M %p') if class_obj.start_time else 'N/A'} - {class_obj.end_time.strftime('%I:%M %p') if class_obj.end_time else 'N/A'}",
+                        'room': venue.name if venue else 'N/A',
+                        'type': getattr(class_obj, 'class_type', 'Lecture'),
+                        'lecturer': lecturer.name if lecturer else 'N/A',
+                        'time_slot': time_slot
+                    })
+                
+                return formatted_classes
+                
+        except Exception as e:
+            print(f"Error getting upcoming classes: {e}")
+            return []
+
+    def get_timetable_data(app, student_id, view_type='monthly', target_date=None):
+        """Get timetable data for student based on view type"""
+        try:
+            with get_session() as db_session:
+                from application.entities2.classes import ClassModel
+                from application.entities2.course import CourseModel
+                from application.entities2.user import UserModel
+                from application.entities2.venue import VenueModel
+                
+                if not target_date:
+                    target_date = date.today()
+                
+                if view_type == 'monthly':
+                    # Generate monthly calendar
+                    first_day = date(target_date.year, target_date.month, 1)
+                    last_day = date(target_date.year, target_date.month, 
+                                  (date(target_date.year, target_date.month + 1, 1) - timedelta(days=1)).day)
+                    
+                    classes = StudentControl.get_student_classes_in_date_range(
+                        student_id, first_day, last_day
+                    )
+                    
+                    # Group classes by date
+                    classes_by_date = {}
+                    for class_data in classes:
+                        if class_data.get('start_time'):
+                            class_date = class_data['start_time'].date() if isinstance(class_data['start_time'], datetime) else class_data['start_time']
+                            if class_date not in classes_by_date:
+                                classes_by_date[class_date] = []
+                            
+                            classes_by_date[class_date].append({
+                                'class_id': class_data['id'],
+                                'course_code': class_data['course_code'],
+                                'course_name': class_data['course_name'],
+                                'start_time': class_data['start_time'].strftime('%I:%M %p') if isinstance(class_data['start_time'], datetime) else 'N/A',
+                                'end_time': class_data['end_time'].strftime('%I:%M %p') if isinstance(class_data['end_time'], datetime) else 'N/A',
+                                'room': class_data['room'],
+                                'lecturer': class_data['lecturer'],
+                                'time_slot': class_data['time_slot']
+                            })
+                    
+                    return {
+                        'success': True,
+                        'view_type': 'monthly',
+                        'current_month': target_date.strftime('%B'),
+                        'current_year': target_date.year,
+                        'classes_by_date': classes_by_date
+                    }
+                    
+                elif view_type == 'weekly':
+                    # Generate weekly data
+                    # Get start of week (Sunday)
+                    week_start = target_date - timedelta(days=target_date.weekday() + 1)
+                    if week_start.weekday() != 6:  # Not Sunday
+                        week_start -= timedelta(days=week_start.weekday() + 1)
+                    
+                    week_end = week_start + timedelta(days=6)
+                    
+                    classes = StudentControl.get_student_classes_in_date_range(
+                        student_id, week_start, week_end
+                    )
+                    
+                    # Group by day of week
+                    week_days = {}
+                    for i in range(7):
+                        current_date = week_start + timedelta(days=i)
+                        week_days[current_date] = []
+                    
+                    for class_data in classes:
+                        if class_data.get('start_time'):
+                            class_date = class_data['start_time'].date() if isinstance(class_data['start_time'], datetime) else class_data['start_time']
+                            if class_date in week_days:
+                                week_days[class_date].append({
+                                    'class_id': class_data['id'],
+                                    'course_code': class_data['course_code'],
+                                    'course_name': class_data['course_name'],
+                                    'title': class_data['course_name'],
+                                    'start_time': class_data['start_time'],
+                                    'end_time': class_data['end_time'],
+                                    'time': class_data['time'],
+                                    'room': class_data['room'],
+                                    'lecturer': class_data['lecturer'],
+                                    'time_slot': class_data['time_slot']
+                                })
+                    
+                    # Convert to list format
+                    formatted_week_days = []
+                    for day_date, day_classes in sorted(week_days.items()):
+                        formatted_week_days.append({
+                            'date': day_date,
+                            'day_name': day_date.strftime('%A'),
+                            'day_short': day_date.strftime('%a'),
+                            'day_number': day_date.day,
+                            'classes': sorted(
+                                day_classes, 
+                                key=lambda x: x['start_time'] if isinstance(x['start_time'], datetime) else datetime.min
+                            )
+                        })
+                    
+                    return {
+                        'success': True,
+                        'view_type': 'weekly',
+                        'week_start': week_start,
+                        'week_end': week_end,
+                        'week_days': formatted_week_days
+                    }
+                    
+                else:  # list view
+                    # Get all upcoming classes
+                    classes = StudentControl.get_upcoming_classes(student_id, target_date)
+                    
+                    return {
+                        'success': True,
+                        'view_type': 'list',
+                        'upcoming_classes': classes
+                    }
+                
+        except Exception as e:
+            app.logger.error(f"Error getting student timetable data: {e}")
+            return {
+                'success': False,
+                'error': str(e)
+            }

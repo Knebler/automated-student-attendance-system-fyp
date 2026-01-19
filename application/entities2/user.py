@@ -136,3 +136,5 @@ class UserModel(BaseEntity[User]):
             User.institution_id == institution_id,
             User.role == role
         ).all()
+        
+    

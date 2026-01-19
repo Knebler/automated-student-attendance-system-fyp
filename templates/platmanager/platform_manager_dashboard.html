@@ -5,41 +5,86 @@
 {% block content %}
 
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+
     /* Platform Manager Dashboard Specific Styles */
     .platform-manager-dashboard {
         max-width: 1400px;
-        margin: 0 auto;
+        margin: auto;
+        padding: 20px;
+        font-family: 'Montserrat', sans-serif;
     }
 
     .page-title {
-        font-size: 2.5rem;
-        font-weight: bold;
-        font-style: italic;
-        color: var(--text-dark);
-        border-bottom: 2px solid var(--border-color);
-        padding-bottom: 1rem;
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        color: #001641;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .mb-2 {
+        margin-bottom: 0.5rem;
+    }
+
+    .mb-3 {
+        margin-bottom: 1rem;
+    }
+
+    .mb-4 {
+        margin-bottom: 1.5rem;
     }
 
     /* Dashboard Grid */
     .dashboard-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-columns: 1fr 1.2fr 1.3fr;
         gap: 1.5rem;
         align-items: start;
     }
 
+    .left-column {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    /* Card Styles */
+    .card-custom {
+        background: #FFFFFF;
+        border-radius: 12px;
+        border: 2px solid #001641;
+        overflow: hidden;
+    }
+
+    .card-header-custom {
+        padding: 1rem 1.25rem;
+        font-weight: 700;
+        font-size: 1.1rem;
+        background: #001641;
+        color: #FFFFFF;
+        border-bottom: 2px solid #001641;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .card-body-custom {
+        padding: 1.25rem;
+        background: #f8fafc;
+    }
+
     /* Stats Box */
     .stats-box {
-        background-color: var(--primary-light);
-        border-radius: 15px;
+        background: #001641;
+        border-radius: 8px;
         padding: 1.25rem;
-        border: 1px solid var(--border-color);
+        border: 2px solid #001641;
     }
 
     .stat-row {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.75rem;
+        font-family: 'Montserrat', sans-serif;
     }
 
     .stat-row:last-child {
@@ -47,12 +92,15 @@
     }
 
     .stat-label {
-        font-weight: bold;
-        color: var(--text-dark);
+        font-weight: 600;
+        color: #FFFFFF;
+        font-size: 0.9rem;
     }
 
     .stat-value {
-        color: var(--text-dark);
+        color: #FFFFFF;
+        font-weight: 700;
+        font-size: 1rem;
     }
 
     /* Quick Actions */
@@ -63,32 +111,45 @@
     }
 
     .action-btn {
-        padding: 0.875rem 1.5rem;
-        border-radius: 25px;
-        font-size: 0.9rem;
-        transition: all 0.3s ease;
+        padding: 0.875rem 1rem;
+        border-radius: 8px;
+        background: #FFFFFF;
+        border: 2px solid #001641;
+        font-size: .9rem;
+        font-weight: 600;
+        transition: all .2s;
+        color: #001641;
+        text-decoration: none;
+        font-family: 'Montserrat', sans-serif;
+        display: block;
         text-align: center;
+    }
+
+    .action-btn:hover {
+        background: #001641;
+        color: #FFFFFF;
+        transform: translateX(4px);
     }
 
     /* Section Title */
     .section-title {
-        font-size: 1.125rem;
-        font-weight: bold;
-        text-decoration: underline;
-        text-underline-offset: 4px;
-        color: var(--text-dark);
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #001641;
+        margin-bottom: 1rem;
+        font-family: 'Montserrat', sans-serif;
     }
 
     /* List Items */
     .list-item {
-        background-color: var(--primary-light);
-        border-radius: 10px;
-        padding: 0.75rem 1rem;
-        margin-bottom: 0.625rem;
+        background: #FFFFFF;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border: 1px solid var(--border-color);
+        border: 2px solid #001641;
     }
 
     .list-item-content {
@@ -99,14 +160,35 @@
 
     .list-item-text {
         font-size: 0.875rem;
-        color: var(--text-dark);
+        color: #001641;
+        font-weight: 500;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .btn-custom {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-align: center;
+        text-decoration: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: 'Montserrat', sans-serif;
     }
 
     .more-btn {
-        padding: 0.375rem 1rem;
-        border-radius: 15px;
-        font-size: 0.75rem;
-        min-width: 60px;
+        background: #001641;
+        border: 2px solid #001641;
+        color: #FFFFFF;
+        min-width: 70px;
+    }
+
+    .more-btn:hover {
+        background: #FFFFFF;
+        color: #001641;
+        transform: scale(1.05);
     }
 
     /* Column sections */
@@ -118,52 +200,52 @@
         margin-bottom: 0;
     }
 
-    /* Left Column */
-    .left-column {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-    }
-
     /* System Performance Box */
     .performance-box {
-        background-color: var(--primary-light);
-        border-radius: 15px;
+        background: #001641;
+        border-radius: 8px;
         padding: 1.25rem;
-        border: 1px solid var(--border-color);
+        border: 2px solid #001641;
     }
 
     .status-row {
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.75rem;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .status-row:last-child {
+        margin-bottom: 0;
     }
 
     .status-normal {
-        color: #059669;
-        font-weight: bold;
+        color: #10b981;
+        font-weight: 700;
+        font-size: 0.9rem;
     }
 
     .checkmark {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 18px;
-        height: 18px;
-        background-color: #059669;
+        width: 20px;
+        height: 20px;
+        background-color: #10b981;
         color: white;
         border-radius: 4px;
         font-size: 12px;
+        font-weight: 700;
     }
 
     /* Report Card */
     .report-card {
-        background-color: var(--primary-light);
-        border-radius: 10px;
+        background: #FFFFFF;
+        border-radius: 8px;
         padding: 1rem;
         margin-bottom: 1rem;
-        border: 1px solid var(--border-color);
+        border: 2px solid #001641;
     }
 
     .report-card:last-child {
@@ -175,25 +257,41 @@
         justify-content: space-between;
         flex-wrap: wrap;
         gap: 0.625rem;
+        margin-bottom: 0.75rem;
     }
 
     .report-info {
         font-size: 0.875rem;
-        color: var(--text-dark);
+        color: #001641;
+        font-weight: 500;
+        font-family: 'Montserrat', sans-serif;
     }
 
     .report-footer {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-top: 0.5rem;
+        padding-top: 0.75rem;
+        border-top: 2px solid #001641;
     }
 
     .view-details-btn {
-        padding: 0.375rem 0.875rem;
-        border-radius: 15px;
-        font-size: 0.75rem;
-        min-width: 100px;
+        background: #001641;
+        border: 2px solid #001641;
+        color: #FFFFFF;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-decoration: none;
+        font-family: 'Montserrat', sans-serif;
+        transition: all 0.2s ease;
+    }
+
+    .view-details-btn:hover {
+        background: #FFFFFF;
+        color: #001641;
+        transform: scale(1.05);
     }
 
     /* Responsive */
@@ -201,11 +299,23 @@
         .dashboard-grid {
             grid-template-columns: 1fr 1fr;
         }
+        .left-column {
+            grid-column: 1 / -1;
+            flex-direction: row;
+        }
     }
 
     @media (max-width: 768px) {
         .dashboard-grid {
             grid-template-columns: 1fr;
+        }
+
+        .left-column {
+            flex-direction: column;
+        }
+
+        .platform-manager-dashboard {
+            padding: 10px;
         }
 
         .page-title {
@@ -246,15 +356,15 @@
         <!-- Left Column -->
         <div class="left-column">
             <!-- Platform Overview Card -->
-            <div class="card-custom mb-4">
+            <div class="card-custom">
                 <div class="card-header-custom">Platform Overview</div>
                 <div class="card-body-custom">
                     <div class="stats-box">
-                        <div class="stat-row mb-2">
+                        <div class="stat-row">
                             <span class="stat-label">Total Subscriptions:</span>
                             <span class="stat-value">{{ total_subscription_count or '—' }}</span>
                         </div>
-                        <div class="stat-row mb-2">
+                        <div class="stat-row">
                             <span class="stat-label">Active Subscriptions:</span>
                             <span class="stat-value">{{ active_subscription_count or '—' }}</span>
                         </div>
@@ -271,11 +381,11 @@
                 <div class="card-header-custom">Quick Actions</div>
                 <div class="card-body-custom">
                     <div class="quick-actions">
-                        <a href="{{ url_for('platform.pending_registrations') }}" class="btn-custom action-btn text-center mb-2">View Subscription Requests</a>
-                        <a href="{{ url_for('platform.subscription_profile_creator') }}" class="btn-custom action-btn text-center mb-2">Create Subscription / Institution Profile</a>
-                        <a href="{{ url_for('platform.user_management') }}" class="btn-custom action-btn text-center mb-2">Manage Admin Accounts</a>
-                        <a href="{{ url_for('platform.user_management') }}" class="btn-custom action-btn text-center mb-2">View User Profiles</a>
-                        <a href="{{ url_for('platform.settings_management') }}" class="btn-custom action-btn text-center">Open System Settings</a>
+                        <a href="{{ url_for('platform.pending_registrations') }}" class="action-btn">View Subscription Requests</a>
+                        <a href="{{ url_for('platform.subscription_profile_creator') }}" class="action-btn">Create Subscription / Institution Profile</a>
+                        <a href="{{ url_for('platform.user_management') }}" class="action-btn">Manage Admin Accounts</a>
+                        <a href="{{ url_for('platform.user_management') }}" class="action-btn">View User Profiles</a>
+                        <a href="{{ url_for('platform.settings_management') }}" class="action-btn">Open System Settings</a>
                     </div>
                 </div>
             </div>
@@ -285,11 +395,11 @@
         <div class="card-custom">
             <div class="card-header-custom">Subscription & Institution Status</div>
             <div class="card-body-custom">
-                <div class="column-section mb-4">
-                    <h3 class="section-title mb-3">Recent Subscriptions</h3>
+                <div class="column-section">
+                    <h3 class="section-title">Recent Subscriptions</h3>
                     {% if recent_subscriptions %}
                         {% for sub in recent_subscriptions %}
-                            <div class="list-item mb-2">
+                            <div class="list-item">
                                 <div class="list-item-content">
                                     <span class="list-item-text">{{ sub.institution_name }}</span>
                                     <span class="list-item-text">{{ sub.request_date.strftime('%Y-%m-%d') }}</span>
@@ -304,7 +414,6 @@
                             </div>
                         </div>
                     {% endif %}
-                <div class="column-section">
                 </div>
             </div>
         </div>
@@ -314,43 +423,43 @@
             <div class="card-header-custom">System & Reports Snapshot</div>
             <div class="card-body-custom">
                 <div class="column-section mb-4">
-                    <h3 class="section-title mb-3">System Performance</h3>
+                    <h3 class="section-title">System Performance</h3>
                     <div class="performance-box">
-                        <div class="status-row mb-2">
+                        <div class="status-row">
                             <span class="stat-label">Overall Status:</span>
                             <span class="checkmark">✓</span>
                             <span class="status-normal">Normal</span>
                         </div>
-                        <div class="stat-row mb-2">
+                        <div class="stat-row">
                             <span class="stat-label">Average Response Time:</span>
-                            <span class="stat-value"> xx ms</span>
+                            <span class="stat-value">xx ms</span>
                         </div>
                         <div class="stat-row">
                             <span class="stat-label">Last Incident:</span>
-                            <span class="stat-value"> None in last 24h</span>
+                            <span class="stat-value">None in last 24h</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="column-section">
-                    <h3 class="section-title mb-3">Recent User Reports</h3>
+                    <h3 class="section-title">Recent User Reports</h3>
                     {% if recent_reports %}
                         {% for report in recent_reports %}
-                            <div class="report-card mb-3">
-                                <div class="report-header mb-2">
+                            <div class="report-card">
+                                <div class="report-header">
                                     <span class="report-info">Case ID: {{ report.case_id }}</span>
                                     <span class="report-info">Institution: {{ report.institution }}</span>
                                     <span class="report-info">Date: {{ report.date }}</span>
                                 </div>
                                 <div class="report-footer">
                                     <span class="report-info">Type: {{ report.type }}</span>
-                                    <a href="{{ url_for('platform.report_details', report_id=report.id) }}" class="btn-outline-custom view-details-btn">View Details</a>
+                                    <a href="{{ url_for('platform.report_details', report_id=report.id) }}" class="view-details-btn">View Details</a>
                                 </div>
                             </div>
                         {% endfor %}
                     {% else %}
                         <div class="report-card">
-                            <div class="report-header mb-2">
+                            <div class="report-header">
                                 <span class="report-info">No recent reports</span>
                             </div>
                         </div>

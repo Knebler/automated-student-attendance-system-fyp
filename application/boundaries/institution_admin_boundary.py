@@ -534,8 +534,14 @@ def update_user_details(user_id):
 @institution_bp.route('/manage_appeals')
 @requires_roles('admin')
 def manage_appeals():
-    """Render the lecturer appeal-management page"""
-    return render_template('institution/admin/institution_admin_appeal_management.html')  
+    with get_session() as db_session:
+        institution_id = session.get('institution_id')
+        appeal_model = AttendanceAppealModel(db_session)
+        
+        # Get all appeals for the institution
+        appeals = appeal_model.get_institution_appeals(institution_id)
+        
+    return render_template('institution/admin/institution_admin_appeal_management.html', appeals=appeals)  
 
 @institution_bp.route('/student_class_attendance_details/<int:course_id>/<int:class_id>/<int:student_id>')  
 @requires_roles('admin')
@@ -661,4 +667,5 @@ def update_student_class_attendance(course_id, class_id, student_id):
             )
             flash(f'Attendance marked as {new_status.capitalize()}', 'success')
             return redirect(url_for('institution.attendance_class_details', class_id=class_id))
+
             

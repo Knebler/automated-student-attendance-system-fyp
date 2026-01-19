@@ -191,3 +191,51 @@ class AttendanceAppealModel(BaseEntity[AttendanceAppeal]):
                 'student_email': student_email
             }
         return None
+    
+    def get_institution_appeals(self, institution_id: int) -> List[Dict[str, Any]]:
+        """Get all appeals for an institution with detailed information"""
+        results = (
+            self.session
+            .query(
+                AttendanceAppeal.appeal_id,
+                AttendanceAppeal.status,
+                AttendanceAppeal.reason,
+                AttendanceAppeal.created_at,
+                AttendanceRecord.attendance_id,
+                User.name.label('student_name'),
+                User.user_id.label('student_id'),
+                Course.code.label('course_code'),
+                Course.name.label('course_name'),
+                Class.class_id,
+                Class.start_time,
+                Class.end_time
+            )
+            .join(AttendanceRecord, AttendanceRecord.attendance_id == AttendanceAppeal.attendance_id)
+            .join(Class, AttendanceRecord.class_id == Class.class_id)
+            .join(Course, Class.course_id == Course.course_id)
+            .join(User, AttendanceAppeal.student_id == User.user_id)
+            .filter(Course.institution_id == institution_id)
+            .order_by(AttendanceAppeal.created_at.desc())
+            .all()
+        )
+        
+        appeals = []
+        for appeal in results:
+            appeals.append({
+                'appeal_id': appeal.appeal_id,
+                'student_name': appeal.student_name,
+                'student_id': appeal.student_id,
+                'course_code': appeal.course_code,
+                'course_name': appeal.course_name,
+                'class_id': appeal.class_id,
+                'class_name': f"{appeal.course_code} - {appeal.course_name} - {appeal.class_id}",
+                'class_date': appeal.start_time.date() if appeal.start_time else None,
+                'class_date_str': appeal.start_time.strftime("%b %d, %Y") if appeal.start_time else "N/A",
+                'start_time': appeal.start_time.strftime("%H:%M") if appeal.start_time else "N/A",
+                'end_time': appeal.end_time.strftime("%H:%M") if appeal.end_time else "N/A",
+                'reason': appeal.reason,
+                'status': appeal.status,
+                'created_at': appeal.created_at.strftime("%b %d, %Y %H:%M") if appeal.created_at else "N/A"
+            })
+        
+        return appeals

@@ -33,7 +33,6 @@
                             <th>Name</th>
                             <th>Code</th>
                             <th>Lecturer</th>
-                            <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -44,11 +43,6 @@
                             <td>{{ course[1] }}</td>
                             <td>{{ course[2] }}</td>
                             <td>{{ course[3] }}</td>
-                            {% if course[4] %}
-                            <td><span class="status active">ACTIVE</span></td>
-                            {% else %}
-                            <td><span class="status inactive">INACTIVE</span></td>
-                            {% endif %}
                             <td class="actions-cell">
                                 <a href="{{ url_for('institution.module_details', course_id=course[0]) }}" class="btn-custom btn-manage">Manage</a>
                             </td>

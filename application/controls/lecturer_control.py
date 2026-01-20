@@ -7,8 +7,8 @@ from application.entities2.course import CourseModel
 from application.entities2.user import UserModel
 from application.entities2.attendance_record import AttendanceRecordModel
 from application.entities2.announcement import AnnouncementModel
-from application.entities2.semester import SemesterModel
 from application.entities2.venue import VenueModel
+from database.models import Class, Course, User, CourseUser, Venue
 
 class LecturerControl:
     """Control class for lecturer business logic using ORM"""
@@ -567,3 +567,135 @@ class LecturerControl:
         except Exception as e:
             app.logger.error(f"Error verifying lecturer class access: {e}")
             return False
+        
+    def get_lecturer_classes_in_date_range(lecturer_id, start_date, end_date, course_filter=None, class_type_filter=None):
+        """Get classes for a lecturer within a date range"""
+        try:
+            with get_session() as db_session:
+                # Use explicit joins like the student version
+                query = (
+                    db_session.query(Class, Course, Venue, User)
+                    .join(Course, Class.course_id == Course.course_id)
+                    .join(Venue, Class.venue_id == Venue.venue_id)
+                    .join(User, Class.lecturer_id == User.user_id)
+                    .join(CourseUser, Course.course_id == CourseUser.course_id)
+                    .filter(CourseUser.user_id == lecturer_id)
+                    .filter(Class.start_time >= start_date)
+                    .filter(Class.start_time <= end_date)
+                    .order_by(Class.start_time)
+                )
+            
+                # Apply course filter if specified
+                if course_filter and course_filter != 'all':
+                    query = query.filter(Course.code == course_filter)
+            
+                # Apply class type filter if specified
+                if class_type_filter and class_type_filter != 'all':
+                    if hasattr(Class, 'class_type'):
+                        query = query.filter(Class.class_type == class_type_filter)
+            
+                results = query.all()
+            
+                # Format classes - each result is a tuple (Class, Course, Venue, User)
+                formatted_classes = []
+                for class_obj, course, venue, lecturer in results:
+                    # Determine time slot
+                    time_slot = 'morning'
+                    if class_obj.start_time:
+                        hour = class_obj.start_time.hour
+                        if hour < 12:
+                            time_slot = 'morning'
+                        elif hour < 17:
+                            time_slot = 'afternoon'
+                        else:
+                            time_slot = 'evening'
+                
+                    formatted_classes.append({
+                        'id': class_obj.class_id,
+                        'course_id': class_obj.course_id,
+                        'course_code': course.code if course else 'N/A',
+                        'course_name': course.name if course else 'N/A',
+                        'title': course.name if course else 'N/A',
+                        'type': getattr(class_obj, 'class_type', 'Lecture'),
+                        'start_time': class_obj.start_time,
+                        'end_time': class_obj.end_time,
+                        'time': f"{class_obj.start_time.strftime('%I:%M %p') if class_obj.start_time else 'N/A'} - {class_obj.end_time.strftime('%I:%M %p') if class_obj.end_time else 'N/A'}",
+                        'room': venue.name if venue else 'N/A',
+                        'venue_id': class_obj.venue_id,
+                        'lecturer': lecturer.name if lecturer else 'N/A',
+                        'lecturer_id': class_obj.lecturer_id,
+                        'status': class_obj.status,
+                        'time_slot': time_slot
+                    })
+            
+                return formatted_classes
+            
+        except Exception as e:
+            print(f"Error getting lecturer classes: {e}")
+            import traceback
+            traceback.print_exc()
+            return []
+
+    def get_upcoming_classes(lecturer_id, current_date=None, course_filter=None, class_type_filter=None):
+        """Get upcoming classes for a lecturer"""
+        try:
+            with get_session() as db_session:
+                if not current_date:
+                    current_date = date.today()
+            
+                # Use explicit joins like the student version
+                query = (
+                    db_session.query(Class, Course, Venue, User)
+                    .join(Course, Class.course_id == Course.course_id)
+                    .join(Venue, Class.venue_id == Venue.venue_id)
+                    .join(User, Class.lecturer_id == User.user_id)
+                    .join(CourseUser, Course.course_id == CourseUser.course_id)
+                    .filter(CourseUser.user_id == lecturer_id)
+                    .filter(Class.start_time >= current_date)
+                    .order_by(Class.start_time)
+                )
+            
+                # Apply course filter if specified
+                if course_filter and course_filter != 'all':
+                    query = query.filter(Course.code == course_filter)
+            
+                # Apply class type filter if specified
+                if class_type_filter and class_type_filter != 'all':
+                    if hasattr(Class, 'class_type'):
+                        query = query.filter(Class.class_type == class_type_filter)
+            
+                results = query.all()
+            
+                # Format classes for list view
+                formatted_classes = []
+                for class_obj, course, venue, lecturer in results:
+                    # Determine time slot
+                    time_slot = 'morning'
+                    if class_obj.start_time:
+                        hour = class_obj.start_time.hour
+                        if hour < 12:
+                            time_slot = 'morning'
+                        elif hour < 17:
+                            time_slot = 'afternoon'
+                        else:
+                            time_slot = 'evening'
+                
+                    formatted_classes.append({
+                        'id': class_obj.class_id,
+                        'course_code': course.code if course else 'N/A',
+                        'title': course.name if course else 'N/A',
+                        'date': class_obj.start_time.strftime('%B %d, %Y') if class_obj.start_time else 'N/A',
+                        'time': f"{class_obj.start_time.strftime('%I:%M %p') if class_obj.start_time else 'N/A'} - {class_obj.end_time.strftime('%I:%M %p') if class_obj.end_time else 'N/A'}",
+                        'room': venue.name if venue else 'N/A',
+                        'type': getattr(class_obj, 'class_type', 'Lecture'),
+                        'lecturer': lecturer.name if lecturer else 'N/A',
+                        'time_slot': time_slot
+                    })
+            
+                return formatted_classes
+            
+        except Exception as e:
+            print(f"Error getting upcoming classes: {e}")
+            import traceback
+            traceback.print_exc()
+            return []

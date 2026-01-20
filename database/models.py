@@ -5,6 +5,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship, declarative_base
 from sqlalchemy.sql import text
 from sqlalchemy.inspection import inspect
+from sqlalchemy import LargeBinary
 
 Base = declarative_base()
 
@@ -279,3 +280,26 @@ class Testimonial(Base, BaseMixin):
     rating = Column(Integer, nullable=False)
     status = Column(TestimonialStatusEnum, nullable=False, server_default="pending")
     date_submitted = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+    
+# CREATE TABLE facial_data (
+#     facial_data_id INT AUTO_INCREMENT PRIMARY KEY,
+#     user_id INT NOT NULL,
+#     face_encoding LONGBLOB NOT NULL,    -- Compressed binary data
+#     sample_count INT DEFAULT 1,
+#     created_at DATETIME,
+#     updated_at DATETIME,
+#     is_active BOOLEAN DEFAULT TRUE,
+#     FOREIGN KEY (user_id) REFERENCES users(user_id)
+# );
+
+class FacialData(Base, BaseMixin):
+    __tablename__ = "facial_data"
+
+    facial_data_id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, index=True)
+
+    face_encoding = Column(LargeBinary, nullable=False)
+    sample_count = Column(Integer, server_default="1")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+    updated_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"), onupdate=text("CURRENT_TIMESTAMP"))
+    is_active = Column(Boolean, server_default="1")

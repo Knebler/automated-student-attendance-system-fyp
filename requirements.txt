@@ -65,3 +65,4 @@ scikit-learn
 pandas                 
 numpy<2                
 pywin32
+vaderSentiment>=3.3.2

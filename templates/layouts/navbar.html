@@ -24,14 +24,13 @@
               <li><a class="nav-link-custom" href="{{ url_for('institution.manage_classes') }}">Manage Classes</a></li>
               <li><a class="nav-link-custom" href="{{ url_for('institution.manage_appeals') }}">Manage Appeals</a></li>
               <li><a class="nav-link-custom" href="{{ url_for('institution.import_data') }}">Import Data</a></li>
-              <li><a class="nav-link-custom" href="{{ url_for('main.testimonial_form') }}">Feedback</a></li>
           {% elif user_role == 'lecturer' %}
               <!-- TODO: Implement proper routing for these sub pages -->
               <li><a class="nav-link-custom" href="{{ url_for('institution_lecturer.lecturer_dashboard') }}">Dashboard</a></li>
               <li><a class="nav-link-custom" href="{{ url_for('institution_lecturer.timetable') }}">View Timetable</a></li>
               <li><a class="nav-link-custom" href="{{ url_for('institution_lecturer.attendance_statistics') }}">View Attendance Statistics</a></li>
               <li><a class="nav-link-custom" href="{{ url_for('institution_lecturer.manage_classes') }}">Manage Classes/Rosters</a></li>
-              <li><a class="nav-link-custom" href="{{ url_for('main.testimonial_form') }}">Feedback</a></li>
+
           {% elif user_role == 'student' %}
               <!-- TODO: Implement proper routing for these sub pages -->
               <li><a class="nav-link-custom" href="{{ url_for('student.dashboard') }}">Dashboard</a></li>
@@ -39,7 +38,6 @@
               <li><a class="nav-link-custom" href="{{ url_for('student.attendance') }}">View My Attendance</a></li>
               <li><a class="nav-link-custom" href="{{ url_for('student.dashboard') }}">View Inbox</a></li>
               <li><a class="nav-link-custom" href="{{ url_for('student.appeal_management') }}">Attendance Appeal</a></li>
-              <li><a class="nav-link-custom" href="{{ url_for('main.testimonial_form') }}">Feedback</a></li>
           {% endif %}
           
           <li><a class="nav-link-custom" href="{{ url_for('auth.profile') }}">Profile</a></li>

@@ -196,6 +196,17 @@
             align-items: center;
         }
 
+        .footer-custom .nav-link-custom {
+            color: white;
+            text-decoration: underline;
+            font-size: 0.9rem;
+            transition: opacity 0.3s ease;
+        }
+
+        .footer-custom .nav-link-custom:hover {
+            opacity: 0.8;
+        }
+
         /* Utility Classes */
         .text-center { text-align: center; }
         .text-right { text-align: right; }
@@ -330,6 +341,7 @@
             <div>
                 <span class="navbar-brand-custom">AttendAI</span>
                 <p class="mt-1" style="font-size: 0.9rem; opacity: 0.8;">AI-Powered Attendance Management</p>
+                <a class="nav-link-custom" href="{{ url_for('main.testimonial_form') }}">Feedback</a>
             </div>
             <div>
                 <p style="font-size: 0.9rem;">&copy; 2026 AttendAI. All rights reserved.</p>

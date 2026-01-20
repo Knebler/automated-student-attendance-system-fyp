@@ -971,14 +971,14 @@
                                         <td>
                                             <div class="action-buttons">
                                                 <button class="btn-action" 
-                                                        onclick="openStudentModal('{{ student.id }}', '{{ student.name|tojson }}', '{{ student.id_number|tojson }}', '{{ student.email|tojson }}', '{{ student.program|tojson }}', '{{ student.status|tojson }}', '{{ student.year|tojson }}')" 
+                                                        onclick="openStudentModal('{{ student.id }}', '{{ student.name }}', '{{ student.id_number }}', '{{ student.email }}', '{{ student.program }}', '{{ student.status }}', '{{ student.year }}')" 
                                                         title="View Details">
                                                     👁️
                                                 </button>
                                                 <button class="btn-action" onclick="editStudent('{{ student.id }}')" title="Edit">
                                                     ✏️
                                                 </button>
-                                                <button class="btn-action btn-danger" onclick="removeStudent('{{ student.id }}', '{{ student.name|tojson }}')" title="Remove">
+                                                <button class="btn-action btn-danger" onclick="removeStudent('{{ student.id }}', '{{ student.name }}')" title="Remove">
                                                     🗑️
                                                 </button>
                                             </div>
@@ -1391,7 +1391,6 @@
     
     function editStudent(studentId) {
         // In a real app, this would open an edit modal
-        console.log('Editing student:', studentId);
         showToast('Edit student functionality coming soon', 'info');
     }
     

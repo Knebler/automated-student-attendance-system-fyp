@@ -120,6 +120,30 @@ class TestimonialModel(BaseEntity[Testimonial]):
         """Count testimonials by status"""
         return self.session.query(Testimonial).filter(Testimonial.status == status).count()
     
+    def get_testimonials_by_status(self, status):
+        """Get all testimonials with a specific status"""
+        headers = ["testimonial_id", "summary", "content", "rating", "date_submitted", "user_name", "user_email", "user_role", "institution_name"]
+        data = (
+            self.session
+            .query(
+                Testimonial.testimonial_id,
+                Testimonial.summary,
+                Testimonial.content,
+                Testimonial.rating,
+                Testimonial.date_submitted,
+                User.name.label("user_name"),
+                User.email.label("user_email"),
+                User.role.label("user_role"),
+                Institution.name.label("institution_name")
+            )
+            .join(User, Testimonial.user_id == User.user_id)
+            .join(Institution, User.institution_id == Institution.institution_id)
+            .filter(Testimonial.status == status)
+            .order_by(Testimonial.date_submitted.desc())
+            .all()
+        )
+        return self.add_headers(headers, data)
+    
     def update_status(self, testimonial_id, status):
         """Update testimonial status"""
         testimonial = self.get_by_id(testimonial_id)

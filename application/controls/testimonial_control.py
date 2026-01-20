@@ -6,11 +6,93 @@ from database.base import get_session
 from sqlalchemy import text
 from datetime import datetime
 import logging
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+import re
 
 logger = logging.getLogger(__name__)
 
+# Initialize sentiment analyzer
+sentiment_analyzer = SentimentIntensityAnalyzer()
+
+# Common inappropriate words/phrases to filter
+PROFANITY_LIST = [
+    'damn', 'hell', 'crap', 'shit', 'fuck', 'bitch', 'ass', 'bastard', 
+    'dick', 'piss', 'cock', 'pussy', 'whore', 'slut', 'fag', 'nigger',
+    'asshole', 'motherfucker', 'bullshit', 'goddamn', 'retard', 'idiot',
+    'stupid', 'dumb', 'moron', 'imbecile'
+]
+
 class TestimonialControl:
     """Control class for testimonial business logic"""
+    
+    @staticmethod
+    def analyze_testimonial_sentiment(content, summary=None):
+        """
+        Analyze testimonial content for sentiment and inappropriate language.
+        
+        Args:
+            content: Main testimonial content
+            summary: Optional testimonial summary
+            
+        Returns:
+            dict: {
+                'is_appropriate': bool,
+                'reason': str (if inappropriate),
+                'sentiment_score': float,
+                'contains_profanity': bool,
+                'profanity_found': list
+            }
+        """
+        # Combine content and summary for analysis
+        full_text = content
+        if summary:
+            full_text = f"{summary} {content}"
+        
+        # Convert to lowercase for checking
+        text_lower = full_text.lower()
+        
+        # Check for profanity
+        found_profanity = []
+        for word in PROFANITY_LIST:
+            # Use word boundaries to avoid false positives
+            pattern = r'\b' + re.escape(word) + r'\b'
+            if re.search(pattern, text_lower, re.IGNORECASE):
+                found_profanity.append(word)
+        
+        contains_profanity = len(found_profanity) > 0
+        
+        # Perform sentiment analysis
+        sentiment_scores = sentiment_analyzer.polarity_scores(full_text)
+        compound_score = sentiment_scores['compound']
+        
+        # Determine if testimonial is appropriate
+        # Compound score ranges from -1 (most negative) to +1 (most positive)
+        # Reject if:
+        # 1. Contains profanity
+        # 2. Sentiment is very negative (compound < -0.5)
+        # 3. Negative sentiment is dominant (neg > 0.5)
+        
+        is_appropriate = True
+        reason = None
+        
+        if contains_profanity:
+            is_appropriate = False
+            reason = f"Contains inappropriate language: {', '.join(found_profanity)}"
+        elif compound_score < -0.5:
+            is_appropriate = False
+            reason = f"Overly negative sentiment detected (score: {compound_score:.2f})"
+        elif sentiment_scores['neg'] > 0.5:
+            is_appropriate = False
+            reason = f"High negative content (negative score: {sentiment_scores['neg']:.2f})"
+        
+        return {
+            'is_appropriate': is_appropriate,
+            'reason': reason,
+            'sentiment_score': compound_score,
+            'sentiment_details': sentiment_scores,
+            'contains_profanity': contains_profanity,
+            'profanity_found': found_profanity
+        }
     
     @staticmethod
     def create_testimonial(app, user_id, institution_id, title, description, rating, status="pending"):

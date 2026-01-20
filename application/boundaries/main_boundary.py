@@ -115,19 +115,33 @@ def submit_testimonial():
         # Generate summary from first 100 characters of feedback
         summary = feedback_details[:100] + '...' if len(feedback_details) > 100 else feedback_details
         
+        # Analyze testimonial for sentiment and inappropriate content
+        analysis = TestimonialControl.analyze_testimonial_sentiment(
+            content=feedback_details,
+            summary=summary
+        )
+        
+        # Determine status based on analysis
+        if not analysis['is_appropriate']:
+            testimonial_status = 'rejected'
+            flash(f'Your testimonial was automatically rejected: {analysis["reason"]}. Please revise and resubmit with appropriate content.', 'danger')
+        else:
+            testimonial_status = 'pending'
+            flash('Thank you for your testimonial! It will be reviewed before being published.', 'success')
+        
+        # Create testimonial with determined status
         new_testimonial = Testimonial(
             user_id=user_id,
             institution_id=institution_id,
             summary=summary,
             content=feedback_details,
             rating=int(rating),
-            status='pending',
+            status=testimonial_status,
             date_submitted=datetime.now()
         )
         db_session.add(new_testimonial)
         db_session.commit()
         
-        flash('Thank you for your testimonial! It will be reviewed before being published.', 'success')
         return redirect(url_for('main.testimonials'))
         
 @main_bp.route('/init-db')

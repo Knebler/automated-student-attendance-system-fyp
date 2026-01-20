@@ -19,6 +19,7 @@
           {% elif user_role == 'admin' %}
               <li><a class="nav-link-custom" href="{{ url_for('institution.institution_dashboard') }}">Dashboard</a></li>
               <li><a class="nav-link-custom" href="{{ url_for('institution.manage_attendance') }}">Manage Attendance</a></li>
+              <li><a class="nav-link-custom" href="{{ url_for('institution.attendance_reports') }}">Attendance Reports</a></li>
               <li><a class="nav-link-custom" href="{{ url_for('institution.manage_users') }}">Manage Users</a></li>
               <li><a class="nav-link-custom" href="{{ url_for('institution.manage_classes') }}">Manage Classes</a></li>
               <li><a class="nav-link-custom" href="{{ url_for('institution.manage_appeals') }}">Manage Appeals</a></li>

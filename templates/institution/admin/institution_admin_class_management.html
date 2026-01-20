@@ -12,12 +12,7 @@
             <!-- search section -->
             <div class="search-section">
                 <div class="search-filters mb-3">
-                    <input id="searchInput" type="text" class="search-input" placeholder="Search by class name, ID, or lecturer..."> 
-                    <select id="statusFilter" class="filter-select">
-                        <option value="">All Status</option>
-                        <option value="ACTIVE">Active</option>
-                        <option value="INACTIVE">Suspended</option>
-                    </select>
+                    <input id="searchInput" type="text" class="search-input" placeholder="Search by class name, code, or lecturer..."> 
                 </div>
             </div>
         </div>
@@ -33,13 +28,13 @@
                             <th>Name</th>
                             <th>Code</th>
                             <th>Lecturer</th>
-                            <th>Actions</th>
+                            <th style="text-align: center;">Actions</th>
                         </tr>
                     </thead>
 
                     <tbody id="userTableBody">
                         {% for course in courses %}
-                        <tr class="course-row" data-name="{{ course[1] }}" data-code="{{ course[2] }}" data-lecturer="{{ course[3] }}" data-status="{% if course[4] %}ACTIVE{% else %}INACTIVE{% endif %}">
+                        <tr class="course-row" data-name="{{ course[1] }}" data-code="{{ course[2] }}" data-lecturer="{{ course[3] }}">
                             <td>{{ course[1] }}</td>
                             <td>{{ course[2] }}</td>
                             <td>{{ course[3] }}</td>
@@ -136,27 +131,6 @@
         background-color: var(--primary-light);
     }
 
-    /* Status Badges */
-    .status {
-        font-weight: 600;
-        font-size: 0.85rem;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        display: inline-block;
-    }
-
-    .status.active {
-        color: #059669;
-        background-color: #f0fdf4;
-        border: 1px solid #059669;
-    }
-
-    .status.inactive {
-        color: #dc2626;
-        background-color: #fef2f2;
-        border: 1px solid #dc2626;
-    }
-
     /* Action Buttons */
     .actions-cell {
         text-align: center;
@@ -218,11 +192,6 @@
             display: none;
         }
 
-        .status {
-            font-size: 0.75rem;
-            padding: 0.2rem 0.5rem;
-        }
-
         .btn-manage {
             padding: 0.4rem 1rem;
             font-size: 0.8rem;
@@ -233,14 +202,11 @@
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const searchInput = document.getElementById('searchInput');
-        const statusFilter = document.getElementById('statusFilter');
         const tableBody = document.getElementById('userTableBody');
         const rows = tableBody.getElementsByTagName('tr');
 
         function filterTable() {
             const searchTerm = searchInput.value.toLowerCase().trim();
-            const selectedStatus = statusFilter.value;
-
             let visibleCount = 0;
 
             for (let row of rows) {
@@ -249,7 +215,6 @@
                 const name = row.getAttribute('data-name')?.toLowerCase() || '';
                 const code = row.getAttribute('data-code')?.toLowerCase() || '';
                 const lecturer = row.getAttribute('data-lecturer')?.toLowerCase() || '';
-                const status = row.getAttribute('data-status') || '';
 
                 const matchesSearch =
                     searchTerm === '' ||
@@ -257,10 +222,7 @@
                     code.includes(searchTerm) ||
                     lecturer.includes(searchTerm);
 
-                const matchesStatus =
-                    selectedStatus === '' || status === selectedStatus;
-
-                if (matchesSearch && matchesStatus) {
+                if (matchesSearch) {
                     row.style.display = '';
                     visibleCount++;
                 } else {
@@ -277,13 +239,12 @@
                 const messageRow = document.createElement('tr');
                 messageRow.id = 'noResultsMessage';
                 messageRow.innerHTML =
-                    '<td colspan="5" style="text-align:center; padding:2rem; color:#6b7280;">No classes found.</td>';
+                    '<td colspan="4" style="text-align:center; padding:2rem; color:#6b7280;">No classes found.</td>';
                 tableBody.appendChild(messageRow);
             }
         }
 
         searchInput.addEventListener('input', filterTable);
-        statusFilter.addEventListener('change', filterTable);
 
         searchInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') filterTable();

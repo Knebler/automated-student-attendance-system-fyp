@@ -81,6 +81,9 @@ def authenticate_user(email, password):
         pass
     return {'success': False, 'error': 'Invalid email or password'}
 
+def hash_password(password) -> str:
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
 class AuthControl:
     """Control class for authentication business logic with multi-role support"""
     

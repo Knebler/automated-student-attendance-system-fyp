@@ -1,13 +1,21 @@
-from flask import Blueprint, render_template, request, session, current_app, flash, redirect, url_for, abort
+from flask import Blueprint, render_template, request, session, current_app, flash, redirect, url_for, abort, jsonify, Response
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
 from application.controls.attendance_control import AttendanceControl
 from application.controls.auth_control import requires_roles
+from application.controls.import_data_control import ALL_IMPORT_JOBS, submit_import_data_job
 from application.entities2 import *
 from database.base import get_session
 from database.models import *
 from datetime import date, datetime, timedelta
 from collections import defaultdict
+import json
+
+import uuid
+import threading
+import time
+from io import BytesIO
+from openpyxl import load_workbook
 
 institution_bp = Blueprint('institution', __name__)
 
@@ -270,15 +278,38 @@ def import_data():
     """Render import institution data page for admins"""
     return render_template('institution/admin/import_institution_data.html')
 
+@institution_bp.route('/import_data/upload', methods=['POST'])
+@requires_roles('admin')
+def upload_data():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file selected'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    try:
+        return jsonify({'job_id': submit_import_data_job(session.get('institution_id'), file.stream.read())}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@institution_bp.route('/import_data/<job_id>', methods=['GET'])
+@requires_roles('admin')
+def get_status(job_id: str):
+    return render_template('institution/admin/import_institution_data_results.html')
+
+@institution_bp.route('/import_data/<job_id>/progress', methods=['GET'])
+@requires_roles('admin')
+def progress_stream(job_id: str):
+    def get_progress():
+        while job_id in ALL_IMPORT_JOBS:
+            print(f"Progress: {ALL_IMPORT_JOBS[job_id]}")
+            yield f"data: {json.dumps(ALL_IMPORT_JOBS[job_id])}\n\n"
+            time.sleep(2) # Streams updates every 2 seconds
+    return Response(get_progress(), mimetype='text/event-stream')
 
 @institution_bp.route('/attendance/student/')
 @requires_roles('admin')
 def attendance_student_details():
-
-    return render_template(
-        'institution/admin/institution_admin_attendance_management_student_details.html',
-    )
-
+    return render_template('institution/admin/institution_admin_attendance_management_student_details.html')
 
 @institution_bp.route('/attendance/class/<int:class_id>')
 @requires_roles('admin')

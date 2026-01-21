@@ -3,6 +3,7 @@
 {% block title %}Import Data - AttendAI{% endblock %}
 
 {% block content %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <div class="import-data-page">
     <div class="page-header mb-4">
         <h1 class="page-title">Import Data</h1>
@@ -61,20 +62,16 @@
     <div class="card-custom">
         <div class="card-header-custom">Data Import</div>
         <div class="card-body-custom">
-            <!-- Import Type Selector -->
-            <div class="import-selector mb-5">
-                <div class="form-group">
-                    <label for="importType" class="form-label">Import For</label>
-                    <select id="importType" class="form-control">
-                        <option value="" disabled selected>Select data type to import</option>
-                        <option value="users">Users</option>
-                        <option value="classes">Classes</option>
-                        <option value="attendance">Attendance Records</option>
-                        <option value="students">Students</option>
-                    </select>
-                </div>
-                <p class="helper-text mt-2">Select the type of data you want to import from the dropdown above.</p>
-            </div>
+            <a href="{{ url_for('static', filename='import-data.xlsx') }}" download="import-data.xlsx" class="btn-custom btn-download mb-4" id="downloadBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="8" y1="13" x2="16" y2="13"></line>
+                    <line x1="8" y1="17" x2="16" y2="17"></line>
+                    <line x1="10" y1="9" x2="10" y2="21"></line>
+                </svg>
+                Download Excel Template
+            </a>
 
             <!-- Upload Area -->
             <div class="upload-section">
@@ -343,6 +340,25 @@
         cursor: not-allowed;
     }
 
+    .btn-download {
+        padding: 0.75rem 3rem;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        font-weight: 300;
+        background-color: var(--primary-dark);
+        border-color: var(--primary-dark);
+        color: white;
+        max-width: 400px;
+        margin: 0 auto;
+        display: block;
+        text-align: center;
+    }
+
+    .btn-download:hover {
+        background-color: #1e293b;
+        border-color: #1e293b;
+    }
+
     /* Responsive Design */
     @media (max-width: 768px) {
         .page-title {
@@ -565,41 +581,29 @@
         });
 
         // Import button click
-        importButton.addEventListener('click', () => {
+        importButton.addEventListener('click', async () => {
             if (fileInput.files.length === 0) {
                 alert('Please select a file to import.');
                 return;
             }
 
-            const importTypeValue = importType.value;
-            if (!importTypeValue) {
-                alert('Please select what type of data you want to import.');
-                return;
-            }
-
-            // Here you would typically submit the form via AJAX
-            // For now, show a success message
-            alert(`Starting import of ${fileInput.files.length} file(s) for ${importTypeValue}...`);
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            response = await fetch('{{ url_for("institution.upload_data") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData,
+            })
             
-            // Simulate import process
-            importButton.textContent = 'Importing...';
-            importButton.disabled = true;
-            
-            setTimeout(() => {
-                alert('Import completed successfully!');
-                importButton.textContent = 'Start Import';
-                importButton.disabled = true;
-                fileInput.value = '';
-                fileInfo.classList.remove('visible');
-                fileName.textContent = 'No file selected';
-                fileSize.textContent = '–';
-            }, 2000);
-        });
-
-        // Enable import button when both file and import type are selected
-        importType.addEventListener('change', () => {
-            if (fileInput.files.length > 0 && importType.value) {
-                importButton.disabled = false;
+            if (response.ok) {
+                const data = await response.json();
+                const jobId = data.job_id;
+                window.location.href = `/institution/import_data/${jobId}`;
+            } else {
+                alert('An error occurred while uploading the file. Please try again.');
             }
         });
     });

@@ -7,6 +7,9 @@ import random
 from base import root_engine, engine, get_session
 from models import *
 
+# Import the new models
+from models import Feature, HeroFeature, Stat
+
 def drop_database():
     with root_engine.connect() as conn:
         conn.execute(text(f"DROP DATABASE IF EXISTS {os.environ['DB_NAME']}"))
@@ -535,6 +538,108 @@ Perfect for hybrid learning, field trips, internships, practical sessions, and e
         session.commit()
         print(f"Added {len(features_data)} features")
 
+def seed_hero_features():
+    with get_session() as session:
+        hero_features_data = [
+            {
+                'title': 'AI-Powered Face Recognition',
+                'description': '99.8% accuracy for automatic attendance marking',
+                'summary': 'Automatically identify and mark attendance using advanced facial recognition technology.',
+                'icon': '🤖',
+                'bg_image': 'https://images.unsplash.com/photo-1677442136019-21780ecad995?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80',
+                'display_order': 1,
+                'is_active': True
+            },
+            {
+                'title': 'QR Code & Mobile Check-ins',
+                'description': 'Fast and convenient attendance marking',
+                'summary': 'Quick QR code scanning for fast check-ins using mobile app or web interface.',
+                'icon': '📱',
+                'bg_image': 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80',
+                'display_order': 2,
+                'is_active': True
+            },
+            {
+                'title': 'Real-time Analytics Dashboard',
+                'description': 'Monitor patterns and generate instant reports',
+                'summary': 'Monitor attendance patterns, trends, and statistics with predictive analytics.',
+                'icon': '📊',
+                'bg_image': 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80',
+                'display_order': 3,
+                'is_active': True
+            },
+            {
+                'title': 'Automated Notifications',
+                'description': 'Alerts via email or SMS',
+                'summary': 'Send automatic alerts about attendance status and upcoming classes.',
+                'icon': '🔔',
+                'bg_image': 'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80',
+                'display_order': 4,
+                'is_active': True
+            },
+            {
+                'title': 'Advanced Security & Compliance',
+                'description': 'Enterprise-grade security with data encryption',
+                'summary': 'Bank-level security with GDPR compliance and role-based access control.',
+                'icon': '🔒',
+                'bg_image': 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80',
+                'display_order': 5,
+                'is_active': True
+            },
+            {
+                'title': 'Seamless Integrations',
+                'description': 'Connect with Google Classroom, Microsoft Teams, and LMS',
+                'summary': 'Powerful API for connecting with existing systems and platforms.',
+                'icon': '🔄',
+                'bg_image': 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80',
+                'display_order': 6,
+                'is_active': True
+            }
+        ]
+        
+        for hero_data in hero_features_data:
+            hero_feature = HeroFeature(**hero_data)
+            session.add(hero_feature)
+        
+        session.commit()
+        print(f"Added {len(hero_features_data)} hero features")
+
+def seed_stats():
+    with get_session() as session:
+        stats_data = [
+            {
+                'value': '500+',
+                'label': 'Educational Institutions',
+                'display_order': 1,
+                'is_active': True
+            },
+            {
+                'value': '98%',
+                'label': 'Customer Satisfaction',
+                'display_order': 2,
+                'is_active': True
+            },
+            {
+                'value': '250K+',
+                'label': 'Students & Employees',
+                'display_order': 3,
+                'is_active': True
+            },
+            {
+                'value': '85%',
+                'label': 'Time Savings',
+                'display_order': 4,
+                'is_active': True
+            }
+        ]
+        
+        for stat_data in stats_data:
+            stat = Stat(**stat_data)
+            session.add(stat)
+        
+        session.commit()
+        print(f"Added {len(stats_data)} stats")
+
 def seed_database():
     import random
     zip_dict = lambda keys, list_of_values: [dict(zip(keys, values)) for values in list_of_values]
@@ -649,6 +754,12 @@ def seed_database():
     
     if row_count("Features") == 0:
         seed_features()
+    
+    if row_count("Hero_Features") == 0:
+        seed_hero_features()
+    
+    if row_count("Stats") == 0:
+        seed_stats()
 
     if row_count("Announcements") == 0:
         cols = [

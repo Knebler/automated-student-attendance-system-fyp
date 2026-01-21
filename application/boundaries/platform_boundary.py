@@ -10,7 +10,7 @@ from application.entities2.subscription import SubscriptionModel
 from application.entities2.testimonial import TestimonialModel
 from application.entities2.user import UserModel
 from database.base import get_session
-from database.models import User, Feature
+from database.models import User, Feature, HeroFeature, Stat
 
 platform_bp = Blueprint('platform', __name__)
 
@@ -463,21 +463,44 @@ def subscription_profile_creator():
 # FEATURE MANAGEMENT
 # =====================
 
-@platform_bp.route('/features')
+@platform_bp.route('/landing-page')
 @requires_roles('platform_manager')
-def feature_management():
-    """Platform manager - feature management"""
+def landing_page_management():
+    """Platform manager - landing page management (hero features, stats, features)"""
     with get_session() as db_session:
+        # Get hero features
+        hero_features = db_session.query(HeroFeature).order_by(HeroFeature.display_order, HeroFeature.hero_feature_id).all()
+        hero_features_list = [hf.as_dict() for hf in hero_features]
+        
+        # Get stats
+        stats = db_session.query(Stat).order_by(Stat.display_order, Stat.stat_id).all()
+        stats_list = [s.as_dict() for s in stats]
+        
+        # Get features
         features = db_session.query(Feature).order_by(Feature.display_order, Feature.feature_id).all()
         features_list = [f.as_dict() for f in features]
         
         # Calculate statistics
+        total_hero_features = len(hero_features)
+        active_hero_features = sum(1 for hf in hero_features if hf.is_active)
+        
+        total_stats = len(stats)
+        active_stats = sum(1 for s in stats if s.is_active)
+        
         total_features = len(features)
         active_features = sum(1 for f in features if f.is_active)
         main_features_count = sum(1 for f in features if not f.is_advanced)
         advanced_features_count = sum(1 for f in features if f.is_advanced)
         
     context = {
+        'hero_features': hero_features_list,
+        'total_hero_features': total_hero_features,
+        'active_hero_features': active_hero_features,
+        
+        'stats': stats_list,
+        'total_stats': total_stats,
+        'active_stats': active_stats,
+        
         'features': features_list,
         'total_features': total_features,
         'active_features': active_features,
@@ -485,7 +508,7 @@ def feature_management():
         'advanced_features_count': advanced_features_count
     }
     
-    return render_template('platmanager/platform_manager_feature_management.html', **context)
+    return render_template('platmanager/platform_manager_landing_page.html', **context)
 
 @platform_bp.route('/api/features/create', methods=['POST'])
 @requires_roles_api('platform_manager')
@@ -594,6 +617,196 @@ def delete_feature(feature_id):
             db_session.commit()
             
         return jsonify({'success': True, 'message': 'Feature deleted successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ====================
+# HERO FEATURES API
+# ====================
+
+@platform_bp.route('/api/hero-features/create', methods=['POST'])
+@requires_roles_api('platform_manager')
+def create_hero_feature():
+    """Create a new hero feature"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            hero_feature = HeroFeature(
+                title=data['title'],
+                description=data['description'],
+                summary=data['summary'],
+                icon=data['icon'],
+                bg_image=data['bg_image'],
+                display_order=data.get('display_order', 0),
+                is_active=data.get('is_active', True)
+            )
+            
+            db_session.add(hero_feature)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Hero feature created successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/hero-features/<int:hero_feature_id>/update', methods=['POST'])
+@requires_roles_api('platform_manager')
+def update_hero_feature(hero_feature_id):
+    """Update an existing hero feature"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            hero_feature = db_session.query(HeroFeature).filter_by(hero_feature_id=hero_feature_id).first()
+            
+            if not hero_feature:
+                return jsonify({'success': False, 'error': 'Hero feature not found'}), 404
+            
+            hero_feature.title = data['title']
+            hero_feature.description = data['description']
+            hero_feature.summary = data['summary']
+            hero_feature.icon = data['icon']
+            hero_feature.bg_image = data['bg_image']
+            hero_feature.display_order = data.get('display_order', 0)
+            hero_feature.is_active = data.get('is_active', True)
+            
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Hero feature updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/hero-features/<int:hero_feature_id>/toggle-status', methods=['POST'])
+@requires_roles_api('platform_manager')
+def toggle_hero_feature_status(hero_feature_id):
+    """Toggle hero feature active status"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            hero_feature = db_session.query(HeroFeature).filter_by(hero_feature_id=hero_feature_id).first()
+            
+            if not hero_feature:
+                return jsonify({'success': False, 'error': 'Hero feature not found'}), 404
+            
+            hero_feature.is_active = data.get('is_active', not hero_feature.is_active)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Hero feature status updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/hero-features/<int:hero_feature_id>/delete', methods=['POST'])
+@requires_roles_api('platform_manager')
+def delete_hero_feature(hero_feature_id):
+    """Delete a hero feature"""
+    try:
+        with get_session() as db_session:
+            hero_feature = db_session.query(HeroFeature).filter_by(hero_feature_id=hero_feature_id).first()
+            
+            if not hero_feature:
+                return jsonify({'success': False, 'error': 'Hero feature not found'}), 404
+            
+            db_session.delete(hero_feature)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Hero feature deleted successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ====================
+# STATS API
+# ====================
+
+@platform_bp.route('/api/stats/create', methods=['POST'])
+@requires_roles_api('platform_manager')
+def create_stat():
+    """Create a new stat"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            stat = Stat(
+                value=data['value'],
+                label=data['label'],
+                display_order=data.get('display_order', 0),
+                is_active=data.get('is_active', True)
+            )
+            
+            db_session.add(stat)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Stat created successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/stats/<int:stat_id>/update', methods=['POST'])
+@requires_roles_api('platform_manager')
+def update_stat(stat_id):
+    """Update an existing stat"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            stat = db_session.query(Stat).filter_by(stat_id=stat_id).first()
+            
+            if not stat:
+                return jsonify({'success': False, 'error': 'Stat not found'}), 404
+            
+            stat.value = data['value']
+            stat.label = data['label']
+            stat.display_order = data.get('display_order', 0)
+            stat.is_active = data.get('is_active', True)
+            
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Stat updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/stats/<int:stat_id>/toggle-status', methods=['POST'])
+@requires_roles_api('platform_manager')
+def toggle_stat_status(stat_id):
+    """Toggle stat active status"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            stat = db_session.query(Stat).filter_by(stat_id=stat_id).first()
+            
+            if not stat:
+                return jsonify({'success': False, 'error': 'Stat not found'}), 404
+            
+            stat.is_active = data.get('is_active', not stat.is_active)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Stat status updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/stats/<int:stat_id>/delete', methods=['POST'])
+@requires_roles_api('platform_manager')
+def delete_stat(stat_id):
+    """Delete a stat"""
+    try:
+        with get_session() as db_session:
+            stat = db_session.query(Stat).filter_by(stat_id=stat_id).first()
+            
+            if not stat:
+                return jsonify({'success': False, 'error': 'Stat not found'}), 404
+            
+            db_session.delete(stat)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Stat deleted successfully'})
         
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

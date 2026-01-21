@@ -20,7 +20,33 @@ main_bp = Blueprint('main', __name__)
 @main_bp.route('/')
 def home():
     """Home page route"""
-    return render_template('index.html')
+    with get_session() as db_session:
+        # Get active hero features for homepage slideshow
+        hero_features_query = db_session.query(HeroFeature).filter_by(is_active=True).order_by(HeroFeature.display_order).all()
+        
+        # Convert to dictionaries for JSON serialization
+        hero_features = [
+            {
+                'title': hf.title,
+                'description': hf.description,
+                'summary': hf.summary,
+                'icon': hf.icon,
+                'bg_image': hf.bg_image
+            }
+            for hf in hero_features_query
+        ]
+        
+        # Get active stats
+        stats_query = db_session.query(Stat).filter_by(is_active=True).order_by(Stat.display_order).all()
+        stats = [
+            {
+                'value': s.value,
+                'label': s.label
+            }
+            for s in stats_query
+        ]
+    
+    return render_template('index.html', hero_features=hero_features, stats=stats)
 
 @main_bp.route('/about')
 def about():

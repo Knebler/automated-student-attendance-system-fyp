@@ -321,3 +321,32 @@ class Feature(Base, BaseMixin):
     display_order = Column(Integer, server_default="0")
     is_advanced = Column(Boolean, server_default="0")
     created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+# ====================
+# HERO FEATURES (Homepage Slideshow)
+# ====================
+class HeroFeature(Base, BaseMixin):
+    __tablename__ = "hero_features"
+
+    hero_feature_id = Column(Integer, primary_key=True)
+    title = Column(String(200), nullable=False)
+    description = Column(String(500), nullable=False)
+    summary = Column(Text, nullable=False)
+    icon = Column(String(50), nullable=False)
+    bg_image = Column(String(500), nullable=False)
+    is_active = Column(Boolean, server_default="1")
+    display_order = Column(Integer, server_default="0")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+# ====================
+# STATS (Homepage Statistics)
+# ====================
+class Stat(Base, BaseMixin):
+    __tablename__ = "stats"
+
+    stat_id = Column(Integer, primary_key=True)
+    value = Column(String(50), nullable=False)
+    label = Column(String(200), nullable=False)
+    is_active = Column(Boolean, server_default="1")
+    display_order = Column(Integer, server_default="0")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))

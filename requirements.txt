@@ -64,4 +64,4 @@ Flask-WTF == 1.2.2
 scikit-learn           
 pandas                 
 numpy<2                
-# pywin32
+pywin32

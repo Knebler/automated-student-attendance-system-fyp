@@ -79,28 +79,12 @@ def attendance_history():
                            user=session.get('user'))
 
 
-# @student_bp.route('/attendance/checkin')
-# @requires_roles('student')
-# def class_checkin():
-#     """Student class check-in view"""
-#     return render_template('institution/student/student_class_checkin.html',
-#                            user=session.get('user'))
-
 @student_bp.route('/attendance/checkin')
 @requires_roles('student')
 def class_checkin():
     """Student class check-in view"""
-    user_id = session.get('user_id')
-
-    with get_session() as db_session:
-        class_model = ClassModel(db_session)
-        upcoming_classes = class_model.get_upcoming_classes_for_student(user_id)
-
     return render_template('institution/student/student_class_checkin.html',
-        user=session.get('user'),
-        upcoming_classes=upcoming_classes
-    )
-
+                           user=session.get('user'))
 
 
 @student_bp.route('/attendance/checkin/face')

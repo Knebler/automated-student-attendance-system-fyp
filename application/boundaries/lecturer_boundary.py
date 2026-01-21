@@ -33,16 +33,11 @@ def lecturer_dashboard():
         lecturer_id = get_lecturer_id()
         institution_id = get_institution_id()
         
-        # Check if show_all_announcements query param is set
-        show_all_announcements = request.args.get('show_all_announcements') == '1'
-        announcement_limit = 50 if show_all_announcements else 2
-        
         # Get all dashboard data including announcements
         result = LecturerControl.get_dashboard_data(
             current_app,
             lecturer_id,
-            institution_id,
-            announcement_limit=announcement_limit
+            institution_id
         )
         
         if not result.get('success'):
@@ -53,11 +48,11 @@ def lecturer_dashboard():
         context = {
             'lecturer_name': result.get('lecturer_info', {}).get('name', 'Lecturer'),
             'today_classes': result.get('today_classes', []),
-            'announcements': result.get('announcements', []),  # Announcements from LecturerControl
+            'announcements': result.get('announcements', []),  # Preview announcements (2 items)
+            'all_announcements': result.get('all_announcements', []),  # All announcements for modal (up to 50)
             'current_time': datetime.now().strftime('%I:%M %p'),
             'current_date': date.today().strftime('%d %B %Y'),
-            'statistics': result.get('statistics', {}),
-            'show_all_announcements': show_all_announcements
+            'statistics': result.get('statistics', {})
         }
         
         return render_template('institution/lecturer/lecturer_dashboard.html', **context)

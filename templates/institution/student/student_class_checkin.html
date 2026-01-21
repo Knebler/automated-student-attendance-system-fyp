@@ -17,7 +17,7 @@
     <div class="checkin-grid">
         <!-- Upcoming Classes -->
         <div class="card-custom">
-            <div class="card-header-custom">Upcoming Classessss</div>
+            <div class="card-header-custom">Upcoming Classes</div>
             <div class="card-body-custom">
                 <div class="class-list">
                 {% for c in upcoming_classes %}
@@ -37,6 +37,10 @@
                             <div class="detail">
                                 <span class="detail-label">Date:</span>
                                 <span class="detail-value">{{ c.date }}</span>
+                            </div>
+                            <div class="detail">
+                                <span class="detail-label">Time:</span>
+                                <span class="detail-value">{{ c.start_time }}-{{ c.end_time }}</span>
                             </div>
                             <div class="detail">
                                 <span class="detail-label">Venue:</span>

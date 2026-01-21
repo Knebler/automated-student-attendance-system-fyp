@@ -13,7 +13,7 @@ from application.entities2.venue import VenueModel
 class LecturerControl:
     """Control class for lecturer business logic using ORM"""
     
-    def get_dashboard_data(app, lecturer_id: int, institution_id: int) -> Dict[str, Any]:
+    def get_dashboard_data(app, lecturer_id: int, institution_id: int, announcement_limit: int = 2) -> Dict[str, Any]:
         """Get data for lecturer dashboard"""
         try:
             with get_session() as db_session:
@@ -31,7 +31,7 @@ class LecturerControl:
                 today_classes = class_model.get_today_classes_for_lecturer(lecturer_id, today)
             
                 # Get recent announcements for the institution
-                announcements = announcement_model.get_recent_announcements(institution_id, limit=3)
+                announcements = announcement_model.get_recent_announcements(institution_id, limit=announcement_limit)
             
                 # Prepare classes data (same as before)
                 formatted_today_classes = []

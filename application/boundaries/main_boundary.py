@@ -35,7 +35,27 @@ def faq():
 @main_bp.route('/features')
 def features():
     """Public Features page"""
-    return render_template('unregistered/features.html')
+    with get_session() as db_session:
+        # Get all active features ordered by display_order
+        main_features = db_session.query(Feature).filter(
+            Feature.is_active == True,
+            Feature.is_advanced == False
+        ).order_by(Feature.display_order).all()
+        
+        advanced_features = db_session.query(Feature).filter(
+            Feature.is_active == True,
+            Feature.is_advanced == True
+        ).order_by(Feature.display_order).all()
+        
+        # Convert to dictionaries
+        main_features_list = [f.as_dict() for f in main_features]
+        advanced_features_list = [f.as_dict() for f in advanced_features]
+    
+    return render_template(
+        'unregistered/features.html', 
+        main_features=main_features_list,
+        advanced_features=advanced_features_list
+    )
 
 @main_bp.route('/subscriptions')
 def subscriptions():

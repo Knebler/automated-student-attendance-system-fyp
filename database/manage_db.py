@@ -347,6 +347,194 @@ def seed_testimonials():
         session.commit()
         print(f"Added {len(testimonials)} testimonials")
 
+def seed_features():
+    with get_session() as session:
+        features_data = [
+            {
+                'slug': 'ai-face-recognition',
+                'icon': '🤖',
+                'title': 'AI-Powered Face Recognition',
+                'description': 'Automatically identify and mark attendance using advanced facial recognition technology with 99.8% accuracy. No more manual check-ins or proxy attendance.',
+                'details': '''Our advanced facial recognition system revolutionizes attendance tracking with unparalleled accuracy and efficiency.
+
+<h4>Key Features:</h4>
+<ul>
+    <li>99.8% accuracy rate with deep learning algorithms</li>
+    <li>Real-time face detection and recognition</li>
+    <li>Works in various lighting conditions</li>
+    <li>Anti-spoofing technology to prevent fraud</li>
+    <li>Privacy-focused with encrypted face data</li>
+</ul>
+
+<h4>How It Works:</h4>
+Students simply look at the camera during class entry. The system instantly identifies them and marks attendance automatically. The entire process takes less than 2 seconds per student.''',
+                'try_url': '/auth/register',
+                'is_advanced': False,
+                'display_order': 1
+            },
+            {
+                'slug': 'qr-mobile-checkins',
+                'icon': '📱',
+                'title': 'QR Code & Mobile Check-ins',
+                'description': 'Quick QR code scanning for fast check-ins. Students and staff can mark attendance with a simple scan using our mobile app or web interface.',
+                'details': '''Streamline attendance with quick QR code scanning and mobile check-ins for maximum flexibility.
+
+<h4>Benefits:</h4>
+<ul>
+    <li>Instant check-in via QR code scanning</li>
+    <li>Works on any smartphone or tablet</li>
+    <li>No special hardware required</li>
+    <li>Offline mode for areas with poor connectivity</li>
+    <li>Unique codes generated for each session</li>
+</ul>
+
+<h4>Perfect For:</h4>
+Large lecture halls, outdoor events, remote learning scenarios, and hybrid classrooms where facial recognition may not be practical.''',
+                'try_url': '/demo/qr-checkin',
+                'is_advanced': False,
+                'display_order': 2
+            },
+            {
+                'slug': 'real-time-analytics',
+                'icon': '📊',
+                'title': 'Real-time Analytics Dashboard',
+                'description': 'Monitor attendance patterns, trends, and statistics in real-time. Generate instant reports and identify at-risk students with predictive analytics.',
+                'details': '''Transform raw attendance data into actionable insights with our powerful analytics platform.
+
+<h4>Analytics Features:</h4>
+<ul>
+    <li>Live attendance tracking across all classes</li>
+    <li>Historical trend analysis and comparisons</li>
+    <li>Customizable reports and exports</li>
+    <li>Visual charts and graphs for easy interpretation</li>
+    <li>Automatic alerts for attendance issues</li>
+</ul>
+
+<h4>Insights You'll Get:</h4>
+Identify patterns like frequent absences, peak attendance times, course popularity, and early warning signs for students who may need additional support.''',
+                'try_url': '/demo/analytics',
+                'is_advanced': False,
+                'display_order': 3
+            },
+            {
+                'slug': 'automated-notifications',
+                'icon': '🔔',
+                'title': 'Automated Notifications',
+                'description': 'Send automatic alerts to students, parents, and staff about attendance status, upcoming classes, and important announcements via email or SMS.',
+                'details': '''Keep everyone informed with automated, customizable notification system.
+
+<h4>Notification Types:</h4>
+<ul>
+    <li>Absence alerts sent to students and parents</li>
+    <li>Class reminders and schedule changes</li>
+    <li>Low attendance warnings</li>
+    <li>Custom announcements and updates</li>
+    <li>Weekly/monthly attendance summaries</li>
+</ul>
+
+<h4>Delivery Options:</h4>
+Choose from email, SMS, push notifications, or in-app alerts. Set up custom rules for when and who receives notifications based on your institution's needs.''',
+                'try_url': '/demo/notifications',
+                'is_advanced': False,
+                'display_order': 4
+            },
+            {
+                'slug': 'advanced-security',
+                'icon': '🔒',
+                'title': 'Advanced Security & Compliance',
+                'description': 'Enterprise-grade security with data encryption, role-based access control, and GDPR compliance. Your data is protected with bank-level security.',
+                'details': '''Enterprise-grade security measures to protect sensitive attendance data.
+
+<h4>Security Features:</h4>
+<ul>
+    <li>End-to-end encryption for all data</li>
+    <li>Role-based access control (RBAC)</li>
+    <li>Two-factor authentication (2FA)</li>
+    <li>Regular security audits and updates</li>
+    <li>GDPR, FERPA, and SOC 2 compliance</li>
+</ul>
+
+<h4>Privacy Protection:</h4>
+We take data privacy seriously. All biometric data is encrypted, stored securely, and never shared with third parties. Students and staff have full control over their personal information.''',
+                'try_url': '/demo/security',
+                'is_advanced': False,
+                'display_order': 5
+            },
+            {
+                'slug': 'seamless-integrations',
+                'icon': '🔄',
+                'title': 'Seamless Integrations',
+                'description': 'Connect with existing systems like Google Classroom, Microsoft Teams, LMS platforms, and student information systems through our powerful API.',
+                'details': '''Connect AttendAI with your existing systems for a unified workflow.
+
+<h4>Integration Options:</h4>
+<ul>
+    <li>Google Classroom and Microsoft Teams</li>
+    <li>Popular LMS platforms (Canvas, Moodle, Blackboard)</li>
+    <li>Student Information Systems (SIS)</li>
+    <li>Calendar applications (Google Calendar, Outlook)</li>
+    <li>Custom integrations via REST API</li>
+</ul>
+
+<h4>Benefits:</h4>
+Sync attendance data automatically, reduce duplicate data entry, and create a seamless experience across all your educational technology tools.''',
+                'try_url': '/demo/integrations',
+                'is_advanced': False,
+                'display_order': 6
+            },
+            {
+                'slug': 'predictive-analytics',
+                'icon': '🎯',
+                'title': 'Predictive Analytics',
+                'description': 'AI algorithms predict student performance based on attendance patterns, helping educators identify at-risk students early and intervene proactively.',
+                'details': '''Use AI to predict student outcomes based on attendance patterns.
+
+<h4>Predictive Capabilities:</h4>
+<ul>
+    <li>Early identification of at-risk students</li>
+    <li>Performance prediction based on attendance</li>
+    <li>Intervention recommendations</li>
+    <li>Success probability scoring</li>
+    <li>Trend forecasting for future semesters</li>
+</ul>
+
+<h4>Impact:</h4>
+Studies show that early intervention based on attendance patterns can improve student retention by up to 25% and increase overall academic performance significantly.''',
+                'try_url': '/demo/predictive-analytics',
+                'is_advanced': True,
+                'display_order': 7
+            },
+            {
+                'slug': 'geolocation-tracking',
+                'icon': '🌐',
+                'title': 'Geolocation Tracking',
+                'description': 'Verify attendance based on location for remote or hybrid learning. Ensure students are in the right place at the right time with geofencing technology.',
+                'details': '''Verify attendance location for remote and hybrid learning environments.
+
+<h4>Location Features:</h4>
+<ul>
+    <li>GPS-based location verification</li>
+    <li>Geofencing for specific areas</li>
+    <li>Configurable radius settings</li>
+    <li>Privacy-conscious location tracking</li>
+    <li>Works for field trips and off-campus events</li>
+</ul>
+
+<h4>Use Cases:</h4>
+Perfect for hybrid learning, field trips, internships, practical sessions, and ensuring students attend the correct physical location for in-person requirements.''',
+                'try_url': '/demo/geolocation',
+                'is_advanced': True,
+                'display_order': 8
+            }
+        ]
+        
+        for feature_data in features_data:
+            feature = Feature(**feature_data)
+            session.add(feature)
+        
+        session.commit()
+        print(f"Added {len(features_data)} features")
+
 def seed_database():
     import random
     zip_dict = lambda keys, list_of_values: [dict(zip(keys, values)) for values in list_of_values]
@@ -458,6 +646,9 @@ def seed_database():
     
     if row_count("Testimonials") == 0:
         seed_testimonials()
+    
+    if row_count("Features") == 0:
+        seed_features()
 
     if row_count("Announcements") == 0:
         cols = [

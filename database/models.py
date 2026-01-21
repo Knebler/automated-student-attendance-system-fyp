@@ -303,3 +303,21 @@ class FacialData(Base, BaseMixin):
     created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
     updated_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"), onupdate=text("CURRENT_TIMESTAMP"))
     is_active = Column(Boolean, server_default="1")
+
+# ====================
+# FEATURES
+# ====================
+class Feature(Base, BaseMixin):
+    __tablename__ = "features"
+
+    feature_id = Column(Integer, primary_key=True)
+    slug = Column(String(100), nullable=False, unique=True, index=True)
+    icon = Column(String(50), nullable=False)
+    title = Column(String(200), nullable=False)
+    description = Column(Text, nullable=False)
+    details = Column(Text)
+    try_url = Column(String(255))
+    is_active = Column(Boolean, server_default="1")
+    display_order = Column(Integer, server_default="0")
+    is_advanced = Column(Boolean, server_default="0")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))

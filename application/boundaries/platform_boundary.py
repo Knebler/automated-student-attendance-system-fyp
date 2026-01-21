@@ -10,7 +10,7 @@ from application.entities2.subscription import SubscriptionModel
 from application.entities2.testimonial import TestimonialModel
 from application.entities2.user import UserModel
 from database.base import get_session
-from database.models import User
+from database.models import User, Feature
 
 platform_bp = Blueprint('platform', __name__)
 
@@ -458,6 +458,145 @@ def delete_testimonial(testimonial_id):
 def subscription_profile_creator():
     """Subscription profile creation page"""
     return render_template('platmanager/platform_manager_subscription_management_profile_creator.html')
+
+# =====================
+# FEATURE MANAGEMENT
+# =====================
+
+@platform_bp.route('/features')
+@requires_roles('platform_manager')
+def feature_management():
+    """Platform manager - feature management"""
+    with get_session() as db_session:
+        features = db_session.query(Feature).order_by(Feature.display_order, Feature.feature_id).all()
+        features_list = [f.as_dict() for f in features]
+        
+        # Calculate statistics
+        total_features = len(features)
+        active_features = sum(1 for f in features if f.is_active)
+        main_features_count = sum(1 for f in features if not f.is_advanced)
+        advanced_features_count = sum(1 for f in features if f.is_advanced)
+        
+    context = {
+        'features': features_list,
+        'total_features': total_features,
+        'active_features': active_features,
+        'main_features_count': main_features_count,
+        'advanced_features_count': advanced_features_count
+    }
+    
+    return render_template('platmanager/platform_manager_feature_management.html', **context)
+
+@platform_bp.route('/api/features/create', methods=['POST'])
+@requires_roles_api('platform_manager')
+def create_feature():
+    """Create a new feature"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            # Check if slug already exists
+            existing = db_session.query(Feature).filter_by(slug=data['slug']).first()
+            if existing:
+                return jsonify({'success': False, 'error': 'A feature with this slug already exists'}), 400
+            
+            # Create new feature
+            feature = Feature(
+                slug=data['slug'],
+                icon=data['icon'],
+                title=data['title'],
+                description=data['description'],
+                details=data.get('details', ''),
+                try_url=data.get('try_url', ''),
+                display_order=data.get('display_order', 0),
+                is_active=data.get('is_active', True),
+                is_advanced=data.get('is_advanced', False)
+            )
+            
+            db_session.add(feature)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Feature created successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/features/<int:feature_id>/update', methods=['POST'])
+@requires_roles_api('platform_manager')
+def update_feature(feature_id):
+    """Update an existing feature"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            feature = db_session.query(Feature).filter_by(feature_id=feature_id).first()
+            
+            if not feature:
+                return jsonify({'success': False, 'error': 'Feature not found'}), 404
+            
+            # Check if slug is being changed and if it conflicts
+            if data['slug'] != feature.slug:
+                existing = db_session.query(Feature).filter_by(slug=data['slug']).first()
+                if existing:
+                    return jsonify({'success': False, 'error': 'A feature with this slug already exists'}), 400
+            
+            # Update feature
+            feature.slug = data['slug']
+            feature.icon = data['icon']
+            feature.title = data['title']
+            feature.description = data['description']
+            feature.details = data.get('details', '')
+            feature.try_url = data.get('try_url', '')
+            feature.display_order = data.get('display_order', 0)
+            feature.is_active = data.get('is_active', True)
+            feature.is_advanced = data.get('is_advanced', False)
+            
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Feature updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/features/<int:feature_id>/toggle-status', methods=['POST'])
+@requires_roles_api('platform_manager')
+def toggle_feature_status(feature_id):
+    """Toggle feature active status"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            feature = db_session.query(Feature).filter_by(feature_id=feature_id).first()
+            
+            if not feature:
+                return jsonify({'success': False, 'error': 'Feature not found'}), 404
+            
+            feature.is_active = data.get('is_active', not feature.is_active)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Feature status updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/features/<int:feature_id>/delete', methods=['POST'])
+@requires_roles_api('platform_manager')
+def delete_feature(feature_id):
+    """Delete a feature"""
+    try:
+        with get_session() as db_session:
+            feature = db_session.query(Feature).filter_by(feature_id=feature_id).first()
+            
+            if not feature:
+                return jsonify({'success': False, 'error': 'Feature not found'}), 404
+            
+            db_session.delete(feature)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Feature deleted successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @platform_bp.route('/api/debug-session', methods=['GET'])
 def debug_session():

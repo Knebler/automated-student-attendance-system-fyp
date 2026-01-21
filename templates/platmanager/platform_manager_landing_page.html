@@ -379,8 +379,8 @@
 </style>
 
 <div class="page-header">
-    <h1>Landing Page Management</h1>
-    <p>Manage all sections of the homepage (index.html)</p>
+    <h1>Landing Page & About Us Management</h1>
+    <p>Manage all sections of the homepage (index.html) and About Us page</p>
 </div>
 
 <!-- Tabs -->
@@ -393,6 +393,15 @@
     </button>
     <button class="tab-button" onclick="switchTab('features')">
         ⚡ Features
+    </button>
+    <button class="tab-button" onclick="switchTab('about')">
+        ℹ️ About Us
+    </button>
+    <button class="tab-button" onclick="switchTab('team')">
+        👥 Team
+    </button>
+    <button class="tab-button" onclick="switchTab('values')">
+        💎 Values
     </button>
 </div>
 
@@ -660,6 +669,227 @@
     </div>
 </div>
 
+<!-- About Us Tab -->
+<div id="about-tab" class="tab-content">
+    <h2 style="text-align: center; margin-bottom: 2rem;">About Us Page Content</h2>
+    
+    <div class="content-table" style="margin-bottom: 2rem;">
+        <div class="table-header">
+            <h2>Intro Section</h2>
+            <button class="btn-custom" onclick="editAboutIntro()">✏️ Edit</button>
+        </div>
+        <div style="padding: 2rem;">
+            {% if about_intro %}
+            <h3>{{ about_intro.title }}</h3>
+            <p>{{ about_intro.description }}</p>
+            {% else %}
+            <p style="text-align: center; color: var(--text-light);">No intro content found</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="content-table" style="margin-bottom: 2rem;">
+        <div class="table-header">
+            <h2>Our Story</h2>
+            <button class="btn-custom" onclick="editAboutStory()">✏️ Edit</button>
+        </div>
+        <div style="padding: 2rem;">
+            {% if about_story %}
+            <h3>{{ about_story.title }}</h3>
+            <p>{{ about_story.content }}</p>
+            {% else %}
+            <p style="text-align: center; color: var(--text-light);">No story content found</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="mission-vision-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem;">
+        <div class="content-table">
+            <div class="table-header">
+                <h2>Mission</h2>
+                <button class="btn-custom" onclick="editMissionVision('mission')">✏️ Edit</button>
+            </div>
+            <div style="padding: 2rem;">
+                {% set mission = mission_vision|selectattr('type', 'equalto', 'mission')|first %}
+                {% if mission %}
+                <h3>{{ mission.title }}</h3>
+                <p>{{ mission.content }}</p>
+                {% else %}
+                <p style="text-align: center; color: var(--text-light);">No mission found</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="content-table">
+            <div class="table-header">
+                <h2>Vision</h2>
+                <button class="btn-custom" onclick="editMissionVision('vision')">✏️ Edit</button>
+            </div>
+            <div style="padding: 2rem;">
+                {% set vision = mission_vision|selectattr('type', 'equalto', 'vision')|first %}
+                {% if vision %}
+                <h3>{{ vision.title }}</h3>
+                <p>{{ vision.content }}</p>
+                {% else %}
+                <p style="text-align: center; color: var(--text-light);">No vision found</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Team Tab -->
+<div id="team-tab" class="tab-content">
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>{{ total_team_members }}</h3>
+            <p>Total Members</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ active_team_members }}</h3>
+            <p>Active Members</p>
+        </div>
+    </div>
+
+    <div class="filter-section">
+        <div class="filter-controls">
+            <input type="text" id="teamSearchInput" placeholder="Search team members..." onkeyup="filterTable('team')">
+            <button class="btn-custom" onclick="openModal('team', 'add')">
+                ➕ Add Team Member
+            </button>
+        </div>
+    </div>
+
+    <div class="content-table">
+        <div class="table-header">
+            <h2>Team Members</h2>
+        </div>
+        
+        {% if team_members %}
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Role</th>
+                        <th>Contributions</th>
+                        <th>Order</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="teamTableBody">
+                    {% for member in team_members %}
+                    <tr data-id="{{ member.team_member_id }}" data-name="{{ member.name.lower() }}">
+                        <td><strong>{{ member.name }}</strong></td>
+                        <td>{{ member.role }}</td>
+                        <td>{{ member.contributions|length }} items</td>
+                        <td>{{ member.display_order }}</td>
+                        <td>
+                            {% if member.is_active %}
+                                <span class="badge badge-success">Active</span>
+                            {% else %}
+                                <span class="badge badge-warning">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-icon btn-edit" onclick="editTeamMember({{ member.team_member_id }})" title="Edit">✏️</button>
+                                <button class="btn-icon btn-toggle" onclick="toggleStatus('team', {{ member.team_member_id }}, {{ 'true' if member.is_active else 'false' }})" title="Toggle">
+                                    {% if member.is_active %}👁️{% else %}🚫{% endif %}
+                                </button>
+                                <button class="btn-icon btn-delete" onclick="deleteItem('team', {{ member.team_member_id }}, '{{ member.name }}')" title="Delete">🗑️</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No team members found</p>
+            <button class="btn-custom" onclick="openModal('team', 'add')">Add Your First Team Member</button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Values Tab -->
+<div id="values-tab" class="tab-content">
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>{{ total_values }}</h3>
+            <p>Total Values</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ active_values }}</h3>
+            <p>Active Values</p>
+        </div>
+    </div>
+
+    <div class="filter-section">
+        <div class="filter-controls">
+            <input type="text" id="valuesSearchInput" placeholder="Search values..." onkeyup="filterTable('valuesTab')">
+            <button class="btn-custom" onclick="openModal('valuesTab', 'add')">
+                ➕ Add Value
+            </button>
+        </div>
+    </div>
+
+    <div class="content-table">
+        <div class="table-header">
+            <h2>Company Values</h2>
+        </div>
+        
+        {% if values %}
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Description</th>
+                        <th>Order</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="valuesTableBody">
+                    {% for value in values %}
+                    <tr data-id="{{ value.value_id }}" data-title="{{ value.title.lower() }}">
+                        <td><strong>{{ value.title }}</strong></td>
+                        <td>{{ value.description[:80] }}...</td>
+                        <td>{{ value.display_order }}</td>
+                        <td>
+                            {% if value.is_active %}
+                                <span class="badge badge-success">Active</span>
+                            {% else %}
+                                <span class="badge badge-warning">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-icon btn-edit" onclick="editValue({{ value.value_id }})" title="Edit">✏️</button>
+                                <button class="btn-icon btn-toggle" onclick="toggleStatus('valuesTab', {{ value.value_id }}, {{ 'true' if value.is_active else 'false' }})" title="Toggle">
+                                    {% if value.is_active %}👁️{% else %}🚫{% endif %}
+                                </button>
+                                <button class="btn-icon btn-delete" onclick="deleteItem('valuesTab', {{ value.value_id }}, '{{ value.title }}')" title="Delete">🗑️</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No values found</p>
+            <button class="btn-custom" onclick="openModal('valuesTab', 'add')">Add Your First Value</button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
 <!-- Hero Feature Modal -->
 <div id="heroModal" class="modal-overlay">
     <div class="modal-content">
@@ -846,11 +1076,177 @@
     </div>
 </div>
 
+<!-- About Intro Modal -->
+<div id="aboutIntroModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Edit About Intro</h2>
+            <button class="modal-close" onclick="closeModal('aboutIntro')">&times;</button>
+        </div>
+        <form id="aboutIntroForm" onsubmit="saveAboutIntro(event)">
+            <div class="form-group">
+                <label for="introTitle">Title*</label>
+                <input type="text" id="introTitle" name="title" required maxlength="200">
+            </div>
+            <div class="form-group">
+                <label for="introDescription">Description*</label>
+                <textarea id="introDescription" name="description" required rows="4"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-custom btn-outline-custom" onclick="closeModal('aboutIntro')">Cancel</button>
+                <button type="submit" class="btn-custom">Update</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- About Story Modal -->
+<div id="aboutStoryModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Edit Our Story</h2>
+            <button class="modal-close" onclick="closeModal('aboutStory')">&times;</button>
+        </div>
+        <form id="aboutStoryForm" onsubmit="saveAboutStory(event)">
+            <div class="form-group">
+                <label for="storyTitle">Title*</label>
+                <input type="text" id="storyTitle" name="title" required maxlength="200">
+            </div>
+            <div class="form-group">
+                <label for="storyContent">Content*</label>
+                <textarea id="storyContent" name="content" required rows="6"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-custom btn-outline-custom" onclick="closeModal('aboutStory')">Cancel</button>
+                <button type="submit" class="btn-custom">Update</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Mission/Vision Modal -->
+<div id="missionVisionModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="missionVisionModalTitle">Edit Mission/Vision</h2>
+            <button class="modal-close" onclick="closeModal('missionVision')">&times;</button>
+        </div>
+        <form id="missionVisionForm" onsubmit="saveMissionVision(event)">
+            <input type="hidden" id="mvType" name="type">
+            <div class="form-group">
+                <label for="mvTitle">Title*</label>
+                <input type="text" id="mvTitle" name="title" required maxlength="200">
+            </div>
+            <div class="form-group">
+                <label for="mvContent">Content*</label>
+                <textarea id="mvContent" name="content" required rows="6"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-custom btn-outline-custom" onclick="closeModal('missionVision')">Cancel</button>
+                <button type="submit" class="btn-custom">Update</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Team Member Modal -->
+<div id="teamModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="teamModalTitle">Add Team Member</h2>
+            <button class="modal-close" onclick="closeModal('team')">&times;</button>
+        </div>
+        <form id="teamForm" onsubmit="saveItem(event, 'team')">
+            <input type="hidden" id="teamMemberId" name="team_member_id">
+            <div class="form-group">
+                <label for="teamName">Name*</label>
+                <input type="text" id="teamName" name="name" required maxlength="200">
+            </div>
+            <div class="form-group">
+                <label for="teamRole">Role*</label>
+                <input type="text" id="teamRole" name="role" required maxlength="200">
+            </div>
+            <div class="form-group">
+                <label for="teamDescription">Description*</label>
+                <textarea id="teamDescription" name="description" required rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="teamContributions">Contributions (one per line)*</label>
+                <textarea id="teamContributions" name="contributions" required rows="6" placeholder="Line 1&#10;Line 2&#10;Line 3"></textarea>
+                <small>Enter each contribution on a new line</small>
+            </div>
+            <div class="form-group">
+                <label for="teamSkills">Skills (one per line)*</label>
+                <textarea id="teamSkills" name="skills" required rows="4" placeholder="Skill 1&#10;Skill 2&#10;Skill 3"></textarea>
+                <small>Enter each skill on a new line</small>
+            </div>
+            <div class="form-group">
+                <label for="teamDisplayOrder">Display Order*</label>
+                <input type="number" id="teamDisplayOrder" name="display_order" required min="0" value="0">
+            </div>
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" id="teamIsActive" name="is_active" checked>
+                    Active
+                </label>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-custom btn-outline-custom" onclick="closeModal('team')">Cancel</button>
+                <button type="submit" class="btn-custom">
+                    <span id="teamSubmitBtnText">Add Team Member</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Value Modal -->
+<div id="valuesTabModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="valuesTabModalTitle">Add Value</h2>
+            <button class="modal-close" onclick="closeModal('valuesTab')">&times;</button>
+        </div>
+        <form id="valuesTabForm" onsubmit="saveItem(event, 'valuesTab')">
+            <input type="hidden" id="valueId" name="value_id">
+            <div class="form-group">
+                <label for="valueTitle">Title*</label>
+                <input type="text" id="valueTitle" name="title" required maxlength="200">
+            </div>
+            <div class="form-group">
+                <label for="valueDescription">Description*</label>
+                <textarea id="valueDescription" name="description" required rows="4"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="valueDisplayOrder">Display Order*</label>
+                <input type="number" id="valueDisplayOrder" name="display_order" required min="0" value="0">
+            </div>
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" id="valueIsActive" name="is_active" checked>
+                    Active
+                </label>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-custom btn-outline-custom" onclick="closeModal('valuesTab')">Cancel</button>
+                <button type="submit" class="btn-custom">
+                    <span id="valuesTabSubmitBtnText">Add Value</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 // Data from backend
 const heroFeaturesData = {{ hero_features|tojson|safe }};
 const statsData = {{ stats|tojson|safe }};
 const featuresData = {{ features|tojson|safe }};
+const aboutIntroData = {{ about_intro|tojson|safe }};
+const aboutStoryData = {{ about_story|tojson|safe }};
+const missionVisionData = {{ mission_vision|tojson|safe }};
+let teamMembersData = {{ team_members|tojson|safe }};
+let valuesData = {{ values|tojson|safe }};
 
 function switchTab(tab) {
     // Update tab buttons

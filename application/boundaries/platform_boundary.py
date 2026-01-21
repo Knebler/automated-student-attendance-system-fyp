@@ -10,7 +10,7 @@ from application.entities2.subscription import SubscriptionModel
 from application.entities2.testimonial import TestimonialModel
 from application.entities2.user import UserModel
 from database.base import get_session
-from database.models import User, Feature, HeroFeature, Stat
+from database.models import User, Feature, HeroFeature, Stat, AboutIntro, AboutStory, AboutMissionVision, TeamMember, AboutValue
 
 platform_bp = Blueprint('platform', __name__)
 
@@ -466,7 +466,8 @@ def subscription_profile_creator():
 @platform_bp.route('/landing-page')
 @requires_roles('platform_manager')
 def landing_page_management():
-    """Platform manager - landing page management (hero features, stats, features)"""
+    """Platform manager - landing page and about us management"""
+    import json
     with get_session() as db_session:
         # Get hero features
         hero_features = db_session.query(HeroFeature).order_by(HeroFeature.display_order, HeroFeature.hero_feature_id).all()
@@ -480,6 +481,27 @@ def landing_page_management():
         features = db_session.query(Feature).order_by(Feature.display_order, Feature.feature_id).all()
         features_list = [f.as_dict() for f in features]
         
+        # Get About Us content
+        about_intro = db_session.query(AboutIntro).first()
+        about_intro_dict = about_intro.as_dict() if about_intro else None
+        
+        about_story = db_session.query(AboutStory).first()
+        about_story_dict = about_story.as_dict() if about_story else None
+        
+        mission_vision = db_session.query(AboutMissionVision).all()
+        mission_vision_list = [mv.as_dict() for mv in mission_vision]
+        
+        team_members = db_session.query(TeamMember).order_by(TeamMember.display_order).all()
+        team_members_list = []
+        for tm in team_members:
+            tm_dict = tm.as_dict()
+            tm_dict['contributions'] = json.loads(tm.contributions) if tm.contributions else []
+            tm_dict['skills'] = json.loads(tm.skills) if tm.skills else []
+            team_members_list.append(tm_dict)
+        
+        values = db_session.query(AboutValue).order_by(AboutValue.display_order).all()
+        values_list = [v.as_dict() for v in values]
+        
         # Calculate statistics
         total_hero_features = len(hero_features)
         active_hero_features = sum(1 for hf in hero_features if hf.is_active)
@@ -491,6 +513,12 @@ def landing_page_management():
         active_features = sum(1 for f in features if f.is_active)
         main_features_count = sum(1 for f in features if not f.is_advanced)
         advanced_features_count = sum(1 for f in features if f.is_advanced)
+        
+        total_team_members = len(team_members)
+        active_team_members = sum(1 for tm in team_members if tm.is_active)
+        
+        total_values = len(values)
+        active_values = sum(1 for v in values if v.is_active)
         
     context = {
         'hero_features': hero_features_list,
@@ -505,7 +533,17 @@ def landing_page_management():
         'total_features': total_features,
         'active_features': active_features,
         'main_features_count': main_features_count,
-        'advanced_features_count': advanced_features_count
+        'advanced_features_count': advanced_features_count,
+        
+        'about_intro': about_intro_dict,
+        'about_story': about_story_dict,
+        'mission_vision': mission_vision_list,
+        'team_members': team_members_list,
+        'total_team_members': total_team_members,
+        'active_team_members': active_team_members,
+        'values': values_list,
+        'total_values': total_values,
+        'active_values': active_values
     }
     
     return render_template('platmanager/platform_manager_landing_page.html', **context)
@@ -807,6 +845,285 @@ def delete_stat(stat_id):
             db_session.commit()
             
         return jsonify({'success': True, 'message': 'Stat deleted successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ====================
+# ABOUT US API
+# ====================
+
+@platform_bp.route('/api/about-intro/update', methods=['POST'])
+@requires_roles_api('platform_manager')
+def update_about_intro():
+    """Update about intro"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            about_intro = db_session.query(AboutIntro).first()
+            
+            if not about_intro:
+                # Create new if doesn't exist
+                about_intro = AboutIntro(
+                    title=data['title'],
+                    description=data['description'],
+                    is_active=data.get('is_active', True)
+                )
+                db_session.add(about_intro)
+            else:
+                about_intro.title = data['title']
+                about_intro.description = data['description']
+                about_intro.is_active = data.get('is_active', True)
+            
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'About intro updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/about-story/update', methods=['POST'])
+@requires_roles_api('platform_manager')
+def update_about_story():
+    """Update about story"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            about_story = db_session.query(AboutStory).first()
+            
+            if not about_story:
+                # Create new if doesn't exist
+                about_story = AboutStory(
+                    title=data['title'],
+                    content=data['content'],
+                    is_active=data.get('is_active', True)
+                )
+                db_session.add(about_story)
+            else:
+                about_story.title = data['title']
+                about_story.content = data['content']
+                about_story.is_active = data.get('is_active', True)
+            
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'About story updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/mission-vision/<string:type>/update', methods=['POST'])
+@requires_roles_api('platform_manager')
+def update_mission_vision(type):
+    """Update mission or vision"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            item = db_session.query(AboutMissionVision).filter_by(type=type).first()
+            
+            if not item:
+                # Create new if doesn't exist
+                item = AboutMissionVision(
+                    type=type,
+                    title=data['title'],
+                    content=data['content'],
+                    is_active=data.get('is_active', True)
+                )
+                db_session.add(item)
+            else:
+                item.title = data['title']
+                item.content = data['content']
+                item.is_active = data.get('is_active', True)
+            
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': f'{type.capitalize()} updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/team-members/create', methods=['POST'])
+@requires_roles_api('platform_manager')
+def create_team_member():
+    """Create a new team member"""
+    import json
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            team_member = TeamMember(
+                name=data['name'],
+                role=data['role'],
+                description=data.get('description', ''),
+                contributions=json.dumps(data.get('contributions', [])),
+                skills=json.dumps(data.get('skills', [])),
+                display_order=data.get('display_order', 0),
+                is_active=data.get('is_active', True)
+            )
+            
+            db_session.add(team_member)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Team member created successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/team-members/<int:team_member_id>/update', methods=['POST'])
+@requires_roles_api('platform_manager')
+def update_team_member(team_member_id):
+    """Update an existing team member"""
+    import json
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            team_member = db_session.query(TeamMember).filter_by(team_member_id=team_member_id).first()
+            
+            if not team_member:
+                return jsonify({'success': False, 'error': 'Team member not found'}), 404
+            
+            team_member.name = data['name']
+            team_member.role = data['role']
+            team_member.description = data.get('description', '')
+            team_member.contributions = json.dumps(data.get('contributions', []))
+            team_member.skills = json.dumps(data.get('skills', []))
+            team_member.display_order = data.get('display_order', 0)
+            team_member.is_active = data.get('is_active', True)
+            
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Team member updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/team-members/<int:team_member_id>/toggle-status', methods=['POST'])
+@requires_roles_api('platform_manager')
+def toggle_team_member_status(team_member_id):
+    """Toggle team member active status"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            team_member = db_session.query(TeamMember).filter_by(team_member_id=team_member_id).first()
+            
+            if not team_member:
+                return jsonify({'success': False, 'error': 'Team member not found'}), 404
+            
+            team_member.is_active = data.get('is_active', not team_member.is_active)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Team member status updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/team-members/<int:team_member_id>/delete', methods=['POST'])
+@requires_roles_api('platform_manager')
+def delete_team_member(team_member_id):
+    """Delete a team member"""
+    try:
+        with get_session() as db_session:
+            team_member = db_session.query(TeamMember).filter_by(team_member_id=team_member_id).first()
+            
+            if not team_member:
+                return jsonify({'success': False, 'error': 'Team member not found'}), 404
+            
+            db_session.delete(team_member)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Team member deleted successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/values/create', methods=['POST'])
+@requires_roles_api('platform_manager')
+def create_value():
+    """Create a new value"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            value = AboutValue(
+                title=data['title'],
+                description=data['description'],
+                display_order=data.get('display_order', 0),
+                is_active=data.get('is_active', True)
+            )
+            
+            db_session.add(value)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Value created successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/values/<int:value_id>/update', methods=['POST'])
+@requires_roles_api('platform_manager')
+def update_value(value_id):
+    """Update an existing value"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            value = db_session.query(AboutValue).filter_by(value_id=value_id).first()
+            
+            if not value:
+                return jsonify({'success': False, 'error': 'Value not found'}), 404
+            
+            value.title = data['title']
+            value.description = data['description']
+            value.display_order = data.get('display_order', 0)
+            value.is_active = data.get('is_active', True)
+            
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Value updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/values/<int:value_id>/toggle-status', methods=['POST'])
+@requires_roles_api('platform_manager')
+def toggle_value_status(value_id):
+    """Toggle value active status"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            value = db_session.query(AboutValue).filter_by(value_id=value_id).first()
+            
+            if not value:
+                return jsonify({'success': False, 'error': 'Value not found'}), 404
+            
+            value.is_active = data.get('is_active', not value.is_active)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Value status updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/values/<int:value_id>/delete', methods=['POST'])
+@requires_roles_api('platform_manager')
+def delete_value(value_id):
+    """Delete a value"""
+    try:
+        with get_session() as db_session:
+            value = db_session.query(AboutValue).filter_by(value_id=value_id).first()
+            
+            if not value:
+                return jsonify({'success': False, 'error': 'Value not found'}), 404
+            
+            db_session.delete(value)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Value deleted successfully'})
         
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

@@ -8,7 +8,7 @@ from base import root_engine, engine, get_session
 from models import *
 
 # Import the new models
-from models import Feature, HeroFeature, Stat
+from models import Feature, HeroFeature, Stat, AboutIntro, AboutStory, AboutMissionVision, TeamMember, AboutValue
 
 def drop_database():
     with root_engine.connect() as conn:
@@ -640,6 +640,180 @@ def seed_stats():
         session.commit()
         print(f"Added {len(stats_data)} stats")
 
+def seed_about_intro():
+    with get_session() as session:
+        intro = AboutIntro(
+            title='About AttendAI',
+            description="We're revolutionizing attendance management with AI-powered solutions that make tracking, reporting, and analytics seamless for educational institutions and businesses worldwide.",
+            is_active=True
+        )
+        session.add(intro)
+        session.commit()
+        print("Added about intro")
+
+def seed_about_story():
+    with get_session() as session:
+        story = AboutStory(
+            title='Our Story',
+            content="Founded in 2025, AttendAI began as a student project at a leading technology university. Our team recognized the inefficiencies in traditional attendance tracking systems and set out to create a smarter solution. Today, we serve over 500 institutions across 30 countries, helping them save thousands of hours annually while improving accuracy and insights.",
+            is_active=True
+        )
+        session.add(story)
+        session.commit()
+        print("Added about story")
+
+def seed_about_mission_vision():
+    with get_session() as session:
+        mission_vision_data = [
+            {
+                'type': 'mission',
+                'title': 'Our Mission',
+                'content': 'To revolutionize attendance management through innovative AI technology, making it effortless for organizations to track, analyze, and optimize participation while providing actionable insights for better decision-making.',
+                'is_active': True
+            },
+            {
+                'type': 'vision',
+                'title': 'Our Vision',
+                'content': 'To become the global standard in attendance management systems, empowering every educational and corporate institution with smart, seamless, and scalable solutions that enhance productivity and engagement.',
+                'is_active': True
+            }
+        ]
+        
+        for mv_data in mission_vision_data:
+            mission_vision = AboutMissionVision(**mv_data)
+            session.add(mission_vision)
+        
+        session.commit()
+        print(f"Added {len(mission_vision_data)} mission/vision items")
+
+def seed_team_members():
+    import json
+    with get_session() as session:
+        team_data = [
+            {
+                'name': 'CHONG YE HAN',
+                'role': 'AI & Documentation Lead',
+                'description': 'Leads the AI development and comprehensive documentation efforts for AttendAI.',
+                'contributions': json.dumps([
+                    'Wireframe Development',
+                    'Project Requirement Document',
+                    'System Requirement Document',
+                    'Facial Recognition AI Training',
+                    'Technical Design Manual',
+                    'Technical Design Document',
+                    'System Requirement Specification'
+                ]),
+                'skills': json.dumps(['AI Development', 'Technical Documentation', 'System Architecture', 'Project Planning']),
+                'display_order': 1,
+                'is_active': True
+            },
+            {
+                'name': 'GOH CHING FONG',
+                'role': 'Project Lead',
+                'description': 'Manages frontend development and project workflow using Kanban methodology.',
+                'contributions': json.dumps([
+                    'Wireframe Development',
+                    'Project Requirement Document',
+                    'Technical Design Document',
+                    'Frontend Prototype Code',
+                    'Preliminary User Manual',
+                    'Technical Design Manual',
+                    'Debugging',
+                    'System Requirement Specification',
+                    'User Manual',
+                    'Kanban Master',
+                    'Presentation Slides'
+                ]),
+                'skills': json.dumps(['Frontend Development', 'Project Management', 'UI/UX Design', 'Documentation']),
+                'display_order': 2,
+                'is_active': True
+            },
+            {
+                'name': 'AARON JED FUSANA BERNARDO',
+                'role': 'Developer',
+                'description': 'Develops both frontend and backend components with a focus on system integration.',
+                'contributions': json.dumps([
+                    'Wireframe Development',
+                    'Project Requirement Document',
+                    'Backend Prototype Code',
+                    'Frontend Prototype Code',
+                    'Debugging',
+                    'System Requirement Specification',
+                    'Kanban Contributor'
+                ]),
+                'skills': json.dumps(['Full Stack Development', 'Backend Architecture', 'Debugging', 'System Integration']),
+                'display_order': 3,
+                'is_active': True
+            },
+            {
+                'name': 'WU JINGHAN',
+                'role': 'UI/UX & Documentation',
+                'description': 'Focuses on user interface design and creating comprehensive user documentation.',
+                'contributions': json.dumps([
+                    'Wireframe Development',
+                    'Project Requirement Document',
+                    'Preliminary User Manual',
+                    'Presentation Slides'
+                ]),
+                'skills': json.dumps(['UI/UX Design', 'User Documentation', 'Presentation Design', 'Wireframing']),
+                'display_order': 4,
+                'is_active': True
+            },
+            {
+                'name': 'LI JING YOUNG',
+                'role': 'Technical Documentation',
+                'description': 'Creates detailed technical documentation and design specifications.',
+                'contributions': json.dumps([
+                    'Wireframe Development',
+                    'Project Requirement Document',
+                    'Technical Design Manual',
+                    'Technical Design Document',
+                    'Presentation Slides',
+                    'System Requirement Specification'
+                ]),
+                'skills': json.dumps(['Technical Writing', 'System Design', 'Documentation', 'Presentation']),
+                'display_order': 5,
+                'is_active': True
+            }
+        ]
+        
+        for member_data in team_data:
+            team_member = TeamMember(**member_data)
+            session.add(team_member)
+        
+        session.commit()
+        print(f"Added {len(team_data)} team members")
+
+def seed_about_values():
+    with get_session() as session:
+        values_data = [
+            {
+                'title': 'Innovation',
+                'description': 'Constantly pushing boundaries with AI and machine learning to deliver cutting-edge solutions.',
+                'display_order': 1,
+                'is_active': True
+            },
+            {
+                'title': 'Reliability',
+                'description': '99.9% uptime guarantee with robust, secure systems you can trust.',
+                'display_order': 2,
+                'is_active': True
+            },
+            {
+                'title': 'User-Centric',
+                'description': 'Designed with real users in mind for intuitive, frictionless experiences.',
+                'display_order': 3,
+                'is_active': True
+            }
+        ]
+        
+        for value_data in values_data:
+            value = AboutValue(**value_data)
+            session.add(value)
+        
+        session.commit()
+        print(f"Added {len(values_data)} values")
+
 def seed_database():
     import random
     zip_dict = lambda keys, list_of_values: [dict(zip(keys, values)) for values in list_of_values]
@@ -760,6 +934,21 @@ def seed_database():
     
     if row_count("Stats") == 0:
         seed_stats()
+    
+    if row_count("About_Intro") == 0:
+        seed_about_intro()
+    
+    if row_count("About_Story") == 0:
+        seed_about_story()
+    
+    if row_count("About_Mission_Vision") == 0:
+        seed_about_mission_vision()
+    
+    if row_count("Team_Members") == 0:
+        seed_team_members()
+    
+    if row_count("About_Values") == 0:
+        seed_about_values()
 
     if row_count("Announcements") == 0:
         cols = [

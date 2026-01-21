@@ -350,3 +350,57 @@ class Stat(Base, BaseMixin):
     is_active = Column(Boolean, server_default="1")
     display_order = Column(Integer, server_default="0")
     created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+# ====================
+# ABOUT US PAGE CONTENT
+# ====================
+class AboutIntro(Base, BaseMixin):
+    __tablename__ = "about_intro"
+
+    about_intro_id = Column(Integer, primary_key=True)
+    title = Column(String(200), nullable=False)
+    description = Column(Text, nullable=False)
+    is_active = Column(Boolean, server_default="1")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+class AboutStory(Base, BaseMixin):
+    __tablename__ = "about_story"
+
+    about_story_id = Column(Integer, primary_key=True)
+    title = Column(String(200), nullable=False)
+    content = Column(Text, nullable=False)
+    is_active = Column(Boolean, server_default="1")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+class AboutMissionVision(Base, BaseMixin):
+    __tablename__ = "about_mission_vision"
+
+    mission_vision_id = Column(Integer, primary_key=True)
+    type = Column(String(20), nullable=False)  # 'mission' or 'vision'
+    title = Column(String(200), nullable=False)
+    content = Column(Text, nullable=False)
+    is_active = Column(Boolean, server_default="1")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+class TeamMember(Base, BaseMixin):
+    __tablename__ = "team_members"
+
+    team_member_id = Column(Integer, primary_key=True)
+    name = Column(String(200), nullable=False)
+    role = Column(String(200), nullable=False)
+    description = Column(Text)
+    contributions = Column(Text)  # JSON array of contribution strings
+    skills = Column(Text)  # JSON array of skill strings
+    display_order = Column(Integer, server_default="0")
+    is_active = Column(Boolean, server_default="1")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+class AboutValue(Base, BaseMixin):
+    __tablename__ = "about_values"
+
+    value_id = Column(Integer, primary_key=True)
+    title = Column(String(200), nullable=False)
+    description = Column(Text, nullable=False)
+    display_order = Column(Integer, server_default="0")
+    is_active = Column(Boolean, server_default="1")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))

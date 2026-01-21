@@ -51,7 +51,66 @@ def home():
 @main_bp.route('/about')
 def about():
     """About page route (public/unregistered)"""
-    return render_template('unregistered/aboutus.html')
+    import json
+    with get_session() as db_session:
+        # Get about intro
+        about_intro = db_session.query(AboutIntro).filter_by(is_active=True).first()
+        intro = {
+            'title': about_intro.title,
+            'description': about_intro.description
+        } if about_intro else {'title': 'About AttendAI', 'description': ''}
+        
+        # Get about story
+        about_story = db_session.query(AboutStory).filter_by(is_active=True).first()
+        story = {
+            'title': about_story.title,
+            'content': about_story.content
+        } if about_story else {'title': 'Our Story', 'content': ''}
+        
+        # Get mission and vision
+        mission = db_session.query(AboutMissionVision).filter_by(is_active=True, type='mission').first()
+        vision = db_session.query(AboutMissionVision).filter_by(is_active=True, type='vision').first()
+        
+        mission_data = {
+            'title': mission.title,
+            'content': mission.content
+        } if mission else {'title': 'Our Mission', 'content': ''}
+        
+        vision_data = {
+            'title': vision.title,
+            'content': vision.content
+        } if vision else {'title': 'Our Vision', 'content': ''}
+        
+        # Get team members
+        team_members_query = db_session.query(TeamMember).filter_by(is_active=True).order_by(TeamMember.display_order).all()
+        team_members = []
+        for tm in team_members_query:
+            team_members.append({
+                'team_member_id': tm.team_member_id,
+                'name': tm.name,
+                'role': tm.role,
+                'description': tm.description,
+                'contributions': json.loads(tm.contributions) if tm.contributions else [],
+                'skills': json.loads(tm.skills) if tm.skills else []
+            })
+        
+        # Get values
+        values_query = db_session.query(AboutValue).filter_by(is_active=True).order_by(AboutValue.display_order).all()
+        values = []
+        for v in values_query:
+            values.append({
+                'value_id': v.value_id,
+                'title': v.title,
+                'description': v.description
+            })
+    
+    return render_template('unregistered/aboutus.html', 
+                         intro=intro,
+                         story=story,
+                         mission=mission_data,
+                         vision=vision_data,
+                         team_members=team_members,
+                         values=values)
 
 @main_bp.route('/faq')
 def faq():

@@ -51,7 +51,6 @@ def process_excel_data(job_id: str, file_data: bytes):
     job_state = ALL_IMPORT_JOBS[job_id]
     try:
         wb = load_workbook(BytesIO(file_data))
-
         import_tasks = ["import_users", "import_venues", "import_courses", "assign_courses", "import_classes"]
 
         # Update count first
@@ -70,6 +69,7 @@ def process_excel_data(job_id: str, file_data: bytes):
                 try:
                     with get_session() as session:
                         session.add(item)
+                    job_state[task_name]["success"] += 1
                 except Exception as e:
                     job_state[task_name]["failed"] += 1
                     job_state[task_name]["errors"].append({"row": row_num, "error": str(e.orig)})
@@ -182,6 +182,7 @@ def parse_assignment_sheet(job_id: str, ws: Worksheet) -> List[CourseUser]:
                 raise ValueError("Invalid user email")
             assignments.append((idx, CourseUser(**zipped_data)))
         except Exception as e:
+            ALL_IMPORT_JOBS[job_id][task_name]["failed"] += 1
             ALL_IMPORT_JOBS[job_id][task_name]["errors"].append({"row": idx, "error": str(e)})
     return assignments
 

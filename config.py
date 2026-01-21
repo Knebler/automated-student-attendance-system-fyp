@@ -30,8 +30,12 @@ class Config:
     UPLOAD_FOLDER = 'static/uploads'
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
 
+    # Stripe Configuration
     STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
     STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
+    
+    # Testing Mode - Set to True to bypass Stripe payment processing
+    TESTING_MODE = os.getenv('TESTING_MODE', 'True').lower() == 'true'
 
 class DevelopmentConfig(Config):
     DEBUG = True

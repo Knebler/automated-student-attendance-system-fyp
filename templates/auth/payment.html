@@ -41,11 +41,20 @@
                         <h5>Payment Information</h5>
                     </div>
                     <div class="card-body">
+                        {% if testing_mode %}
+                        <!-- Testing Mode Notice -->
+                        <div class="alert alert-warning mb-4">
+                            <strong><i class="fas fa-info-circle"></i> Testing Mode Enabled</strong><br>
+                            Payment processing is disabled for testing. You can proceed with registration without entering payment details.
+                        </div>
+                        {% endif %}
+
                         <form id="payment-form" method="POST" action="{{ url_for('auth.process_payment') }}">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="registration_data" value="{{ registration_data_json }}">
                             
-                            <!-- Stripe Card Element -->
+                            {% if not testing_mode %}
+                            <!-- Stripe Card Element (Only in Production) -->
                             <div class="mb-3">
                                 <label for="card-element" class="form-label">Credit or Debit Card</label>
                                 <div id="card-element" class="form-control p-3" style="height: 45px;">
@@ -81,6 +90,7 @@
                                     <input type="text" class="form-control" id="billing_zip" name="billing_zip" required>
                                 </div>
                             </div>
+                            {% endif %}
 
                             <!-- Terms and Conditions -->
                             <div class="form-check mb-3">
@@ -93,7 +103,11 @@
                             <!-- Payment Buttons -->
                             <div class="d-grid gap-2">
                                 <button type="submit" id="submit-button" class="btn btn-primary">
+                                    {% if testing_mode %}
+                                    <span id="button-text">Complete Registration (Test Mode)</span>
+                                    {% else %}
                                     <span id="button-text">Pay ${{ "%.2f"|format(selected_plan.price_per_cycle) if selected_plan else '0.00' }} & Complete Registration</span>
+                                    {% endif %}
                                     <span id="spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
                                 </button>
                                 <a href="{{ url_for('auth.register') }}" class="btn btn-outline-secondary">Back to Registration</a>
@@ -103,18 +117,28 @@
                 </div>
 
                 <!-- Security Notice -->
+                {% if not testing_mode %}
                 <div class="alert alert-info mt-4">
                     <small>
                         <i class="fas fa-lock me-2"></i>
                         <strong>Secure Payment:</strong> Your payment information is encrypted and processed securely by Stripe. We do not store your credit card details.
                     </small>
                 </div>
+                {% else %}
+                <div class="alert alert-success mt-4">
+                    <small>
+                        <i class="fas fa-check me-2"></i>
+                        <strong>Testing Mode:</strong> You can complete registration without payment processing for testing purposes.
+                    </small>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
 
-<!-- Stripe.js -->
+{% if not testing_mode %}
+<!-- Stripe.js (Only load in production mode) -->
 <script src="https://js.stripe.com/v3/"></script>
 <script>
     // Initialize Stripe with your publishable key
@@ -210,4 +234,21 @@
         }
     });
 </script>
+{% else %}
+<!-- Testing Mode - Simple form submission -->
+<script>
+    // In testing mode, just submit the form without Stripe validation
+    const form = document.getElementById('payment-form');
+    const submitButton = document.getElementById('submit-button');
+    const buttonText = document.getElementById('button-text');
+    const spinner = document.getElementById('spinner');
+    
+    form.addEventListener('submit', function(event) {
+        // Disable submit button and show spinner
+        submitButton.disabled = true;
+        buttonText.classList.add('d-none');
+        spinner.classList.remove('d-none');
+    });
+</script>
+{% endif %}
 {% endblock %}

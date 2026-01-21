@@ -236,7 +236,8 @@ def payment():
                 registration_data=registration_data,
                 registration_data_json=registration_data_json,
                 selected_plan=selected_plan,
-                stripe_public_key=current_app.config.get('STRIPE_PUBLIC_KEY')
+                stripe_public_key=current_app.config.get('STRIPE_PUBLIC_KEY'),
+                testing_mode=current_app.config.get('TESTING_MODE', False)
             )
     except Exception as e:
         current_app.logger.error(f"Error loading payment page: {e}")
@@ -255,13 +256,15 @@ def process_payment():
         
         registration_data = json.loads(registration_data_json)
         
-        # Mock payment method validation (skip actual validation in dev mode)
+        # Check if testing mode is enabled
+        testing_mode = current_app.config.get('TESTING_MODE', False)
+        
+        # Mock payment method validation (skip actual validation in testing mode)
         payment_method_id = request.form.get('payment_method_id')
         
         if not payment_method_id:
-            # In development, allow bypassing real payment validation
-            # For production, you'd want to keep this check
-            if current_app.config.get('ENV') == 'development':
+            # In testing mode, allow bypassing real payment validation
+            if testing_mode:
                 # Generate a mock payment method ID
                 import secrets
                 payment_method_id = f'pm_mock_{secrets.token_hex(8)}'

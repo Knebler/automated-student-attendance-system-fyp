@@ -1,21 +1,15 @@
 from flask import Blueprint, render_template, request, session, current_app, flash, redirect, url_for, abort, jsonify, Response
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
-from application.controls.attendance_control import AttendanceControl
 from application.controls.auth_control import requires_roles
 from application.controls.import_data_control import ALL_IMPORT_JOBS, submit_import_data_job
 from application.entities2 import *
 from database.base import get_session
 from database.models import *
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from collections import defaultdict
 import json
-
-import uuid
-import threading
 import time
-from io import BytesIO
-from openpyxl import load_workbook
 
 institution_bp = Blueprint('institution', __name__)
 

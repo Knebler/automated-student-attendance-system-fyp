@@ -1,7 +1,8 @@
 from typing import List, Optional, Dict, Any
 from datetime import date, timedelta, datetime
 from .base_entity import BaseEntity
-from database.models import Subscription, Institution, SubscriptionPlan
+from database.models import Subscription, Institution, SubscriptionPlan, User
+from application.entities2.user import UserModel
 from sqlalchemy import or_, and_
 
 
@@ -65,9 +66,9 @@ class SubscriptionModel(BaseEntity[Subscription]):
             
         Note: 
         - 'active': is_active=True AND (end_date is null OR end_date in future)
-        - 'suspended': is_active=False
+        - 'suspended': is_active=False AND end_date is not null AND end_date in future
         - 'pending': is_active=False AND end_date is null
-        - 'expired': end_date is in past
+        - 'expired': end_date is in past (regardless of is_active)
         """
         now = datetime.now()
         
@@ -86,13 +87,18 @@ class SubscriptionModel(BaseEntity[Subscription]):
                 .count()
             )
         elif status == 'suspended':
+            # Suspended: inactive, has an end date in future
             return (
                 self.session.query(Subscription)
-                .filter(Subscription.is_active == False)
+                .filter(
+                    Subscription.is_active == False,
+                    Subscription.end_date.isnot(None),
+                    Subscription.end_date >= now
+                )
                 .count()
             )
         elif status == 'pending':
-            # Pending subscriptions are inactive with no end date (not yet activated)
+            # Pending: inactive, no end date set yet
             return (
                 self.session.query(Subscription)
                 .filter(
@@ -102,7 +108,7 @@ class SubscriptionModel(BaseEntity[Subscription]):
                 .count()
             )
         elif status == 'expired':
-            # Expired subscriptions have end_date in the past
+            # Expired: end date in past
             return (
                 self.session.query(Subscription)
                 .filter(
@@ -114,10 +120,106 @@ class SubscriptionModel(BaseEntity[Subscription]):
         else:
             return 0  # Invalid status
 
+    def create_subscription_with_user_check(
+        self, 
+        user_id: Optional[int] = None, 
+        **subscription_data
+    ) -> Optional[Subscription]:
+        """Create a new subscription, checking user status to determine initial status.
+        
+        If user_id is provided and the user is inactive, the subscription will be 
+        created as 'pending' (is_active=False, end_date=None).
+        Otherwise, it will be created as 'suspended' (is_active=False, end_date set).
+        """ 
+        # Check user status if user_id is provided
+        if user_id is not None:
+            user_model = UserModel(self.session)
+            user = user_model.get_by_id(user_id)
+            
+            if user and not user.is_active:
+                # User is inactive, create subscription as pending
+                subscription_data['is_active'] = False
+                subscription_data['end_date'] = None
+            else:
+                # User is active or user not found, create as suspended
+                subscription_data['is_active'] = False
+                # Set end_date to something in future for suspended status
+                if 'end_date' not in subscription_data:
+                    subscription_data['end_date'] = datetime.now() + timedelta(days=365)
+        else:
+            # No user_id provided, default to suspended
+            subscription_data['is_active'] = False
+            if 'end_date' not in subscription_data:
+                subscription_data['end_date'] = datetime.now() + timedelta(days=365)
+        
+        # Create the subscription
+        return self.create(**subscription_data)
+
+    def determine_subscription_status(self, subscription_id: int) -> str:
+        """Determine the current status of a subscription based on its fields.
+        
+        Returns: 'active', 'suspended', 'pending', or 'expired'
+        """
+        subscription = self.get_by_id(subscription_id)
+        if not subscription:
+            return 'unknown'
+        
+        now = datetime.now()
+        
+        if subscription.is_active and (subscription.end_date is None or subscription.end_date >= now):
+            return 'active'
+        elif not subscription.is_active and subscription.end_date is None:
+            return 'pending'
+        elif not subscription.is_active and subscription.end_date and subscription.end_date >= now:
+            return 'suspended'
+        elif subscription.end_date and subscription.end_date < now:
+            return 'expired'
+        else:
+            return 'unknown'
+
+    def update_subscription_based_on_user_status(self, subscription_id: int) -> bool:
+        """Update subscription status based on associated user's status.
+        
+        This checks if the subscription's associated user (if any) is active or not,
+        and updates the subscription status accordingly.
+        
+        Returns True if updated, False otherwise.
+        """
+        subscription = self.get_by_id(subscription_id)
+        if not subscription:
+            return False
+        
+        # Method 1: If users have subscription_id field
+        users = self.session.query(User).filter(
+            User.subscription_id == subscription_id
+        ).all()
+        
+        
+        if not users:
+            return False
+        
+        # Check if any associated user is active
+        any_user_active = any(user.is_active for user in users)
+        
+        current_status = self.determine_subscription_status(subscription_id)
+        
+        if not any_user_active and current_status == 'suspended':
+            # All associated users are inactive, change from suspended to pending
+            subscription.is_active = False
+            subscription.end_date = None
+            self.session.commit()
+            return True
+        elif any_user_active and current_status == 'pending':
+            # At least one user is active, change from pending to suspended
+            subscription.is_active = False
+            subscription.end_date = datetime.now() + timedelta(days=365)
+            self.session.commit()
+            return True
+        
+        return False
+
     def get_pending_subscriptions(self) -> List[Dict[str, Any]]:
         """Get all pending subscription requests with institution details."""
-        from application.entities2.institution import InstitutionModel
-        
         pending_subs = (
             self.session.query(Subscription)
             .filter(
@@ -191,6 +293,9 @@ class SubscriptionModel(BaseEntity[Subscription]):
                 subscription.end_date = datetime.now() + timedelta(days=365)
         elif new_status == 'suspended':
             subscription.is_active = False
+            # Ensure end date is set (for suspended status)
+            if not subscription.end_date:
+                subscription.end_date = datetime.now() + timedelta(days=365)
         elif new_status == 'expired':
             subscription.is_active = False
             # Optionally set end date to past if not set
@@ -223,10 +328,14 @@ class SubscriptionModel(BaseEntity[Subscription]):
         if subscription.plan_id:
             plan = self.session.query(SubscriptionPlan).get(subscription.plan_id)
         
+        # Determine current status
+        current_status = self.determine_subscription_status(subscription_id)
+        
         return {
             'subscription': subscription.as_dict(),
             'institution': institution.as_dict() if institution else None,
-            'plan': plan.as_dict() if plan else None
+            'plan': plan.as_dict() if plan else None,
+            'current_status': current_status
         }
 
     def get_recent_subscriptions(self, since_date: datetime, limit: int = 10) -> List[Dict[str, Any]]:
@@ -242,6 +351,9 @@ class SubscriptionModel(BaseEntity[Subscription]):
         
         result = []
         for subscription, institution in subscriptions:
+            # Determine status for each subscription
+            status = self.determine_subscription_status(subscription.subscription_id)
+            
             result.append({
                 'subscription_id': subscription.subscription_id,
                 'institution_name': institution.name if institution else 'Unknown',
@@ -250,7 +362,8 @@ class SubscriptionModel(BaseEntity[Subscription]):
                 'start_date': subscription.start_date,
                 'end_date': subscription.end_date,
                 'is_active': subscription.is_active,
-                'created_at': subscription.created_at
+                'created_at': subscription.created_at,
+                'status': status
             })
         
         return result

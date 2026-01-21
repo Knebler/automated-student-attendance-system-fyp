@@ -712,11 +712,12 @@
                             <span class="btn-icon">🏛️</span>
                             Create Institution Profile
                         </button>
-                        <button class="btn-custom btn-view-pending" id="viewPendingBtn">
-                            <span class="btn-icon">📋</span>
-                            View Pending Subscription Requests
-                        </button>
-                        
+                        <a href="{{ url_for('platform.pending_registrations') }}" class="btn-link">
+                            <button class="btn-custom btn-view-pending" id="viewPendingBtn">
+                                <span class="btn-icon">📋</span>
+                                View Pending Subscription Requests
+                            </button>
+                        </a>
                         <div class="search-section mt-3">
                             <div class="search-box">
                                 <input type="text" 
@@ -1196,24 +1197,6 @@
                     showAlert(`Error creating institution: ${error.message}`, 'error');
                 });
             });
-        });
-
-        // View Pending Requests Button
-        const viewPendingBtn = document.getElementById('viewPendingBtn');
-        viewPendingBtn.addEventListener('click', function() {
-            // Scroll to subscription requests table
-            const requestsSection = document.querySelector('.subscriptions-table');
-            if (requestsSection) {
-                requestsSection.scrollIntoView({ behavior: 'smooth' });
-                
-                // Highlight the table
-                requestsSection.closest('.card-custom').style.boxShadow = '0 0 0 3px rgba(14, 165, 233, 0.3)';
-                setTimeout(() => {
-                    requestsSection.closest('.card-custom').style.boxShadow = '';
-                }, 2000);
-                
-                showAlert('Showing all pending subscription requests.', 'info');
-            }
         });
     });
 

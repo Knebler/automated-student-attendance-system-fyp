@@ -18,24 +18,27 @@ platform_bp = Blueprint('platform', __name__)
 @requires_roles('platform_manager')
 def platform_dashboard():
     """Platform manager dashboard"""
-    with get_session() as session:
-        inst_model = InstitutionModel(session)
-        sub_model = SubscriptionModel(session)
-        user_model = UserModel(session)
-
-        subscriptions = sub_model.get_all()
-        active_subscriptions = [sub for sub in subscriptions if sub.is_active == True]
-        recent_subscriptions = sorted(active_subscriptions, key=lambda sub: sub.created_at, reverse=True)[:5]
-
-        context = {
-            'total_subscription_count': len(subscriptions),
-            'active_subscription_count': len(active_subscriptions),
-            'total_user_count': user_model.count(),
-            'recent_subscriptions': [{
-                "institution_name": inst_model.get_one(subscription_id=sub.subscription_id).name,
-                "request_date": sub.created_at,
-            } for sub in recent_subscriptions],
-        }
+    # Use PlatformControl to get dashboard statistics
+    stats_result = PlatformControl.get_platform_dashboard_stats()
+    
+    if not stats_result['success']:
+        flash(stats_result.get('error', 'Error loading dashboard statistics'), 'danger')
+        stats = {}
+    else:
+        stats = stats_result['statistics']
+    
+    # Get recent subscription requests
+    requests_result = PlatformControl.get_subscription_requests(limit=5)
+    recent_requests = requests_result.get('requests', []) if requests_result['success'] else []
+    
+    context = {
+        'statistics': stats,
+        'recent_requests': recent_requests,
+        'total_subscription_count': stats.get('total_institutions', 0),
+        'active_subscription_count': stats.get('active_institutions', 0),
+        'total_user_count': stats.get('total_users', 0),
+        'recent_subscriptions': recent_requests,  # Use recent requests for recent subscriptions
+    }
     return render_template('platmanager/platform_manager_dashboard.html', **context)
 
 
@@ -43,7 +46,6 @@ def platform_dashboard():
 @requires_roles('platform_manager')
 def pending_registrations():
     """List pending registration requests for review (platform manager view)"""
-
 
     # Use PlatformControl to get pending subscriptions
     result = PlatformControl.get_pending_subscriptions()
@@ -182,9 +184,11 @@ def subscription_management():
         
         # Statistics
         'active_institutions': stats.get('active_institutions', 0),
-        'suspended_institutions': stats.get('suspended_institutions', 0),
+        'suspended_subscriptions': stats.get('suspended_subscriptions', 0),  # Fixed field name
         'pending_requests': stats.get('pending_requests', 0),
         'new_institutions_quarter': stats.get('new_institutions_quarter', 0),
+        'expired_subscriptions': stats.get('expired_subscriptions', 0),
+        'total_institutions_count': stats.get('total_institutions', 0),
     }
     
     return render_template('platmanager/platform_manager_subscription_management.html', **context)
@@ -209,6 +213,9 @@ def update_subscription_status(subscription_id):
     data = request.json
     new_status = data.get('status')
     
+    if not new_status:
+        return jsonify({'success': False, 'error': 'Status is required'}), 400
+    
     # Get reviewer_id from session
     reviewer_id = session.get('user_id')
     
@@ -229,6 +236,9 @@ def process_subscription_request(request_id):
     """Approve or reject a subscription request"""
     data = request.json
     action = data.get('action')
+    
+    if not action or action not in ['approve', 'reject']:
+        return jsonify({'success': False, 'error': 'Valid action (approve/reject) is required'}), 400
     
     # Get reviewer_id from session
     reviewer_id = session.get('user_id')
@@ -268,39 +278,28 @@ def search_institutions():
             'count': len(institutions)
         })
 
-
 @platform_bp.route('/api/subscriptions/stats', methods=['GET'])
 @requires_roles_api('platform_manager')
 def get_subscription_stats():
     """Get subscription statistics for dashboard"""
-    with get_session() as session:
-        inst_model = InstitutionModel(session)
-        sub_model = SubscriptionModel(session)
-        
-        # Get counts
-        total_institutions = inst_model.count()
-        active_subscriptions = sub_model.count_by_status('active')
-        suspended_subscriptions = sub_model.count_by_status('suspended')
-        pending_requests = sub_model.count_by_status('pending')
-        
-        # Calculate growth (simplified - would query historical data in real app)
-        # This could be moved to a separate method that queries historical data
-        growth_data = {
-            'total_growth': 3,  # +3 this quarter
-            'active_growth': '+5%',  # +5% growth
-            'suspended_growth': '-1',  # -1 this month
-        }
-        
-        return jsonify({
-            'success': True,
-            'stats': {
-                'total_institutions': total_institutions,
-                'active_institutions': active_subscriptions,
-                'suspended_subscriptions': suspended_subscriptions,
-                'pending_requests': pending_requests,
-                'growth': growth_data
-            }
-        })
+    # Use PlatformControl.get_subscription_statistics() which already handles this
+    result = PlatformControl.get_subscription_statistics()
+    
+    if result['success']:
+        return jsonify(result)
+    else:
+        return jsonify(result), 500
+
+@platform_bp.route('/api/dashboard/stats', methods=['GET'])
+@requires_roles_api('platform_manager')
+def get_dashboard_stats():
+    """Get comprehensive dashboard statistics"""
+    result = PlatformControl.get_platform_dashboard_stats()
+    
+    if result['success']:
+        return jsonify(result)
+    else:
+        return jsonify(result), 500
     
 @platform_bp.route('/api/institutions/<int:institution_id>', methods=['GET'])
 @requires_roles_api('platform_manager')

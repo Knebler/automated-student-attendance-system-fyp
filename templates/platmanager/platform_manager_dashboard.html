@@ -294,6 +294,81 @@
         transform: scale(1.05);
     }
 
+    /* Enhanced Statistics Cards */
+    .enhanced-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .stat-card {
+        background: #001641;
+        border-radius: 8px;
+        padding: 0.75rem;
+        border: 2px solid #001641;
+        text-align: center;
+    }
+
+    .stat-card-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #FFFFFF;
+        margin-bottom: 0.25rem;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .stat-card-label {
+        font-size: 0.8rem;
+        color: #cbd5e1;
+        font-weight: 500;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .stat-growth {
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-top: 0.25rem;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .growth-positive {
+        color: #10b981;
+    }
+
+    .growth-negative {
+        color: #ef4444;
+    }
+
+    .growth-neutral {
+        color: #94a3b8;
+    }
+
+    /* Pending Request Button */
+    .pending-requests-btn {
+        background: #FFFFFF;
+        border: 2px solid #001641;
+        color: #001641;
+        padding: 0.875rem 1rem;
+        border-radius: 8px;
+        font-size: .9rem;
+        font-weight: 600;
+        transition: all .2s;
+        text-decoration: none;
+        font-family: 'Montserrat', sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .pending-requests-btn:hover {
+        background: #001641;
+        color: #FFFFFF;
+        transform: translateX(4px);
+    }
+
     /* Responsive */
     @media (max-width: 1200px) {
         .dashboard-grid {
@@ -346,6 +421,10 @@
             flex-direction: column;
             gap: 0.25rem;
         }
+
+        .enhanced-stats-grid {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 
@@ -359,20 +438,38 @@
             <div class="card-custom">
                 <div class="card-header-custom">Platform Overview</div>
                 <div class="card-body-custom">
-                    <div class="stats-box">
-                        <div class="stat-row">
-                            <span class="stat-label">Total Subscriptions:</span>
-                            <span class="stat-value">{{ total_subscription_count or '—' }}</span>
+                    {% if statistics %}
+                    <div class="enhanced-stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-card-value">{{ statistics.total_institutions or '—' }}</div>
+                            <div class="stat-card-label">Total Institutions</div>
+                            {% if statistics.new_institutions_quarter %}
+                            <div class="stat-growth growth-positive">+{{ statistics.new_institutions_quarter }} this quarter</div>
+                            {% endif %}
                         </div>
-                        <div class="stat-row">
-                            <span class="stat-label">Active Subscriptions:</span>
-                            <span class="stat-value">{{ active_subscription_count or '—' }}</span>
+                        <div class="stat-card">
+                            <div class="stat-card-value">{{ statistics.active_institutions or '—' }}</div>
+                            <div class="stat-card-label">Active Subscriptions</div>
+                            {% if statistics.subscription_status_distribution and statistics.subscription_status_distribution.active %}
+                            <div class="stat-card-label">{{ ((statistics.subscription_status_distribution.active / statistics.total_institutions) * 100)|round(1) if statistics.total_institutions > 0 else 0 }}% active rate</div>
+                            {% endif %}
                         </div>
-                        <div class="stat-row">
-                            <span class="stat-label">Total Registered Users:</span>
-                            <span class="stat-value">{{ total_user_count or '—' }}</span>
+                        <div class="stat-card">
+                            <div class="stat-card-value">{{ statistics.total_users or '—' }}</div>
+                            <div class="stat-card-label">Total Users</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-value">{{ statistics.recent_subscriptions_count or '—' }}</div>
+                            <div class="stat-card-label">New (30 days)</div>
                         </div>
                     </div>
+                    {% endif %}
+                    
+                    <!-- Pending Requests Button -->
+                    <a href="{{ url_for('platform.pending_registrations') }}" class="pending-requests-btn">
+                        <span class="btn-icon">📋</span>
+                        View Pending Subscription Requests
+                    </a>
                 </div>
             </div>
 
@@ -384,7 +481,7 @@
                         <a href="{{ url_for('platform.pending_registrations') }}" class="action-btn">View Subscription Requests</a>
                         <a href="{{ url_for('platform.subscription_profile_creator') }}" class="action-btn">Create Subscription / Institution Profile</a>
                         <a href="{{ url_for('platform.user_management') }}" class="action-btn">Manage Admin Accounts</a>
-                        <a href="{{ url_for('platform.user_management') }}" class="action-btn">View User Profiles</a>
+                        <a href="{{ url_for('platform.subscription_management') }}" class="action-btn">Manage Subscriptions</a>
                         <a href="{{ url_for('platform.settings_management') }}" class="action-btn">Open System Settings</a>
                     </div>
                 </div>
@@ -396,23 +493,60 @@
             <div class="card-header-custom">Subscription & Institution Status</div>
             <div class="card-body-custom">
                 <div class="column-section">
-                    <h3 class="section-title">Recent Subscriptions</h3>
-                    {% if recent_subscriptions %}
-                        {% for sub in recent_subscriptions %}
+                    <h3 class="section-title">Recent Subscription Requests</h3>
+                    {% if recent_requests %}
+                        {% for request in recent_requests[:5] %}
                             <div class="list-item">
                                 <div class="list-item-content">
-                                    <span class="list-item-text">{{ sub.institution_name }}</span>
-                                    <span class="list-item-text">{{ sub.request_date.strftime('%Y-%m-%d') }}</span>
+                                    <span class="list-item-text"><strong>{{ request.institution_name }}</strong></span>
+                                    <span class="list-item-text">Requested: {{ request.request_date.strftime('%Y-%m-%d') if request.request_date else 'N/A' }}</span>
+                                    <span class="list-item-text">Plan: {{ request.plan or 'N/A' }}</span>
                                 </div>
-                                <a href="{{ url_for('platform.pending_registrations') }}#req-{{ sub.id }}" class="btn-custom more-btn">More</a>
+                                <a href="{{ url_for('platform.pending_registrations') }}#req-{{ request.subscription_id }}" class="btn-custom more-btn">Review</a>
                             </div>
                         {% endfor %}
+                        {% if recent_requests|length > 5 %}
+                        <div class="text-center mt-2">
+                            <small>Showing 5 of {{ recent_requests|length }} requests</small>
+                        </div>
+                        {% endif %}
                     {% else %}
                         <div class="list-item">
                             <div class="list-item-content">
-                                <span class="list-item-text">No recent subscriptions</span>
+                                <span class="list-item-text">No pending subscription requests</span>
                             </div>
                         </div>
+                    {% endif %}
+                </div>
+
+                <!-- Subscription Status Distribution -->
+                <div class="column-section">
+                    <h3 class="section-title">Subscription Status Overview</h3>
+                    {% if statistics and statistics.subscription_status_distribution %}
+                    <div class="stats-box">
+                        <div class="stat-row">
+                            <span class="stat-label">Active:</span>
+                            <span class="stat-value">{{ statistics.subscription_status_distribution.active or 0 }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Suspended:</span>
+                            <span class="stat-value">{{ statistics.subscription_status_distribution.suspended or 0 }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Pending:</span>
+                            <span class="stat-value">{{ statistics.subscription_status_distribution.pending or 0 }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Expired:</span>
+                            <span class="stat-value">{{ statistics.subscription_status_distribution.expired or 0 }}</span>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="stats-box">
+                        <div class="stat-row">
+                            <span class="stat-label">Loading statistics...</span>
+                        </div>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -441,32 +575,61 @@
                     </div>
                 </div>
 
+                <!-- Plan Distribution -->
                 <div class="column-section">
-                    <h3 class="section-title">Recent User Reports</h3>
-                    {% if recent_reports %}
-                        {% for report in recent_reports %}
-                            <div class="report-card">
-                                <div class="report-header">
-                                    <span class="report-info">Case ID: {{ report.case_id }}</span>
-                                    <span class="report-info">Institution: {{ report.institution }}</span>
-                                    <span class="report-info">Date: {{ report.date }}</span>
-                                </div>
-                                <div class="report-footer">
-                                    <span class="report-info">Type: {{ report.type }}</span>
-                                    <a href="{{ url_for('platform.report_details', report_id=report.id) }}" class="view-details-btn">View Details</a>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="report-card">
-                            <div class="report-header">
-                                <span class="report-info">No recent reports</span>
-                            </div>
+                    <h3 class="section-title">Plan Distribution</h3>
+                    {% if statistics and statistics.plan_distribution %}
+                    <div class="stats-box">
+                        {% for plan, count in statistics.plan_distribution.items() %}
+                        <div class="stat-row">
+                            <span class="stat-label">{{ plan|title }} Plan:</span>
+                            <span class="stat-value">{{ count }}</span>
                         </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="stats-box">
+                        <div class="stat-row">
+                            <span class="stat-label">Loading plan distribution...</span>
+                        </div>
+                    </div>
                     {% endif %}
+                </div>
+
+                <div class="column-section">
+                    <h3 class="section-title">Recent Activity</h3>
+                    <div class="report-card">
+                        <div class="report-header">
+                            <span class="report-info">Last Login: Today</span>
+                            <span class="report-info">Active Sessions: 1</span>
+                        </div>
+                        <div class="report-footer">
+                            <span class="report-info">System Uptime: 99.9%</span>
+                            <a href="{{ url_for('platform.performance_management') }}" class="view-details-btn">View Metrics</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Optional: Add JavaScript for dynamic updates -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Refresh dashboard stats every 60 seconds
+    setInterval(function() {
+        fetch('{{ url_for("platform.get_dashboard_stats") }}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update statistics on the page
+                    console.log('Dashboard stats updated:', data.statistics);
+                    // You could add more dynamic updates here
+                }
+            })
+            .catch(error => console.error('Error updating dashboard stats:', error));
+    }, 60000); // 60 seconds
+});
+</script>
 {% endblock %}

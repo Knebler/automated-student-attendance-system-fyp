@@ -395,6 +395,7 @@ def testimonial_review():
 def approve_testimonial(testimonial_id):
     """Approve a testimonial"""
     reviewer_id = session.get('user_id')
+    status_filter = request.args.get('status', 'pending')
     
     result = TestimonialControl.update_testimonial_status(
         app=current_app,
@@ -408,13 +409,14 @@ def approve_testimonial(testimonial_id):
     else:
         flash(result.get('error', 'Failed to approve testimonial'), 'danger')
     
-    return redirect(url_for('platform.testimonial_review'))
+    return redirect(url_for('platform.testimonial_review', status=status_filter))
 
 @platform_bp.route('/testimonials/reject/<int:testimonial_id>', methods=['POST'])
 @requires_roles('platform_manager')
 def reject_testimonial(testimonial_id):
     """Reject a testimonial"""
     reviewer_id = session.get('user_id')
+    status_filter = request.args.get('status', 'pending')
     
     result = TestimonialControl.update_testimonial_status(
         app=current_app,
@@ -428,13 +430,14 @@ def reject_testimonial(testimonial_id):
     else:
         flash(result.get('error', 'Failed to reject testimonial'), 'danger')
     
-    return redirect(url_for('platform.testimonial_review'))
+    return redirect(url_for('platform.testimonial_review', status=status_filter))
 
 @platform_bp.route('/testimonials/delete/<int:testimonial_id>', methods=['POST'])
 @requires_roles('platform_manager')
 def delete_testimonial(testimonial_id):
     """Delete a testimonial"""
     user_id = session.get('user_id')
+    status_filter = request.args.get('status', 'pending')
     
     result = TestimonialControl.delete_testimonial(
         app=current_app,
@@ -448,7 +451,7 @@ def delete_testimonial(testimonial_id):
     else:
         flash(result.get('error', 'Failed to delete testimonial'), 'danger')
     
-    return redirect(url_for('platform.testimonial_review'))
+    return redirect(url_for('platform.testimonial_review', status=status_filter))
 
 @platform_bp.route('/create')
 @requires_roles('platform_manager')

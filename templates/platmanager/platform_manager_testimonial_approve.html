@@ -119,7 +119,7 @@
                             <div class="btn-group" role="group">
                                 {% if testimonial.status == 'pending' %}
                                 <form method="post" 
-                                      action="{{ url_for('platform.approve_testimonial', testimonial_id=testimonial.testimonial_id) }}" 
+                                      action="{{ url_for('platform.approve_testimonial', testimonial_id=testimonial.testimonial_id, status=status_filter) }}" 
                                       style="display:inline" 
                                       onsubmit="return confirm('Approve this testimonial from {{ testimonial.user_name }}?')">
                                     <button class="btn btn-success btn-sm" type="submit">
@@ -128,7 +128,7 @@
                                 </form>
                                 
                                 <form method="post" 
-                                      action="{{ url_for('platform.reject_testimonial', testimonial_id=testimonial.testimonial_id) }}" 
+                                      action="{{ url_for('platform.reject_testimonial', testimonial_id=testimonial.testimonial_id, status=status_filter) }}" 
                                       style="display:inline" 
                                       class="ms-2"
                                       onsubmit="return confirm('Reject this testimonial from {{ testimonial.user_name }}?')">
@@ -139,7 +139,7 @@
                                 {% endif %}
                                 
                                 <form method="post" 
-                                      action="{{ url_for('platform.delete_testimonial', testimonial_id=testimonial.testimonial_id) }}" 
+                                      action="{{ url_for('platform.delete_testimonial', testimonial_id=testimonial.testimonial_id, status=status_filter) }}" 
                                       style="display:inline" 
                                       class="ms-2"
                                       onsubmit="return confirm('Permanently delete this testimonial from {{ testimonial.user_name }}? This action cannot be undone.')">

@@ -19,7 +19,10 @@ PROFANITY_LIST = [
     'damn', 'hell', 'crap', 'shit', 'fuck', 'bitch', 'ass', 'bastard', 
     'dick', 'piss', 'cock', 'pussy', 'whore', 'slut', 'fag', 'nigger',
     'asshole', 'motherfucker', 'bullshit', 'goddamn', 'retard', 'idiot',
-    'stupid', 'dumb', 'moron', 'imbecile'
+    'stupid', 'dumb', 'moron', 'imbecile', 'anal', 'arse', 'arsehole',
+    'wth', 'wtf', 'stfu', 'gtfo', 'kys', 'kms', 'fk', 'fuk', 'fck',
+    'sht', 'shyt', 'btch', 'cnt', 'cunt', 'twat', 'bollocks', 'wanker',
+    'prick', 'douche', 'jackass', 'dipshit', 'dumbass', 'screw you'
 ]
 
 # Concerning words that suggest inappropriate surveillance or privacy violations
@@ -29,6 +32,21 @@ CONCERNING_WORDS = [
     'invade privacy', 'privacy invasion', 'surveillance state', 
     'tracking us', 'monitoring us', 'watching us', 'spies on'
 ]
+
+# Patterns that suggest non-serious or troll testimonials
+TROLL_PATTERNS = [
+    r'\b(lol|lmao|rofl|lmfao)\b',  # Excessive laughing
+    r'\b(rlly|rly|prolly|gonna|wanna|gotta)\s+',  # Excessive text speak (multiple instances)
+    r'(horh|lorh|leh|meh|siah|lah)\b',  # Singlish particles used excessively
+    r'\b(anyhow|dunno|gonna|wanna)\s+(anyhow|dunno|gonna|wanna)',  # Repetitive slang
+    r'([?!]){3,}',  # Excessive punctuation
+    r'\b(play play|joking|kidding|jk)\b',  # Indicating non-seriousness
+]
+
+# Minimum word count for serious testimonials (excluding very short casual comments)
+MIN_SERIOUS_WORD_COUNT = 15
+# Maximum ratio of slang/informal words to total words
+MAX_INFORMAL_RATIO = 0.4
 
 class TestimonialControl:
     """Control class for testimonial business logic"""
@@ -48,7 +66,8 @@ class TestimonialControl:
                 'reason': str (if inappropriate),
                 'sentiment_score': float,
                 'contains_profanity': bool,
-                'profanity_found': list
+                'profanity_found': list,
+                'is_troll': bool
             }
         """
         # Combine content and summary for analysis
@@ -59,13 +78,35 @@ class TestimonialControl:
         # Convert to lowercase for checking
         text_lower = full_text.lower()
         
-        # Check for profanity
+        # Check word count for serious testimonials
+        word_count = len(full_text.split())
+        if word_count < MIN_SERIOUS_WORD_COUNT:
+            return {
+                'is_appropriate': False,
+                'reason': f'Testimonial too short ({word_count} words). Please provide at least {MIN_SERIOUS_WORD_COUNT} words.',
+                'sentiment_score': 0,
+                'sentiment_details': {},
+                'contains_profanity': False,
+                'profanity_found': [],
+                'contains_concerning': False,
+                'concerning_found': [],
+                'is_troll': True
+            }
+        
+        # Check for profanity with better matching
         found_profanity = []
         for word in PROFANITY_LIST:
-            # Use word boundaries to avoid false positives
-            pattern = r'\b' + re.escape(word) + r'\b'
-            if re.search(pattern, text_lower, re.IGNORECASE):
-                found_profanity.append(word)
+            # For abbreviations without word boundaries (wth, wtf, etc.)
+            if len(word) <= 4 and word.isalpha():
+                # Match as standalone or with punctuation
+                pattern = r'(?:^|\s|[^\w])' + re.escape(word) + r'(?:$|\s|[^\w])'
+                if re.search(pattern, text_lower, re.IGNORECASE):
+                    found_profanity.append(word)
+            else:
+                # Use word boundaries for longer words
+                pattern = r'\b' + re.escape(word) + r'\b'
+                if re.search(pattern, text_lower, re.IGNORECASE):
+                    found_profanity.append(word)
         
         contains_profanity = len(found_profanity) > 0
         
@@ -83,6 +124,22 @@ class TestimonialControl:
         
         contains_concerning = len(found_concerning) > 0
         
+        # Check for troll patterns
+        troll_matches = []
+        for pattern in TROLL_PATTERNS:
+            matches = re.findall(pattern, full_text, re.IGNORECASE)
+            if matches:
+                troll_matches.extend(matches)
+        
+        is_troll = len(troll_matches) >= 2  # Multiple troll indicators
+        
+        # Check for excessive informal language
+        informal_words = ['rlly', 'rly', 'horh', 'lorh', 'leh', 'meh', 'siah', 'lah', 
+                         'anyhow', 'dunno', 'gonna', 'wanna', 'gotta', 'prolly', 
+                         'u', 'ur', 'bcuz', 'cuz', 'bcoz', 'coz']
+        informal_count = sum(1 for word in informal_words if re.search(r'\b' + re.escape(word) + r'\b', text_lower))
+        informal_ratio = informal_count / word_count if word_count > 0 else 0
+        
         # Perform sentiment analysis
         sentiment_scores = sentiment_analyzer.polarity_scores(full_text)
         compound_score = sentiment_scores['compound']
@@ -92,8 +149,10 @@ class TestimonialControl:
         # Reject if:
         # 1. Contains profanity
         # 2. Contains concerning words about privacy/surveillance
-        # 3. Sentiment is very negative (compound < -0.5)
-        # 4. Negative sentiment is dominant (neg > 0.5)
+        # 3. Matches troll patterns
+        # 4. Too much informal language
+        # 5. Sentiment is very negative (compound < -0.5)
+        # 6. Negative sentiment is dominant (neg > 0.5)
         
         is_appropriate = True
         reason = None
@@ -104,6 +163,12 @@ class TestimonialControl:
         elif contains_concerning:
             is_appropriate = False
             reason = f"Contains concerning content about privacy/surveillance: {', '.join(found_concerning)}"
+        elif is_troll:
+            is_appropriate = False
+            reason = f"Contains non-serious or troll-like content. Please submit a genuine testimonial."
+        elif informal_ratio > MAX_INFORMAL_RATIO:
+            is_appropriate = False
+            reason = f"Too much informal language ({informal_ratio:.1%}). Please write in a more professional manner."
         elif compound_score < -0.5:
             is_appropriate = False
             reason = f"Overly negative sentiment detected (score: {compound_score:.2f})"
@@ -119,7 +184,9 @@ class TestimonialControl:
             'contains_profanity': contains_profanity,
             'profanity_found': found_profanity,
             'contains_concerning': contains_concerning,
-            'concerning_found': found_concerning
+            'concerning_found': found_concerning,
+            'is_troll': is_troll,
+            'informal_ratio': informal_ratio
         }
     
     @staticmethod

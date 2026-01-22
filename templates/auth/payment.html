@@ -3,44 +3,338 @@
 {% block title %}Payment - Attendance System{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
+<style>
+    .register-container {
+        animation: fadeInUp 0.5s ease-out;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        min-height: calc(100vh - 260px);
+        padding: 3rem 0 2rem;
+    }
+
+    .register-card-wrap {
+        width: 100%;
+        max-width: 960px;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Payment form */
+    .register-container .card {
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(148, 163, 184, 0.25);
+        overflow: hidden;
+    }
+
+    .register-container .card-header {
+        background-color: #ffffff;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 1.5rem;
+    }
+
+    .register-container .card-header h4 {
+        color: #0f172a;
+        font-weight: 600;
+        margin: 0;
+        font-size: 1.5rem;
+    }
+
+    .register-container .card-header h5 {
+        color: #0f172a;
+        font-weight: 600;
+        margin: 0;
+        font-size: 1.2rem;
+    }
+
+    .register-container .card-body {
+        background-color: #ffffff;
+        padding: 2rem;
+    }
+
+    .register-container .form-label {
+        color: #0f172a;
+        font-weight: 500;
+        margin-bottom: 0.75rem;
+        font-size: 0.95rem;
+    }
+
+    /* Input Fields */
+    .register-container .form-control,
+    .register-container .form-select {
+        background-color: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        color: #0f172a;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        transition: all 0.25s ease;
+    }
+
+    .register-container .form-control:focus,
+    .register-container .form-select:focus {
+        background-color: #ffffff;
+        border-color: #0f172a;
+        color: #0f172a;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.15);
+    }
+
+    .register-container .form-control::placeholder {
+        color: #94a3b8;
+        opacity: 0.8;
+    }
+
+    .register-container .form-text {
+        color: #64748b;
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+    }
+
+    /* Stripe Card Element Styling */
+    .register-container #card-element {
+        background-color: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        transition: all 0.25s ease;
+        height: auto !important;
+        min-height: 48px;
+    }
+
+    .register-container #card-element.StripeElement--focus {
+        border-color: #0f172a;
+        box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.15);
+    }
+
+    .register-container #card-element.StripeElement--invalid {
+        border-color: #fa755a;
+    }
+
+    .register-container #card-errors {
+        color: #fa755a;
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+    }
+
+    .register-container .btn-primary {
+        background-color: #0f172a;
+        border: 2px solid #0f172a;
+        color: #ffffff;
+        font-weight: 600;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        transition: all 0.25s ease;
+        font-size: 1rem;
+        width: 100%;
+    }
+
+    .register-container .btn-primary:hover {
+        background-color: #1e293b;
+        border-color: #1e293b;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.3);
+    }
+
+    .register-container .btn-primary:active {
+        background-color: #020617;
+        border-color: #020617;
+        transform: translateY(0);
+    }
+
+    .register-container .btn-primary:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    /* Secondary button / Link button */
+    .register-container .btn-link {
+        color: #94a3b8;
+        text-decoration: none;
+        font-size: 0.9rem;
+        padding: 0.5rem 0;
+        transition: color 0.25s ease;
+        width: 100%;
+        text-align: center;
+        display: block;
+    }
+
+    .register-container .btn-link:hover {
+        color: #0f172a;
+        text-decoration: underline;
+    }
+
+    .register-container .mb-3 {
+        margin-bottom: 1.5rem;
+    }
+
+    .register-container .mb-4 {
+        margin-bottom: 2rem;
+    }
+
+    .register-container .mt-4 {
+        margin-top: 1.5rem;
+    }
+
+    .register-container .mt-2 {
+        margin-top: 0.5rem;
+    }
+
+    .register-actions {
+        margin-top: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 100%;
+    }
+
+    .register-actions .register-button {
+        width: 100%;
+    }
+
+    .register-actions .login-link {
+        width: 100%;
+        text-align: center;
+    }
+
+    /* Section headers */
+    .register-container h6 {
+        color: #0f172a;
+        font-weight: 600;
+        font-size: 1rem;
+        margin-bottom: 1rem;
+        margin-top: 0;
+    }
+
+    /* Summary section styling */
+    .register-container .summary-card {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .register-container .summary-card h6 {
+        color: #0f172a;
+        font-weight: 600;
+        font-size: 0.95rem;
+        margin-bottom: 0.75rem;
+        margin-top: 0;
+    }
+
+    .register-container .summary-card p {
+        color: #64748b;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+        margin-top: 0;
+    }
+
+    .register-container .summary-card strong {
+        color: #0f172a;
+        font-weight: 600;
+    }
+
+    /* Form check styling */
+    .register-container .form-check {
+        margin-bottom: 1.5rem;
+    }
+
+    .register-container .form-check-input {
+        margin-top: 0.25rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+    }
+
+    .register-container .form-check-input:checked {
+        background-color: #0f172a;
+        border-color: #0f172a;
+    }
+
+    .register-container .form-check-input:focus {
+        border-color: #0f172a;
+        box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.15);
+    }
+
+    .register-container .form-check-label {
+        color: #0f172a;
+        font-size: 0.9rem;
+        margin-left: 0.5rem;
+    }
+
+    /* Alert styling */
+    .register-container .alert {
+        background-color: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 8px;
+        color: #1e40af;
+        padding: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .register-container .alert small {
+        font-size: 0.85rem;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .register-container {
+            align-items: flex-start;
+            padding: 2.5rem 0 2rem;
+            min-height: auto;
+        }
+
+        .register-container .card-body {
+            padding: 1.5rem;
+        }
+    }
+</style>
+
+<div class="row justify-content-center register-container">
+    <div class="register-card-wrap">
         <div class="card">
             <div class="card-header">
                 <h4>Complete Your Registration</h4>
             </div>
             <div class="card-body">
                 <!-- Registration Summary -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5>Registration Summary</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6>Personal Details</h6>
-                                <p><strong>Name:</strong> {{ registration_data.name }}</p>
-                                <p><strong>Email:</strong> {{ registration_data.email }}</p>
-                                <p><strong>Role:</strong> {{ registration_data.role|replace('_', ' ')|title }}</p>
-                            </div>
-                            <div class="col-md-6">
-                                <h6>Institution Details</h6>
-                                <p><strong>Institution:</strong> {{ registration_data.institution_name }}</p>
-                                {% if registration_data.selected_plan_id %}
-                                <p><strong>Selected Plan:</strong> {{ selected_plan.name }}</p>
-                                <p><strong>Price:</strong> ${{ "%.2f"|format(selected_plan.price_per_cycle) }} {{ selected_plan.billing_cycle }}</p>
-                                {% endif %}
-                            </div>
+                <div class="summary-card">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Personal Details</h6>
+                            <p><strong>Name:</strong> {{ registration_data.name }}</p>
+                            <p><strong>Email:</strong> {{ registration_data.email }}</p>
+                            <p><strong>Role:</strong> {{ registration_data.role|replace('_', ' ')|title }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Institution Details</h6>
+                            <p><strong>Institution:</strong> {{ registration_data.institution_name }}</p>
+                            {% if registration_data.selected_plan_id %}
+                            <p><strong>Selected Plan:</strong> {{ selected_plan.name }}</p>
+                            <p><strong>Price:</strong> ${{ "%.2f"|format(selected_plan.price_per_cycle) }} {{ selected_plan.billing_cycle }}</p>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
 
                 <!-- Payment Form -->
-                <div class="card">
-                    <div class="card-header">
+                <div class="card" style="border: none; box-shadow: none; margin-bottom: 0;">
+                    <div class="card-header" style="border-bottom: 1px solid #e2e8f0; padding: 0 0 1rem 0; margin-bottom: 1.5rem;">
                         <h5>Payment Information</h5>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body" style="padding: 0;">
                         <form id="payment-form" method="POST" action="{{ url_for('auth.process_payment') }}">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="registration_data" value="{{ registration_data_json }}">
@@ -48,10 +342,10 @@
                             <!-- Stripe Card Element -->
                             <div class="mb-3">
                                 <label for="card-element" class="form-label">Credit or Debit Card</label>
-                                <div id="card-element" class="form-control p-3" style="height: 45px;">
+                                <div id="card-element">
                                     <!-- Stripe Card Element will be inserted here -->
                                 </div>
-                                <div id="card-errors" class="text-danger mt-2" role="alert"></div>
+                                <div id="card-errors" role="alert"></div>
                             </div>
 
                             <!-- Billing Details -->
@@ -91,12 +385,12 @@
                             </div>
 
                             <!-- Payment Buttons -->
-                            <div class="d-grid gap-2">
-                                <button type="submit" id="submit-button" class="btn btn-primary">
+                            <div class="register-actions">
+                                <button type="submit" id="submit-button" class="btn btn-primary register-button">
                                     <span id="button-text">Pay ${{ "%.2f"|format(selected_plan.price_per_cycle) if selected_plan else '0.00' }} & Complete Registration</span>
                                     <span id="spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
                                 </button>
-                                <a href="{{ url_for('auth.register') }}" class="btn btn-outline-secondary">Back to Registration</a>
+                                <a href="{{ url_for('auth.register') }}" class="btn btn-link login-link">Back to Registration</a>
                             </div>
                         </form>
                     </div>
@@ -121,14 +415,16 @@
     const stripe = Stripe('{{ stripe_public_key }}');
     const elements = stripe.elements();
     
-    // Create card element
+    // Create card element with styling to match Register form inputs
     const cardElement = elements.create('card', {
         style: {
             base: {
-                fontSize: '16px',
-                color: '#32325d',
+                fontSize: '0.95rem',
+                color: '#0f172a',
+                fontFamily: 'inherit',
                 '::placeholder': {
-                    color: '#aab7c4'
+                    color: '#94a3b8',
+                    opacity: 0.8
                 }
             },
             invalid: {

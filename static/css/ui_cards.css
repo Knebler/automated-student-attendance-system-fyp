@@ -1,0 +1,88 @@
+/* Quick Actions */
+.quick-actions {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.quick-action-button {
+    padding: 0.875rem 1rem;
+    border-radius: 8px;
+    background: #ffffff;
+    border: 2px solid #001641;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    color: #001641;
+    text-decoration: none;
+    font-family: 'Montserrat', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+}
+
+.quick-action-button:hover {
+    background: #001641;
+    color: #ffffff;
+    transform: translateX(4px);
+    box-shadow: 0 4px 10px rgba(0, 22, 65, 0.15);
+}
+
+.quick-action-icon {
+    font-size: 20px;
+    line-height: 1;
+    width: 24px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.quick-action-text {
+    flex: 1;
+}
+
+.qa-unified {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #0f172a;
+}
+
+/* Unified section card style */
+.dashboard-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+}
+
+.dashboard-card .card-header-custom {
+    background: #ffffff;
+    color: #0f172a;
+    border-bottom: 1px solid #e5e7eb;
+    font-weight: 600;
+}
+
+.dashboard-card .card-body-custom {
+    background: #ffffff;
+}
+
+/* Override dark borders */
+.main-container .card-custom {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+}
+
+.main-container .card-custom .card-header-custom {
+    background: #ffffff;
+    color: #0f172a;
+    border-bottom: 1px solid #e5e7eb;
+    font-weight: 600;
+}
+
+.main-container .card-custom .card-body-custom {
+    background: #ffffff;
+}

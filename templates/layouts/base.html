@@ -30,6 +30,7 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            padding-top: 70px;
         }
 
         /* Navigation - Design from indexdesign.html */
@@ -131,8 +132,87 @@
         }
 
         .alert-info {
-            border-color: #0891b2;
+            border-color: #001641;
             background-color: #f0f9ff;
+        }
+
+        /* Toast Container */
+        .toast-container {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            max-width: 400px;
+            width: 90%;
+            pointer-events: none;
+        }
+
+        .toast-container .toast {
+            pointer-events: auto;
+        }
+
+        /* Notification Toast Styling */
+        .notification {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            margin-bottom: 10px;
+            padding: 1.25rem 1.5rem;
+            position: relative;
+            min-width: 300px;
+            max-width: 400px;
+            border-left: 4px solid;
+        }
+
+        .notification-success {
+            border-left-color: #058d62;
+            color: var(--text-dark);
+        }
+
+        .notification-error {
+            border-left-color: #c33030;
+            color: var(--text-dark);
+        }
+
+        .notification-info {
+            border-left-color: #001641;
+            color: var(--text-dark);
+        }
+
+        /* Notification content wrapper */
+        .notification-body {
+            padding: 0;
+            margin: 0;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: var(--text-dark);
+        }
+
+        /* Notification close button */
+        .notification-close {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-light);
+            cursor: pointer;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            padding: 0;
+            opacity: 1;
+        }
+
+        .notification-close:hover {
+            background: #f1f5f9;
+            color: var(--text-dark);
         }
 
         /* Common Design Elements */
@@ -247,6 +327,20 @@
                 gap: 1rem;
                 text-align: center;
             }
+
+            .toast-container {
+                top: 70px;
+                left: 50%;
+                transform: translateX(-50%);
+                max-width: 95%;
+                width: 95%;
+            }
+
+            .notification {
+                min-width: auto;
+                max-width: 100%;
+                padding: 1rem 1.25rem;
+            }
         }
 
         /* Mobile Menu Toggle */
@@ -309,28 +403,17 @@
     <!-- Custom Navigation -->
     {% include 'layouts/navbar.html' %}
     
-    <!-- Alert Messages -->
-    <div class="alert-container">
+    <!-- Toast Container for Flash Messages -->
+    <div class="toast-container" aria-live="polite" aria-atomic="true">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert-custom alert-{{ category }} mt-3">
-                        {{ message }}
-                        <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'" style="float: right; background: none; border: none; font-size: 1.2rem; cursor: pointer;">×</button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-    </div>
-
-    <!-- Alert Messages -->
-    <div class="alert-container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert-custom alert-{{ category }} mt-3">
-                        {{ message }}
-                        <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'" style="float: right; background: none; border: none; font-size: 1.2rem; cursor: pointer;">×</button>
+                    {% set notification_type = 'error' if category == 'danger' else category %}
+                    <div class="toast notification notification-{{ notification_type }}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="3000">
+                        <button type="button" class="notification-close" data-bs-dismiss="toast" aria-label="Close">&times;</button>
+                        <div class="notification-body">
+                            {{ message }}
+                        </div>
                     </div>
                 {% endfor %}
             {% endif %}
@@ -372,10 +455,26 @@
                 menu.classList.remove('show');
             }
         });
+
     </script>
 
     <!-- Bootstrap JS (kept for any components that might need it) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Show toasts on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const toastElements = document.querySelectorAll('.toast');
+            toastElements.forEach(function(toastEl) {
+                const toast = new bootstrap.Toast(toastEl, {
+                    autohide: true,
+                    delay: 3000
+                });
+                toast.show();
+            });
+        });
+    </script>
+    
     {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -3,93 +3,391 @@
 {% block title %}Testimonial Submission{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="card-custom">
-        <div class="card-header-custom">
-            Testimonial Submission Form
-        </div>
+<style>
+    .register-container {
+        animation: fadeInUp 0.5s ease-out;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        min-height: calc(100vh - 260px);
+        padding: 3rem 0 2rem;
+    }
 
-        <div class="card-body-custom">
-            <form method="POST" action="{{ url_for('main.submit_testimonial') }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                
-                <!-- User Information -->
-                <h5 class="mb-3">User Details</h5>
+    .register-card-wrap {
+        width: 100%;
+        max-width: 960px;
+    }
 
-                <div class="form-group mb-3">
-                    <label for="user_name">User Name</label>
-                    <input 
-                        type="text" 
-                        class="form-control" 
-                        id="user_name" 
-                        name="user_name" 
-                        value="{{ user_name }}" 
-                        readonly
-                    >
-                </div>
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 
-                <div class="form-group mb-3">
-                    <label for="institution">Institution</label>
-                    <input 
-                        type="text" 
-                        class="form-control" 
-                        id="institution" 
-                        name="institution" 
-                        value="{{ institution_name }}" 
-                        readonly
-                    >
-                </div>
+    /* testimonial form style*/
+    .register-container .card {
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(148, 163, 184, 0.25);
+        overflow: hidden;
+    }
 
-                <div class="form-group mb-3">
-                    <label for="role">Role</label>
-                    <input 
-                        type="text" 
-                        class="form-control" 
-                        id="role" 
-                        name="role" 
-                        value="{{ role }}" 
-                        readonly
-                    >
-                </div>
+    .register-container .card-header {
+        background-color: #ffffff;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 1.5rem;
+    }
 
+    .register-container .card-header h4 {
+        color: #0f172a;
+        font-weight: 600;
+        margin: 0;
+        font-size: 1.5rem;
+    }
 
-                <!-- Rating 1-5 with stars-->
+    .register-container .card-body {
+        background-color: #ffffff;
+        padding: 2rem;
+    }
 
-                <div class="form-group mb-3">
-                    <label for="rating">Rating</label>
-                    <select class="form-control" id="rating" name="rating" required>
-                        <option value="" disabled selected>Select your rating</option>
-                        <option value="1">1 - Very Poor</option>
-                        <option value="2">2 - Poor</option>
-                        <option value="3">3 - Average</option>
-                        <option value="4">4 - Good</option>
-                        <option value="5">5 - Excellent</option>
-                    </select>
-                </div>
+    .register-container .form-label {
+        color: #0f172a;
+        font-weight: 500;
+        margin-bottom: 0.75rem;
+        font-size: 0.95rem;
+    }
 
-                <div class="form-group mb-3">
-                    <label for="feedback_details">Feedback Details</label>
-                    <textarea 
-                        class="form-control" 
-                        id="feedback_details" 
-                        name="feedback_details" 
-                        rows="5"
-                        placeholder="Please provide your feedback here."
-                        required
-                    ></textarea>
-                </div>
+    .register-container .form-label.required::before {
+        content: "* ";
+        color: #d93025;
+        font-weight: 700;
+    }
 
-               
+    /* Input Fields */
+    .register-container .form-control,
+    .register-container .form-select {
+        background-color: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        color: #0f172a;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        transition: all 0.25s ease;
+    }
 
-                <!-- Submit -->
-                <div class="text-end">
-                    <button type="submit" class="btn btn-primary">
-                        Submit Feedback
-                    </button>
-                </div>
+    .register-container .form-control:focus,
+    .register-container .form-select:focus {
+        background-color: #ffffff;
+        border-color: #0f172a;
+        color: #0f172a;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.15);
+    }
 
-            </form>
+    .register-container .form-control:read-only {
+        background-color: #f8fafc;
+        cursor: not-allowed;
+    }
+
+    /* Error styling */
+    .register-container .input-error {
+        border-color: #d93025 !important;
+    }
+
+    .register-container .input-error:focus {
+        border-color: #d93025 !important;
+        box-shadow: 0 0 0 3px rgba(217, 48, 37, 0.15) !important;
+    }
+
+    .register-container .error-text {
+        color: #d93025;
+        font-size: 0.9rem;
+        margin-top: 6px;
+        display: block;
+    }
+
+    .register-container .form-control::placeholder {
+        color: #94a3b8;
+        opacity: 0.8;
+    }
+
+    .register-container .form-text {
+        color: #64748b;
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+    }
+
+    .register-container .btn-primary {
+        background-color: #0f172a;
+        border: 2px solid #0f172a;
+        color: #ffffff;
+        font-weight: 600;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        transition: all 0.25s ease;
+        font-size: 1rem;
+        width: 100%;
+    }
+
+    .register-container .btn-primary:hover {
+        background-color: #1e293b;
+        border-color: #1e293b;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.3);
+    }
+
+    .register-container .btn-primary:active {
+        background-color: #020617;
+        border-color: #020617;
+        transform: translateY(0);
+    }
+
+    .register-container .mb-3 {
+        margin-bottom: 1.5rem;
+    }
+
+    .register-container h5 {
+        color: #0f172a;
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 1.5rem;
+        margin-top: 0;
+    }
+
+    .register-actions {
+        margin-top: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 100%;
+    }
+
+    .register-actions .register-button {
+        width: 100%;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .register-container {
+            align-items: flex-start;
+            padding: 2.5rem 0 2rem;
+            min-height: auto;
+        }
+
+        .register-container .card-body {
+            padding: 1.5rem;
+        }
+    }
+</style>
+
+<div class="row justify-content-center register-container">
+    <div class="register-card-wrap">
+        <div class="card">
+            <div class="card-header">
+                <h4>Testimonial Submission Form</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('main.submit_testimonial') }}" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <!-- User Information -->
+                    <h5>User Details</h5>
+
+                    <div class="mb-3">
+                        <label for="user_name" class="form-label">User Name</label>
+                        <input 
+                            type="text" 
+                            class="form-control" 
+                            id="user_name" 
+                            name="user_name" 
+                            value="{{ user_name }}" 
+                            readonly
+                        >
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="institution" class="form-label">Institution</label>
+                        <input 
+                            type="text" 
+                            class="form-control" 
+                            id="institution" 
+                            name="institution" 
+                            value="{{ institution_name }}" 
+                            readonly
+                        >
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="role" class="form-label">Role</label>
+                        <input 
+                            type="text" 
+                            class="form-control" 
+                            id="role" 
+                            name="role" 
+                            value="{{ role }}" 
+                            readonly
+                        >
+                    </div>
+
+                    <!-- Rating -->
+                    <div class="mb-3">
+                        <label for="rating" class="form-label required">Rating</label>
+                        <select class="form-control form-select" id="rating" name="rating" required>
+                            <option value="" disabled selected>Select your rating</option>
+                            <option value="1">1 - Very Poor</option>
+                            <option value="2">2 - Poor</option>
+                            <option value="3">3 - Average</option>
+                            <option value="4">4 - Good</option>
+                            <option value="5">5 - Excellent</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="feedback_details" class="form-label required">Feedback Details</label>
+                        <textarea 
+                            class="form-control" 
+                            id="feedback_details" 
+                            name="feedback_details" 
+                            rows="5"
+                            placeholder="Please provide your feedback here."
+                            required
+                        ></textarea>
+                    </div>
+
+                    <!-- Submit -->
+                    <div class="register-actions">
+                        <button type="submit" class="btn btn-primary register-button">
+                            Submit Feedback
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+    // Required field indicators and custom validation (matching register form)
+    (function () {
+        const form = document.querySelector('form[method="POST"]');
+        if (!form) return;
+
+        // add "required" class to label (for showing *)
+        function markRequiredLabels() {
+            const requiredFields = form.querySelectorAll('[required]');
+            requiredFields.forEach((field) => {
+                if (!field.id) return; // need id to match label
+                const label = form.querySelector(`label[for="${field.id}"]`);
+                if (label) label.classList.add('required');
+            });
+        }
+
+        // find the container of a field 
+        function getContainer(field) {
+            return field.closest('.mb-3') || field.parentElement;
+        }
+
+        // show error message under the field
+        function showError(field, message) {
+            const container = getContainer(field);
+
+            // remove old error if exists
+            const old = container.querySelector('.error-text');
+            if (old) old.remove();
+
+            // red border
+            field.classList.add('input-error');
+
+            // error text
+            const span = document.createElement('span');
+            span.className = 'error-text';
+            span.textContent = message;
+            container.appendChild(span);
+        }
+
+        // clear error state
+        function clearError(field) {
+            const container = getContainer(field);
+            field.classList.remove('input-error');
+
+            const old = container.querySelector('.error-text');
+            if (old) old.remove();
+        }
+
+        // validate single field
+        function validateField(field) {
+            // skip hidden fields
+            if (field.closest('.d-none')) {
+                clearError(field);
+                return true;
+            }
+
+            const value = (field.value || '').trim();
+
+            // required check
+            if (field.hasAttribute('required') && value === '') {
+                showError(field, 'This field is required.');
+                return false;
+            }
+
+            clearError(field);
+            return true;
+        }
+
+        // validate all fields when submit
+        form.addEventListener('submit', function (e) {
+            let ok = true;
+
+            const fields = form.querySelectorAll('input, select, textarea');
+
+            // clear all errors first
+            fields.forEach((f) => clearError(f));
+
+            // validate required fields
+            fields.forEach((f) => {
+                if (f.hasAttribute('required')) {
+                    if (!validateField(f)) ok = false;
+                }
+            });
+
+            // cannot submit if any error
+            if (!ok) {
+                e.preventDefault();
+                
+                const first = form.querySelector('.input-error');
+                if (first) {
+                    first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    first.focus();
+                }
+            }
+        });
+
+        // re-check field when typing
+        form.addEventListener('input', function (e) {
+            const t = e.target;
+            if (t.matches('input, select, textarea')) {
+                if (t.hasAttribute('required')) {
+                    validateField(t);
+                }
+            }
+        });
+
+        form.addEventListener('change', function (e) {
+            const t = e.target;
+            if (t.matches('input, select, textarea')) {
+                if (t.hasAttribute('required')) {
+                    validateField(t);
+                }
+            }
+        });
+
+        markRequiredLabels();
+    })();
+</script>
 {% endblock %}

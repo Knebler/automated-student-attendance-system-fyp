@@ -1,7 +1,8 @@
-from flask import Blueprint, render_template, session, current_app, request, redirect, url_for, flash
+from flask import Blueprint, render_template, session, current_app, request, redirect, url_for, flash, jsonify
 from application.controls.database_control import DatabaseControl
 from application.controls.testimonial_control import TestimonialControl
-from application.controls.auth_control import AuthControl, requires_roles
+from application.controls.platformissue_control import PlatformIssueControl
+from application.controls.auth_control import AuthControl, requires_roles, requires_roles_api
 from application.boundaries.dev_actions import register_action
 import datetime
 from flask import Blueprint, render_template, request, session, current_app, flash, redirect, url_for, abort
@@ -143,6 +144,241 @@ def submit_testimonial():
         db_session.commit()
         
         return redirect(url_for('main.testimonials'))
+    
+@main_bp.route('/report-issue')
+@requires_roles(['student', 'lecturer', 'admin'])
+def report_issue_form():
+    """Display form for reporting platform issues"""
+    try:
+        # Get user info for the form
+        user_id = session.get('user_id')
+        institution_id = session.get('institution_id')
+        
+        if not user_id or not institution_id:
+            flash('You must be logged in to report an issue', 'danger')
+            return redirect(url_for('auth.login'))
+        
+        with get_session() as db_session:
+            user_model = UserModel(db_session)
+            institution_model = InstitutionModel(db_session)
+            
+            user = user_model.get_by_id(user_id)
+            institution = institution_model.get_by_id(institution_id)
+            
+            if not user or not institution:
+                flash('User or institution not found', 'danger')
+                return redirect(url_for('main.home'))
+        
+        # Get available categories
+        categories = PlatformIssueControl.get_categories()
+        
+        return render_template(
+            'components/report_issue_form.html',
+            user_name=user.name if user else 'User',
+            user_role=session.get('role'),
+            institution_name=institution.name if institution else 'Institution',
+            categories=categories
+        )
+        
+    except Exception as e:
+        flash(f'Error loading issue report form: {str(e)}', 'danger')
+        return redirect(url_for('main.home'))
+
+@main_bp.route('/report-issue/submit', methods=['POST'])
+@requires_roles_api(['student', 'lecturer', 'admin'])
+def submit_issue_report():
+    """Handle submission of platform issue reports"""
+    try:
+        user_id = session.get('user_id')
+        institution_id = session.get('institution_id')
+        
+        if not user_id or not institution_id:
+            return jsonify({'success': False, 'error': 'You must be logged in to report an issue'}), 401
+        
+        # Get form data
+        description = request.form.get('description', '').strip()
+        category = request.form.get('category', 'bug')
+        
+        # Validate inputs
+        if not description:
+            flash('Issue description is required', 'danger')
+            return redirect(url_for('main.report_issue_form'))
+        
+        # Validate category
+        if not PlatformIssueControl.validate_category(category):
+            flash('Invalid issue category selected', 'danger')
+            return redirect(url_for('main.report_issue_form'))
+        
+        # Analyze content for appropriateness
+        analysis = PlatformIssueControl.analyze_issue_content(description, category)
+        
+        if not analysis['is_appropriate']:
+            flash(f'Your issue report contains inappropriate content: {analysis["reason"]}. Please revise your report.', 'danger')
+            return redirect(url_for('main.report_issue_form'))
+        
+        # Create the issue
+        result = PlatformIssueControl.create_issue(
+            app=current_app,
+            user_id=user_id,
+            institution_id=institution_id,
+            description=description,
+            category=category
+        )
+        
+        if result['success']:
+            flash('Issue reported successfully! Our team will review it soon.', 'success')
+            # Optionally redirect to a confirmation page or user's issue history
+            return redirect(url_for('main.my_reports'))
+        else:
+            flash(f'Failed to submit issue: {result["error"]}', 'danger')
+            return redirect(url_for('main.report_issue_form'))
+            
+    except Exception as e:
+        flash(f'Error submitting issue report: {str(e)}', 'danger')
+        return redirect(url_for('main.report_issue_form'))
+
+@main_bp.route('/my-reports')
+@requires_roles(['student', 'lecturer', 'admin'])
+def my_reports():
+    """Display user's submitted issue reports"""
+    try:
+        user_id = session.get('user_id')
+        
+        if not user_id:
+            flash('You must be logged in to view your reports', 'danger')
+            return redirect(url_for('auth.login'))
+        
+        result = PlatformIssueControl.get_issues_by_user(
+            app=current_app,
+            user_id=user_id,
+            include_deleted=False
+        )
+        
+        if not result['success']:
+            flash(f'Error loading your reports: {result["error"]}', 'danger')
+            return redirect(url_for('main.home'))
+        
+        # Get categories for filter display
+        categories = PlatformIssueControl.get_categories()
+        
+        return render_template(
+            'platform/my_reports.html',
+            issues=result['issues'],
+            total_count=result['count'],
+            categories=categories
+        )
+        
+    except Exception as e:
+        flash(f'Error loading your reports: {str(e)}', 'danger')
+        return redirect(url_for('main.home'))
+
+@main_bp.route('/api/report-issue', methods=['POST'])
+@requires_roles_api(['student', 'lecturer', 'admin'])
+def api_report_issue():
+    """API endpoint for submitting issue reports (for AJAX)"""
+    try:
+        user_id = session.get('user_id')
+        institution_id = session.get('institution_id')
+        
+        if not user_id or not institution_id:
+            return jsonify({'success': False, 'error': 'Authentication required'}), 401
+        
+        # Get JSON data
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+        
+        description = data.get('description', '').strip()
+        category = data.get('category', 'bug')
+        
+        # Validate inputs
+        if not description:
+            return jsonify({'success': False, 'error': 'Issue description is required'}), 400
+        
+        if not PlatformIssueControl.validate_category(category):
+            return jsonify({'success': False, 'error': 'Invalid issue category'}), 400
+        
+        # Analyze content
+        analysis = PlatformIssueControl.analyze_issue_content(description, category)
+        
+        if not analysis['is_appropriate']:
+            return jsonify({
+                'success': False, 
+                'error': f'Content validation failed: {analysis["reason"]}',
+                'validation_details': analysis
+            }), 400
+        
+        # Create the issue
+        result = PlatformIssueControl.create_issue(
+            app=current_app,
+            user_id=user_id,
+            institution_id=institution_id,
+            description=description,
+            category=category
+        )
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'message': 'Issue reported successfully',
+                'issue_id': result['issue_id']
+            }), 201
+        else:
+            return jsonify({'success': False, 'error': result['error']}), 500
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@main_bp.route('/api/validate-issue', methods=['POST'])
+@requires_roles_api(['student', 'lecturer', 'admin'])
+def api_validate_issue():
+    """API endpoint for validating issue content before submission"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+        
+        description = data.get('description', '').strip()
+        category = data.get('category', 'bug')
+        
+        # Analyze content
+        analysis = PlatformIssueControl.analyze_issue_content(description, category)
+        
+        return jsonify({
+            'success': True,
+            'validation': analysis
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@main_bp.route('/api/my-reports')
+@requires_roles(['student', 'lecturer', 'admin'])
+def api_my_reports():
+    """API endpoint for getting user's reports"""
+    try:
+        user_id = session.get('user_id')
+        
+        if not user_id:
+            return jsonify({'success': False, 'error': 'Authentication required'}), 401
+        
+        result = PlatformIssueControl.get_issues_by_user(
+            app=current_app,
+            user_id=user_id,
+            include_deleted=False
+        )
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'issues': result['issues'],
+                'count': result['count']
+            })
+        else:
+            return jsonify({'success': False, 'error': result['error']}), 500
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
         
 @main_bp.route('/init-db')
 def init_database():

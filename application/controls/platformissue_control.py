@@ -92,7 +92,7 @@ class PlatformIssueControl:
         }
     
     @staticmethod
-    def create_issue(app, user_id, institution_id, description, category="bug"):
+    def create_issue(user_id, institution_id, description, category="bug"):
         """
         Create a new platform issue/report.
         
@@ -144,7 +144,7 @@ class PlatformIssueControl:
             return {'success': False, 'error': str(e)}
     
     @staticmethod
-    def get_issue_by_id(app, issue_id):
+    def get_issue_by_id(issue_id):
         """
         Get an issue by its ID.
         
@@ -173,7 +173,7 @@ class PlatformIssueControl:
             return {'success': False, 'error': str(e)}
     
     @staticmethod
-    def get_issues_by_user(app, user_id, include_deleted=False):
+    def get_issues_by_user(user_id, include_deleted=False):
         """
         Get all issues reported by a specific user.
         
@@ -215,7 +215,7 @@ class PlatformIssueControl:
             return {'success': False, 'error': str(e)}
     
     @staticmethod
-    def get_issues_by_institution(app, institution_id, include_deleted=False):
+    def get_issues_by_institution(institution_id, include_deleted=False):
         """
         Get all issues from a specific institution.
         
@@ -263,7 +263,7 @@ class PlatformIssueControl:
             return {'success': False, 'error': str(e)}
     
     @staticmethod
-    def get_all_active_issues(app, category=None, page=1, per_page=10):
+    def get_all_active_issues(category=None, page=1, per_page=10):
         """
         Get all active (not deleted) issues for platform managers.
         
@@ -318,7 +318,7 @@ class PlatformIssueControl:
             return {'success': False, 'error': str(e)}
     
     @staticmethod
-    def get_recent_issues(app, limit=10):
+    def get_recent_issues(limit=10):
         """
         Get recent active issues for dashboard display.
         
@@ -383,7 +383,7 @@ class PlatformIssueControl:
             return {'success': False, 'error': str(e)}
     
     @staticmethod
-    def mark_issue_as_deleted(app, issue_id, manager_id=None):
+    def mark_issue_as_deleted(issue_id, manager_id=None):
         """
         Mark an issue as deleted (hand over to dev team).
         
@@ -429,7 +429,7 @@ class PlatformIssueControl:
             return {'success': False, 'error': str(e)}
     
     @staticmethod
-    def search_issues(app, search_term='', category=''):
+    def search_issues(search_term='', category=''):
         """
         Search issues by description text and/or category.
         

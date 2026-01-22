@@ -3,8 +3,315 @@
 {% block title %}Register - Attendance System{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
+<style>
+    .register-container {
+        animation: fadeInUp 0.5s ease-out;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        min-height: calc(100vh - 260px);
+        padding: 3rem 0 2rem;
+    }
+
+    .register-card-wrap {
+        width: 100%;
+        max-width: 960px;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Register form */
+    .register-container .card {
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(148, 163, 184, 0.25);
+        overflow: hidden;
+    }
+
+    .register-container .card-header {
+        background-color: #ffffff;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 1.5rem;
+    }
+
+    .register-container .card-header h4 {
+        color: #0f172a;
+        font-weight: 600;
+        margin: 0;
+        font-size: 1.5rem;
+    }
+
+    .register-container .card-body {
+        background-color: #ffffff;
+        padding: 2rem;
+    }
+
+    .register-container .form-label {
+        color: #0f172a;
+        font-weight: 500;
+        margin-bottom: 0.75rem;
+        font-size: 0.95rem;
+    }
+
+    /* Input Fields */
+    .register-container .form-control,
+    .register-container .form-select {
+        background-color: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        color: #0f172a;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        transition: all 0.25s ease;
+    }
+
+    .register-container .form-control:focus,
+    .register-container .form-select:focus {
+        background-color: #ffffff;
+        border-color: #0f172a;
+        color: #0f172a;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.15);
+    }
+
+    .register-container .form-control::placeholder {
+        color: #94a3b8;
+        opacity: 0.8;
+    }
+
+    .register-container .form-text {
+        color: #64748b;
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+    }
+
+    .register-container .btn-primary {
+        background-color: #0f172a;
+        border: 2px solid #0f172a;
+        color: #ffffff;
+        font-weight: 600;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        transition: all 0.25s ease;
+        font-size: 1rem;
+    }
+
+    .register-container .btn-primary:hover {
+        background-color: #1e293b;
+        border-color: #1e293b;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.3);
+    }
+
+    .register-container .btn-primary:active {
+        background-color: #020617;
+        border-color: #020617;
+        transform: translateY(0);
+    }
+
+    /* Login Link */
+    .register-container .btn-link {
+        color: #94a3b8;
+        text-decoration: none;
+        font-size: 0.9rem;
+        padding: 0.5rem 0;
+        transition: color 0.25s ease;
+    }
+
+    .register-container .btn-link:hover {
+        color: #0f172a;
+        text-decoration: underline;
+    }
+
+    .register-container .mb-3 {
+        margin-bottom: 1.5rem;
+    }
+
+    .register-actions {
+        margin-top: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 100%;
+    }
+
+    .register-actions .register-button {
+        width: 100%;
+    }
+
+    .register-actions .login-link {
+        width: 100%;
+        text-align: center;
+    }
+
+    .register-columns {
+        display: flex;
+        gap: 2rem;
+        width: 100%;
+    }
+
+    .register-left,
+    .register-right {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .register-container {
+            align-items: flex-start;
+            padding: 2.5rem 0 2rem;
+            min-height: auto;
+        }
+
+        .register-container .card-body {
+            padding: 1.5rem;
+        }
+
+    .register-columns {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    }
+
+    /* dropdowns */
+    .custom-dropdown-wrapper {
+        position: relative;
+        width: 100%;
+    }
+
+    .custom-dropdown-wrapper .form-select {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+        height: 0;
+        width: 0;
+        overflow: hidden;
+    }
+
+    .custom-dropdown {
+        position: relative;
+        width: 100%;
+        cursor: pointer;
+    }
+
+    .custom-dropdown-trigger {
+        background-color: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        color: #0f172a;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.25s ease;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    .custom-dropdown-trigger:hover {
+        border-color: #94a3b8;
+        background-color: #f8fafc;
+    }
+
+    .custom-dropdown-trigger:focus {
+        outline: none;
+        border-color: #0f172a;
+        box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.15);
+    }
+
+    .custom-dropdown-trigger.open {
+        border-color: #0f172a;
+        box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.15);
+    }
+
+    .custom-dropdown-text {
+        flex: 1;
+        color: #0f172a;
+    }
+
+    .custom-dropdown-text.placeholder {
+        color: #94a3b8;
+    }
+
+    .custom-dropdown-arrow {
+        width: 0;
+        height: 0;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 6px solid #0f172a;
+        transition: transform 0.25s ease;
+        margin-left: 0.75rem;
+    }
+
+    .custom-dropdown.open .custom-dropdown-arrow {
+        transform: rotate(180deg);
+    }
+
+    .custom-dropdown-menu {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        right: 0;
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(148, 163, 184, 0.25);
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: all 0.3s ease;
+        z-index: 1000;
+    }
+
+    .custom-dropdown.open .custom-dropdown-menu {
+        max-height: 300px;
+        opacity: 1;
+        transform: translateY(0);
+        overflow-y: auto;
+    }
+
+    .custom-dropdown-option {
+        padding: 0.75rem 1rem;
+        color: #0f172a;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        font-size: 0.95rem;
+    }
+
+    .custom-dropdown-option:hover {
+        background-color: #f1f5f9;
+    }
+
+    .custom-dropdown-option.selected {
+        background-color: #0f172a;
+        color: #ffffff;
+    }
+
+    .custom-dropdown-option:first-child {
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+
+    .custom-dropdown-option:last-child {
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
+    }
+</style>
+
+<div class="row justify-content-center register-container">
+    <div class="register-card-wrap">
         <div class="card">
             <div class="card-header">
                 <h4>Register</h4>
@@ -12,70 +319,95 @@
             <div class="card-body">
                 <form method="POST" action="{{ url_for('auth.register') }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Full Name</label>
-                        <input type="text" class="form-control" id="name" name="name">
-                    </div>
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email Address</label>
-                        <input type="email" class="form-control" id="email" name="email" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
+                    <div class="register-columns">
+                        <div class="register-left">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="name" name="name">
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="password" name="password" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="role" class="form-label">Register As</label>
+                                <div class="custom-dropdown-wrapper">
+                                    <select id="role" name="role" class="form-select">
+                                        <option value="institution_admin">Institution Admin</option>
+                                    </select>
+                                    <div class="custom-dropdown" id="custom-role-dropdown">
+                                        <div class="custom-dropdown-trigger" tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="false">
+                                            <span class="custom-dropdown-text"></span>
+                                            <span class="custom-dropdown-arrow"></span>
+                                        </div>
+                                        <div class="custom-dropdown-menu" role="listbox">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3 d-none" id="inst-plan-group">
+                                <label for="selected_plan_id" class="form-label">Subscription Plan</label>
+                                <div class="custom-dropdown-wrapper">
+                                    <select id="selected_plan_id" name="selected_plan_id" class="form-select">
+                                        <option value="">-- Select a plan --</option>
+                                        {% for plan in subscription_plans %}
+                                            <option value="{{ plan.plan_id }}" {% if preselected_plan_id and preselected_plan_id|int == plan.plan_id %}selected{% endif %}>{{ plan.name }}{% if plan.price %} — {{ plan.price }}{% endif %}{% if plan.billing_cycle %} / {{ plan.billing_cycle }}{% endif %}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="custom-dropdown" id="custom-plan-dropdown">
+                                        <div class="custom-dropdown-trigger" tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="false">
+                                            <span class="custom-dropdown-text placeholder">-- Select a plan --</span>
+                                            <span class="custom-dropdown-arrow"></span>
+                                        </div>
+                                        <div class="custom-dropdown-menu" role="listbox">
+
+                                        </div>
+                                    </div>
+                                </div>
+                                <small class="form-text text-muted">Select a subscription plan for your institution; it will be activated upon approval.</small>
+                            </div>
+                            <div class="mb-3 d-none" id="inst-select-group">
+                                <label for="institution_id" class="form-label">Select your Institution</label>
+                                <select id="institution_id" name="institution_id" class="form-select">
+                                    <option value="">-- Select Institution --</option>
+                                    {% for inst in institutions %}
+                                        <option value="{{ inst.institution_id }}">{{ inst.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="register-right">
+                            <div class="mb-3 d-none" id="inst-name-group">
+                                <label for="institution_name" class="form-label">Educational Institute</label>
+                                <input type="text" class="form-control" id="institution_name" name="institution_name" placeholder="Your institution name (e.g., Example University)">
+                                <small class="form-text text-muted" id="inst-note">Only institution admins can register here — your request will be reviewed before an account is issued.</small>
+                            </div>
+
+                            <div class="mb-3 d-none" id="inst-address-group">
+                                <label for="institution_address" class="form-label">Institution Address</label>
+                                <input type="text" class="form-control" id="institution_address" name="institution_address" placeholder="Postal address or campus location">
+                            </div>
+
+                            <div class="mb-3 d-none" id="inst-phone-group">
+                                <label for="phone_number" class="form-label">Contact Phone</label>
+                                <input type="text" class="form-control" id="phone_number" name="phone_number" placeholder="Optional phone number">
+                            </div>
+
+                            <div class="mb-3 d-none" id="inst-message-group">
+                                <label for="message" class="form-label">Message</label>
+                                <textarea class="form-control" id="message" name="message" rows="3" placeholder="Optional message to the platform managers."></textarea>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="role" class="form-label">Register As</label>
-                        <select id="role" name="role" class="form-select">
-                            <option value="institution_admin">Institution Admin</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3 d-none" id="inst-name-group">
-                        <label for="institution_name" class="form-label">Educational Institute</label>
-                        <input type="text" class="form-control" id="institution_name" name="institution_name" placeholder="Your institution name (e.g., Example University)">
-                        <small class="form-text text-muted" id="inst-note">Only institution admins can register here — your request will be reviewed before an account is issued.</small>
-                    </div>
-
-                    <div class="mb-3 d-none" id="inst-address-group">
-                        <label for="institution_address" class="form-label">Institution Address</label>
-                        <input type="text" class="form-control" id="institution_address" name="institution_address" placeholder="Postal address or campus location">
-                    </div>
-
-                    <div class="mb-3 d-none" id="inst-phone-group">
-                        <label for="phone_number" class="form-label">Contact Phone</label>
-                        <input type="text" class="form-control" id="phone_number" name="phone_number" placeholder="Optional phone number">
-                    </div>
-
-                    <div class="mb-3 d-none" id="inst-message-group">
-                        <label for="message" class="form-label">Message</label>
-                        <textarea class="form-control" id="message" name="message" rows="3" placeholder="Optional message to the platform managers."></textarea>
-                    </div>
-
-                    <div class="mb-3 d-none" id="inst-plan-group">
-                        <label for="selected_plan_id" class="form-label">Subscription Plan</label>
-                        <select id="selected_plan_id" name="selected_plan_id" class="form-select">
-                            <option value="">-- Select a plan --</option>
-                            {% for plan in subscription_plans %}
-                                <option value="{{ plan.plan_id }}" {% if preselected_plan_id and preselected_plan_id|int == plan.plan_id %}selected{% endif %}>{{ plan.name }}{% if plan.price %} — {{ plan.price }}{% endif %}{% if plan.billing_cycle %} / {{ plan.billing_cycle }}{% endif %}</option>
-                            {% endfor %}
-                        </select>
-                        <small class="form-text text-muted">Select a subscription plan for your institution; it will be activated upon approval.</small>
-                    </div>
-
-                    <div class="mb-3 d-none" id="inst-select-group">
-                        <label for="institution_id" class="form-label">Select your Institution</label>
-                        <select id="institution_id" name="institution_id" class="form-select">
-                            <option value="">-- Select Institution --</option>
-                            {% for inst in institutions %}
-                                <option value="{{ inst.institution_id }}">{{ inst.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary">Register</button>
-                        <a href="{{ url_for('auth.login') }}" class="btn btn-link">Already have an account? Login</a>
+                    <div class="register-actions">
+                        <button type="submit" class="btn btn-primary register-button">Register</button>
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-link login-link">Already have an account? Login</a>
                     </div>
                 </form>
             </div>
@@ -141,6 +473,283 @@
         // Initial visibility based on default value
         updateInstVisibility();
         roleSelect.addEventListener('change', updateInstVisibility);
+    })();
+
+    // Plan dropdown
+    (function() {
+        const nativeSelect = document.getElementById('selected_plan_id');
+        // custom dropdown
+        const customDropdown = document.getElementById('custom-plan-dropdown');
+        const customTrigger = customDropdown.querySelector('.custom-dropdown-trigger');
+        const customText = customDropdown.querySelector('.custom-dropdown-text');
+        const customMenu = customDropdown.querySelector('.custom-dropdown-menu');
+        
+        if (!nativeSelect || !customDropdown) return;
+
+        function buildCustomOptions() {
+            customMenu.innerHTML = '';
+            const options = nativeSelect.querySelectorAll('option');
+            
+            options.forEach((option, index) => {
+                const customOption = document.createElement('div');
+                customOption.className = 'custom-dropdown-option';
+                customOption.textContent = option.textContent;
+                customOption.setAttribute('data-value', option.value);
+                customOption.setAttribute('role', 'option');
+                customOption.setAttribute('tabindex', '0');
+                
+                // set current selected
+                if (option.value === nativeSelect.value) {
+                    customOption.classList.add('selected');
+                    customText.textContent = option.textContent;
+                    customText.classList.remove('placeholder');
+                }
+                
+                customOption.addEventListener('click', function() {
+                    selectOption(option.value, option.textContent);
+                });
+                
+                customOption.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        selectOption(option.value, option.textContent);
+                    }
+                });
+                
+                customMenu.appendChild(customOption);
+            });
+        }
+
+        // Select an option
+        function selectOption(value, text) {
+            nativeSelect.value = value;
+            customText.textContent = text || '-- Select a plan --';
+            
+            if (value === '') {
+                customText.classList.add('placeholder');
+            } else {
+                customText.classList.remove('placeholder');
+            }
+            
+            // update selected style in menu
+            customMenu.querySelectorAll('.custom-dropdown-option').forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.getAttribute('data-value') === value) {
+                    opt.classList.add('selected');
+                }
+            });
+            
+            // tell other code that value changed
+            nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            
+            closeDropdown();
+        }
+
+        // Open dropdown
+        function openDropdown() {
+            customDropdown.classList.add('open');
+            customTrigger.setAttribute('aria-expanded', 'true');
+        }
+
+        // Close dropdown
+        function closeDropdown() {
+            customDropdown.classList.remove('open');
+            customTrigger.setAttribute('aria-expanded', 'false');
+            customTrigger.classList.remove('open');
+        }
+
+        // Toggle dropdown
+        function toggleDropdown() {
+            if (customDropdown.classList.contains('open')) {
+                closeDropdown();
+            } else {
+                openDropdown();
+            }
+        }
+
+        // Initialize
+        buildCustomOptions();
+
+        // Click on trigger
+        customTrigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleDropdown();
+        });
+
+        customTrigger.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (!customDropdown.classList.contains('open')) {
+                    openDropdown();
+                }
+            } else if (e.key === 'Escape') {
+                closeDropdown();
+            }
+        });
+
+        // Click outside to close
+        document.addEventListener('click', function(e) {
+            if (!customDropdown.contains(e.target)) {
+                closeDropdown();
+            }
+        });
+
+        // ESC key to close
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && customDropdown.classList.contains('open')) {
+                closeDropdown();
+            }
+        });
+
+        // when native select changes, update UI
+        nativeSelect.addEventListener('change', function() {
+            const selectedOption = nativeSelect.options[nativeSelect.selectedIndex];
+            if (selectedOption) {
+                customText.textContent = selectedOption.textContent;
+                if (nativeSelect.value === '') {
+                    customText.classList.add('placeholder');
+                } else {
+                    customText.classList.remove('placeholder');
+                }
+            }
+            buildCustomOptions();
+        });
+
+        /// if plan group is hidden/shown, rebuild menu when it shows
+        const instPlanGroup = document.getElementById('inst-plan-group');
+        if (instPlanGroup) {
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                        // Rebuild options when group becomes visible
+                        if (!instPlanGroup.classList.contains('d-none')) {
+                            buildCustomOptions();
+                        }
+                    }
+                });
+            });
+            observer.observe(instPlanGroup, { attributes: true });
+        }
+    })();
+
+    // Role dropdown
+    (function() {
+        const nativeSelect = document.getElementById('role');
+        const customDropdown = document.getElementById('custom-role-dropdown');
+        if (!nativeSelect || !customDropdown) return;
+
+        const customTrigger = customDropdown.querySelector('.custom-dropdown-trigger');
+        const customText = customDropdown.querySelector('.custom-dropdown-text');
+        const customMenu = customDropdown.querySelector('.custom-dropdown-menu');
+
+        function buildRoleOptions() {
+            customMenu.innerHTML = '';
+            const options = nativeSelect.querySelectorAll('option');
+
+            options.forEach(option => {
+                const opt = document.createElement('div');
+                opt.className = 'custom-dropdown-option';
+                opt.textContent = option.textContent;
+                opt.setAttribute('data-value', option.value);
+                opt.setAttribute('role', 'option');
+                opt.setAttribute('tabindex', '0');
+
+                if (option.value === nativeSelect.value) {
+                    opt.classList.add('selected');
+                    customText.textContent = option.textContent;
+                }
+
+                opt.addEventListener('click', function () {
+                    selectRole(option.value, option.textContent);
+                });
+
+                opt.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        selectRole(option.value, option.textContent);
+                    }
+                });
+
+                customMenu.appendChild(opt);
+            });
+        }
+
+        function selectRole(value, text) {
+            nativeSelect.value = value;
+            customText.textContent = text;
+
+            customMenu.querySelectorAll('.custom-dropdown-option').forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.getAttribute('data-value') === value) {
+                    opt.classList.add('selected');
+                }
+            });
+
+            nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            closeRoleDropdown();
+        }
+
+        // open dropdown
+        function openRoleDropdown() {
+            customDropdown.classList.add('open');
+            customTrigger.setAttribute('aria-expanded', 'true');
+        }
+
+        // close dropdown
+        function closeRoleDropdown() {
+            customDropdown.classList.remove('open');
+            customTrigger.setAttribute('aria-expanded', 'false');
+            customTrigger.classList.remove('open');
+        }
+
+        // toggle dropdown
+        function toggleRoleDropdown() {
+            if (customDropdown.classList.contains('open')) {
+                closeRoleDropdown();
+            } else {
+                openRoleDropdown();
+            }
+        }
+
+        buildRoleOptions();
+
+        customTrigger.addEventListener('click', function (e) {
+            e.stopPropagation();
+            toggleRoleDropdown();
+        });
+
+        customTrigger.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (!customDropdown.classList.contains('open')) {
+                    openRoleDropdown();
+                }
+            } else if (e.key === 'Escape') {
+                closeRoleDropdown();
+            }
+        });
+
+        // click outside to close
+        document.addEventListener('click', function (e) {
+            if (!customDropdown.contains(e.target)) {
+                closeRoleDropdown();
+            }
+        });
+
+        // ESC key to close
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && customDropdown.classList.contains('open')) {
+                closeRoleDropdown();
+            }
+        });
+
+        nativeSelect.addEventListener('change', function () {
+            const selected = nativeSelect.options[nativeSelect.selectedIndex];
+            if (selected) {
+                customText.textContent = selected.textContent;
+            }
+            buildRoleOptions();
+        });
     })();
 </script>
 {% endblock %}

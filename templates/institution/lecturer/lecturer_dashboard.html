@@ -11,6 +11,7 @@
             <h1 class="welcome-title">
                 Welcome <span class="lecturer-name">{{ lecturer_name }}</span>
             </h1>
+
             <div class="datetime-display">
                 <span class="time">{{ current_time }}</span>
                 <span class="separator">•</span>
@@ -18,10 +19,10 @@
             </div>
         </div>
 
-        <div class="notification-bell" title="Notifications" id="notificationBell">
+        <div class="notification-bell" title="Announcements" id="notificationBell" data-announcements-count="{{ announcements|length|default(0) }}">
             🔔
-            {% if statistics and statistics.unread_notifications_count and statistics.unread_notifications_count > 0 %}
-            <span class="notification-badge">{{ statistics.unread_notifications_count }}</span>
+            {% if announcements and announcements|length > 0 %}
+            <span class="notification-badge"></span>
             {% endif %}
         </div>
     </div>
@@ -91,12 +92,15 @@
         </div>
 
         <!-- Announcements -->
-        <div class="card-custom">
+        <div class="card-custom" id="institution-announcements">
             <div class="card-header-custom">Institution Announcements</div>
             <div class="card-body-custom announcements-list">
                 {% if announcements %}
                     {% for announcement in announcements %}
-                    <div class="announcement-item">
+                    <div class="announcement-item clickable"
+                         data-title="{{ announcement.title|e }}"
+                         data-date="{{ announcement.date|e }}"
+                         data-content="{{ announcement.content|e }}">
                         <div class="announcement-header">
                             <h3>{{ announcement.title }}</h3>
                             <span>{{ announcement.date }}</span>
@@ -118,12 +122,81 @@
 
                 {% if announcements %}
                 <div class="announcements-actions">
-                    <a href="#" class="btn-custom btn-view-all">View All Announcements</a>
+                    <button id="openAnnouncementsModal" class="btn-custom btn-view-all">View All Announcements</button>
                 </div>
                 {% endif %}
             </div>
         </div>
 
+    </div>
+</div>
+
+<!-- Announcement Detail Modal -->
+<div id="announcementDetailModal" class="modal-overlay" aria-hidden="true" style="display: none;">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>Announcement Details</h2>
+            <button id="closeAnnouncementDetail" class="modal-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="annc-detail-content">
+                <h2 id="announcementDetailTitle"></h2>
+                <p id="announcementDetailDate" class="annc-detail-date"></p>
+                <div id="announcementDetailContent" class="annc-detail-text"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Toast -->
+<div id="notifToast" class="notification-toast" style="display: none;">
+    <div class="toast-content">
+        <button id="notifToastClose" class="toast-close" aria-label="Close">&times;</button>
+        <p class="toast-message"><span id="notifToastMsg"></span></p>
+        <button class="btn-toast" id="notifToastOpen">View announcements</button>
+    </div>
+</div>
+
+<!-- Announcements Modal -->
+<div id="announcementsModal" class="modal-overlay" aria-hidden="true" style="display: none;">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>All Announcements</h2>
+            <button id="closeAnnouncementsModal" class="modal-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <!-- List View -->
+            <div id="anncListView">
+                {% if all_announcements %}
+                    {% for announcement in all_announcements %}
+                    <div class="annc-item" 
+                         data-title="{{ announcement.title|e }}"
+                         data-date="{{ announcement.date|e }}"
+                         data-content="{{ announcement.content|e }}">
+                        <div class="annc-item-header">
+                            <h3 class="annc-item-title">{{ announcement.title }}</h3>
+                            <span class="annc-item-date">{{ announcement.date }}</span>
+                        </div>
+                        <p class="annc-item-preview">{{ announcement.content[:100] }}{% if announcement.content|length > 100 %}...{% endif %}</p>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="no-announcements-message">
+                        <p>📢 No announcements available</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Detail View -->
+            <div id="anncDetailView" style="display: none;">
+                <button id="anncBackToList" class="btn-back">← Back to List</button>
+                <div class="annc-detail-content">
+                    <h2 id="anncDetailTitle"></h2>
+                    <p id="anncDetailDate" class="annc-detail-date"></p>
+                    <div id="anncDetailContent" class="annc-detail-text"></div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -188,14 +261,10 @@
     top: -6px;
     right: -6px;
     background: #dc2626;
-    color: white;
-    width: 20px;
-    height: 20px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
-    font-size: 0.75rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    border: 2px solid white;
 }
 
 .badge {
@@ -361,6 +430,16 @@
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
+.announcement-item.clickable {
+    cursor: pointer;
+}
+
+.announcement-item.clickable:hover {
+    background: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+}
+
 .announcement-header {
     display: flex;
     justify-content: space-between;
@@ -435,6 +514,277 @@
 .no-classes-message p,
 .no-announcements-message p {
     margin: 0.5rem 0;
+}
+
+/* Notification Toast */
+.notification-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    padding: 1.25rem 1.5rem;
+    z-index: 1000;
+    min-width: 300px;
+    max-width: 400px;
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.toast-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    position: relative;
+}
+
+.toast-close {
+    position: absolute;
+    top: -0.5rem;
+    right: -0.5rem;
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-light);
+    cursor: pointer;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.toast-close:hover {
+    background: #f1f5f9;
+    color: var(--text-dark);
+}
+
+.toast-message {
+    font-size: 0.95rem;
+    color: var(--text-dark);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.btn-toast {
+    background: var(--primary-dark);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.btn-toast:hover {
+    background: #3b82f6;
+}
+
+/* Announcements Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    backdrop-filter: blur(2px);
+}
+
+.modal-card {
+    background: white;
+    border-radius: 14px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.modal-close {
+    background: transparent;
+    border: none;
+    font-size: 1.8rem;
+    color: var(--text-light);
+    cursor: pointer;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    background: #f1f5f9;
+    color: var(--text-dark);
+}
+
+.modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* Announcement List Items */
+.annc-item {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.annc-item:hover {
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: #e5e7eb;
+    transform: translateY(-2px);
+}
+
+.annc-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.annc-item-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin: 0;
+    flex: 1;
+}
+
+.annc-item-date {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    white-space: nowrap;
+    margin-left: 1rem;
+}
+
+.annc-item-preview {
+    font-size: 0.9rem;
+    color: var(--text-dark);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Announcement Detail View */
+.btn-back {
+    background: transparent;
+    border: 1px solid var(--text-light);
+    color: var(--text-dark);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+    transition: all 0.2s ease;
+}
+
+.btn-back:hover {
+    background: #f1f5f9;
+    border-color: var(--text-dark);
+}
+
+.annc-detail-content {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.annc-detail-content h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin: 0 0 0.75rem 0;
+}
+
+.annc-detail-date {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.annc-detail-text {
+    font-size: 1rem;
+    color: var(--text-dark);
+    line-height: 1.7;
+    white-space: pre-wrap;
+}
+
+/* Announcement Highlight */
+#institution-announcements.highlight {
+    animation: highlightPulse 2s ease-out;
+}
+
+@keyframes highlightPulse {
+    0% {
+        background-color: #fef3c7;
+        box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7);
+    }
+    50% {
+        background-color: #fef3c7;
+        box-shadow: 0 0 0 8px rgba(251, 191, 36, 0);
+    }
+    100% {
+        background-color: transparent;
+        box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
+    }
 }
 
 .small-text {
@@ -519,14 +869,204 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
     
-    // Notification bell click handler
-    const notificationBell = document.getElementById('notificationBell');
-    if (notificationBell) {
-        notificationBell.addEventListener('click', () => {
-            // In a real implementation, this would show notifications or redirect to notifications page
-            alert('Notifications feature coming soon!');
+    // Modal functions
+    function openAnnouncementsModal() {
+        const modal = document.getElementById('announcementsModal');
+        const listView = document.getElementById('anncListView');
+        const detailView = document.getElementById('anncDetailView');
+        if (modal) {
+            modal.style.display = 'flex';
+            modal.setAttribute('aria-hidden', 'false');
+            // Ensure list view is shown and detail view is hidden
+            if (listView) listView.style.display = 'block';
+            if (detailView) detailView.style.display = 'none';
+        }
+    }
+    
+    function closeAnnouncementsModal() {
+        const modal = document.getElementById('announcementsModal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.setAttribute('aria-hidden', 'true');
+        }
+    }
+    
+    function showAnnouncementDetail(el) {
+        const listView = document.getElementById('anncListView');
+        const detailView = document.getElementById('anncDetailView');
+        const detailTitle = document.getElementById('anncDetailTitle');
+        const detailDate = document.getElementById('anncDetailDate');
+        const detailContent = document.getElementById('anncDetailContent');
+        
+        if (listView && detailView && detailTitle && detailDate && detailContent) {
+            // Get data from clicked element
+            const title = el.dataset.title || '';
+            const date = el.dataset.date || '';
+            const content = el.dataset.content || '';
+            
+            // Fill detail view
+            detailTitle.textContent = title;
+            detailDate.textContent = date;
+            detailContent.textContent = content;
+            
+            // Show detail view, hide list view
+            listView.style.display = 'none';
+            detailView.style.display = 'block';
+        }
+    }
+    
+    function backToList() {
+        const listView = document.getElementById('anncListView');
+        const detailView = document.getElementById('anncDetailView');
+        if (listView && detailView) {
+            listView.style.display = 'block';
+            detailView.style.display = 'none';
+        }
+    }
+    
+    // Open modal button
+    const openModalBtn = document.getElementById('openAnnouncementsModal');
+    if (openModalBtn) {
+        openModalBtn.addEventListener('click', openAnnouncementsModal);
+    }
+    
+    // Close modal button
+    const closeModalBtn = document.getElementById('closeAnnouncementsModal');
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', closeAnnouncementsModal);
+    }
+    
+    // Close modal on backdrop click
+    const modal = document.getElementById('announcementsModal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeAnnouncementsModal();
+            }
         });
     }
+    
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            // Close announcements modal if open
+            const announcementsModal = document.getElementById('announcementsModal');
+            if (announcementsModal && announcementsModal.style.display !== 'none') {
+                closeAnnouncementsModal();
+            }
+            // Close announcement detail modal if open
+            const announcementDetailModal = document.getElementById('announcementDetailModal');
+            if (announcementDetailModal && announcementDetailModal.style.display !== 'none') {
+                closeAnnouncementDetailModal();
+            }
+        }
+    });
+    
+    // Announcement list items click handler
+    document.querySelectorAll('.annc-item').forEach(item => {
+        item.addEventListener('click', function() {
+            showAnnouncementDetail(this);
+        });
+    });
+    
+    // Back to list button
+    const backToListBtn = document.getElementById('anncBackToList');
+    if (backToListBtn) {
+        backToListBtn.addEventListener('click', backToList);
+    }
+    
+    // Notification bell click handler - always show toast
+    const notificationBell = document.getElementById('notificationBell');
+    const notifToast = document.getElementById('notifToast');
+    const notifToastMsg = document.getElementById('notifToastMsg');
+    const notifToastOpen = document.getElementById('notifToastOpen');
+    const notifToastClose = document.getElementById('notifToastClose');
+    
+    if (notificationBell && notifToast && notifToastMsg) {
+        notificationBell.addEventListener('click', () => {
+            // Get announcements count from data attribute
+            const announcementsCount = parseInt(notificationBell.dataset.announcementsCount || '0') || 0;
+            
+            // Always show toast with appropriate message
+            if (announcementsCount > 0) {
+                notifToastMsg.textContent = 'You have new announcements.';
+            } else {
+                notifToastMsg.textContent = 'No new announcements.';
+            }
+            
+            notifToast.style.display = 'block';
+        });
+    }
+    
+    // Toast "View announcements" button - opens modal and closes toast
+    if (notifToastOpen) {
+        notifToastOpen.addEventListener('click', () => {
+            openAnnouncementsModal();
+            if (notifToast) {
+                notifToast.style.display = 'none';
+            }
+        });
+    }
+    
+    // Toast close button
+    if (notifToastClose) {
+        notifToastClose.addEventListener('click', () => {
+            if (notifToast) {
+                notifToast.style.display = 'none';
+            }
+        });
+    }
+    
+    // Announcement Detail Modal functions
+    function openAnnouncementDetailModal(title, date, content) {
+        const modal = document.getElementById('announcementDetailModal');
+        const titleEl = document.getElementById('announcementDetailTitle');
+        const dateEl = document.getElementById('announcementDetailDate');
+        const contentEl = document.getElementById('announcementDetailContent');
+        
+        if (modal && titleEl && dateEl && contentEl) {
+            titleEl.textContent = title || '';
+            dateEl.textContent = date || '';
+            contentEl.textContent = content || '';
+            modal.style.display = 'flex';
+            modal.setAttribute('aria-hidden', 'false');
+        }
+    }
+    
+    function closeAnnouncementDetailModal() {
+        const modal = document.getElementById('announcementDetailModal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.setAttribute('aria-hidden', 'true');
+        }
+    }
+    
+    // Click handlers for announcement items
+    document.querySelectorAll('.announcement-item.clickable').forEach(item => {
+        item.addEventListener('click', function() {
+            const title = this.dataset.title || '';
+            const date = this.dataset.date || '';
+            const content = this.dataset.content || '';
+            openAnnouncementDetailModal(title, date, content);
+        });
+    });
+    
+    // Close announcement detail modal button
+    const closeAnnouncementDetailBtn = document.getElementById('closeAnnouncementDetail');
+    if (closeAnnouncementDetailBtn) {
+        closeAnnouncementDetailBtn.addEventListener('click', closeAnnouncementDetailModal);
+    }
+    
+    // Close announcement detail modal on backdrop click
+    const announcementDetailModal = document.getElementById('announcementDetailModal');
+    if (announcementDetailModal) {
+        announcementDetailModal.addEventListener('click', (e) => {
+            if (e.target === announcementDetailModal) {
+                closeAnnouncementDetailModal();
+            }
+        });
+    }
+    
 });
 </script>
 {% endblock %}

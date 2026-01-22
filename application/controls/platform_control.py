@@ -226,8 +226,8 @@ class PlatformControl:
             valid_statuses = ['active', 'suspended', 'pending', 'expired']
             if new_status not in valid_statuses:
                 return {
-                'success': False,
-                'error': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'
+                    'success': False,
+                    'error': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'
                 }
 
             with get_session() as db_session:
@@ -243,17 +243,18 @@ class PlatformControl:
                         'error': 'Subscription not found.'
                     }
                 
-                # Update subscription status
-                subscription.status = new_status
-                subscription.is_active = (new_status == 'active')
-                subscription.updated_at = datetime.now()
+                # Use the entity method to update subscription status
+                success = subscription_model.update_subscription_status(
+                    subscription_id=subscription_id,
+                    new_status=new_status,
+                    reviewer_id=reviewer_id
+                )
                 
-                if new_status == 'active':
-                    # Set renewal date if activating
-                    subscription.renewal_date = datetime.now() + timedelta(days=365)
-                elif new_status == 'suspended':
-                    # Clear renewal date if suspending
-                    subscription.renewal_date = None
+                if not success:
+                    return {
+                        'success': False,
+                        'error': 'Failed to update subscription status.'
+                    }
                 
                 # Update admin user status based on subscription
                 institution = institution_model.get_by_subscription_id(subscription_id)
@@ -269,7 +270,7 @@ class PlatformControl:
                     'message': f'Subscription status updated to {new_status}',
                     'subscription_id': subscription_id,
                     'new_status': new_status,
-                    'is_active': (new_status == 'active')  # For backward compatibility
+                    'is_active': subscription.is_active  # Get the actual is_active value
                 }
             
         except Exception as e:
@@ -322,21 +323,12 @@ class PlatformControl:
                             'error': 'Failed to update subscription status.'
                         }
                 else:
-                    # For reject, we could either delete or mark as rejected
-                    # Since Subscription doesn't have a status field, we'll just deactivate
-                    success = subscription_model.update_subscription_status(
-                        subscription_id=request_id,
-                        new_status='suspended',
-                        reviewer_id=reviewer_id
-                    )
-                
-                    if success:
-                        message = 'Subscription request rejected'
+                    # For reject, we should use the reject_subscription method
+                    result = PlatformControl.reject_subscription(request_id, reviewer_id)
+                    if result['success']:
+                        message = 'Subscription request rejected and data cleaned up'
                     else:
-                        return {
-                            'success': False,
-                            'error': 'Failed to update subscription status.'
-                        }
+                        return result
             
                 return {
                     'success': True,
@@ -375,8 +367,10 @@ class PlatformControl:
                     role='admin'
                 )
                 
-                # Get subscription statistics for this institution
-                subscription = subscription_model.get_by_id(institution.subscription_id)
+                # Get subscription for this institution
+                # Assuming Institution has subscription_id field
+                subscription_id = institution.subscription_id if hasattr(institution, 'subscription_id') else None
+                subscription = subscription_model.get_by_id(subscription_id) if subscription_id else None
                 
                 return {
                     'success': True,
@@ -473,7 +467,11 @@ class PlatformControl:
                 all_subscriptions = subscription_model.get_all()
                 plan_distribution = {}
                 for sub in all_subscriptions:
-                    plan_name = sub.plan or 'none'
+                    # Get plan name from plan_id
+                    plan_name = 'none'
+                    if sub.plan_id:
+                        plan = subscription_plan_model.get_by_id(sub.plan_id)
+                        plan_name = plan.name if plan else f'plan_{sub.plan_id}'
                     plan_distribution[plan_name] = plan_distribution.get(plan_name, 0) + 1
                 
                 # Get growth metrics (simplified)
@@ -509,7 +507,7 @@ class PlatformControl:
         
     def approve_institution_registration(subscription_id: int) -> Dict[str, Any]:
         """Activate a pending institution registration.
-    
+        
         This consolidates the functionality from AuthControl into PlatformControl.
         """
         try:
@@ -518,18 +516,24 @@ class PlatformControl:
                 institution_model = InstitutionModel(db_session)
                 user_model = UserModel(db_session)
             
-                # Get and activate subscription
-                subscription = subscription_model.get_by_id(subscription_id)
-                if not subscription:
+                # Get subscription details
+                subscription_data = subscription_model.get_subscription_with_details(subscription_id)
+                if not subscription_data:
                     return {'success': False, 'error': 'Subscription not found.'}
                 
-                if subscription.is_active:
+                subscription = subscription_data['subscription']
+                institution_data = subscription_data.get('institution')
+                
+                if not institution_data:
+                    return {'success': False, 'error': 'Institution not found for this subscription.'}
+                
+                if subscription['is_active']:
                     return {'success': False, 'error': 'Subscription is already active.'}
             
-                # Get the institution linked to this subscription
-                institution = institution_model.get_by_subscription_id(subscription_id)
+                # Get the institution object
+                institution = institution_model.get_by_id(institution_data['institution_id'])
                 if not institution:
-                    return {'success': False, 'error': 'Institution not found for this subscription.'}
+                    return {'success': False, 'error': 'Institution object not found.'}
             
                 # Use the entity method to update subscription status
                 success = subscription_model.update_subscription_status(
@@ -545,7 +549,9 @@ class PlatformControl:
                     }
             
                 # Set renewal date to 1 year from now
-                subscription.renewal_date = datetime.now() + timedelta(days=365)
+                subscription_obj = subscription_model.get_by_id(subscription_id)
+                if subscription_obj:
+                    subscription_obj.renewal_date = datetime.now() + timedelta(days=365)
             
                 # Activate the admin user or create if doesn't exist
                 admin_user = user_model.get_by_email(institution.poc_email)
@@ -578,7 +584,7 @@ class PlatformControl:
                     'success': True,
                     'message': f'Institution registration approved for {institution.name}',
                     'institution_id': institution.institution_id,
-                    'subscription_id': subscription.subscription_id,
+                    'subscription_id': subscription_id,
                     'institution_name': institution.name
                 }
             

@@ -1,0 +1,287 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Import Data - AttendAI{% endblock %}
+
+{% block content %}
+
+<div class="import-results-page" id="resultsPage">
+    <div class="accordion" id="importResultsAccordion">
+        <div class="accordion-item" data-section="import_users">
+            <button class="accordion-header">
+                <span>Import Users</span>
+                <span class="progress-text">Waiting...</span>
+                <span class="accordion-icon">▼</span>
+            </button>
+            <div class="accordion-content">
+                <div class="accordion-body">
+                    <div class="error-list"></div>
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item" data-section="import_venues">
+            <button class="accordion-header">
+                <span>Import Venues</span>
+                <span class="progress-text">Waiting...</span>
+                <span class="accordion-icon">▼</span>
+            </button>
+            <div class="accordion-content">
+                <div class="accordion-body">
+                    <div class="error-list"></div>
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item" data-section="import_courses">
+            <button class="accordion-header">
+                <span>Import Courses</span>
+                <span class="progress-text">Waiting...</span>
+                <span class="accordion-icon">▼</span>
+            </button>
+            <div class="accordion-content">
+                <div class="accordion-body">
+                    <div class="error-list"></div>
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item" data-section="assign_courses">
+            <button class="accordion-header">
+                <span>Assign Courses</span>
+                <span class="progress-text">Waiting...</span>
+                <span class="accordion-icon">▼</span>
+            </button>
+            <div class="accordion-content">
+                <div class="accordion-body">
+                    <div class="error-list"></div>
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item" data-section="import_classes">
+            <button class="accordion-header">
+                <span>Import Classes</span>
+                <span class="progress-text">Waiting...</span>
+                <span class="accordion-icon">▼</span>
+            </button>
+            <div class="accordion-content">
+                <div class="accordion-body">
+                    <div class="error-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .accordion {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .accordion-item {
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .accordion-item:last-child {
+        border-bottom: none;
+    }
+
+    .accordion-header {
+        width: 100%;
+        padding: 20px;
+        background: white;
+        border: none;
+        text-align: left;
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background-color 0.2s;
+        gap: 15px;
+    }
+
+    .accordion-header:hover {
+        background: #f9f9f9;
+    }
+
+    .accordion-header.active {
+        background: #f0f0f0;
+    }
+
+    .progress-text {
+        font-size: 14px;
+        font-weight: 400;
+        color: #666;
+        margin-left: auto;
+    }
+
+    .progress-text.has-errors {
+        color: #d32f2f;
+    }
+
+    .progress-text.success {
+        color: #388e3c;
+    }
+
+    .accordion-icon {
+        transition: transform 0.3s ease;
+        font-size: 20px;
+        color: #666;
+        flex-shrink: 0;
+    }
+
+    .accordion-header.active .accordion-icon {
+        transform: rotate(180deg);
+    }
+
+    .accordion-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+    }
+
+    .accordion-body {
+        padding: 0 20px 20px 20px;
+        color: #666;
+        line-height: 1.6;
+    }
+
+    .error-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .error-row {
+        display: flex;
+        padding: 12px;
+        background: #fff3e0;
+        border-left: 3px solid #ff9800;
+        border-radius: 4px;
+        gap: 15px;
+    }
+
+    .error-row-number {
+        font-weight: 600;
+        color: #e65100;
+        min-width: 60px;
+        flex-shrink: 0;
+    }
+
+    .error-message {
+        flex: 1;
+        color: #333;
+    }
+
+    .no-errors {
+        color: #388e3c;
+        font-style: italic;
+    }
+</style>
+
+<script>
+    // Get job ID from URL or set it here
+    const jobId = window.location.pathname.split('/').pop() || 'YOUR_JOB_ID';
+    
+    const accordion = document.getElementById('importResultsAccordion');
+    const headers = accordion.querySelectorAll('.accordion-header');
+
+    // Accordion functionality
+    headers.forEach(header => {
+        header.addEventListener('click', () => {
+            const content = header.parentElement.querySelector('.accordion-content');
+            const isActive = header.classList.contains('active');
+
+            if (isActive) {
+                header.classList.remove('active');
+                content.style.maxHeight = null;
+            } else {
+                header.classList.add('active');
+                content.style.maxHeight = content.scrollHeight + 'px';
+            }
+        });
+    });
+
+    // EventSource for progress updates
+    const eventSource = new EventSource(`/institution/import_data/${jobId}/progress`);
+
+    eventSource.onmessage = function(event) {
+        try {
+            const data = JSON.parse(event.data);
+            updateProgress(data);
+        } catch (error) {
+            console.error('Error parsing progress data:', error);
+        }
+    };
+
+    eventSource.onerror = function(error) {
+        eventSource.close();
+    };
+
+    function updateProgress(data) {
+        const sections = ['import_users', 'import_venues', 'import_courses', 'assign_courses', 'import_classes'];
+        
+        sections.forEach(section => {
+            const sectionData = data[section];
+            if (!sectionData || Object.keys(sectionData).length === 0) {
+                return;
+            }
+
+            const accordionItem = document.querySelector(`[data-section="${section}"]`);
+            if (!accordionItem) return;
+
+            const progressText = accordionItem.querySelector('.progress-text');
+            const errorList = accordionItem.querySelector('.error-list');
+            const accordionContent = accordionItem.querySelector('.accordion-content');
+
+            const { total, success, failed, errors } = sectionData;
+            // Update progress text
+            if (total >= 0) {
+                progressText.textContent = `${success} succeeded, ${failed} failed out of ${total}`;
+                
+                if (failed > 0) {
+                    progressText.classList.add('has-errors');
+                    progressText.classList.remove('success');
+                } else {
+                    progressText.classList.add('success');
+                    progressText.classList.remove('has-errors');
+                }
+            }
+
+            // Update error list
+            if (errors && errors.length > 0) {
+                errorList.innerHTML = errors.map(error => `
+                    <div class="error-row">
+                        <div class="error-row-number">Row ${error.row}</div>
+                        <div class="error-message">${error.error}</div>
+                    </div>
+                `).join('');
+
+                // Auto-expand if there are errors
+                const header = accordionItem.querySelector('.accordion-header');
+                if (!header.classList.contains('active')) {
+                    header.classList.add('active');
+                    accordionContent.style.maxHeight = accordionContent.scrollHeight + 'px';
+                }
+            } else if (total > 0 && failed === 0) {
+                errorList.innerHTML = '<div class="no-errors">No errors - all imports successful!</div>';
+            } else {
+                errorList.innerHTML = '';
+            }
+
+            // Recalculate max-height if accordion is open
+            const header = accordionItem.querySelector('.accordion-header');
+            if (header.classList.contains('active')) {
+                accordionContent.style.maxHeight = accordionContent.scrollHeight + 'px';
+            }
+        });
+    }
+
+    // Clean up EventSource when page is unloaded
+    window.addEventListener('beforeunload', () => {
+        eventSource.close();
+    });
+</script>
+{% endblock %}

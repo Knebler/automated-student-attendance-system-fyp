@@ -7,6 +7,8 @@ from application.entities2.course import CourseModel
 from application.entities2.user import UserModel
 from application.entities2.attendance_record import AttendanceRecordModel
 from application.entities2.announcement import AnnouncementModel
+from application.entities2.notification import NotificationModel
+from application.entities2.semester import SemesterModel
 from application.entities2.venue import VenueModel
 from database.models import Class, Course, User, CourseUser, Venue
 
@@ -20,6 +22,7 @@ class LecturerControl:
                 user_model = UserModel(db_session)
                 class_model = ClassModel(db_session)
                 announcement_model = AnnouncementModel(db_session)
+                notification_model = NotificationModel(db_session)
             
                 # Get lecturer info
                 lecturer = user_model.get_by_id(lecturer_id)
@@ -30,8 +33,11 @@ class LecturerControl:
                 today = date.today()
                 today_classes = class_model.get_today_classes_for_lecturer(lecturer_id, today)
             
-                # Get recent announcements for the institution
-                announcements = announcement_model.get_recent_announcements(institution_id, limit=3)
+                # Get preview announcements (2 items) for dashboard
+                preview_announcements = announcement_model.get_recent_announcements(institution_id, limit=2)
+                
+                # Get all announcements (up to 50 items) for modal
+                all_announcements_list = announcement_model.get_recent_announcements(institution_id, limit=50)
             
                 # Prepare classes data (same as before)
                 formatted_today_classes = []
@@ -50,9 +56,9 @@ class LecturerControl:
                         'student_count': class_model.get_enrolled_count(class_obj.class_id) if hasattr(class_model, 'get_enrolled_count') else 0
                     })
             
-                # Prepare announcements in the format expected by the template
+                # Prepare preview announcements (2 items)
                 formatted_announcements = []
-                for announcement in announcements:
+                for announcement in preview_announcements:
                     requested_by = user_model.get_by_id(announcement.requested_by_user_id) if announcement.requested_by_user_id else None
                 
                     formatted_announcements.append({
@@ -60,6 +66,19 @@ class LecturerControl:
                         'date': announcement.date_posted.strftime('%b %d, %Y') if announcement.date_posted else 'N/A',
                         'content': announcement.content
                     })
+                
+                # Prepare all announcements (up to 50 items) for modal
+                formatted_all_announcements = []
+                for announcement in all_announcements_list:
+                    formatted_all_announcements.append({
+                        'title': announcement.title,
+                        'date': announcement.date_posted.strftime('%b %d, %Y') if announcement.date_posted else 'N/A',
+                        'content': announcement.content,
+                        'date_raw': announcement.date_posted.isoformat() if announcement.date_posted else None
+                    })
+                
+                # Get unread notifications count
+                unread_notifications_count = notification_model.get_unread_count(lecturer_id)
             
                 return {
                     'success': True,
@@ -70,11 +89,13 @@ class LecturerControl:
                         'role': lecturer.role
                     },
                     'today_classes': formatted_today_classes,
-                    'announcements': formatted_announcements,  # Now in correct format
+                    'announcements': formatted_announcements,  # Preview announcements (2 items)
+                    'all_announcements': formatted_all_announcements,  # All announcements for modal (up to 50)
                     'statistics': {
                         'today_classes_count': len(today_classes),
                         'current_date': today.strftime('%d %B %Y'),
-                        'current_time': datetime.now().strftime('%I:%M %p')
+                        'current_time': datetime.now().strftime('%I:%M %p'),
+                        'unread_notifications_count': unread_notifications_count
                     }
                 }
             

@@ -48,7 +48,8 @@ def lecturer_dashboard():
         context = {
             'lecturer_name': result.get('lecturer_info', {}).get('name', 'Lecturer'),
             'today_classes': result.get('today_classes', []),
-            'announcements': result.get('announcements', []),  # Announcements from LecturerControl
+            'announcements': result.get('announcements', []),  # Preview announcements (2 items)
+            'all_announcements': result.get('all_announcements', []),  # All announcements for modal (up to 50)
             'current_time': datetime.now().strftime('%I:%M %p'),
             'current_date': date.today().strftime('%d %B %Y'),
             'statistics': result.get('statistics', {})

@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from application.controls.auth_control import AuthControl, requires_roles, requires_roles_api
 from application.controls.platform_control import PlatformControl
 from application.controls.testimonial_control import TestimonialControl
+from application.controls.platformissue_control import PlatformIssueControl
 from application.entities.base_entity import BaseEntity
 from application.entities2.institution import InstitutionModel
 from application.entities2.subscription import SubscriptionModel
@@ -31,9 +32,14 @@ def platform_dashboard():
     requests_result = PlatformControl.get_subscription_requests(limit=5)
     recent_requests = requests_result.get('requests', []) if requests_result['success'] else []
     
+    # Get recent issues for dashboard (only open/pending issues)
+    issues_result = PlatformIssueControl.get_recent_issues(limit=5)
+    recent_issues = issues_result.get('issues', []) if issues_result['success'] else []
+    
     context = {
         'statistics': stats,
         'recent_requests': recent_requests,
+        'recent_issues': recent_issues,  # Added recent issues
         'total_subscription_count': stats.get('total_institutions', 0),
         'active_subscription_count': stats.get('active_institutions', 0),
         'total_user_count': stats.get('total_users', 0),
@@ -1126,6 +1132,240 @@ def delete_value(value_id):
         
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+@platform_bp.route('/issues')
+@requires_roles('platform_manager')
+def issue_management():
+    """Platform manager - issue management overview"""
+    status_filter = request.args.get('status', 'open')
+    priority_filter = request.args.get('priority', '')
+    category_filter = request.args.get('category', '')
+    page = int(request.args.get('page', 1))
+    per_page = int(request.args.get('per_page', 10))
+    
+    # Get issues with filters
+    issues_result = PlatformIssueControl.get_issues_for_platform_manager(
+        status=status_filter,
+        priority=priority_filter,
+        category=category_filter,
+        page=page,
+        per_page=per_page
+    )
+    
+    # Get issue statistics
+    stats_result = PlatformIssueControl.get_issue_statistics_for_platform_manager()
+    
+    if not issues_result['success']:
+        flash(issues_result.get('error', 'Error loading issues'), 'danger')
+        issues = []
+        pagination = {}
+    else:
+        issues = issues_result['issues']
+        pagination = issues_result['pagination']
+    
+    if not stats_result['success']:
+        flash(stats_result.get('error', 'Error loading issue statistics'), 'danger')
+        stats = {}
+    else:
+        stats = stats_result['statistics']
+    
+    context = {
+        'issues': issues,
+        'stats': stats,
+        'current_page': pagination.get('current_page', page),
+        'total_pages': pagination.get('total_pages', 1),
+        'has_prev': pagination.get('has_prev', False),
+        'has_next': pagination.get('has_next', False),
+        'total_issues': pagination.get('total_items', 0),
+        'status_filter': status_filter,
+        'priority_filter': priority_filter,
+        'category_filter': category_filter,
+    }
+    
+    return render_template('platmanager/platform_manager_report_management.html', **context)
+
+@platform_bp.route('/issues/<int:issue_id>')
+@requires_roles('platform_manager')
+def issue_details(issue_id):
+    """Platform manager - view specific issue details"""
+    result = PlatformIssueControl.get_issue_details_for_platform_manager(issue_id)
+    
+    if not result['success']:
+        flash(result.get('error', 'Issue not found'), 'danger')
+        return redirect(url_for('platform.issue_management'))
+    
+    context = {
+        'issue': result['issue'],
+        'comments': result.get('comments', []),
+        'history': result.get('history', []),
+    }
+    
+    return render_template('platmanager/platform_manager_report_management_report_details.html', **context)
+
+@platform_bp.route('/issues/resolve/<int:issue_id>', methods=['POST'])
+@requires_roles('platform_manager')
+def resolve_issue(issue_id):
+    """Platform manager - resolve an issue"""
+    resolver_id = session.get('user_id')
+    resolution_notes = request.form.get('resolution_notes', '').strip()
+    
+    if not resolution_notes:
+        flash('Resolution notes are required', 'danger')
+        return redirect(url_for('platform.issue_details', issue_id=issue_id))
+    
+    result = PlatformIssueControl.resolve_issue(
+        issue_id=issue_id,
+        resolver_id=resolver_id,
+        resolution_notes=resolution_notes
+    )
+    
+    if result['success']:
+        flash('Issue resolved successfully', 'success')
+    else:
+        flash(result.get('error', 'Failed to resolve issue'), 'danger')
+    
+    return redirect(url_for('platform.issue_details', issue_id=issue_id))
+
+@platform_bp.route('/issues/reject/<int:issue_id>', methods=['POST'])
+@requires_roles('platform_manager')
+def reject_issue(issue_id):
+    """Platform manager - reject an issue"""
+    resolver_id = session.get('user_id')
+    rejection_reason = request.form.get('rejection_reason', '').strip()
+    
+    if not rejection_reason:
+        flash('Rejection reason is required', 'danger')
+        return redirect(url_for('platform.issue_details', issue_id=issue_id))
+    
+    result = PlatformIssueControl.reject_issue(
+        issue_id=issue_id,
+        resolver_id=resolver_id,
+        rejection_reason=rejection_reason
+    )
+    
+    if result['success']:
+        flash('Issue rejected', 'success')
+    else:
+        flash(result.get('error', 'Failed to reject issue'), 'danger')
+    
+    return redirect(url_for('platform.issue_details', issue_id=issue_id))
+
+@platform_bp.route('/issues/comment/<int:issue_id>', methods=['POST'])
+@requires_roles('platform_manager')
+def add_issue_comment(issue_id):
+    """Platform manager - add comment to an issue"""
+    commenter_id = session.get('user_id')
+    comment_text = request.form.get('comment', '').strip()
+    
+    if not comment_text:
+        flash('Comment text is required', 'danger')
+        return redirect(url_for('platform.issue_details', issue_id=issue_id))
+    
+    result = PlatformIssueControl.add_comment_to_issue(
+        issue_id=issue_id,
+        commenter_id=commenter_id,
+        comment_text=comment_text,
+        is_platform_manager=True
+    )
+    
+    if result['success']:
+        flash('Comment added successfully', 'success')
+    else:
+        flash(result.get('error', 'Failed to add comment'), 'danger')
+    
+    return redirect(url_for('platform.issue_details', issue_id=issue_id))
+
+@platform_bp.route('/issues/update-priority/<int:issue_id>', methods=['POST'])
+@requires_roles('platform_manager')
+def update_issue_priority(issue_id):
+    """Platform manager - update issue priority"""
+    new_priority = request.form.get('priority', '').strip()
+    updater_id = session.get('user_id')
+    
+    if not new_priority or new_priority not in ['low', 'medium', 'high', 'critical']:
+        flash('Invalid priority level', 'danger')
+        return redirect(url_for('platform.issue_details', issue_id=issue_id))
+    
+    result = PlatformIssueControl.update_issue_priority(
+        issue_id=issue_id,
+        new_priority=new_priority,
+        updater_id=updater_id
+    )
+    
+    if result['success']:
+        flash('Priority updated successfully', 'success')
+    else:
+        flash(result.get('error', 'Failed to update priority'), 'danger')
+    
+    return redirect(url_for('platform.issue_details', issue_id=issue_id))
+
+@platform_bp.route('/api/issues/stats')
+@requires_roles_api('platform_manager')
+def get_issue_stats():
+    """Get issue statistics for dashboard (AJAX endpoint)"""
+    result = PlatformIssueControl.get_issue_statistics_for_platform_manager()
+    
+    if result['success']:
+        return jsonify(result)
+    else:
+        return jsonify(result), 500
+
+@platform_bp.route('/api/issues/recent')
+@requires_roles_api('platform_manager')
+def get_recent_issues():
+    """Get recent issues for dashboard (AJAX endpoint)"""
+    limit = int(request.args.get('limit', 5))
+    
+    result = PlatformIssueControl.get_recent_issues(limit=limit)
+    
+    if result['success']:
+        return jsonify(result)
+    else:
+        return jsonify(result), 500
+
+@platform_bp.route('/api/issues/category-distribution')
+@requires_roles_api('platform_manager')
+def get_issue_category_distribution():
+    """Get issue category distribution (for charts)"""
+    result = PlatformIssueControl.get_issue_category_distribution()
+    
+    if result['success']:
+        return jsonify(result)
+    else:
+        return jsonify(result), 500
+
+@platform_bp.route('/api/issues/status-timeline')
+@requires_roles_api('platform_manager')
+def get_issue_status_timeline():
+    """Get issue status timeline (for charts)"""
+    days = int(request.args.get('days', 30))
+    
+    result = PlatformIssueControl.get_issue_status_timeline(days=days)
+    
+    if result['success']:
+        return jsonify(result)
+    else:
+        return jsonify(result), 500
+
+@platform_bp.route('/api/issues/search')
+@requires_roles_api('platform_manager')
+def search_issues():
+    """Search issues by various criteria"""
+    search_term = request.args.get('q', '').strip()
+    status = request.args.get('status', '')
+    priority = request.args.get('priority', '')
+    category = request.args.get('category', '')
+    
+    result = PlatformIssueControl.search_issues(
+        search_term=search_term,
+        status=status,
+        priority=priority,
+        category=category
+    )
+    
+    if result['success']:
+        return jsonify(result)
+    else:
+        return jsonify(result), 500
 
 @platform_bp.route('/api/debug-session', methods=['GET'])
 def debug_session():

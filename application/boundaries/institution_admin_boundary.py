@@ -69,6 +69,66 @@ def manage_users():
                            suspended_count=suspended_count
                            )
 
+@institution_bp.route('/manage_users/add', methods=['GET'])
+@requires_roles('admin')
+def add_user_form():
+    """Display form to add a new user (student or lecturer only)"""
+    return render_template('institution/admin/institution_admin_add_user.html')
+
+@institution_bp.route('/manage_users/add', methods=['POST'])
+@requires_roles('admin')
+def add_user():
+    """Create a new user (student or lecturer only)"""
+    from application.controls.auth_control import hash_password
+    
+    role = request.form.get('role')
+    
+    # Restrict to student and lecturer roles only
+    if role not in ['student', 'lecturer']:
+        flash('Only students and lecturers can be added.', 'error')
+        return redirect(url_for('institution.add_user_form'))
+    
+    name = request.form.get('name')
+    email = request.form.get('email')
+    password = request.form.get('password')
+    age = request.form.get('age')
+    gender = request.form.get('gender')
+    phone_number = request.form.get('phone_number')
+    institution_id = session.get('institution_id')
+    
+    # Validate required fields
+    if not all([name, email, password, role]):
+        flash('Name, email, password, and role are required.', 'error')
+        return redirect(url_for('institution.add_user_form'))
+    
+    with get_session() as db_session:
+        user_model = UserModel(db_session)
+        
+        # Check if email already exists
+        existing_user = user_model.get_by_email(email)
+        if existing_user:
+            flash('A user with this email already exists.', 'error')
+            return redirect(url_for('institution.add_user_form'))
+        
+        try:
+            # Create new user
+            user_model.create(
+                institution_id=institution_id,
+                role=role,
+                name=name,
+                email=email,
+                password_hash=hash_password(password),
+                age=int(age) if age else None,
+                gender=gender if gender else None,
+                phone_number=phone_number if phone_number else None,
+                is_active=True
+            )
+            flash(f'{role.capitalize()} account created successfully.', 'success')
+            return redirect(url_for('institution.manage_users'))
+        except Exception as e:
+            flash(f'Error creating user: {str(e)}', 'error')
+            return redirect(url_for('institution.add_user_form'))
+
 @institution_bp.route('/manage_users/<int:user_id>/suspend', methods=['POST'])
 @requires_roles('admin')
 def suspend_user(user_id):
@@ -554,6 +614,42 @@ def update_user_details(user_id):
             phone_number=request.form.get('phone_number'),
             age=request.form.get('age')
         )
+    return redirect(url_for('institution.view_user_details', user_id=user_id))
+
+@institution_bp.route('/manage_users/<int:user_id>/account_settings', methods=['POST'])
+@requires_roles('admin')
+def update_user_account_settings(user_id):
+    """Update account settings including suspension status and password"""
+    from application.controls.auth_control import hash_password
+    
+    with get_session() as db_session:
+        user_model = UserModel(db_session)
+        user = user_model.get_by_id(user_id)
+        
+        # Security check: prevent editing admins and users from other institutions
+        if user.role == 'admin' or user.institution_id != session.get('institution_id'):
+            flash('You cannot edit this user.', 'error')
+            return abort(401)
+        
+        action = request.form.get('action')
+        
+        if action == 'suspend':
+            user_model.suspend(user_id)
+            flash('User account has been suspended.', 'success')
+        elif action == 'unsuspend':
+            user_model.unsuspend(user_id)
+            flash('User account has been unsuspended.', 'success')
+        elif action == 'update':
+            # Handle password update
+            new_password = request.form.get('new_password', '').strip()
+            if new_password:
+                # Hash the new password
+                password_hash = hash_password(new_password)
+                user_model.update(user_id, password_hash=password_hash)
+                flash('Password has been updated successfully.', 'success')
+            else:
+                flash('No changes were made.', 'info')
+    
     return redirect(url_for('institution.view_user_details', user_id=user_id))
 
 @institution_bp.route('/manage_appeals')

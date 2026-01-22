@@ -59,28 +59,9 @@
         font-size: 0.95rem;
     }
 
-    /* Input Fields */
+    /* Input Fields - Using shared form-input-custom class from base.html */
     .login-container .form-control {
-        background-color: #ffffff;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        color: #0f172a;
-        padding: 0.75rem 1rem;
-        font-size: 0.95rem;
-        transition: all 0.25s ease;
-    }
-
-    .login-container .form-control:focus {
-        background-color: #ffffff;
-        border-color: #0f172a;
-        color: #0f172a;
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.15);
-    }
-
-    .login-container .form-control::placeholder {
-        color: #94a3b8;
-        opacity: 0.8;
+        /* Styles inherited from .form-input-custom in base.html */
     }
 
     /* Login Button */
@@ -156,11 +137,11 @@
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="mb-3">
                         <label for="email" class="form-label">Email Address</label>
-                        <input type="email" class="form-control" id="email" name="email" required>
+                        <input type="email" class="form-control form-input-custom" id="email" name="email" required>
                     </div>
                     <div class="mb-3">
                         <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
+                        <input type="password" class="form-control form-input-custom" id="password" name="password" required>
                     </div>
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary">Login</button>

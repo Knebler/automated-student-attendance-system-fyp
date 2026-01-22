@@ -3,7 +3,6 @@
 {% block title %}Platform Manager Dashboard - AttendAI{% endblock %}
 
 {% block content %}
-
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
 
@@ -101,34 +100,6 @@
         color: #FFFFFF;
         font-weight: 700;
         font-size: 1rem;
-    }
-
-    /* Quick Actions */
-    .quick-actions {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-
-    .action-btn {
-        padding: 0.875rem 1rem;
-        border-radius: 8px;
-        background: #FFFFFF;
-        border: 2px solid #001641;
-        font-size: .9rem;
-        font-weight: 600;
-        transition: all .2s;
-        color: #001641;
-        text-decoration: none;
-        font-family: 'Montserrat', sans-serif;
-        display: block;
-        text-align: center;
-    }
-
-    .action-btn:hover {
-        background: #001641;
-        color: #FFFFFF;
-        transform: translateX(4px);
     }
 
     /* Section Title */
@@ -435,7 +406,7 @@
         <!-- Left Column -->
         <div class="left-column">
             <!-- Platform Overview Card -->
-            <div class="card-custom">
+            <div class="card-custom dashboard-card">
                 <div class="card-header-custom">Platform Overview</div>
                 <div class="card-body-custom">
                     {% if statistics %}
@@ -474,22 +445,35 @@
             </div>
 
             <!-- Quick Actions Card -->
-            <div class="card-custom">
+            <div class="card-custom dashboard-card quick-actions-card">
                 <div class="card-header-custom">Quick Actions</div>
-                <div class="card-body-custom">
-                    <div class="quick-actions">
-                        <a href="{{ url_for('platform.pending_registrations') }}" class="action-btn">View Subscription Requests</a>
-                        <a href="{{ url_for('platform.subscription_profile_creator') }}" class="action-btn">Create Subscription / Institution Profile</a>
-                        <a href="{{ url_for('platform.user_management') }}" class="action-btn">Manage Admin Accounts</a>
-                        <a href="{{ url_for('platform.subscription_management') }}" class="action-btn">Manage Subscriptions</a>
-                        <a href="{{ url_for('platform.settings_management') }}" class="action-btn">Open System Settings</a>
-                    </div>
+                <div class="card-body-custom quick-actions">
+                    <a href="{{ url_for('platform.pending_registrations') }}" class="quick-action-button qa-unified">
+                        <span class="quick-action-icon">📥</span>
+                        <span class="quick-action-text">View Subscription Requests</span>
+                    </a>
+                    <a href="{{ url_for('platform.subscription_profile_creator') }}" class="quick-action-button qa-unified">
+                        <span class="quick-action-icon">🧾</span>
+                        <span class="quick-action-text">Create Subscription / Institution Profile</span>
+                    </a>
+                    <a href="{{ url_for('platform.user_management') }}" class="quick-action-button qa-unified">
+                        <span class="quick-action-icon">👥</span>
+                        <span class="quick-action-text">Manage Admin Accounts</span>
+                    </a>
+                    <a href="{{ url_for('platform.subscription_management') }}" class="quick-action-button qa-unified">
+                        <span class="quick-action-icon">💳</span>
+                        <span class="quick-action-text">Manage Subscriptions</span>
+                    </a>
+                    <a href="{{ url_for('platform.settings_management') }}" class="quick-action-button qa-unified">
+                        <span class="quick-action-icon">⚙️</span>
+                        <span class="quick-action-text">Open System Settings</span>
+                    </a>
                 </div>
             </div>
         </div>
 
         <!-- Middle Column -->
-        <div class="card-custom">
+        <div class="card-custom dashboard-card">
             <div class="card-header-custom">Subscription & Institution Status</div>
             <div class="card-body-custom">
                 <div class="column-section">
@@ -553,7 +537,7 @@
         </div>
 
         <!-- Right Column -->
-        <div class="card-custom">
+        <div class="card-custom dashboard-card">
             <div class="card-header-custom">System & Reports Snapshot</div>
             <div class="card-body-custom">
                 <div class="column-section mb-4">

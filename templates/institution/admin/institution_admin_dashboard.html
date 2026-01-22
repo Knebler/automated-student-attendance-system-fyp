@@ -10,7 +10,7 @@
         <!-- LEFT -->
         <div class="left-column">
 
-            <div class="card-custom">
+            <div class="card-custom dashboard-card">
                 <div class="card-header-custom">Institution</div>
                 <div class="card-body-custom">
                     <div class="profile-info">
@@ -22,24 +22,41 @@
                         {% endif %}
                         <p><span>Renewal</span>{{ institution.renewal.strftime('%d %b %Y') }}</p>
                     </div>
-                    <a class="btn-custom btn-outline" a href="{{ url_for('institution.institution_profile') }}">Manage Institution</a>
+                    <div class="institution-actions">
+                        <a class="btn-custom btn-outline manage-institution-button" a href="{{ url_for('institution.institution_profile') }}">Manage Institution</a>
+                    </div>
                 </div>
             </div>
 
-            <div class="card-custom">
+            <div class="card-custom dashboard-card">
                 <div class="card-header-custom">Quick Actions</div>
                 <div class="card-body-custom quick-actions">
-                    <a href="{{ url_for('institution.manage_users') }}" class="action-btn">👤 Manage Users</a>
-                    <a href="{{ url_for('institution.manage_attendance') }}" class="action-btn">📊 Attendance</a>
-                    <a href="{{ url_for('institution.manage_classes') }}" class="action-btn">🏫 Classes</a>
-                    <a href="{{ url_for('institution.institution_profile') }}" class="action-btn">⚙ Institution Profile</a>
-                    <a href="{{ url_for('institution.import_data') }}" class="action-btn">📥 Import Data</a>
+                    <a href="{{ url_for('institution.manage_users') }}" class="quick-action-button qa-unified">
+                        <span class="quick-action-icon">👤</span>
+                        <span class="quick-action-text">Manage Users</span>
+                    </a>
+                    <a href="{{ url_for('institution.manage_attendance') }}" class="quick-action-button qa-unified">
+                        <span class="quick-action-icon">📊</span>
+                        <span class="quick-action-text">Manage Attendance</span>
+                    </a>
+                    <a href="{{ url_for('institution.manage_classes') }}" class="quick-action-button qa-unified">
+                        <span class="quick-action-icon">🏫</span>
+                        <span class="quick-action-text">Manage Classes</span>
+                    </a>
+                    <a href="{{ url_for('institution.institution_profile') }}" class="quick-action-button qa-unified">
+                        <span class="quick-action-icon">⚙️</span>
+                        <span class="quick-action-text">Institution Profile</span>
+                    </a>
+                    <a href="{{ url_for('institution.import_data') }}" class="quick-action-button qa-unified">
+                        <span class="quick-action-icon">📥</span>
+                        <span class="quick-action-text">Import Data</span>
+                    </a>
                 </div>
             </div>
         </div>
 
         <!-- MIDDLE -->
-        <div class="card-custom">
+        <div class="card-custom dashboard-card">
             <div class="card-header-custom">User Overview</div>
             <div class="card-body-custom">
                 <div class="stats-main">
@@ -58,7 +75,7 @@
         </div>
 
         <!-- RIGHT -->
-        <div class="card-custom">
+        <div class="card-custom dashboard-card">
             <div class="card-header-custom">Classes Today</div>
             <div class="card-body-custom">
 
@@ -111,25 +128,21 @@
     }
 
     .card-custom {
-        background: #FFFFFF;
-        border-radius: 12px;
-        border: 2px solid #001641;
+        background: white;
+        border-radius: 14px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.06);
         overflow: hidden;
     }
 
     .card-header-custom {
-        padding: 1rem 1.25rem;
-        font-weight: 700;
+        font-weight: 600;
         font-size: 1.1rem;
-        background: #001641;
-        color: #FFFFFF;
-        border-bottom: 2px solid #001641;
-        font-family: 'Montserrat', sans-serif;
+        padding: 1.25rem 1.25rem 0.5rem;
+        border-bottom: 1px solid #e5e7eb;
     }
 
     .card-body-custom {
         padding: 1.25rem;
-        background: #f8fafc;
     }
 
     .profile-info p {
@@ -192,29 +205,14 @@
         transform: translateY(-1px);
     }
 
-    .quick-actions {
-        display: grid;
-        gap: .75rem;
+    .institution-actions {
+        display: flex;
+        justify-content: center;
+        margin-top: 18px;
     }
 
-    .action-btn {
-        padding: .875rem 1rem;
-        border-radius: 8px;
-        background: #FFFFFF;
-        border: 2px solid #001641;
-        font-size: .9rem;
-        font-weight: 600;
-        transition: all .2s;
-        color: #001641;
-        text-decoration: none;
-        font-family: 'Montserrat', sans-serif;
-        display: block;
-    }
-
-    .action-btn:hover {
-        background: #001641;
-        color: #FFFFFF;
-        transform: translateX(4px);
+    .manage-institution-button {
+        min-width: 220px;
     }
 
     .stats-main {

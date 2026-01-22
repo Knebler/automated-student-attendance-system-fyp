@@ -39,7 +39,6 @@
               <li><a class="nav-link-custom{% if current_endpoint == 'student.dashboard' %} active{% endif %}" href="{{ url_for('student.dashboard') }}">Dashboard</a></li>
               <li><a class="nav-link-custom{% if current_endpoint == 'student.timetable' %} active{% endif %}" href="{{ url_for('student.timetable') }}">Timetable</a></li>
               <li><a class="nav-link-custom{% if current_endpoint == 'student.attendance' %} active{% endif %}" href="{{ url_for('student.attendance') }}">View My Attendance</a></li>
-              <li><a class="nav-link-custom{% if current_endpoint == 'student.dashboard' %} active{% endif %}" href="{{ url_for('student.dashboard') }}">View Inbox</a></li>
               <li><a class="nav-link-custom{% if current_endpoint == 'student.appeal_management' %} active{% endif %}" href="{{ url_for('student.appeal_management') }}">Attendance Appeal</a></li>
               <li><a class="nav-link-custom{% if current_endpoint == 'student.profile' %} active{% endif %}" href="{{ url_for('student.profile') }}">Profile</a></li>
           {% endif %}

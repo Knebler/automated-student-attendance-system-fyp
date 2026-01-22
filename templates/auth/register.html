@@ -63,6 +63,12 @@
         font-size: 0.95rem;
     }
 
+    .register-container .form-label.required::before {
+        content: "* ";
+        color: #d93025;
+        font-weight: 700;
+    }
+
     /* Input Fields */
     .register-container .form-control,
     .register-container .form-select {
@@ -82,6 +88,32 @@
         color: #0f172a;
         outline: none;
         box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.15);
+    }
+
+    /* Error styling */
+    .register-container .input-error {
+        border-color: #d93025 !important;
+    }
+
+    .register-container .input-error:focus {
+        border-color: #d93025 !important;
+        box-shadow: 0 0 0 3px rgba(217, 48, 37, 0.15) !important;
+    }
+
+    .register-container .custom-dropdown-trigger.input-error {
+        border-color: #d93025 !important;
+    }
+
+    .register-container .custom-dropdown-trigger.input-error:focus {
+        border-color: #d93025 !important;
+        box-shadow: 0 0 0 3px rgba(217, 48, 37, 0.15) !important;
+    }
+
+    .register-container .error-text {
+        color: #d93025;
+        font-size: 0.9rem;
+        margin-top: 6px;
+        display: block;
     }
 
     .register-container .form-control::placeholder {
@@ -317,7 +349,7 @@
                 <h4>Register</h4>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('auth.register') }}">
+                <form method="POST" action="{{ url_for('auth.register') }}" novalidate>
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="register-columns">
                         <div class="register-left">
@@ -751,5 +783,337 @@
             buildRoleOptions();
         });
     })();
+
+    // // Required field indicators and custom validation
+    // (function() {
+    //     const form = document.querySelector('form[method="POST"]');
+    //     if (!form) return;
+
+    //     // Function to add required class to labels for required fields
+    //     function markRequiredLabels() {
+    //         const requiredFields = form.querySelectorAll('input[required], select[required], textarea[required]');
+    //         requiredFields.forEach(function(field) {
+    //             const label = form.querySelector('label[for="' + field.id + '"]');
+    //             if (label && !label.classList.contains('required')) {
+    //                 label.classList.add('required');
+    //             }
+    //         });
+    //     }
+
+    //     // Function to show error message
+    //     function showError(field, message) {
+    //         let container = field.parentElement;
+    //         if (field.closest('.custom-dropdown-wrapper')) {
+    //             container = field.closest('.custom-dropdown-wrapper').parentElement;
+    //         } else if (field.closest('.mb-3')) {
+    //             container = field.closest('.mb-3');
+    //         }
+
+    //         // Remove existing error message
+    //         const existingError = container.querySelector('.error-text');
+    //         if (existingError) {
+    //             existingError.remove();
+    //         }
+
+    //         // Add error class to input/select
+    //         field.classList.add('input-error');
+            
+    //         // add error to custom dropdown trigger if it exists
+    //         const customTrigger = container.querySelector('.custom-dropdown-trigger');
+    //         if (customTrigger) {
+    //             customTrigger.classList.add('input-error');
+    //         }
+
+    //         // Create and add error message
+    //         const errorText = document.createElement('span');
+    //         errorText.className = 'error-text';
+    //         errorText.textContent = message || 'This field is required.';
+    //         container.appendChild(errorText);
+    //     }
+
+    //     // Function to clear error
+    //     function clearError(field) {
+    //         field.classList.remove('input-error');
+            
+    //         // Find container (for custom dropdowns)
+    //         let container = field.parentElement;
+    //         if (field.closest('.custom-dropdown-wrapper')) {
+    //             container = field.closest('.custom-dropdown-wrapper').parentElement;
+    //         } else if (field.closest('.mb-3')) {
+    //             container = field.closest('.mb-3');
+    //         }
+            
+    //         // Remove error from custom dropdown trigger if it exists
+    //         const customTrigger = container.querySelector('.custom-dropdown-trigger');
+    //         if (customTrigger) {
+    //             customTrigger.classList.remove('input-error');
+    //         }
+            
+    //         const errorText = container.querySelector('.error-text');
+    //         if (errorText) {
+    //             errorText.remove();
+    //         }
+    //     }
+
+    //     // Function to validate a field
+    //     function validateField(field) {
+    //         // Skip validation if field is hidden
+    //         if (field.closest('.d-none')) {
+    //             clearError(field);
+    //             return true;
+    //         }
+
+    //         let value;
+    //         if (field.tagName === 'SELECT') {
+    //             value = field.value;
+    //         } else {
+    //             value = field.value.trim();
+    //         }
+            
+    //         // Check if field is required and empty
+    //         if (field.hasAttribute('required') && value === '') {
+    //             showError(field, 'This field is required.');
+    //             return false;
+    //         }
+
+    //         // Check email format if it's an email field
+    //         if (field.type === 'email' && value !== '') {
+    //             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    //             if (!emailRegex.test(value)) {
+    //                 showError(field, 'Please enter a valid email address.');
+    //                 return false;
+    //             }
+    //         }
+
+    //         // Clear error if field is valid
+    //         clearError(field);
+    //         return true;
+    //     }
+
+    //     // Validate form on submit
+    //     form.addEventListener('submit', function(e) {
+    //         let isValid = true;
+    //         const requiredFields = form.querySelectorAll('input[required], select[required], textarea[required]');
+            
+    //         // Clear all errors first
+    //         requiredFields.forEach(function(field) {
+    //             clearError(field);
+    //         });
+
+    //         // Validate each required field
+    //         requiredFields.forEach(function(field) {
+    //             if (!validateField(field)) {
+    //                 isValid = false;
+    //             }
+    //         });
+
+    //         // Also validate custom dropdowns (role and plan)
+    //         const roleSelect = document.getElementById('role');
+    //         const planSelect = document.getElementById('selected_plan_id');
+            
+    //         if (roleSelect && roleSelect.hasAttribute('required')) {
+    //             if (!validateField(roleSelect)) {
+    //                 isValid = false;
+    //             }
+    //         }
+
+    //         if (planSelect && planSelect.hasAttribute('required') && !planSelect.closest('.d-none')) {
+    //             if (!validateField(planSelect)) {
+    //                 isValid = false;
+    //             }
+    //         }
+
+    //         // Check institution name if required
+    //         const instNameInput = document.getElementById('institution_name');
+    //         if (instNameInput && instNameInput.hasAttribute('required') && !instNameInput.closest('.d-none')) {
+    //             if (!validateField(instNameInput)) {
+    //                 isValid = false;
+    //             }
+    //         }
+
+    //         // Check institution_id if required
+    //         const instIdSelect = document.getElementById('institution_id');
+    //         if (instIdSelect && instIdSelect.hasAttribute('required') && !instIdSelect.closest('.d-none')) {
+    //             if (!validateField(instIdSelect)) {
+    //                 isValid = false;
+    //             }
+    //         }
+
+    //         if (!isValid) {
+    //             e.preventDefault();
+    //             e.stopPropagation();
+                
+    //             // Scroll to first error
+    //             const firstError = form.querySelector('.input-error');
+    //             if (firstError) {
+    //                 firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    //                 firstError.focus();
+    //             }
+    //         }
+    //     });
+
+    //     // Clear errors on input
+    //     form.addEventListener('input', function(e) {
+    //         if (e.target.matches('input, select, textarea')) {
+    //             validateField(e.target);
+    //         }
+    //     });
+
+    //     form.addEventListener('change', function(e) {
+    //         if (e.target.matches('input, select, textarea')) {
+    //             validateField(e.target);
+    //         }
+    //     });
+
+    //     // Handle custom dropdown changes
+    //     const roleSelect = document.getElementById('role');
+    //     if (roleSelect) {
+    //         roleSelect.addEventListener('change', function() {
+    //             validateField(roleSelect);
+    //         });
+    //     }
+
+    //     const planSelect = document.getElementById('selected_plan_id');
+    //     if (planSelect) {
+    //         planSelect.addEventListener('change', function() {
+    //             validateField(planSelect);
+    //         });
+    //     }
+
+    //     markRequiredLabels();
+
+    //     // Re-mark when fields are shown/hidden
+    //     const observer = new MutationObserver(function() {
+    //         markRequiredLabels();
+    //     });
+
+    //     // Observe changes to d-none classes
+    //     const fieldsToObserve = form.querySelectorAll('[id$="-group"]');
+    //     fieldsToObserve.forEach(function(field) {
+    //         observer.observe(field, { attributes: true, attributeFilter: ['class'] });
+    //     });
+    // })();
+
+// only handle: required field + email format
+(function () {
+  // get POST form
+  const form = document.querySelector('form[method="POST"]');
+  if (!form) return;
+
+  // add "required" class to label (for showing *)
+  function markRequiredLabels() {
+    const requiredFields = form.querySelectorAll('[required]');
+    requiredFields.forEach((field) => {
+      if (!field.id) return; // need id to match label
+      const label = form.querySelector(`label[for="${field.id}"]`);
+      if (label) label.classList.add('required');
+    });
+  }
+
+  // find the container of a field (usually .mb-3)
+  function getContainer(field) {
+    return field.closest('.mb-3') || field.parentElement;
+  }
+
+  // show error message under the field
+  function showError(field, message) {
+    const container = getContainer(field);
+
+    // remove old error if exists
+    const old = container.querySelector('.error-text');
+    if (old) old.remove();
+
+    // add red border
+    field.classList.add('input-error');
+
+    // create error text
+    const span = document.createElement('span');
+    span.className = 'error-text';
+    span.textContent = message;
+    container.appendChild(span);
+  }
+
+  // clear error state
+  function clearError(field) {
+    const container = getContainer(field);
+    field.classList.remove('input-error');
+
+    const old = container.querySelector('.error-text');
+    if (old) old.remove();
+  }
+
+  // validate single field
+  function validateField(field) {
+    // skip hidden fields
+    if (field.closest('.d-none')) {
+      clearError(field);
+      return true;
+    }
+
+    const value = (field.value || '').trim();
+
+    // required check
+    if (field.hasAttribute('required') && value === '') {
+      showError(field, 'This field is required.');
+      return false;
+    }
+
+    // email format check
+    if (field.type === 'email' && value !== '') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(value)) {
+        showError(field, 'Please enter a valid email address.');
+        return false;
+      }
+    }
+
+    // field is valid
+    clearError(field);
+    return true;
+  }
+
+  // validate all fields when submit
+  form.addEventListener('submit', function (e) {
+    let ok = true;
+
+    const fields = form.querySelectorAll('input, select, textarea');
+
+    // clear all errors first
+    fields.forEach((f) => clearError(f));
+
+    // validate required + email fields
+    fields.forEach((f) => {
+      if (f.hasAttribute('required') || f.type === 'email') {
+        if (!validateField(f)) ok = false;
+      }
+    });
+
+    // stop submit if any error
+    if (!ok) {
+      e.preventDefault();
+
+      // scroll to first error
+      const first = form.querySelector('.input-error');
+      if (first) {
+        first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        first.focus();
+      }
+    }
+  });
+
+  // re-check field when user is typing
+  form.addEventListener('input', function (e) {
+    const t = e.target;
+    if (t.matches('input, select, textarea')) {
+      if (t.hasAttribute('required') || t.type === 'email') {
+        validateField(t);
+      }
+    }
+  });
+
+  // init
+  markRequiredLabels();
+})();
+
 </script>
 {% endblock %}

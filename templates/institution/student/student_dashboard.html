@@ -448,44 +448,6 @@
         font-weight: 600;
         color: var(--text-dark);
         font-size: 1rem;
-        text-align: center;
-    }
-
-    .links-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 0.75rem;
-    }
-
-    .link-item {
-        background: #f8fafc;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        padding: 1rem;
-        text-decoration: none;
-        color: var(--text-dark);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 0.5rem;
-        transition: all 0.3s ease;
-    }
-
-    .link-item:hover {
-        background: #f1f5f9;
-        transform: translateY(-2px);
-        text-decoration: none;
-        color: var(--text-dark);
-    }
-
-    .link-icon {
-        font-size: 1.5rem;
-    }
-
-    .link-text {
-        font-size: 0.85rem;
-        font-weight: 500;
-        text-align: center;
     }
 
     /* No data messages */
@@ -510,10 +472,6 @@
     @media (max-width: 1024px) {
         .dashboard-grid {
             grid-template-columns: 1fr 1fr;
-        }
-        
-        .links-grid {
-            grid-template-columns: repeat(2, 1fr);
         }
     }
 
@@ -558,10 +516,6 @@
             margin-left: 0;
         }
 
-        .links-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-
         .stat-breakdown {
             flex-direction: column;
             gap: 0.5rem;
@@ -579,10 +533,6 @@
 
         .class-actions {
             flex-direction: column;
-        }
-
-        .links-grid {
-            grid-template-columns: 1fr;
         }
     }
 </style>
@@ -612,7 +562,7 @@
     <!-- Dashboard Grid -->
     <div class="dashboard-grid">
         <!-- Student Profile & Stats Card -->
-        <div class="card-custom">
+        <div class="card-custom dashboard-card">
             <div class="card-header-custom">Student Profile</div>
             <div class="card-body-custom">
                 <div class="profile-content">
@@ -669,7 +619,7 @@
         </div>
 
         <!-- Today's Classes Card -->
-        <div class="card-custom">
+        <div class="card-custom dashboard-card">
             <div class="card-header-custom">
                 Today's Classes 
                 {% if today_classes|length > 0 %}
@@ -738,7 +688,7 @@
         </div>
 
         <!-- Announcements & Quick Links Card -->
-        <div class="card-custom">
+        <div class="card-custom dashboard-card">
             <div class="card-header-custom">Announcements & Quick Links</div>
             <div class="card-body-custom">
                 <!-- Announcements Section -->
@@ -769,29 +719,29 @@
                     {% endif %}
                 </div>
 
-                <!-- Quick Links Section -->
+                <!-- Quick Action Section -->
                 <div class="quick-links">
-                    <div class="links-title mb-3">Quick Access</div>
-                    <div class="links-grid">
-                        <a href="{{ url_for('student.attendance') }}" class="link-item">
-                            <span class="link-icon">📊</span>
-                            <span class="link-text">My Attendance</span>
+                    <div class="links-title mb-3">Quick Actions</div>
+                    <div class="quick-actions">
+                        <a href="{{ url_for('student.attendance') }}" class="quick-action-button qa-unified">
+                            <span class="quick-action-icon">📊</span>
+                            <span class="quick-action-text">My Attendance</span>
                         </a>
-                        <a href="{{ url_for('student.appeal_management') }}" class="link-item">
-                            <span class="link-icon">📝</span>
-                            <span class="link-text">Submit Appeal</span>
+                        <a href="{{ url_for('student.appeal_management') }}" class="quick-action-button qa-unified">
+                            <span class="quick-action-icon">📝</span>
+                            <span class="quick-action-text">Submit Appeal</span>
                         </a>
-                        <a href="{{ url_for('student.attendance_history') }}" class="link-item">
-                            <span class="link-icon">📚</span>
-                            <span class="link-text">Attendance History</span>
+                        <a href="{{ url_for('student.attendance_history') }}" class="quick-action-button qa-unified">
+                            <span class="quick-action-icon">📚</span>
+                            <span class="quick-action-text">Attendance History</span>
                         </a>
-                        <a href="{{ url_for('student.absent_records') }}" class="link-item">
-                            <span class="link-icon">📅</span>
-                            <span class="link-text">Absent Records</span>
+                        <a href="{{ url_for('student.absent_records') }}" class="quick-action-button qa-unified">
+                            <span class="quick-action-icon">📅</span>
+                            <span class="quick-action-text">Absent Records</span>
                         </a>
-                        <a href="{{ url_for('student.profile') }}" class="link-item">
-                            <span class="link-icon">🏫</span>
-                            <span class="link-text">My Profile</span>
+                        <a href="{{ url_for('student.profile') }}" class="quick-action-button qa-unified">
+                            <span class="quick-action-icon">🏫</span>
+                            <span class="quick-action-text">My Profile</span>
                         </a>
                     </div>
                 </div>

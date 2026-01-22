@@ -31,7 +31,7 @@
     <div class="dashboard-grid">
 
         <!-- Today's Classes -->
-        <div class="card-custom">
+        <div class="card-custom dashboard-card">
             <div class="card-header-custom">
                 Today's Classes 
                 {% if today_classes|length > 0 %}
@@ -92,7 +92,7 @@
         </div>
 
         <!-- Announcements -->
-        <div class="card-custom" id="institution-announcements">
+        <div class="card-custom dashboard-card" id="institution-announcements">
             <div class="card-header-custom">Institution Announcements</div>
             <div class="card-body-custom announcements-list">
                 {% if announcements %}

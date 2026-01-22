@@ -10,7 +10,7 @@
         <!-- LEFT -->
         <div class="left-column">
 
-            <div class="card-custom">
+            <div class="card-custom dashboard-card">
                 <div class="card-header-custom">Institution</div>
                 <div class="card-body-custom">
                     <div class="profile-info">
@@ -28,26 +28,26 @@
                 </div>
             </div>
 
-            <div class="card-custom">
+            <div class="card-custom dashboard-card">
                 <div class="card-header-custom">Quick Actions</div>
                 <div class="card-body-custom quick-actions">
-                    <a href="{{ url_for('institution.manage_users') }}" class="quick-action-button">
+                    <a href="{{ url_for('institution.manage_users') }}" class="quick-action-button qa-unified">
                         <span class="quick-action-icon">👤</span>
                         <span class="quick-action-text">Manage Users</span>
                     </a>
-                    <a href="{{ url_for('institution.manage_attendance') }}" class="quick-action-button">
+                    <a href="{{ url_for('institution.manage_attendance') }}" class="quick-action-button qa-unified">
                         <span class="quick-action-icon">📊</span>
-                        <span class="quick-action-text">Attendance</span>
+                        <span class="quick-action-text">Manage Attendance</span>
                     </a>
-                    <a href="{{ url_for('institution.manage_classes') }}" class="quick-action-button">
+                    <a href="{{ url_for('institution.manage_classes') }}" class="quick-action-button qa-unified">
                         <span class="quick-action-icon">🏫</span>
                         <span class="quick-action-text">Manage Classes</span>
                     </a>
-                    <a href="{{ url_for('institution.institution_profile') }}" class="quick-action-button">
+                    <a href="{{ url_for('institution.institution_profile') }}" class="quick-action-button qa-unified">
                         <span class="quick-action-icon">⚙️</span>
                         <span class="quick-action-text">Institution Profile</span>
                     </a>
-                    <a href="{{ url_for('institution.import_data') }}" class="quick-action-button">
+                    <a href="{{ url_for('institution.import_data') }}" class="quick-action-button qa-unified">
                         <span class="quick-action-icon">📥</span>
                         <span class="quick-action-text">Import Data</span>
                     </a>
@@ -56,7 +56,7 @@
         </div>
 
         <!-- MIDDLE -->
-        <div class="card-custom">
+        <div class="card-custom dashboard-card">
             <div class="card-header-custom">User Overview</div>
             <div class="card-body-custom">
                 <div class="stats-main">
@@ -75,7 +75,7 @@
         </div>
 
         <!-- RIGHT -->
-        <div class="card-custom">
+        <div class="card-custom dashboard-card">
             <div class="card-header-custom">Classes Today</div>
             <div class="card-body-custom">
 
@@ -213,42 +213,6 @@
 
     .manage-institution-button {
         min-width: 220px;
-    }
-
-    .quick-actions {
-        display: grid;
-        gap: .75rem;
-    }
-
-    .quick-action-button {
-        padding: .875rem 1rem;
-        border-radius: 8px;
-        background: #FFFFFF;
-        border: 2px solid #001641;
-        font-size: .9rem;
-        font-weight: 600;
-        transition: all .2s;
-        color: #001641;
-        text-decoration: none;
-        font-family: 'Montserrat', sans-serif;
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 12px;
-    }
-
-    .quick-action-button:hover {
-        background: #001641;
-        color: #FFFFFF;
-        transform: translateX(4px);
-    }
-
-    .quick-action-icon {
-        font-size: 20px;
-        line-height: 1;
-        width: 24px;
-        text-align: center;
-        flex-shrink: 0;
     }
 
     .stats-main {

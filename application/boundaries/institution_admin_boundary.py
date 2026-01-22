@@ -248,6 +248,75 @@ def manage_classes():
         }
     return render_template('institution/admin/institution_admin_class_management.html', **context)
 
+@institution_bp.route('/manage_classes/add', methods=['GET'])
+@requires_roles('admin')
+def add_course_form():
+    """Display form to add a new course"""
+    institution_id = session.get('institution_id')
+    with get_session() as db_session:
+        user_model = UserModel(db_session)
+        # Get all lecturers from the institution
+        lecturers = user_model.get_by_institution_and_role(institution_id, 'lecturer')
+        lecturers = [{'user_id': l.user_id, 'name': l.name} for l in lecturers]
+    return render_template('institution/admin/institution_admin_add_course.html', lecturers=lecturers)
+
+@institution_bp.route('/manage_classes/add', methods=['POST'])
+@requires_roles('admin')
+def add_course():
+    """Create a new course"""
+    code = request.form.get('code')
+    name = request.form.get('name')
+    description = request.form.get('description')
+    credits = request.form.get('credits')
+    lecturer_id = request.form.get('lecturer_id')
+    institution_id = session.get('institution_id')
+    
+    # Validate required fields
+    if not all([code, name]):
+        flash('Course code and name are required.', 'error')
+        return redirect(url_for('institution.add_course_form'))
+    
+    with get_session() as db_session:
+        course_model = CourseModel(db_session)
+        
+        # Check if course code already exists in this institution
+        existing_course = course_model.get_one(institution_id=institution_id, code=code)
+        if existing_course:
+            flash('A course with this code already exists in your institution.', 'error')
+            return redirect(url_for('institution.add_course_form'))
+        
+        try:
+            # Create new course
+            new_course = course_model.create(
+                institution_id=institution_id,
+                code=code,
+                name=name,
+                description=description if description else None,
+                credits=int(credits) if credits else None
+            )
+            
+            # Assign lecturer to course if selected
+            if lecturer_id:
+                course_user_model = CourseUserModel(db_session)
+                semester_model = SemesterModel(db_session)
+                
+                # Get or create a default semester for the institution
+                # You might want to add semester selection in the form later
+                semesters = semester_model.get_all(institution_id=institution_id)
+                if semesters:
+                    semester_id = semesters[0].semester_id
+                    course_user_model.assign(
+                        course_id=new_course.course_id,
+                        user_id=int(lecturer_id),
+                        semester_id=semester_id
+                    )
+            
+            flash(f'Course "{name}" created successfully.', 'success')
+            return redirect(url_for('institution.manage_classes'))
+        except Exception as e:
+            flash(f'Error creating course: {str(e)}', 'error')
+            return redirect(url_for('institution.add_course_form'))
+
 @institution_bp.route('/manage_classes/<int:course_id>')
 @requires_roles('admin')
 def module_details(course_id):

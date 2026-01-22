@@ -1,3 +1,4 @@
+# requirements.txt for Easy Import
 bcrypt==4.1.2
 blinker==1.9.0
 CacheControl==0.14.4
@@ -70,3 +71,7 @@ urllib3==1.26.20
 vaderSentiment==3.3.2
 Werkzeug==3.0.1
 WTForms==3.2.1
+scikit-learn           
+pandas                 
+numpy<2                
+pywin32

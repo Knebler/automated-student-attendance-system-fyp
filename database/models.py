@@ -303,3 +303,25 @@ class FacialData(Base, BaseMixin):
     created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
     updated_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"), onupdate=text("CURRENT_TIMESTAMP"))
     is_active = Column(Boolean, server_default="1")
+
+# =====================
+# PLATFORM ISSUES (USER REPORTS)
+# =====================
+class PlatformIssue(Base, BaseMixin):
+    __tablename__ = "platform_issues"
+    
+    issue_id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, index=True)
+    institution_id = Column(Integer, ForeignKey("institutions.institution_id"), nullable=False, index=True)
+    
+    description = Column(Text, nullable=False)
+    category = Column(String(100))
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+    deleted_at = Column(DateTime)  # null = active, not null = deleted (for dev team)
+    
+    # Relationships
+    reporter = relationship("User", foreign_keys=[user_id])
+    institution = relationship("Institution")
+    
+    def is_active(self):
+        return self.deleted_at is None

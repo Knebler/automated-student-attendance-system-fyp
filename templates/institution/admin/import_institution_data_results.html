@@ -5,6 +5,7 @@
 {% block content %}
 
 <div class="import-results-page" id="resultsPage">
+    <h1 class="page-title">Import Data Results</h1>
     <div class="accordion" id="importResultsAccordion">
         <div class="accordion-item" data-section="import_users">
             <button class="accordion-header">
@@ -70,65 +71,103 @@
 </div>
 
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+
+    .import-results-page {
+        max-width: 1400px;
+        margin: auto;
+        padding: 20px;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .page-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        color: #001641;
+        font-family: 'Montserrat', sans-serif;
+    }
+
     .accordion {
-        background: white;
-        border-radius: 8px;
+        background: transparent;
+        border-radius: 12px;
         overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
     }
 
     .accordion-item {
-        border-bottom: 1px solid #e0e0e0;
+        background: #FFFFFF;
+        border: 2px solid #001641;
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.3s ease;
     }
 
-    .accordion-item:last-child {
-        border-bottom: none;
+    .accordion-item:hover {
+        box-shadow: 0 4px 12px rgba(0, 22, 65, 0.15);
     }
 
     .accordion-header {
         width: 100%;
-        padding: 20px;
-        background: white;
+        padding: 1.25rem 1.5rem;
+        background: #001641;
         border: none;
         text-align: left;
-        font-size: 16px;
-        font-weight: 600;
-        color: #333;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #FFFFFF;
         cursor: pointer;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        transition: background-color 0.2s;
+        transition: all 0.2s ease;
         gap: 15px;
+        font-family: 'Montserrat', sans-serif;
     }
 
     .accordion-header:hover {
-        background: #f9f9f9;
+        background: #002456;
     }
 
     .accordion-header.active {
-        background: #f0f0f0;
+        background: #001641;
+        border-bottom: 2px solid #001641;
+    }
+
+    .accordion-header span:first-child {
+        flex: 0 0 auto;
     }
 
     .progress-text {
-        font-size: 14px;
-        font-weight: 400;
-        color: #666;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #FFFFFF;
         margin-left: auto;
+        margin-right: 10px;
+        font-family: 'Montserrat', sans-serif;
+        background: rgba(255, 255, 255, 0.15);
+        padding: 0.375rem 0.75rem;
+        border-radius: 6px;
     }
 
     .progress-text.has-errors {
-        color: #d32f2f;
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #991b1b;
     }
 
     .progress-text.success {
-        color: #388e3c;
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #166534;
     }
 
     .accordion-icon {
         transition: transform 0.3s ease;
-        font-size: 20px;
-        color: #666;
+        font-size: 1.25rem;
+        color: #FFFFFF;
         flex-shrink: 0;
     }
 
@@ -140,44 +179,103 @@
         max-height: 0;
         overflow: hidden;
         transition: max-height 0.3s ease;
+        background: #f8fafc;
     }
 
     .accordion-body {
-        padding: 0 20px 20px 20px;
-        color: #666;
+        padding: 1.5rem;
+        color: #001641;
         line-height: 1.6;
+        font-family: 'Montserrat', sans-serif;
     }
 
     .error-list {
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 0.75rem;
     }
 
     .error-row {
         display: flex;
-        padding: 12px;
-        background: #fff3e0;
-        border-left: 3px solid #ff9800;
-        border-radius: 4px;
+        padding: 1rem 1.25rem;
+        background: #FFFFFF;
+        border: 2px solid #991b1b;
+        border-left: 4px solid #991b1b;
+        border-radius: 8px;
         gap: 15px;
+        font-family: 'Montserrat', sans-serif;
+        transition: all 0.2s ease;
+    }
+
+    .error-row:hover {
+        transform: translateX(4px);
+        box-shadow: 0 2px 8px rgba(153, 27, 27, 0.15);
     }
 
     .error-row-number {
-        font-weight: 600;
-        color: #e65100;
-        min-width: 60px;
+        font-weight: 700;
+        color: #991b1b;
+        min-width: 70px;
         flex-shrink: 0;
+        font-size: 0.9rem;
+        font-family: 'Montserrat', sans-serif;
     }
 
     .error-message {
         flex: 1;
-        color: #333;
+        color: #001641;
+        font-size: 0.9rem;
+        font-family: 'Montserrat', sans-serif;
     }
 
     .no-errors {
-        color: #388e3c;
-        font-style: italic;
+        color: #166534;
+        font-weight: 600;
+        font-size: 0.95rem;
+        padding: 1rem;
+        background: #dcfce7;
+        border: 2px solid #166534;
+        border-radius: 8px;
+        text-align: center;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    @media (max-width: 768px) {
+        .import-results-page {
+            padding: 10px;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+        }
+
+        .accordion-header {
+            padding: 1rem;
+            font-size: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .progress-text {
+            font-size: 0.8rem;
+            order: 3;
+            flex-basis: 100%;
+            margin-top: 0.5rem;
+            margin-left: 0;
+            text-align: left;
+        }
+
+        .accordion-body {
+            padding: 1rem;
+        }
+
+        .error-row {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .error-row-number {
+            min-width: auto;
+        }
     }
 </style>
 

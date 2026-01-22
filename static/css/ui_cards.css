@@ -67,7 +67,7 @@
     background: #ffffff;
 }
 
-/* Override dark borders on section containers in main content */
+/* Override dark borders */
 .main-container .card-custom {
     background: #ffffff;
     border: 1px solid #e2e8f0;

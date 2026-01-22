@@ -66,3 +66,4 @@ pandas
 numpy<2                
 pywin32
 vaderSentiment>=3.3.2
+openpxyl>=3.1.5

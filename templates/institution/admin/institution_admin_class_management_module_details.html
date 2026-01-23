@@ -24,48 +24,11 @@
         </div>
     </div>
 
-    <!-- Completed Classes Section -->
-    <div class="card-custom mb-4">
-        <div class="card-header-custom d-flex justify-content-between align-items-center">
-            <div>Completed Classes</div>
-        </div>
-        <div class="card-body-custom">
-            <div class="table-responsive">
-                <table class="classes-table">
-                    <thead>
-                        <tr>
-                            <th>Class</th>
-                            <th>Start</th>
-                            <th>End</th>
-                            <th>Venue</th>
-                            <th>Lecturer</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for c in completed %}
-                        <tr>
-                            <td>{{c[0]}}</td>
-                            <td>{{c[1]}}</td>
-                            <td>{{c[2]}}</td>
-                            <td>{{c[3]}}</td>
-                            <td>{{c[4]}}</td>
-                            <td class="actions-cell">
-                                <a href="{{ url_for('institution.attendance_class_details', class_id=c[0]) }}" class="btn-custom btn-manage">Manage Class</a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- Upcoming Classes Section -->
+    <!-- All Classes Section -->
     <div class="card-custom">
         <div class="card-header-custom d-flex justify-content-between align-items-center">
-            <div>Upcoming Classes</div>
-            <button class="btn-custom btn-add">Add Classes</button>
+            <div>All Classes</div>
+            <a href="{{ url_for('institution.add_class_form', course_id=course[0]) }}" class="btn-custom btn-add">Add Classes</a>
         </div>
         <div class="card-body-custom">
             <div class="table-responsive">
@@ -77,17 +40,27 @@
                             <th>End</th>
                             <th>Venue</th>
                             <th>Lecturer</th>
+                            <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for c in upcoming %}
+                        {% for c in classes %}
                         <tr>
                             <td>{{c[0]}}</td>
                             <td>{{c[1]}}</td>
                             <td>{{c[2]}}</td>
                             <td>{{c[3]}}</td>
                             <td>{{c[4]}}</td>
+                            <td>
+                                {% if c[5] == 'completed' %}
+                                    <span class="status completed">Completed</span>
+                                {% elif c[5] == 'ongoing' %}
+                                    <span class="status ongoing">Ongoing</span>
+                                {% else %}
+                                    <span class="status upcoming">Upcoming</span>
+                                {% endif %}
+                            </td>
                             <td class="actions-cell">
                                 <a href="{{ url_for('institution.attendance_class_details', class_id=c[0]) }}" class="btn-custom btn-manage">Manage Class</a>
                             </td>
@@ -214,6 +187,24 @@
         padding: 0.25rem 0.75rem;
         border-radius: 20px;
         display: inline-block;
+    }
+
+    .status.completed {
+        color: #059669;
+        background-color: #f0fdf4;
+        border: 1px solid #059669;
+    }
+
+    .status.ongoing {
+        color: #2563eb;
+        background-color: #eff6ff;
+        border: 1px solid #2563eb;
+    }
+
+    .status.upcoming {
+        color: #7c3aed;
+        background-color: #faf5ff;
+        border: 1px solid #7c3aed;
     }
 
     .status.active {

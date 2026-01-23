@@ -63,6 +63,12 @@
         font-size: 0.95rem;
     }
 
+    .register-container .form-label.required::before {
+        content: "* ";
+        color: #d93025;
+        font-weight: 700;
+    }
+
     /* Input Fields */
     .register-container .form-control,
     .register-container .form-select {
@@ -82,6 +88,32 @@
         color: #0f172a;
         outline: none;
         box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.15);
+    }
+
+    /* Error styling */
+    .register-container .input-error {
+        border-color: #d93025 !important;
+    }
+
+    .register-container .input-error:focus {
+        border-color: #d93025 !important;
+        box-shadow: 0 0 0 3px rgba(217, 48, 37, 0.15) !important;
+    }
+
+    .register-container .custom-dropdown-trigger.input-error {
+        border-color: #d93025 !important;
+    }
+
+    .register-container .custom-dropdown-trigger.input-error:focus {
+        border-color: #d93025 !important;
+        box-shadow: 0 0 0 3px rgba(217, 48, 37, 0.15) !important;
+    }
+
+    .register-container .error-text {
+        color: #d93025;
+        font-size: 0.9rem;
+        margin-top: 6px;
+        display: block;
     }
 
     .register-container .form-control::placeholder {
@@ -317,7 +349,7 @@
                 <h4>Register</h4>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('auth.register') }}">
+                <form method="POST" action="{{ url_for('auth.register') }}" novalidate>
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="register-columns">
                         <div class="register-left">
@@ -751,5 +783,126 @@
             buildRoleOptions();
         });
     })();
+
+
+
+    // required field + email format
+    (function () {
+    const form = document.querySelector('form[method="POST"]');
+    if (!form) return;
+
+    // add "required" class to label (for showing *)
+    function markRequiredLabels() {
+        const requiredFields = form.querySelectorAll('[required]');
+        requiredFields.forEach((field) => {
+        if (!field.id) return; // need id to match label
+        const label = form.querySelector(`label[for="${field.id}"]`);
+        if (label) label.classList.add('required');
+        });
+    }
+
+    // find the container of a field 
+    function getContainer(field) {
+        return field.closest('.mb-3') || field.parentElement;
+    }
+
+    // show error message under the field
+    function showError(field, message) {
+        const container = getContainer(field);
+
+        // remove old error if exists
+        const old = container.querySelector('.error-text');
+        if (old) old.remove();
+
+        // red border
+        field.classList.add('input-error');
+
+        // error text
+        const span = document.createElement('span');
+        span.className = 'error-text';
+        span.textContent = message;
+        container.appendChild(span);
+    }
+
+    // clear error state
+    function clearError(field) {
+        const container = getContainer(field);
+        field.classList.remove('input-error');
+
+        const old = container.querySelector('.error-text');
+        if (old) old.remove();
+    }
+
+    // validate single field
+    function validateField(field) {
+        // skip hidden fields
+        if (field.closest('.d-none')) {
+        clearError(field);
+        return true;
+        }
+
+        const value = (field.value || '').trim();
+
+        // required check
+        if (field.hasAttribute('required') && value === '') {
+        showError(field, 'This field is required.');
+        return false;
+        }
+
+        // email format check
+        if (field.type === 'email' && value !== '') {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(value)) {
+            showError(field, 'Please enter a valid email address.');
+            return false;
+        }
+        }
+
+        clearError(field);
+        return true;
+    }
+
+    // validate all fields when submit
+    form.addEventListener('submit', function (e) {
+        let ok = true;
+
+        const fields = form.querySelectorAll('input, select, textarea');
+
+        // clear all errors first
+        fields.forEach((f) => clearError(f));
+
+        // validate required + email fields
+        fields.forEach((f) => {
+        if (f.hasAttribute('required') || f.type === 'email') {
+            if (!validateField(f)) ok = false;
+        }
+        });
+
+        // cannot submit if any error
+        if (!ok) {
+        e.preventDefault();
+
+        // scroll to first error
+        const first = form.querySelector('.input-error');
+        if (first) {
+            first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            first.focus();
+        }
+        }
+    });
+
+    // re-check field when typing
+    form.addEventListener('input', function (e) {
+        const t = e.target;
+        if (t.matches('input, select, textarea')) {
+        if (t.hasAttribute('required') || t.type === 'email') {
+            validateField(t);
+        }
+        }
+    });
+
+    markRequiredLabels();
+    })();
+
 </script>
 {% endblock %}

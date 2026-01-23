@@ -28,7 +28,7 @@
     <div class="card-custom">
         <div class="card-header-custom d-flex justify-content-between align-items-center">
             <div>All Classes</div>
-            <button class="btn-custom btn-add">Add Classes</button>
+            <a href="{{ url_for('institution.add_class_form', course_id=course[0]) }}" class="btn-custom btn-add">Add Classes</a>
         </div>
         <div class="card-body-custom">
             <div class="table-responsive">

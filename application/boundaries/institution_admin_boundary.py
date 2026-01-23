@@ -337,6 +337,107 @@ def module_details(course_id):
         }
     return render_template('institution/admin/institution_admin_class_management_module_details.html', **context)
 
+@institution_bp.route('/manage_classes/<int:course_id>/add_class', methods=['GET'])
+@requires_roles('admin')
+def add_class_form(course_id):
+    """Display form to add a new class to a course"""
+    institution_id = session.get('institution_id')
+    
+    with get_session() as db_session:
+        course_model = CourseModel(db_session)
+        user_model = UserModel(db_session)
+        venue_model = VenueModel(db_session)
+        semester_model = SemesterModel(db_session)
+        
+        # Verify course belongs to institution
+        course = course_model.get_by_id(course_id)
+        if not course or course.institution_id != institution_id:
+            flash('Course not found or access denied.', 'error')
+            return redirect(url_for('institution.manage_classes'))
+        
+        # Get the course's assigned lecturer(s)
+        course_lecturers = (
+            db_session.query(User)
+            .join(CourseUser, CourseUser.user_id == User.user_id)
+            .filter(CourseUser.course_id == course_id)
+            .filter(User.role == 'lecturer')
+            .all()
+        )
+        
+        # Get available resources
+        venues = venue_model.get_all(institution_id=institution_id)
+        semesters = semester_model.get_all(institution_id=institution_id)
+        
+        context = {
+            'course': course.as_dict(),
+            'lecturers': [{'user_id': l.user_id, 'name': l.name} for l in course_lecturers],
+            'venues': [{'venue_id': v.venue_id, 'name': v.name} for v in venues],
+            'semesters': [{'semester_id': s.semester_id, 'name': s.name} for s in semesters]
+        }
+    
+    return render_template('institution/admin/institution_admin_add_class.html', **context)
+
+@institution_bp.route('/manage_classes/<int:course_id>/add_class', methods=['POST'])
+@requires_roles('admin')
+def add_class(course_id):
+    """Create a new class for a course"""
+    from datetime import datetime
+    
+    institution_id = session.get('institution_id')
+    
+    # Get form data
+    semester_id = request.form.get('semester_id')
+    venue_id = request.form.get('venue_id')
+    lecturer_id = request.form.get('lecturer_id')
+    start_time = request.form.get('start_time')
+    end_time = request.form.get('end_time')
+    
+    # Validate required fields
+    if not all([semester_id, venue_id, lecturer_id, start_time, end_time]):
+        flash('All fields are required.', 'error')
+        return redirect(url_for('institution.add_class_form', course_id=course_id))
+    
+    try:
+        # Parse datetime strings
+        start_datetime = datetime.fromisoformat(start_time)
+        end_datetime = datetime.fromisoformat(end_time)
+        
+        # Validate times
+        if end_datetime <= start_datetime:
+            flash('End time must be after start time.', 'error')
+            return redirect(url_for('institution.add_class_form', course_id=course_id))
+        
+        with get_session() as db_session:
+            course_model = CourseModel(db_session)
+            class_model = ClassModel(db_session)
+            
+            # Verify course belongs to institution
+            course = course_model.get_by_id(course_id)
+            if not course or course.institution_id != institution_id:
+                flash('Course not found or access denied.', 'error')
+                return redirect(url_for('institution.manage_classes'))
+            
+            # Create the class
+            new_class = class_model.create(
+                course_id=course_id,
+                semester_id=int(semester_id),
+                venue_id=int(venue_id),
+                lecturer_id=int(lecturer_id),
+                start_time=start_datetime,
+                end_time=end_datetime,
+                status='scheduled'
+            )
+            
+            flash(f'Class created successfully (ID: {new_class.class_id})', 'success')
+            return redirect(url_for('institution.module_details', course_id=course_id))
+            
+    except ValueError as e:
+        flash(f'Invalid date/time format: {str(e)}', 'error')
+        return redirect(url_for('institution.add_class_form', course_id=course_id))
+    except Exception as e:
+        flash(f'Error creating class: {str(e)}', 'error')
+        return redirect(url_for('institution.add_class_form', course_id=course_id))
+
 @institution_bp.route('/institution_profile')
 @requires_roles('admin')
 def institution_profile():

@@ -60,6 +60,33 @@ def profile():
         flash('An error occurred while loading your profile', 'danger')
         return render_template('institution/student/student_profile_management.html')
 
+@student_bp.route('/facial-recognition-retrain')
+@requires_roles('student')
+def facial_recognition_retrain():
+    """Facial recognition retrain page for students"""
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            flash('Please log in to access this page', 'warning')
+            return redirect(url_for('auth.login'))
+        
+        # Get student info
+        with get_session() as db_session:
+            from database.models import User
+            student = db_session.query(User).filter(User.user_id == user_id).first()
+            student_data = {
+                'name': student.name if student else 'Student',
+                'email': student.email if student else '',
+                'user_id': user_id
+            }
+        
+        return render_template('institution/student/student_facial_recognition_retrain.html', **student_data)
+        
+    except Exception as e:
+        current_app.logger.error(f"Error loading facial recognition retrain page: {e}")
+        flash('An error occurred while loading the page', 'danger')
+        return redirect(url_for('student.profile'))
+
 @student_bp.route('/attendance')
 @requires_roles('student')
 def attendance():

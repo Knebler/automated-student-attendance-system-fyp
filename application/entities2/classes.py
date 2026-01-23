@@ -15,6 +15,7 @@ class ClassModel(BaseEntity[Class]):
     def update_class_statuses(self, institution_id=None):
         """
         Update class statuses in the database based on current time.
+        Also marks unmarked attendance as 'absent' for completed classes.
         Returns number of classes updated.
         """
         now = datetime.now()
@@ -38,6 +39,39 @@ class ClassModel(BaseEntity[Class]):
         for cls in completed_classes:
             cls.status = 'completed'
             updated_count += 1
+            
+            # Mark any unmarked attendance as 'absent' for this completed class
+            # Get all students enrolled in this class
+            enrolled_students = (
+                self.session.query(User.user_id)
+                .join(CourseUser, CourseUser.user_id == User.user_id)
+                .filter(CourseUser.course_id == cls.course_id)
+                .filter(CourseUser.semester_id == cls.semester_id)
+                .filter(User.role == 'student')
+                .all()
+            )
+            
+            student_ids = [s[0] for s in enrolled_students]
+            
+            # Get students who already have attendance records
+            existing_records = (
+                self.session.query(AttendanceRecord.student_id)
+                .filter(AttendanceRecord.class_id == cls.class_id)
+                .all()
+            )
+            
+            existing_student_ids = {r[0] for r in existing_records}
+            
+            # Create absent records for students without attendance
+            for student_id in student_ids:
+                if student_id not in existing_student_ids:
+                    new_record = AttendanceRecord(
+                        class_id=cls.class_id,
+                        student_id=student_id,
+                        status='absent',
+                        marked_by='system'
+                    )
+                    self.session.add(new_record)
         
         # Update in_progress classes (started but not ended, and status is 'scheduled')
         in_progress_classes = query.filter(

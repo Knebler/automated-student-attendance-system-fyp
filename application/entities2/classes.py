@@ -73,11 +73,11 @@ class ClassModel(BaseEntity[Class]):
                     )
                     self.session.add(new_record)
         
-        # Update in_progress classes (started but not ended, and status is 'scheduled')
+        # Update in_progress classes (started but not ended, and status is not 'in_progress' or 'completed')
         in_progress_classes = query.filter(
             Class.start_time <= now,
             Class.end_time >= now,
-            Class.status == 'scheduled'
+            Class.status.notin_(['in_progress', 'completed'])
         ).all()
         
         for cls in in_progress_classes:

@@ -12,6 +12,47 @@ class ClassModel(BaseEntity[Class]):
     def __init__(self, session):
         super().__init__(session, Class)
 
+    def update_class_statuses(self, institution_id=None):
+        """
+        Update class statuses in the database based on current time.
+        Returns number of classes updated.
+        """
+        now = datetime.now()
+        updated_count = 0
+        
+        # Build base query
+        query = self.session.query(Class)
+        
+        # Filter by institution if provided
+        if institution_id:
+            query = query.join(Course, Class.course_id == Course.course_id).filter(
+                Course.institution_id == institution_id
+            )
+        
+        # Update completed classes (end_time has passed and status is not 'completed')
+        completed_classes = query.filter(
+            Class.end_time < now,
+            Class.status != 'completed'
+        ).all()
+        
+        for cls in completed_classes:
+            cls.status = 'completed'
+            updated_count += 1
+        
+        # Update in_progress classes (started but not ended, and status is 'scheduled')
+        in_progress_classes = query.filter(
+            Class.start_time <= now,
+            Class.end_time >= now,
+            Class.status == 'scheduled'
+        ).all()
+        
+        for cls in in_progress_classes:
+            cls.status = 'in_progress'
+            updated_count += 1
+        
+        self.session.commit()
+        return updated_count
+
     def get_today(self, institution_id):
         return (
             self.session
@@ -43,6 +84,52 @@ class ClassModel(BaseEntity[Class]):
             .filter(Class.course_id == course_id)
             .filter(Class.start_time > datetime.now())
             .filter(User.role == "lecturer")
+            .all()
+        )
+
+    def get_all_with_status(self, course_id, update_db=True):
+        """
+        Get all classes for a course with status (completed, in_progress, scheduled).
+        
+        Args:
+            course_id: ID of the course
+            update_db: If True, updates the database status before querying (default: True)
+        
+        Returns status from database, but also updates statuses automatically.
+        """
+        now = datetime.now()
+        
+        if update_db:
+            # First, update any classes that need status changes
+            # Get the institution_id for this course
+            course = self.session.query(Course).filter(Course.course_id == course_id).first()
+            if course:
+                self.update_class_statuses(institution_id=course.institution_id)
+        
+        # Map database status to display status
+        status_map = case(
+            (Class.status == 'completed', 'completed'),
+            (Class.status == 'in_progress', 'ongoing'),
+            (Class.status == 'scheduled', 'upcoming'),
+            (Class.status == 'cancelled', 'cancelled'),
+            else_='upcoming'
+        )
+        
+        return (
+            self.session
+            .query(
+                Class.class_id, 
+                Class.start_time, 
+                Class.end_time, 
+                Venue.name, 
+                User.name,
+                status_map.label('status')
+            )
+            .join(User, User.user_id == Class.lecturer_id)
+            .join(Venue, Class.venue_id == Venue.venue_id)
+            .filter(Class.course_id == course_id)
+            .filter(User.role == "lecturer")
+            .order_by(Class.start_time.desc())
             .all()
         )
 

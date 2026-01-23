@@ -25,6 +25,9 @@ def institution_dashboard():
         sub_model = SubscriptionModel(db_session)
         class_model = ClassModel(db_session)
         
+        # Update class statuses on dashboard load
+        class_model.update_class_statuses(institution_id=institution_id)
+        
         institution = institution_model.get_one(institution_id=institution_id)
         institution_name = institution.name if institution else "Unknown Institution"
 
@@ -326,12 +329,11 @@ def module_details(course_id):
         course_model = CourseModel(db_session)
         if course_model.get_by_id(course_id).institution_id != session.get('institution_id'):
             return abort(401)
-        completed = class_model.get_completed(course_id)
-        upcoming = class_model.get_upcoming(course_id)
+        # Get all classes with their status
+        all_classes = class_model.get_all_with_status(course_id)
         context = {
             "course": course_model.get_manage_course_info(session.get('institution_id'), course_id)[0],
-            "completed": completed,
-            "upcoming": upcoming,
+            "classes": all_classes,
         }
     return render_template('institution/admin/institution_admin_class_management_module_details.html', **context)
 
@@ -458,6 +460,8 @@ def manage_attendance():
     institution_id = session.get('institution_id')
     with get_session() as db_session:
         class_model = ClassModel(db_session)
+        # Update class statuses before fetching
+        class_model.update_class_statuses(institution_id=institution_id)
         classes = class_model.get_all_classes_with_attendance(institution_id)
 
     return render_template('institution/admin/institution_admin_attendance_management.html', classes=classes)
@@ -932,4 +936,20 @@ def update_student_class_attendance(course_id, class_id, student_id):
             flash(f'Attendance marked as {new_status.capitalize()}', 'success')
             return redirect(url_for('institution.attendance_class_details', class_id=class_id))
 
+
+@institution_bp.route('/update_class_statuses', methods=['POST'])
+@requires_roles('admin')
+def update_class_statuses():
+    """Manually trigger class status updates for the institution"""
+    institution_id = session.get('institution_id')
+    
+    with get_session() as db_session:
+        class_model = ClassModel(db_session)
+        updated_count = class_model.update_class_statuses(institution_id=institution_id)
+    
+    return jsonify({
+        'success': True,
+        'updated_count': updated_count,
+        'message': f'Successfully updated {updated_count} class(es)'
+    })
             

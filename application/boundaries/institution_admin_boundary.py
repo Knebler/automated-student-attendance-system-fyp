@@ -574,9 +574,58 @@ def cancel_class(course_id, class_id):
         try:
             # Update class status to cancelled
             cls.status = 'cancelled'
+            
+            # Get all attendance records for this class
+            attendance_records = (
+                db_session.query(AttendanceRecord)
+                .filter(AttendanceRecord.class_id == class_id)
+                .all()
+            )
+            
+            # Update all attendance records to 'excused'
+            excused_count = 0
+            for record in attendance_records:
+                if record.status != 'excused':
+                    record.status = 'excused'
+                    if not record.notes:
+                        record.notes = 'Class cancelled by admin'
+                    else:
+                        record.notes += ' | Class cancelled by admin'
+                    excused_count += 1
+            
+            # Get all enrolled students who don't have attendance records yet
+            enrolled_students = (
+                db_session.query(User.user_id)
+                .join(CourseUser, CourseUser.user_id == User.user_id)
+                .filter(CourseUser.course_id == cls.course_id)
+                .filter(CourseUser.semester_id == cls.semester_id)
+                .filter(User.role == 'student')
+                .all()
+            )
+            
+            student_ids = [s[0] for s in enrolled_students]
+            
+            # Get students who already have attendance records
+            existing_student_ids = {r.student_id for r in attendance_records}
+            
+            # Create 'excused' records for students without attendance
+            created_count = 0
+            for student_id in student_ids:
+                if student_id not in existing_student_ids:
+                    new_record = AttendanceRecord(
+                        class_id=class_id,
+                        student_id=student_id,
+                        status='excused',
+                        marked_by='system',
+                        notes='Class cancelled by admin'
+                    )
+                    db_session.add(new_record)
+                    created_count += 1
+            
             db_session.commit()
             
-            flash(f'Class on {cls.start_time.strftime("%Y-%m-%d %H:%M")} has been cancelled successfully.', 'success')
+            total_affected = excused_count + created_count
+            flash(f'Class on {cls.start_time.strftime("%Y-%m-%d %H:%M")} has been cancelled successfully. {total_affected} student(s) marked as excused.', 'success')
             return redirect(url_for('institution.module_details', course_id=course_id))
             
         except Exception as e:

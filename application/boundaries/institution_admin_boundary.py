@@ -438,6 +438,102 @@ def add_class(course_id):
         flash(f'Error creating class: {str(e)}', 'error')
         return redirect(url_for('institution.add_class_form', course_id=course_id))
 
+@institution_bp.route('/manage_classes/<int:course_id>/edit_class/<int:class_id>', methods=['GET'])
+@requires_roles('admin')
+def edit_class_form(course_id, class_id):
+    """Display form to edit a class"""
+    institution_id = session.get('institution_id')
+    
+    with get_session() as db_session:
+        course_model = CourseModel(db_session)
+        class_model = ClassModel(db_session)
+        venue_model = VenueModel(db_session)
+        
+        # Verify course belongs to institution
+        course = course_model.get_by_id(course_id)
+        if not course or course.institution_id != institution_id:
+            flash('Course not found or access denied.', 'error')
+            return redirect(url_for('institution.manage_classes'))
+        
+        # Get the class to edit
+        cls = class_model.get_by_id(class_id)
+        if not cls or cls.course_id != course_id:
+            flash('Class not found or does not belong to this course.', 'error')
+            return redirect(url_for('institution.module_details', course_id=course_id))
+        
+        # Get available venues
+        venues = venue_model.get_all(institution_id=institution_id)
+        
+        context = {
+            'course': course.as_dict(),
+            'class': cls.as_dict(),
+            'venues': [{'venue_id': v.venue_id, 'name': v.name} for v in venues]
+        }
+    
+    return render_template('institution/admin/institution_admin_edit_class.html', **context)
+
+@institution_bp.route('/manage_classes/<int:course_id>/edit_class/<int:class_id>', methods=['POST'])
+@requires_roles('admin')
+def edit_class(course_id, class_id):
+    """Update a class"""
+    from datetime import datetime
+    
+    institution_id = session.get('institution_id')
+    
+    # Get form data
+    venue_id = request.form.get('venue_id')
+    start_time = request.form.get('start_time')
+    end_time = request.form.get('end_time')
+    
+    # Validate required fields
+    if not all([venue_id, start_time, end_time]):
+        flash('All fields are required.', 'error')
+        return redirect(url_for('institution.edit_class_form', course_id=course_id, class_id=class_id))
+    
+    try:
+        # Parse datetime strings
+        start_datetime = datetime.fromisoformat(start_time)
+        end_datetime = datetime.fromisoformat(end_time)
+        
+        # Validate times
+        if end_datetime <= start_datetime:
+            flash('End time must be after start time.', 'error')
+            return redirect(url_for('institution.edit_class_form', course_id=course_id, class_id=class_id))
+        
+        with get_session() as db_session:
+            course_model = CourseModel(db_session)
+            class_model = ClassModel(db_session)
+            
+            # Verify course belongs to institution
+            course = course_model.get_by_id(course_id)
+            if not course or course.institution_id != institution_id:
+                flash('Course not found or access denied.', 'error')
+                return redirect(url_for('institution.manage_classes'))
+            
+            # Verify class belongs to course
+            cls = class_model.get_by_id(class_id)
+            if not cls or cls.course_id != course_id:
+                flash('Class not found or does not belong to this course.', 'error')
+                return redirect(url_for('institution.module_details', course_id=course_id))
+            
+            # Update the class
+            class_model.update(
+                class_id,
+                venue_id=int(venue_id),
+                start_time=start_datetime,
+                end_time=end_datetime
+            )
+            
+            flash('Class updated successfully', 'success')
+            return redirect(url_for('institution.module_details', course_id=course_id))
+            
+    except ValueError as e:
+        flash(f'Invalid date/time format: {str(e)}', 'error')
+        return redirect(url_for('institution.edit_class_form', course_id=course_id, class_id=class_id))
+    except Exception as e:
+        flash(f'Error updating class: {str(e)}', 'error')
+        return redirect(url_for('institution.edit_class_form', course_id=course_id, class_id=class_id))
+
 @institution_bp.route('/institution_profile')
 @requires_roles('admin')
 def institution_profile():

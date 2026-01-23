@@ -10,7 +10,10 @@
     <div class="card-custom mb-4">
         <div class="card-header-custom">Class Details</div>
         <div class="card-body-custom">
-            <h2 class="class-title mb-4">{{course_name}} - L{{class_id}}</h2>
+            <div class="class-title-container mb-4">
+                <h2 class="class-title">{{course_name}} - L{{class_id}}</h2>
+                <a href="{{ url_for('institution.edit_class_form', course_id=course_id, class_id=class_id) }}" class="btn-custom btn-edit">Edit Class</a>
+            </div>
             
             <div class="class-info mb-4">
                 <div class="info-group">
@@ -63,6 +66,7 @@
                                 <td>
                                     <div class="action-buttons">
                                         <a href="{{ url_for('institution.student_class_attendance_details', course_id=course_id, class_id=class_id, student_id=r.get('student_id'))}}" class="btn-custom manage-btn">Manage</a>
+
                                         {% if r.get('notes') %}<span class="appeal-badge">Has Notes</span>{% endif %}
                                     </div>
                                 </td>
@@ -103,12 +107,21 @@
         padding-bottom: 1rem;
     }
 
-    /* Class Title */
+    /* Class Title Container */
+    .class-title-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
     .class-title {
         font-size: 1.5rem;
         font-weight: bold;
         color: var(--text-dark);
         text-decoration: underline;
+        margin: 0;
     }
 
     /* Class Info */
@@ -270,6 +283,28 @@
         background-color: #1e293b;
     }
 
+    .btn-edit {
+        padding: 0.75rem 1.75rem;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        background-color: #f59e0b;
+        color: white;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-edit:hover {
+        background-color: #d97706;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
     .appeal-badge {
         background-color: #ff5252;
         color: white;
@@ -340,6 +375,11 @@
     @media (max-width: 768px) {
         .page-title {
             font-size: 1.75rem;
+        }
+
+        .class-title-container {
+            flex-direction: column;
+            align-items: flex-start;
         }
 
         .class-info {

@@ -61,12 +61,17 @@
                                     <span class="status completed">Completed</span>
                                 {% elif c[5] == 'ongoing' %}
                                     <span class="status ongoing">Ongoing</span>
+                                {% elif c[5] == 'cancelled' %}
+                                    <span class="status cancelled">Cancelled</span>
                                 {% else %}
                                     <span class="status upcoming">Upcoming</span>
                                 {% endif %}
                             </td>
                             <td class="actions-cell">
                                 <a href="{{ url_for('institution.attendance_class_details', class_id=c[0]) }}" class="btn-custom btn-manage">Manage Class</a>
+                                {% if c[5] not in ['completed', 'cancelled'] %}
+                                <button class="btn-custom btn-cancel" onclick="confirmCancel({{c[0]}}, '{{c[1]}}')">Cancel</button>
+                                {% endif %}
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -229,6 +234,12 @@
         border: 1px solid #dc2626;
     }
 
+    .status.cancelled {
+        color: #dc2626;
+        background-color: #fef2f2;
+        border: 1px solid #dc2626;
+    }
+
     /* Action Buttons */
     .actions-cell {
         text-align: center;
@@ -280,6 +291,21 @@
 
     .btn-add:hover {
         background-color: #1e293b;
+    }
+
+    .btn-cancel {
+        padding: 0.5rem 1.5rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        background-color: #dc2626;
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-cancel:hover {
+        background-color: #b91c1c;
     }
 
     /* Header Alignment */
@@ -354,4 +380,27 @@
         }
     }
 </style>
+
+<script>
+function confirmCancel(classId, startTime) {
+    if (confirm(`Are you sure you want to cancel the class on ${startTime}? This action cannot be undone.`)) {
+        // Create a form and submit it
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/institution/manage_classes/{{ course[0] }}/cancel_class/${classId}`;
+        
+        // Add CSRF token if using Flask-WTF
+        {% if csrf_token %}
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = '{{ csrf_token() }}';
+        form.appendChild(csrfInput);
+        {% endif %}
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
 {% endblock %}

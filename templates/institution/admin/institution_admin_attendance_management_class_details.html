@@ -22,17 +22,36 @@
                 </div>
                 <div class="info-group">
                     <span><strong>Lecturer: </strong>{{ class.lecturer }}</span>
+                    <span><strong>Status: </strong>
+                        {% if class_status == 'completed' %}
+                            <span class="status-badge completed">Completed</span>
+                        {% elif class_status == 'in_progress' %}
+                            <span class="status-badge ongoing">Ongoing</span>
+                        {% elif class_status == 'cancelled' %}
+                            <span class="status-badge cancelled">Cancelled</span>
+                        {% else %}
+                            <span class="status-badge upcoming">Upcoming</span>
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="info-group">
                     <span><strong>Attendance Marked: </strong>{{ class.marked }} / {{ class.total }}</span>
-                </div>
-                <div class="info-group">
                     <span><strong>Present: </strong>{{ class.present }}</span>
-                    <span><strong>Late: </strong>{{ class.late }}</span>
                 </div>
                 <div class="info-group">
+                    <span><strong>Late: </strong>{{ class.late }}</span>
                     <span><strong>Absent: </strong>{{ class.absent }}</span>
+                </div>
+                <div class="info-group">
                     <span><strong>Excused: </strong>{{ class.excused }}</span>
                 </div>
             </div>
+            
+            {% if class_status == 'cancelled' %}
+            <div class="alert-cancelled mb-4">
+                <strong>⚠️ This class has been cancelled.</strong> Attendance management is disabled for cancelled classes.
+            </div>
+            {% endif %}
 
             <div class="records-section">
                 <h3 class="section-title mb-3">Records</h3>
@@ -65,7 +84,11 @@
                                 <td><span class="status-{{ r.status }}">{{ r.status|upper }}</span></td>
                                 <td>
                                     <div class="action-buttons">
+                                        {% if class_status != 'cancelled' %}
                                         <a href="{{ url_for('institution.student_class_attendance_details', course_id=course_id, class_id=class_id, student_id=r.get('student_id'))}}" class="btn-custom manage-btn">Manage</a>
+                                        {% else %}
+                                        <button class="btn-custom manage-btn-disabled" disabled>Manage</button>
+                                        {% endif %}
 
                                         {% if r.get('notes') %}<span class="appeal-badge">Has Notes</span>{% endif %}
                                     </div>
@@ -148,6 +171,49 @@
 
     .info-group strong {
         color: var(--primary-dark);
+    }
+
+    /* Status Badges */
+    .status-badge {
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        display: inline-block;
+    }
+
+    .status-badge.completed {
+        color: #059669;
+        background-color: #f0fdf4;
+        border: 1px solid #059669;
+    }
+
+    .status-badge.ongoing {
+        color: #2563eb;
+        background-color: #eff6ff;
+        border: 1px solid #2563eb;
+    }
+
+    .status-badge.upcoming {
+        color: #7c3aed;
+        background-color: #faf5ff;
+        border: 1px solid #7c3aed;
+    }
+
+    .status-badge.cancelled {
+        color: #dc2626;
+        background-color: #fef2f2;
+        border: 1px solid #dc2626;
+    }
+
+    /* Alert for cancelled class */
+    .alert-cancelled {
+        background-color: #fef2f2;
+        border: 2px solid #dc2626;
+        border-radius: 10px;
+        padding: 1rem 1.5rem;
+        color: #dc2626;
+        font-size: 0.95rem;
     }
 
     /* Section Title */
@@ -281,6 +347,17 @@
 
     .manage-btn:hover {
         background-color: #1e293b;
+    }
+
+    .manage-btn-disabled {
+        padding: 0.5rem 1.25rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        background-color: #9ca3af;
+        color: white;
+        border: none;
+        cursor: not-allowed;
+        opacity: 0.6;
     }
 
     .btn-edit {

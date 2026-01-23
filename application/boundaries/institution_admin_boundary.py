@@ -633,6 +633,63 @@ def cancel_class(course_id, class_id):
             flash(f'Error cancelling class: {str(e)}', 'error')
             return redirect(url_for('institution.module_details', course_id=course_id))
 
+@institution_bp.route('/manage_classes/<int:course_id>/delete_class/<int:class_id>', methods=['POST'])
+@requires_roles('admin')
+def delete_class(course_id, class_id):
+    """Delete a cancelled class and its attendance records"""
+    institution_id = session.get('institution_id')
+    
+    with get_session() as db_session:
+        course_model = CourseModel(db_session)
+        class_model = ClassModel(db_session)
+        
+        # Verify course belongs to institution
+        course = course_model.get_by_id(course_id)
+        if not course or course.institution_id != institution_id:
+            flash('Course not found or access denied.', 'error')
+            return redirect(url_for('institution.manage_classes'))
+        
+        # Get the class
+        cls = class_model.get_by_id(class_id)
+        if not cls:
+            flash('Class not found.', 'error')
+            return redirect(url_for('institution.module_details', course_id=course_id))
+        
+        # Verify class belongs to the course
+        if cls.course_id != course_id:
+            flash('Class does not belong to this course.', 'error')
+            return redirect(url_for('institution.module_details', course_id=course_id))
+        
+        # Only allow deletion of cancelled classes
+        if cls.status != 'cancelled':
+            flash('Only cancelled classes can be deleted. Please cancel the class first.', 'error')
+            return redirect(url_for('institution.module_details', course_id=course_id))
+        
+        try:
+            # Store class details for the success message before deletion
+            class_time = cls.start_time.strftime("%Y-%m-%d %H:%M")
+            
+            # Count records that will be deleted (for user feedback)
+            attendance_count = (
+                db_session.query(AttendanceRecord)
+                .filter(AttendanceRecord.class_id == class_id)
+                .count()
+            )
+            
+            # Delete the class - CASCADE will automatically delete:
+            # 1. All attendance_records (via class_id FK with CASCADE)
+            # 2. All attendance_appeals (via attendance_id FK with CASCADE)
+            db_session.delete(cls)
+            db_session.commit()
+            
+            flash(f'Class on {class_time} has been permanently deleted along with {attendance_count} attendance record(s).', 'success')
+            return redirect(url_for('institution.module_details', course_id=course_id))
+            
+        except Exception as e:
+            db_session.rollback()
+            flash(f'Error deleting class: {str(e)}', 'error')
+            return redirect(url_for('institution.module_details', course_id=course_id))
+
 @institution_bp.route('/institution_profile')
 @requires_roles('admin')
 def institution_profile():

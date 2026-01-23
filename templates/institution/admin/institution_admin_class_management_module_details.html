@@ -71,6 +71,8 @@
                                 <a href="{{ url_for('institution.attendance_class_details', class_id=c[0]) }}" class="btn-custom btn-manage">Manage Class</a>
                                 {% if c[5] not in ['completed', 'cancelled'] %}
                                 <button class="btn-custom btn-cancel" onclick="confirmCancel({{c[0]}}, '{{c[1]}}')">Cancel</button>
+                                {% elif c[5] == 'cancelled' %}
+                                <button class="btn-custom btn-delete" onclick="confirmDelete({{c[0]}}, '{{c[1]}}')">Delete</button>
                                 {% endif %}
                         </tr>
                         {% endfor %}
@@ -308,6 +310,21 @@
         background-color: #b91c1c;
     }
 
+    .btn-delete {
+        padding: 0.5rem 1.5rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        background-color: #991b1b;
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-delete:hover {
+        background-color: #7f1d1d;
+    }
+
     /* Header Alignment */
     .d-flex {
         display: flex;
@@ -400,6 +417,30 @@ function confirmCancel(classId, startTime) {
         
         document.body.appendChild(form);
         form.submit();
+    }
+}
+
+function confirmDelete(classId, startTime) {
+    if (confirm(`⚠️ WARNING: Are you sure you want to PERMANENTLY DELETE the class on ${startTime}?\n\nThis will also delete all attendance records for this class.\n\nThis action CANNOT be undone!`)) {
+        // Double confirmation for safety
+        if (confirm(`Final confirmation: Delete class on ${startTime} and all its attendance records?`)) {
+            // Create a form and submit it
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/institution/manage_classes/{{ course[0] }}/delete_class/${classId}`;
+            
+            // Add CSRF token if using Flask-WTF
+            {% if csrf_token %}
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = '{{ csrf_token() }}';
+            form.appendChild(csrfInput);
+            {% endif %}
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
     }
 }
 </script>

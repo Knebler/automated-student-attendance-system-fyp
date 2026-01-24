@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, session, redirect, url_for, flash, current_app, request, jsonify
 from application.controls.auth_control import AuthControl, requires_roles
 from application.controls.student_control import StudentControl
+from application.entities2.notification import NotificationModel
 from database.base import get_session
 from datetime import datetime, date, timedelta
 import calendar
@@ -502,3 +503,116 @@ def generate_student_weekly_data(target_date, student_id, course_filter=None, cl
         'week_end': week_end,
         'days': week_days
     }
+
+# Notification API endpoints
+@student_bp.route('/api/notifications', methods=['GET'])
+@requires_roles('student')
+def get_notifications():
+    """API endpoint to get notifications for the student"""
+    try:
+        student_id = session.get('user_id')
+        if not student_id:
+            return jsonify({'success': False, 'error': 'User not authenticated'}), 401
+        
+        with get_session() as db_session:
+            notification_model = NotificationModel(db_session)
+            
+            # Get all notifications (or just unread ones based on query param)
+            unread_only = request.args.get('unread_only', 'false').lower() == 'true'
+            notifications = notification_model.get_user_notifications(student_id, unread_only=unread_only)
+            
+            # Format notifications for JSON response
+            formatted_notifications = []
+            for notif in notifications:
+                formatted_notifications.append({
+                    'notification_id': notif.notification_id,
+                    'content': notif.content,
+                    'created_at': notif.created_at.strftime('%b %d, %Y at %I:%M %p') if notif.created_at else 'N/A',
+                    'created_at_relative': get_relative_time(notif.created_at) if notif.created_at else 'N/A',
+                    'acknowledged': notif.acknowledged
+                })
+            
+            return jsonify({
+                'success': True,
+                'notifications': formatted_notifications,
+                'count': len(formatted_notifications)
+            })
+            
+    except Exception as e:
+        current_app.logger.error(f"Error fetching notifications: {e}")
+        return jsonify({'success': False, 'error': 'Failed to fetch notifications'}), 500
+
+@student_bp.route('/api/notifications/<int:notification_id>/mark-read', methods=['POST'])
+@requires_roles('student')
+def mark_notification_read(notification_id):
+    """API endpoint to mark a notification as read"""
+    try:
+        student_id = session.get('user_id')
+        if not student_id:
+            return jsonify({'success': False, 'error': 'User not authenticated'}), 401
+        
+        with get_session() as db_session:
+            notification_model = NotificationModel(db_session)
+            
+            # Verify the notification belongs to this user
+            from database.models import Notification
+            notification = db_session.query(Notification).filter_by(
+                notification_id=notification_id,
+                user_id=student_id
+            ).first()
+            
+            if not notification:
+                return jsonify({'success': False, 'error': 'Notification not found'}), 404
+            
+            # Mark as read
+            notification_model.mark_as_read(notification_id)
+            
+            return jsonify({'success': True, 'message': 'Notification marked as read'})
+            
+    except Exception as e:
+        current_app.logger.error(f"Error marking notification as read: {e}")
+        return jsonify({'success': False, 'error': 'Failed to mark notification as read'}), 500
+
+@student_bp.route('/api/notifications/mark-all-read', methods=['POST'])
+@requires_roles('student')
+def mark_all_notifications_read():
+    """API endpoint to mark all notifications as read"""
+    try:
+        student_id = session.get('user_id')
+        if not student_id:
+            return jsonify({'success': False, 'error': 'User not authenticated'}), 401
+        
+        with get_session() as db_session:
+            notification_model = NotificationModel(db_session)
+            count = notification_model.mark_all_as_read(student_id)
+            
+            return jsonify({
+                'success': True,
+                'message': f'{count} notification(s) marked as read',
+                'count': count
+            })
+            
+    except Exception as e:
+        current_app.logger.error(f"Error marking all notifications as read: {e}")
+        return jsonify({'success': False, 'error': 'Failed to mark all notifications as read'}), 500
+
+def get_relative_time(dt):
+    """Get relative time string (e.g., '2 hours ago', 'Just now')"""
+    if not dt:
+        return 'N/A'
+    
+    now = datetime.now()
+    diff = now - dt
+    
+    if diff.total_seconds() < 60:
+        return 'Just now'
+    elif diff.total_seconds() < 3600:
+        minutes = int(diff.total_seconds() / 60)
+        return f'{minutes} minute{"s" if minutes != 1 else ""} ago'
+    elif diff.total_seconds() < 86400:
+        hours = int(diff.total_seconds() / 3600)
+        return f'{hours} hour{"s" if hours != 1 else ""} ago'
+    elif diff.days < 7:
+        return f'{diff.days} day{"s" if diff.days != 1 else ""} ago'
+    else:
+        return dt.strftime('%b %d, %Y')

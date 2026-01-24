@@ -252,8 +252,14 @@ def seed_classes(classes_per_sem: int=5):
 def seed_attendance():
     with get_session() as session:
         classes = session.query(Class).all()
-        statuses = AttendanceStatusEnum.enums
+        # Create a copy of statuses to avoid modifying the original enum
+        statuses = list(AttendanceStatusEnum.enums)
         statuses.remove("unmarked")
+
+        # Track all attendance records to count them
+        all_attendance_records = []
+        # Track unique class-student pairs to prevent duplicates
+        seen_pairs = set()
 
         for cls in classes:
             # Get students who should be in this class
@@ -263,10 +269,14 @@ def seed_attendance():
                 User.role == "student",
             ).all()
 
-            # Initialize attendance records list
-            attendance_records = []
-
             for cu in enrolled_students:
+                # Create unique key for this class-student pair
+                pair_key = (cls.class_id, cu.user_id)
+                
+                # Skip if we've already created a record for this pair
+                if pair_key in seen_pairs:
+                    continue
+                
                 record = AttendanceRecord(
                     class_id=cls.class_id,
                     student_id=cu.user_id,
@@ -274,13 +284,13 @@ def seed_attendance():
                     marked_by="lecturer",
                     lecturer_id=cls.lecturer_id
                 )
-                attendance_records.append(record)
+                all_attendance_records.append(record)
+                seen_pairs.add(pair_key)
 
-            # Add all attendance records for this class at once
-            session.add_all(attendance_records)
-
+        # Add all attendance records at once
+        session.add_all(all_attendance_records)
         session.commit()
-        print(f"Created {len(attendance_records)} attendance records.")
+        print(f"Created {len(all_attendance_records)} attendance records.")
         
 def seed_appeals():
     with get_session() as session:

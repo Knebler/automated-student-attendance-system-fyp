@@ -543,9 +543,11 @@ def cancel_class(course_id, class_id):
     with get_session() as db_session:
         course_model = CourseModel(db_session)
         class_model = ClassModel(db_session)
+        announcement_model = AnnouncementModel(db_session)
         
         # Verify course belongs to institution
         course = course_model.get_by_id(course_id)
+        course_code = course.code if course else "Unknown"
         if not course or course.institution_id != institution_id:
             flash('Course not found or access denied.', 'error')
             return redirect(url_for('institution.manage_classes'))
@@ -574,7 +576,7 @@ def cancel_class(course_id, class_id):
         try:
             # Update class status to cancelled
             cls.status = 'cancelled'
-            
+            announcement_model.create_announcement(institution_id, cls.lecturer_id, f'Class {course_code} - {class_id} Cancelled', f'Class {course_code} - {class_id} cancelled by admin')
             # Get all attendance records for this class
             attendance_records = (
                 db_session.query(AttendanceRecord)

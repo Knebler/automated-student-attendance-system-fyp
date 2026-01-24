@@ -1,0 +1,141 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Issue Details #{{ issue.issue_id }} - AttendAI{% endblock %}
+
+{% block content %}
+<style>
+    .issue-details-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    
+    .issue-header {
+        background-color: var(--primary-light);
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border-color);
+    }
+    
+    .issue-id {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--primary-dark);
+    }
+    
+    .issue-meta {
+        color: var(--text-light);
+        font-size: 0.9rem;
+    }
+    
+    .issue-description {
+        background-color: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        border: 1px solid var(--border-color);
+        margin-bottom: 1.5rem;
+        white-space: pre-line;
+    }
+    
+    .comments-section {
+        margin-top: 2rem;
+    }
+    
+    .comment {
+        background-color: white;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid var(--border-color);
+    }
+    
+    .comment-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
+    
+    .comment-author {
+        font-weight: bold;
+        color: var(--primary-dark);
+    }
+    
+    .comment-date {
+        color: var(--text-light);
+        font-size: 0.85rem;
+    }
+    
+    .comment-content {
+        white-space: pre-line;
+    }
+    
+    .history-item {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .history-date {
+        color: var(--text-light);
+        font-size: 0.85rem;
+    }
+</style>
+
+<div class="issue-details-container">
+    <!-- Back Button -->
+    <a href="{{ url_for('main.my_reports') }}" class="btn btn-outline-secondary mb-4">
+        <i class="fas fa-arrow-left me-2"></i>Back to My Reports
+    </a>
+    
+    <!-- Issue Header -->
+    <div class="issue-header">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h1 class="issue-id mb-2">Issue #{{ issue.issue_id }}</h1>
+                <div class="issue-meta mb-3">
+                    <span class="me-3">
+                        <i class="fas fa-calendar me-1"></i>
+                        {{ issue.created_at.strftime('%Y-%m-%d %H:%M') }}
+                    </span>
+                    <span class="me-3">
+                        <i class="fas fa-tag me-1"></i>
+                        {{ issue.category|replace('_', ' ')|title }}
+                    </span>
+                    <span>
+                        <i class="fas fa-circle me-1"></i>
+                        {% if issue.status == 'open' or issue.is_active %}
+                            <span class="badge bg-danger">Open</span>
+                        {% elif issue.status == 'in_progress' %}
+                            <span class="badge bg-warning">In Progress</span>
+                        {% elif issue.status == 'resolved' %}
+                            <span class="badge bg-success">Resolved</span>
+                        {% elif issue.status == 'rejected' %}
+                            <span class="badge bg-secondary">Rejected</span>
+                        {% else %}
+                            <span class="badge bg-info">Pending</span>
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            {% if issue.is_active %}
+            <a href="{{ url_for('main.update_issue', issue_id=issue.issue_id) }}" 
+               class="btn btn-primary">
+                <i class="fas fa-edit me-2"></i>Update Issue
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Issue Description -->
+    <div class="card">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Issue Description</h5>
+        </div>
+        <div class="card-body">
+            <div class="issue-description">
+                {{ issue.description }}
+            </div>
+        </div>
+    </div>
+    
+</div>
+{% endblock %}

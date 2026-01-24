@@ -276,6 +276,39 @@ def absent_records():
         flash('An error occurred while loading absent records', 'danger')
         return render_template('institution/student/student_attendance_management_history.html')
     
+@student_bp.route('/announcements')
+@requires_roles('student')
+def announcements():
+    """View all announcements"""
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            flash('Please log in to view announcements', 'warning')
+            return redirect(url_for('auth.login'))
+        
+        # Get all dashboard data which includes all announcements
+        dashboard_data = StudentControl.get_dashboard_data(user_id)
+        
+        if not dashboard_data.get('success'):
+            flash(dashboard_data.get('error', 'Error loading announcements'), 'danger')
+            return render_template('institution/student/student_announcements.html')
+        
+        # Prepare context for announcements page
+        context = {
+            'student_name': dashboard_data.get('student', {}).get('name', 'Student'),
+            'student_info': dashboard_data.get('student', {}),
+            'all_announcements': dashboard_data.get('all_announcements', []),
+            'current_time': dashboard_data.get('current_time', ''),
+            'current_date': dashboard_data.get('current_date', '')
+        }
+        
+        return render_template('institution/student/student_announcements.html', **context)
+        
+    except Exception as e:
+        current_app.logger.error(f"Error loading student announcements: {e}")
+        flash('An error occurred while loading announcements', 'danger')
+        return render_template('institution/student/student_announcements.html')
+
 @student_bp.route('/timetable')
 @requires_roles('student')
 def timetable():

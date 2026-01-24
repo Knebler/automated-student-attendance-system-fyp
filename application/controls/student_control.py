@@ -732,14 +732,21 @@ class StudentControl:
                 
                 # Get recent announcements for the student's institution
                 try:
-                    announcements = announcement_model.get_recent_announcements(
+                    # Get preview announcements (3 items) for dashboard
+                    preview_announcements = announcement_model.get_recent_announcements(
                         institution_id=student.institution_id, 
                         limit=3
                     )
                     
-                    # Format announcements similar to lecturer_control.py
+                    # Get all announcements (up to 50 items) for the announcements page
+                    all_announcements_list = announcement_model.get_recent_announcements(
+                        institution_id=student.institution_id, 
+                        limit=50
+                    )
+                    
+                    # Format preview announcements
                     formatted_announcements = []
-                    for announcement in announcements:
+                    for announcement in preview_announcements:
                         # Get the user who created the announcement
                         requested_by = user_model.get_by_id(announcement.requested_by_user_id) if announcement.requested_by_user_id else None
                         
@@ -749,10 +756,24 @@ class StudentControl:
                             'content': announcement.content,
                             'author': requested_by.name if requested_by else 'Unknown'
                         })
+                    
+                    # Format all announcements for the announcements page
+                    formatted_all_announcements = []
+                    for announcement in all_announcements_list:
+                        requested_by = user_model.get_by_id(announcement.requested_by_user_id) if announcement.requested_by_user_id else None
+                        
+                        formatted_all_announcements.append({
+                            'title': announcement.title,
+                            'date': announcement.date_posted.strftime('%b %d, %Y') if announcement.date_posted else 'N/A',
+                            'content': announcement.content,
+                            'author': requested_by.name if requested_by else 'Unknown',
+                            'date_raw': announcement.date_posted.isoformat() if announcement.date_posted else None
+                        })
                 except Exception as e:
                     # If there's an error getting announcements, log it and return empty list
                     print(f"Error getting announcements for student dashboard: {e}")
                     formatted_announcements = []
+                    formatted_all_announcements = []
                 
                 return {
                     'success': True,
@@ -763,7 +784,8 @@ class StudentControl:
                         'institution_id': student.institution_id
                     },
                     'today_classes': today_classes,
-                    'announcements': formatted_announcements,  # UPDATED: Now has actual announcements
+                    'announcements': formatted_announcements,  # Preview announcements (3 items)
+                    'all_announcements': formatted_all_announcements,  # All announcements for page (up to 50)
                     'statistics': {
                         'overall_attendance': round(present_percent, 1),
                         'present_count': p + l + e,

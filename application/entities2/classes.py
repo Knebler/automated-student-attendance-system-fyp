@@ -16,10 +16,14 @@ class ClassModel(BaseEntity[Class]):
         """
         Update class statuses in the database based on current time.
         Also marks unmarked attendance as 'absent' for completed classes.
+        Sends notifications to students when class is starting in 30 mins or has started.
         Returns number of classes updated.
         """
+        from .notification import NotificationModel
+        
         now = datetime.now()
         updated_count = 0
+        notification_model = NotificationModel(self.session)
         
         # Build base query
         query = self.session.query(Class)
@@ -29,6 +33,49 @@ class ClassModel(BaseEntity[Class]):
             query = query.join(Course, Class.course_id == Course.course_id).filter(
                 Course.institution_id == institution_id
             )
+        
+        # Check for classes starting in 30 minutes (with 1 minute window)
+        thirty_min_from_now = now + timedelta(minutes=30)
+        thirty_one_min_from_now = now + timedelta(minutes=31)
+        
+        classes_starting_soon = query.filter(
+            Class.start_time >= thirty_min_from_now,
+            Class.start_time < thirty_one_min_from_now,
+            Class.status == 'scheduled',
+            Class.notification_30min_sent == False
+        ).all()
+        
+        for cls in classes_starting_soon:
+            # Get enrolled students
+            enrolled_students = (
+                self.session.query(User.user_id)
+                .join(CourseUser, CourseUser.user_id == User.user_id)
+                .filter(CourseUser.course_id == cls.course_id)
+                .filter(CourseUser.semester_id == cls.semester_id)
+                .filter(User.role == 'student')
+                .all()
+            )
+            
+            student_ids = [s[0] for s in enrolled_students]
+            
+            # Get course and venue names for notification
+            course_venue_info = (
+                self.session.query(Course.name, Venue.name)
+                .join(Course, Course.course_id == cls.course_id)
+                .join(Venue, Venue.venue_id == cls.venue_id)
+                .first()
+            )
+            
+            if course_venue_info and student_ids:
+                course_name, venue_name = course_venue_info
+                notification_content = f"⏰ Class starting soon: {course_name} begins in 30 minutes at {venue_name}"
+                
+                # Send notifications to all enrolled students
+                notification_model.bulk_create_notifications(student_ids, notification_content)
+                
+                # Mark notification as sent
+                cls.notification_30min_sent = True
+                updated_count += 1
         
         # Update completed classes (end_time has passed and status is not 'completed' or 'cancelled')
         completed_classes = query.filter(
@@ -83,6 +130,38 @@ class ClassModel(BaseEntity[Class]):
         for cls in in_progress_classes:
             cls.status = 'in_progress'
             updated_count += 1
+            
+            # Send "class has started" notification if not already sent
+            if not cls.notification_started_sent:
+                # Get enrolled students
+                enrolled_students = (
+                    self.session.query(User.user_id)
+                    .join(CourseUser, CourseUser.user_id == User.user_id)
+                    .filter(CourseUser.course_id == cls.course_id)
+                    .filter(CourseUser.semester_id == cls.semester_id)
+                    .filter(User.role == 'student')
+                    .all()
+                )
+                
+                student_ids = [s[0] for s in enrolled_students]
+                
+                # Get course and venue names for notification
+                course_venue_info = (
+                    self.session.query(Course.name, Venue.name)
+                    .join(Course, Course.course_id == cls.course_id)
+                    .join(Venue, Venue.venue_id == cls.venue_id)
+                    .first()
+                )
+                
+                if course_venue_info and student_ids:
+                    course_name, venue_name = course_venue_info
+                    notification_content = f"🔔 Class started: {course_name} is now in progress at {venue_name}"
+                    
+                    # Send notifications to all enrolled students
+                    notification_model.bulk_create_notifications(student_ids, notification_content)
+                    
+                    # Mark notification as sent
+                    cls.notification_started_sent = True
         
         self.session.commit()
         return updated_count

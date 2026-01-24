@@ -19,11 +19,20 @@
             </div>
         </div>
 
-        <div class="notification-bell" title="Announcements" id="notificationBell" data-announcements-count="{{ announcements|length|default(0) }}">
-            🔔
-            {% if announcements and announcements|length > 0 %}
-            <span class="notification-badge"></span>
-            {% endif %}
+        <div class="header-actions">
+            <div class="notification-bell" title="Notifications" id="notificationBell" data-notification-count="{{ statistics.unread_notifications_count|default(0) }}">
+                🔔
+                {% if statistics.unread_notifications_count and statistics.unread_notifications_count > 0 %}
+                <span class="notification-badge">{{ statistics.unread_notifications_count }}</span>
+                {% endif %}
+            </div>
+            
+            <div class="notification-bell" title="Announcements" id="announcementBell" data-announcements-count="{{ announcements|length|default(0) }}">
+                📢
+                {% if announcements and announcements|length > 0 %}
+                <span class="notification-badge"></span>
+                {% endif %}
+            </div>
         </div>
     </div>
 
@@ -154,6 +163,25 @@
         <button id="notifToastClose" class="toast-close" aria-label="Close">&times;</button>
         <p class="toast-message"><span id="notifToastMsg"></span></p>
         <button class="btn-toast" id="notifToastOpen">View announcements</button>
+    </div>
+</div>
+
+<!-- Notifications Modal -->
+<div id="notificationsModal" class="modal-overlay" aria-hidden="true" style="display: none;">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>Notifications</h2>
+            <button id="closeNotificationsModal" class="modal-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="notifications-header-actions">
+                <button id="markAllReadBtn" class="btn-mark-all-read">Mark All as Read</button>
+            </div>
+            <div id="notificationsList" class="notifications-list">
+                <!-- Notifications will be loaded here dynamically -->
+                <div class="loading-message">Loading notifications...</div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -792,6 +820,95 @@
     opacity: 0.8;
 }
 
+/* Header Actions */
+.header-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+/* Notifications Styles */
+.notifications-header-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.btn-mark-all-read {
+    background: transparent;
+    border: 1px solid var(--primary-dark);
+    color: var(--primary-dark);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.btn-mark-all-read:hover {
+    background: var(--primary-dark);
+    color: white;
+}
+
+.notifications-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.notification-item {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-left: 4px solid transparent;
+    position: relative;
+}
+
+.notification-item.unread {
+    background: #eff6ff;
+    border-left-color: var(--primary-dark);
+}
+
+.notification-item:hover {
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+.notification-content {
+    font-size: 0.95rem;
+    color: var(--text-dark);
+    margin: 0 0 0.5rem 0;
+    line-height: 1.5;
+}
+
+.notification-time {
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.notification-item.unread .notification-content {
+    font-weight: 500;
+}
+
+.no-notifications-message {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-light);
+}
+
+.loading-message {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-light);
+}
+
 /* Responsive */
 @media (max-width: 900px) {
     .dashboard-grid {
@@ -949,6 +1066,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // Close modal on Escape key
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
+            // Close notifications modal if open
+            const notificationsModal = document.getElementById('notificationsModal');
+            if (notificationsModal && notificationsModal.style.display !== 'none') {
+                closeNotificationsModal();
+            }
             // Close announcements modal if open
             const announcementsModal = document.getElementById('announcementsModal');
             if (announcementsModal && announcementsModal.style.display !== 'none') {
@@ -975,17 +1097,25 @@ document.addEventListener("DOMContentLoaded", () => {
         backToListBtn.addEventListener('click', backToList);
     }
     
-    // Notification bell click handler - always show toast
+    // Notification bell click handler - opens notifications modal
     const notificationBell = document.getElementById('notificationBell');
+    if (notificationBell) {
+        notificationBell.addEventListener('click', () => {
+            openNotificationsModal();
+        });
+    }
+    
+    // Announcement bell click handler - shows toast
+    const announcementBell = document.getElementById('announcementBell');
     const notifToast = document.getElementById('notifToast');
     const notifToastMsg = document.getElementById('notifToastMsg');
     const notifToastOpen = document.getElementById('notifToastOpen');
     const notifToastClose = document.getElementById('notifToastClose');
     
-    if (notificationBell && notifToast && notifToastMsg) {
-        notificationBell.addEventListener('click', () => {
+    if (announcementBell && notifToast && notifToastMsg) {
+        announcementBell.addEventListener('click', () => {
             // Get announcements count from data attribute
-            const announcementsCount = parseInt(notificationBell.dataset.announcementsCount || '0') || 0;
+            const announcementsCount = parseInt(announcementBell.dataset.announcementsCount || '0') || 0;
             
             // Always show toast with appropriate message
             if (announcementsCount > 0) {
@@ -1015,6 +1145,154 @@ document.addEventListener("DOMContentLoaded", () => {
                 notifToast.style.display = 'none';
             }
         });
+    }
+    
+    // Notifications Modal functions
+    function openNotificationsModal() {
+        const modal = document.getElementById('notificationsModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            modal.setAttribute('aria-hidden', 'false');
+            loadNotifications();
+        }
+    }
+    
+    function closeNotificationsModal() {
+        const modal = document.getElementById('notificationsModal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.setAttribute('aria-hidden', 'true');
+        }
+    }
+    
+    function loadNotifications() {
+        const notificationsList = document.getElementById('notificationsList');
+        if (!notificationsList) return;
+        
+        notificationsList.innerHTML = '<div class="loading-message">Loading notifications...</div>';
+        
+        fetch('{{ url_for("institution_lecturer.get_notifications") }}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.notifications) {
+                    if (data.notifications.length === 0) {
+                        notificationsList.innerHTML = '<div class="no-notifications-message"><p>📭 No notifications</p><p class="small-text">You\'re all caught up!</p></div>';
+                    } else {
+                        notificationsList.innerHTML = '';
+                        data.notifications.forEach(notif => {
+                            const notifItem = document.createElement('div');
+                            notifItem.className = 'notification-item' + (notif.acknowledged ? '' : ' unread');
+                            notifItem.dataset.notificationId = notif.notification_id;
+                            notifItem.innerHTML = `
+                                <p class="notification-content">${escapeHtml(notif.content)}</p>
+                                <span class="notification-time">${notif.created_at_relative}</span>
+                            `;
+                            notifItem.addEventListener('click', () => {
+                                if (!notif.acknowledged) {
+                                    markNotificationAsRead(notif.notification_id);
+                                }
+                            });
+                            notificationsList.appendChild(notifItem);
+                        });
+                    }
+                } else {
+                    notificationsList.innerHTML = '<div class="no-notifications-message"><p>❌ Failed to load notifications</p></div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading notifications:', error);
+                notificationsList.innerHTML = '<div class="no-notifications-message"><p>❌ Error loading notifications</p></div>';
+            });
+    }
+    
+    function markNotificationAsRead(notificationId) {
+        fetch(`{{ url_for("institution_lecturer.mark_notification_read", notification_id=0) }}`.replace('0', notificationId), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const notifItem = document.querySelector(`.notification-item[data-notification-id="${notificationId}"]`);
+                if (notifItem) {
+                    notifItem.classList.remove('unread');
+                }
+                updateNotificationBadge();
+            }
+        })
+        .catch(error => {
+            console.error('Error marking notification as read:', error);
+        });
+    }
+    
+    function markAllNotificationsAsRead() {
+        fetch('{{ url_for("institution_lecturer.mark_all_notifications_read") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.querySelectorAll('.notification-item.unread').forEach(item => {
+                    item.classList.remove('unread');
+                });
+                updateNotificationBadge();
+            }
+        })
+        .catch(error => {
+            console.error('Error marking all notifications as read:', error);
+        });
+    }
+    
+    function updateNotificationBadge() {
+        const badge = document.querySelector('#notificationBell .notification-badge');
+        const bell = document.getElementById('notificationBell');
+        if (badge && bell) {
+            const unreadCount = document.querySelectorAll('.notification-item.unread').length;
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    }
+    
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, m => map[m]);
+    }
+    
+    // Close notifications modal button
+    const closeNotificationsModalBtn = document.getElementById('closeNotificationsModal');
+    if (closeNotificationsModalBtn) {
+        closeNotificationsModalBtn.addEventListener('click', closeNotificationsModal);
+    }
+    
+    // Close notifications modal on backdrop click
+    const notificationsModal = document.getElementById('notificationsModal');
+    if (notificationsModal) {
+        notificationsModal.addEventListener('click', (e) => {
+            if (e.target === notificationsModal) {
+                closeNotificationsModal();
+            }
+        });
+    }
+    
+    // Mark all as read button
+    const markAllReadBtn = document.getElementById('markAllReadBtn');
+    if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', markAllNotificationsAsRead);
     }
     
     // Announcement Detail Modal functions

@@ -178,7 +178,7 @@ def parse_assignment_sheet(job_id: str, ws: Worksheet) -> List[CourseUser]:
             if zipped_data["semester_id"] is None:
                 raise ValueError("Invalid semester name")
             zipped_data["user_id"] = user_email_to_id.get(zipped_data.pop("email"), None)
-            if zipped_data["lecturer_id"] is None:
+            if zipped_data["user_id"] is None:
                 raise ValueError("Invalid user email")
             assignments.append((idx, CourseUser(**zipped_data)))
         except Exception as e:
@@ -189,7 +189,7 @@ def parse_assignment_sheet(job_id: str, ws: Worksheet) -> List[CourseUser]:
 def parse_class_sheet(job_id: str, ws: Worksheet) -> List[Class]:
     task_name = "import_classes"
     inst_id = ALL_IMPORT_JOBS[job_id]["institution_id"]
-    headers = ["course_code", "semester_name", "venue_name", "lecturer_email", "start_date", "end_date"]
+    headers = ["course_code", "semester_name", "venue_name", "lecturer_email", "start_time", "end_time"]
     classes = []
 
     # Preload data for lookups

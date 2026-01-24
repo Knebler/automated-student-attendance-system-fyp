@@ -657,6 +657,217 @@
             display: none;
         }
     }
+
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        opacity: 0;
+        animation: fadeIn 0.3s ease forwards;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .modal-content {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: slideUp 0.3s ease forwards;
+    }
+
+    @keyframes slideUp {
+        from { 
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to { 
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .modal-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--text-light);
+        padding: 0.25rem;
+        line-height: 1;
+        transition: color 0.2s ease;
+    }
+
+    .modal-close:hover {
+        color: var(--primary-dark);
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .modal-footer {
+        padding: 1.5rem;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+    }
+
+    /* Modal Form Styles */
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        font-size: 0.9rem;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.9rem;
+        background-color: white;
+        color: var(--text-dark);
+        transition: border-color 0.2s ease;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .form-group input:invalid,
+    .form-group select:invalid {
+        border-color: #dc2626;
+    }
+
+    /* Modal Detail View Styles */
+    .institution-details-view {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .detail-section {
+        background-color: var(--primary-light);
+        padding: 1.25rem;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+    }
+
+    .detail-section h4 {
+        margin: 0 0 1rem 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--primary-dark);
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 0.5rem;
+    }
+
+    .detail-section p {
+        margin: 0.5rem 0;
+        color: var(--text-dark);
+        font-size: 0.9rem;
+    }
+
+    .detail-section p strong {
+        color: var(--text-dark);
+        min-width: 120px;
+        display: inline-block;
+    }
+
+    .admin-user {
+        background-color: white;
+        padding: 0.75rem;
+        border-radius: 6px;
+        border: 1px solid var(--border-color);
+        margin-bottom: 0.75rem;
+    }
+
+    .admin-user:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Alert Styles */
+    .alert-custom {
+        padding: 1rem 1.25rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        animation: slideInRight 0.3s ease forwards;
+    }
+
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    .alert-custom .btn-close {
+        background: none;
+        border: none;
+        font-size: 1.25rem;
+        cursor: pointer;
+        padding: 0;
+        margin-left: 1rem;
+        opacity: 0.7;
+        transition: opacity 0.2s ease;
+    }
+
+    .alert-custom .btn-close:hover {
+        opacity: 1;
+    }
+
 </style>
 
 <div class="platform-manager-subscription-management">

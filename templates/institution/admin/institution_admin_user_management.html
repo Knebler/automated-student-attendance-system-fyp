@@ -39,7 +39,7 @@
                 </div>
             </div>
 
-            <!-- Search Section -->
+            <!-- Search and Add User Section -->
             <div class="search-section mb-4">
                 <div class="search-container">
                     <input type="text" id="searchInput" class="search-input" placeholder="Search by name or ID">
@@ -55,6 +55,7 @@
                         <option value="suspended">Suspended</option>
                     </select>
                     <button id="clearFilters" class="btn-custom clear-btn">Clear Filters</button>
+                    <a href="{{ url_for('institution.add_user_form') }}" class="btn-custom" style="background-color: #001641; color: white; margin-left: auto; border: 2px solid #001641; font-weight: 600;">Add User</a>
                 </div>
             </div>
 

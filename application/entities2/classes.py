@@ -12,6 +12,160 @@ class ClassModel(BaseEntity[Class]):
     def __init__(self, session):
         super().__init__(session, Class)
 
+    def update_class_statuses(self, institution_id=None):
+        """
+        Update class statuses in the database based on current time.
+        Also marks unmarked attendance as 'absent' for completed classes.
+        Sends notifications to students when class is starting in 30 mins or has started.
+        Returns number of classes updated.
+        """
+        from .notification import NotificationModel
+        
+        now = datetime.now()
+        updated_count = 0
+        notification_model = NotificationModel(self.session)
+        
+        # Build base query
+        query = self.session.query(Class)
+        
+        # Filter by institution if provided
+        if institution_id:
+            query = query.join(Course, Class.course_id == Course.course_id).filter(
+                Course.institution_id == institution_id
+            )
+        
+        # Check for classes starting in 30 minutes (with 1 minute window)
+        thirty_min_from_now = now + timedelta(minutes=30)
+        thirty_one_min_from_now = now + timedelta(minutes=31)
+        
+        classes_starting_soon = query.filter(
+            Class.start_time >= thirty_min_from_now,
+            Class.start_time < thirty_one_min_from_now,
+            Class.status == 'scheduled',
+            Class.notification_30min_sent == False
+        ).all()
+        
+        for cls in classes_starting_soon:
+            # Get enrolled students
+            enrolled_students = (
+                self.session.query(User.user_id)
+                .join(CourseUser, CourseUser.user_id == User.user_id)
+                .filter(CourseUser.course_id == cls.course_id)
+                .filter(CourseUser.semester_id == cls.semester_id)
+                .filter(User.role == 'student')
+                .all()
+            )
+            
+            student_ids = [s[0] for s in enrolled_students]
+            
+            # Get course and venue names for notification
+            course_venue_info = (
+                self.session.query(Course.name, Venue.name)
+                .filter(Course.course_id == cls.course_id)
+                .join(Venue, Venue.venue_id == cls.venue_id)
+                .first()
+            )
+            
+            if course_venue_info and student_ids:
+                course_name, venue_name = course_venue_info
+                notification_content = f"⏰ Class starting soon: {course_name} begins in 30 minutes at {venue_name}"
+                
+                # Send notifications to all enrolled students
+                notification_model.bulk_create_notifications(student_ids, notification_content)
+                
+                # Mark notification as sent
+                cls.notification_30min_sent = True
+                updated_count += 1
+        
+        # Update completed classes (end_time has passed and status is not 'completed' or 'cancelled')
+        completed_classes = query.filter(
+            Class.end_time < now,
+            Class.status.notin_(['completed', 'cancelled'])
+        ).all()
+        
+        for cls in completed_classes:
+            cls.status = 'completed'
+            updated_count += 1
+            
+            # Mark any unmarked attendance as 'absent' for this completed class
+            # Get all students enrolled in this class
+            enrolled_students = (
+                self.session.query(User.user_id)
+                .join(CourseUser, CourseUser.user_id == User.user_id)
+                .filter(CourseUser.course_id == cls.course_id)
+                .filter(CourseUser.semester_id == cls.semester_id)
+                .filter(User.role == 'student')
+                .all()
+            )
+            
+            student_ids = [s[0] for s in enrolled_students]
+            
+            # Get students who already have attendance records
+            existing_records = (
+                self.session.query(AttendanceRecord.student_id)
+                .filter(AttendanceRecord.class_id == cls.class_id)
+                .all()
+            )
+            
+            existing_student_ids = {r[0] for r in existing_records}
+            
+            # Create absent records for students without attendance
+            for student_id in student_ids:
+                if student_id not in existing_student_ids:
+                    new_record = AttendanceRecord(
+                        class_id=cls.class_id,
+                        student_id=student_id,
+                        status='absent',
+                        marked_by='system'
+                    )
+                    self.session.add(new_record)
+        
+        # Update in_progress classes (started but not ended, and status is not 'in_progress', 'completed', or 'cancelled')
+        in_progress_classes = query.filter(
+            Class.start_time <= now,
+            Class.end_time >= now,
+            Class.status.notin_(['in_progress', 'completed', 'cancelled'])
+        ).all()
+        
+        for cls in in_progress_classes:
+            cls.status = 'in_progress'
+            updated_count += 1
+            
+            # Send "class has started" notification if not already sent
+            if not cls.notification_started_sent:
+                # Get enrolled students
+                enrolled_students = (
+                    self.session.query(User.user_id)
+                    .join(CourseUser, CourseUser.user_id == User.user_id)
+                    .filter(CourseUser.course_id == cls.course_id)
+                    .filter(CourseUser.semester_id == cls.semester_id)
+                    .filter(User.role == 'student')
+                    .all()
+                )
+                
+                student_ids = [s[0] for s in enrolled_students]
+                
+                # Get course and venue names for notification
+                course_venue_info = (
+                    self.session.query(Course.name, Venue.name)
+                    .filter(Course.course_id == cls.course_id)
+                    .filter(Venue.venue_id == cls.venue_id)
+                    .first()
+                )
+                
+                if course_venue_info and student_ids:
+                    course_name, venue_name = course_venue_info
+                    notification_content = f"🔔 Class started: {course_name} is now in progress at {venue_name}"
+                    
+                    # Send notifications to all enrolled students
+                    notification_model.bulk_create_notifications(student_ids, notification_content)
+                    
+                    # Mark notification as sent
+                    cls.notification_started_sent = True
+        
+        self.session.commit()
+        return updated_count
+
     def get_today(self, institution_id):
         return (
             self.session
@@ -43,6 +197,52 @@ class ClassModel(BaseEntity[Class]):
             .filter(Class.course_id == course_id)
             .filter(Class.start_time > datetime.now())
             .filter(User.role == "lecturer")
+            .all()
+        )
+
+    def get_all_with_status(self, course_id, update_db=True):
+        """
+        Get all classes for a course with status (completed, in_progress, scheduled).
+        
+        Args:
+            course_id: ID of the course
+            update_db: If True, updates the database status before querying (default: True)
+        
+        Returns status from database, but also updates statuses automatically.
+        """
+        now = datetime.now()
+        
+        if update_db:
+            # First, update any classes that need status changes
+            # Get the institution_id for this course
+            course = self.session.query(Course).filter(Course.course_id == course_id).first()
+            if course:
+                self.update_class_statuses(institution_id=course.institution_id)
+        
+        # Map database status to display status
+        status_map = case(
+            (Class.status == 'completed', 'completed'),
+            (Class.status == 'in_progress', 'ongoing'),
+            (Class.status == 'scheduled', 'upcoming'),
+            (Class.status == 'cancelled', 'cancelled'),
+            else_='upcoming'
+        )
+        
+        return (
+            self.session
+            .query(
+                Class.class_id, 
+                Class.start_time, 
+                Class.end_time, 
+                Venue.name, 
+                User.name,
+                status_map.label('status')
+            )
+            .join(User, User.user_id == Class.lecturer_id)
+            .join(Venue, Class.venue_id == Venue.venue_id)
+            .filter(Class.course_id == course_id)
+            .filter(User.role == "lecturer")
+            .order_by(Class.start_time.desc())
             .all()
         )
 

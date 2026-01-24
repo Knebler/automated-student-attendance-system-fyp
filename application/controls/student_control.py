@@ -5,7 +5,8 @@ from application.entities2.attendance_appeal import AttendanceAppealModel
 from application.entities2.user import UserModel
 from application.entities2.course import CourseModel
 from application.entities2.venue import VenueModel
-from application.entities2.announcement import AnnouncementModel  # NEW: Import AnnouncementModel
+from application.entities2.announcement import AnnouncementModel
+from application.entities2.notification import NotificationModel
 from datetime import datetime, date, timedelta
 from database.base import get_session
 from database.models import AttendanceAppealStatusEnum, AttendanceRecord, Class, Course, CourseUser, User, Venue, User as UserModelDB
@@ -652,7 +653,8 @@ class StudentControl:
                 class_model = ClassModel(db_session)
                 semester_model = SemesterModel(db_session)
                 attendance_model = AttendanceRecordModel(db_session)
-                announcement_model = AnnouncementModel(db_session)  # NEW: Add announcement model
+                announcement_model = AnnouncementModel(db_session)
+                notification_model = NotificationModel(db_session)
                 
                 # Get student info
                 student = user_model.get_by_id(user_id)
@@ -730,16 +732,26 @@ class StudentControl:
                 present_percent = ((p + l + e) / marked * 100) if marked > 0 else 0
                 absent_percent = (a / marked * 100) if marked > 0 else 0
                 
+                # Get unread notifications count
+                unread_notifications_count = notification_model.get_unread_count(user_id)
+                
                 # Get recent announcements for the student's institution
                 try:
-                    announcements = announcement_model.get_recent_announcements(
+                    # Get preview announcements (3 items) for dashboard
+                    preview_announcements = announcement_model.get_recent_announcements(
                         institution_id=student.institution_id, 
                         limit=3
                     )
                     
-                    # Format announcements similar to lecturer_control.py
+                    # Get all announcements (up to 50 items) for the announcements page
+                    all_announcements_list = announcement_model.get_recent_announcements(
+                        institution_id=student.institution_id, 
+                        limit=50
+                    )
+                    
+                    # Format preview announcements
                     formatted_announcements = []
-                    for announcement in announcements:
+                    for announcement in preview_announcements:
                         # Get the user who created the announcement
                         requested_by = user_model.get_by_id(announcement.requested_by_user_id) if announcement.requested_by_user_id else None
                         
@@ -749,10 +761,24 @@ class StudentControl:
                             'content': announcement.content,
                             'author': requested_by.name if requested_by else 'Unknown'
                         })
+                    
+                    # Format all announcements for the announcements page
+                    formatted_all_announcements = []
+                    for announcement in all_announcements_list:
+                        requested_by = user_model.get_by_id(announcement.requested_by_user_id) if announcement.requested_by_user_id else None
+                        
+                        formatted_all_announcements.append({
+                            'title': announcement.title,
+                            'date': announcement.date_posted.strftime('%b %d, %Y') if announcement.date_posted else 'N/A',
+                            'content': announcement.content,
+                            'author': requested_by.name if requested_by else 'Unknown',
+                            'date_raw': announcement.date_posted.isoformat() if announcement.date_posted else None
+                        })
                 except Exception as e:
                     # If there's an error getting announcements, log it and return empty list
                     print(f"Error getting announcements for student dashboard: {e}")
                     formatted_announcements = []
+                    formatted_all_announcements = []
                 
                 return {
                     'success': True,
@@ -763,7 +789,8 @@ class StudentControl:
                         'institution_id': student.institution_id
                     },
                     'today_classes': today_classes,
-                    'announcements': formatted_announcements,  # UPDATED: Now has actual announcements
+                    'announcements': formatted_announcements,  # Preview announcements (3 items)
+                    'all_announcements': formatted_all_announcements,  # All announcements for page (up to 50)
                     'statistics': {
                         'overall_attendance': round(present_percent, 1),
                         'present_count': p + l + e,
@@ -772,7 +799,8 @@ class StudentControl:
                         'excused_count': e,
                         'total_classes': total,
                         'present_percent': round(present_percent, 1),
-                        'absent_percent': round(absent_percent, 1)
+                        'absent_percent': round(absent_percent, 1),
+                        'unread_notifications_count': unread_notifications_count
                     },
                     'current_time': current_time.strftime('%I:%M %p'),
                     'current_date': current_date.strftime('%d %B %Y')

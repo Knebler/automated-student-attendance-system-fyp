@@ -215,6 +215,10 @@ class Class(Base, BaseMixin):
     start_time = Column(DateTime, nullable=False)
     end_time = Column(DateTime, nullable=False)
     
+    # Notification tracking flags
+    notification_30min_sent = Column(Boolean, server_default="0")
+    notification_started_sent = Column(Boolean, server_default="0")
+    
     def as_sanitized_dict(self):
         data = self.as_dict()
         return data
@@ -229,7 +233,7 @@ class AttendanceRecord(Base, BaseMixin):
     )
 
     attendance_id = Column(Integer, primary_key=True)
-    class_id = Column(Integer, ForeignKey("classes.class_id"), nullable=False, index=True)
+    class_id = Column(Integer, ForeignKey("classes.class_id", ondelete="CASCADE"), nullable=False, index=True)
     student_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, index=True)
 
     status = Column(AttendanceStatusEnum, nullable=False, index=True)
@@ -246,7 +250,7 @@ class AttendanceAppeal(Base, BaseMixin):
     __tablename__ = "attendance_appeals"
 
     appeal_id = Column(Integer, primary_key=True)
-    attendance_id = Column(Integer, ForeignKey("attendance_records.attendance_id"), nullable=False)
+    attendance_id = Column(Integer, ForeignKey("attendance_records.attendance_id", ondelete="CASCADE"), nullable=False)
     student_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
 
     status = Column(AttendanceAppealStatusEnum, nullable=False, server_default="pending")
@@ -303,3 +307,25 @@ class FacialData(Base, BaseMixin):
     created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
     updated_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"), onupdate=text("CURRENT_TIMESTAMP"))
     is_active = Column(Boolean, server_default="1")
+
+# =====================
+# PLATFORM ISSUES (USER REPORTS)
+# =====================
+class PlatformIssue(Base, BaseMixin):
+    __tablename__ = "platform_issues"
+    
+    issue_id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, index=True)
+    institution_id = Column(Integer, ForeignKey("institutions.institution_id"), nullable=False, index=True)
+    
+    description = Column(Text, nullable=False)
+    category = Column(String(100))
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+    deleted_at = Column(DateTime)  # null = active, not null = deleted (for dev team)
+    
+    # Relationships
+    reporter = relationship("User", foreign_keys=[user_id])
+    institution = relationship("Institution")
+    
+    def is_active(self):
+        return self.deleted_at is None

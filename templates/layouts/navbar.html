@@ -16,9 +16,9 @@
               <li><a class="nav-link-custom{% if current_endpoint == 'platform.user_management' %} active{% endif %}" href="{{ url_for('platform.user_management') }}">Users</a></li>
               <li><a class="nav-link-custom{% if current_endpoint == 'platform.subscription_management' %} active{% endif %}" href="{{ url_for('platform.subscription_management') }}">Institutions/Subscriptions</a></li>
               <li><a class="nav-link-custom{% if current_endpoint == 'platform.testimonial_review' %} active{% endif %}" href="{{ url_for('platform.testimonial_review') }}">Testimonials</a></li>
-              <li><a class="nav-link-custom{% if current_endpoint == 'platform.report_management' %} active{% endif %}" href="{{ url_for('platform.report_management') }}">Reports</a></li>
               <li><a class="nav-link-custom{% if current_endpoint == 'platform.performance_management' %} active{% endif %}" href="{{ url_for('platform.performance_management') }}">Performance</a></li>
               <li><a class="nav-link-custom{% if current_endpoint == 'platform.settings_management' %} active{% endif %}" href="{{ url_for('platform.settings_management') }}">Settings</a></li>
+              <li><a class="nav-link-custom{% if current_endpoint == 'platform.issue_management' %} active{% endif %}" href="{{ url_for('platform.issue_management') }}">Platform Issues</a></li>
           {% elif user_role == 'admin' %}
               <li><a class="nav-link-custom{% if current_endpoint == 'institution.institution_dashboard' %} active{% endif %}" href="{{ url_for('institution.institution_dashboard') }}">Dashboard</a></li>
               <li><a class="nav-link-custom{% if current_endpoint == 'institution.manage_attendance' %} active{% endif %}" href="{{ url_for('institution.manage_attendance') }}">Manage Attendance</a></li>
@@ -27,12 +27,14 @@
               <li><a class="nav-link-custom{% if current_endpoint == 'institution.manage_classes' %} active{% endif %}" href="{{ url_for('institution.manage_classes') }}">Manage Classes</a></li>
               <li><a class="nav-link-custom{% if current_endpoint == 'institution.manage_appeals' %} active{% endif %}" href="{{ url_for('institution.manage_appeals') }}">Manage Appeals</a></li>
               <li><a class="nav-link-custom{% if current_endpoint == 'institution.import_data' %} active{% endif %}" href="{{ url_for('institution.import_data') }}">Import Data</a></li>
+              <li><a class="nav-link-custom{% if current_endpoint == 'main.my_reports' %} active{% endif %}" href="{{ url_for('main.my_reports') }}">My Reports</a></li>
           {% elif user_role == 'lecturer' %}
               <!-- TODO: Implement proper routing for these sub pages -->
               <li><a class="nav-link-custom{% if current_endpoint == 'institution_lecturer.lecturer_dashboard' %} active{% endif %}" href="{{ url_for('institution_lecturer.lecturer_dashboard') }}">Dashboard</a></li>
               <li><a class="nav-link-custom{% if current_endpoint == 'institution_lecturer.timetable' %} active{% endif %}" href="{{ url_for('institution_lecturer.timetable') }}">View Timetable</a></li>
               <li><a class="nav-link-custom{% if current_endpoint == 'institution_lecturer.attendance_statistics' %} active{% endif %}" href="{{ url_for('institution_lecturer.attendance_statistics') }}">View Attendance Statistics</a></li>
               <li><a class="nav-link-custom{% if current_endpoint == 'institution_lecturer.manage_classes' %} active{% endif %}" href="{{ url_for('institution_lecturer.manage_classes') }}">Manage Classes/Rosters</a></li>
+              <li><a class="nav-link-custom{% if current_endpoint == 'main.my_reports' %} active{% endif %}" href="{{ url_for('main.my_reports') }}">My Reports</a></li>
 
           {% elif user_role == 'student' %}
               <!-- TODO: Implement proper routing for these sub pages -->
@@ -40,7 +42,9 @@
               <li><a class="nav-link-custom{% if current_endpoint == 'student.timetable' %} active{% endif %}" href="{{ url_for('student.timetable') }}">Timetable</a></li>
               <li><a class="nav-link-custom{% if current_endpoint == 'student.attendance' %} active{% endif %}" href="{{ url_for('student.attendance') }}">View My Attendance</a></li>
               <li><a class="nav-link-custom{% if current_endpoint == 'student.appeal_management' %} active{% endif %}" href="{{ url_for('student.appeal_management') }}">Attendance Appeal</a></li>
+              <li><a class="nav-link-custom{% if current_endpoint == 'student.facial_recognition_retrain' %} active{% endif %}" href="{{ url_for('student.facial_recognition_retrain') }}">Facial Recognition</a></li>
               <li><a class="nav-link-custom{% if current_endpoint == 'student.profile' %} active{% endif %}" href="{{ url_for('student.profile') }}">Profile</a></li>
+              <li><a class="nav-link-custom{% if current_endpoint == 'main.my_reports' %} active{% endif %}" href="{{ url_for('main.my_reports') }}">My Reports</a></li>
           {% endif %}
           
           <li><a class="nav-link-custom" href="{{ url_for('auth.logout') }}">Logout</a></li>

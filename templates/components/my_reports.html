@@ -1,11 +1,11 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}Reports Management - AttendAI{% endblock %}
+{% block title %}My Issue Reports - AttendAI{% endblock %}
 
 {% block content %}
 <style>
-    /* Reports Management Specific Styles */
-    .reports-management {
+    /* My Reports Specific Styles */
+    .my-reports {
         max-width: 1400px;
         margin: 0 auto;
     }
@@ -172,6 +172,12 @@
         border: 1px solid #dc2626;
     }
 
+    .status-rejected {
+        background-color: #f3f4f6;
+        color: #6b7280;
+        border: 1px solid #6b7280;
+    }
+
     /* Action Buttons */
     .more-btn {
         padding: 0.375rem 1rem;
@@ -191,15 +197,6 @@
         background-color: var(--secondary-dark);
     }
 
-    /* Dropdown Styles */
-    .dropdown-menu {
-        min-width: 120px;
-    }
-
-    .dropdown-item {
-        cursor: pointer;
-    }
-
     /* Progress Bar */
     .progress {
         background-color: #e2e8f0;
@@ -211,25 +208,21 @@
         border-radius: 3px;
     }
 
-    /* Pagination */
-    .pagination {
-        margin-bottom: 0;
-    }
-
-    .page-link {
-        color: var(--primary-dark);
-        border-color: var(--border-color);
-    }
-
-    .page-link:hover {
-        color: white;
+    /* Report New Issue Button */
+    .report-new-btn {
         background-color: var(--primary-color);
-        border-color: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 0.5rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: background-color 0.2s ease;
     }
 
-    .page-item.active .page-link {
+    .report-new-btn:hover {
         background-color: var(--primary-dark);
-        border-color: var(--primary-dark);
+        color: white;
+        text-decoration: none;
     }
 
     /* Responsive */
@@ -293,87 +286,65 @@
     }
 </style>
 
-<div class="reports-management">
-    <h1 class="page-title mb-4">Platform Issues Management</h1>
-    <p class="subtitle mb-4">View and manage platform issues or feedback raised by users.</p>
-
-    <!-- Filters Section -->
-    <div class="filters-section mb-4">
-        <form method="GET" action="{{ url_for('platform.issue_management') }}" class="row g-3 align-items-end">
-            <div class="col-md-3">
-                <label for="status" class="form-label">Status</label>
-                <select name="status" id="status" class="form-select">
-                    <option value="open" {% if status_filter == 'open' %}selected{% endif %}>Open</option>
-                    <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>In Progress</option>
-                    <option value="resolved" {% if status_filter == 'resolved' %}selected{% endif %}>Resolved</option>
-                    <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
-                    <option value="" {% if status_filter == '' %}selected{% endif %}>All Status</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label for="category" class="form-label">Category</label>
-                <select name="category" id="category" class="form-select">
-                    <option value="">All Categories</option>
-                    <option value="bug" {% if category_filter == 'bug' %}selected{% endif %}>Bug</option>
-                    <option value="feature_request" {% if category_filter == 'feature_request' %}selected{% endif %}>Feature Request</option>
-                    <option value="ui_issue" {% if category_filter == 'ui_issue' %}selected{% endif %}>UI Issue</option>
-                    <option value="performance" {% if category_filter == 'performance' %}selected{% endif %}>Performance</option>
-                    <option value="security" {% if category_filter == 'security' %}selected{% endif %}>Security</option>
-                    <option value="data_issue" {% if category_filter == 'data_issue' %}selected{% endif %}>Data Issue</option>
-                    <option value="account_issue" {% if category_filter == 'account_issue' %}selected{% endif %}>Account Issue</option>
-                    <option value="billing" {% if category_filter == 'billing' %}selected{% endif %}>Billing</option>
-                    <option value="other" {% if category_filter == 'other' %}selected{% endif %}>Other</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label for="search" class="form-label">Search</label>
-                <input type="text" name="search" id="search" class="form-control" 
-                       placeholder="Search in descriptions..." value="{{ request.args.get('search', '') }}">
-            </div>
-            <div class="col-md-3">
-                <button type="submit" class="btn-custom primary-btn w-100">Apply Filters</button>
-            </div>
-        </form>
+<div class="my-reports">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="page-title mb-2">My Issue Reports</h1>
+            <p class="subtitle mb-0">View and track the issues you've reported to our platform team.</p>
+        </div>
+        <a href="{{ url_for('main.report_issue_form') }}" class="report-new-btn">
+            <i class="fas fa-plus-circle me-2"></i>Report New Issue
+        </a>
     </div>
 
     <div class="dashboard-grid">
-        <!-- Left Column: Issues Overview -->
+        <!-- Left Column: My Reports Overview -->
         <div class="card-custom">
-            <div class="card-header-custom">Issues Overview</div>
+            <div class="card-header-custom">My Reports Overview</div>
             <div class="card-body-custom">
                 <div class="stats-box">
                     <div class="stat-row mb-2">
-                        <span class="stat-label">Total Issues:</span>
-                        <span class="stat-value">{{ stats.total_issues if stats else total_issues }}</span>
+                        <span class="stat-label">Total Reports:</span>
+                        <span class="stat-value">{{ total_count }}</span>
                     </div>
                     <div class="stat-row mb-2">
-                        <span class="stat-label">Open Issues:</span>
-                        <span class="stat-value">{{ stats.open_issues if stats else 0 }}</span>
+                        <span class="stat-label">Open:</span>
+                        {% set open_count = issues|selectattr('is_active', 'equalto', true)|list|length %}
+                        <span class="stat-value">{{ open_count }}</span>
                     </div>
                     <div class="stat-row mb-2">
                         <span class="stat-label">In Progress:</span>
-                        <span class="stat-value">{{ stats.in_progress if stats else 0 }}</span>
+                        {% set in_progress_count = issues|selectattr('status', 'equalto', 'in_progress')|list|length %}
+                        <span class="stat-value">{{ in_progress_count }}</span>
                     </div>
                     <div class="stat-row mb-2">
                         <span class="stat-label">Resolved:</span>
-                        <span class="stat-value">{{ stats.resolved if stats else 0 }}</span>
-                    </div>
-                    <div class="stat-row mb-2">
-                        <span class="stat-label">Rejected:</span>
-                        <span class="stat-value">{{ stats.rejected if stats else 0 }}</span>
+                        {% set resolved_count = issues|selectattr('status', 'equalto', 'resolved')|list|length %}
+                        <span class="stat-value">{{ resolved_count }}</span>
                     </div>
                     <div class="stat-row">
-                        <span class="stat-label">Recent (7 days):</span>
-                        <span class="stat-value">{{ stats.recent_issues if stats else 0 }}</span>
+                        <span class="stat-label">Rejected:</span>
+                        {% set rejected_count = issues|selectattr('status', 'equalto', 'rejected')|list|length %}
+                        <span class="stat-value">{{ rejected_count }}</span>
                     </div>
                 </div>
                 
                 <!-- Category Distribution -->
-                {% if stats and stats.category_distribution %}
+                {% if issues %}
                 <div class="mt-4">
-                    <h6 class="mb-2">Issues by Category</h6>
+                    <h6 class="mb-2">My Reports by Category</h6>
                     <div class="category-distribution">
-                        {% for category, count in stats.category_distribution.items() %}
+                        {% set category_counts = {} %}
+                        {% for issue in issues %}
+                            {% set category = issue.category %}
+                            {% if category not in category_counts %}
+                                {% set _ = category_counts.update({category: 1}) %}
+                            {% else %}
+                                {% set _ = category_counts.update({category: category_counts[category] + 1}) %}
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% for category, count in category_counts.items() %}
                         <div class="category-item mb-1">
                             <div class="d-flex justify-content-between">
                                 <span class="category-name">{{ category|replace('_', ' ')|title }}</span>
@@ -381,7 +352,7 @@
                             </div>
                             <div class="progress" style="height: 6px;">
                                 <div class="progress-bar" role="progressbar"
-                                 style="--progress: {{ (count / stats.total_issues * 100) if stats.total_issues > 0 else 0 }}%; width: var(--progress);"></div>
+                                 style="--progress: {{ (count / total_count * 100) if total_count > 0 else 0 }}%; width: var(--progress);"></div>
                             </div>
                         </div>
                         {% endfor %}
@@ -391,10 +362,10 @@
             </div>
         </div>
 
-        <!-- Right Column: Issues List -->
+        <!-- Right Column: My Reports List -->
         <div class="card-custom">
             <div class="card-header-custom d-flex justify-content-between align-items-center">
-                <span>Platform Issues</span>
+                <span>My Submitted Reports</span>
                 <div class="d-flex gap-2">
                     <select id="perPageSelect" class="form-select form-select-sm" style="width: auto;">
                         <option value="5" {% if per_page == 5 %}selected{% endif %}>5 per page</option>
@@ -404,81 +375,62 @@
                 </div>
             </div>
             <div class="card-body-custom">
+                {% if issues %}
                 <table class="reports-table">
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Institution</th>
-                            <th>Reporter</th>
                             <th>Category</th>
+                            <th>Description</th>
                             <th>Date Submitted</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% if issues %}
-                            {% for issue in issues %}
-                            <tr>
-                                <td>#{{ issue.issue_id }}</td>
-                                <td>{{ issue.institution_name or 'Unknown Institution' }}</td>
-                                <td>{{ issue.reporter_name or 'Unknown User' }}</td>
-                                <td>
-                                    <span class="category-badge">{{ issue.category|replace('_', ' ')|title }}</span>
-                                </td>
-                                <td>{{ issue.created_at.strftime('%Y-%m-%d %H:%M') if issue.created_at else 'N/A' }}</td>
-                                <td>
-                                    {% if issue.is_active %}
-                                        <span class="status-badge status-open">Open</span>
-                                    {% else %}
-                                        <span class="status-badge status-resolved">Resolved</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <a href="{{ url_for('platform.issue_details', issue_id=issue.issue_id) }}" 
-                                       class="btn-custom more-btn">View</a>
-                                    {% if issue.is_active %}
-                                    <div class="dropdown d-inline-block">
-                                        <button class="btn-custom secondary-btn dropdown-toggle" type="button" 
-                                                data-bs-toggle="dropdown" aria-expanded="false">
-                                            Actions
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <li>
-                                                <form method="POST" action="{{ url_for('platform.resolve_issue_platform_manager', issue_id=issue.issue_id) }}" 
-                                                      class="d-inline" onsubmit="return confirmResolve()">
-                                                    <input type="hidden" name="resolution_notes" value="Resolved by platform manager">
-                                                    <button type="submit" class="dropdown-item text-success">Resolve</button>
-                                                </form>
-                                            </li>
-                                            <li>
-                                                <form method="POST" action="{{ url_for('platform.reject_issue_platform_manager', issue_id=issue.issue_id) }}" 
-                                                      class="d-inline" onsubmit="return confirmReject()">
-                                                    <input type="hidden" name="rejection_reason" value="Rejected by platform manager">
-                                                    <button type="submit" class="dropdown-item text-danger">Reject</button>
-                                                </form>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        {% else %}
-                            <tr>
-                                <td colspan="7" class="text-center p-3">No issues found</td>
-                            </tr>
-                        {% endif %}
+                        {% for issue in issues %}
+                        <tr>
+                            <td>#{{ issue.issue_id or issue.id }}</td>
+                            <td>
+                                <span class="category-badge">{{ issue.category|replace('_', ' ')|title }}</span>
+                            </td>
+                            <td>
+                                <div class="issue-description" style="max-width: 300px;">
+                                    {{ issue.description[:100] }}{% if issue.description|length > 100 %}...{% endif %}
+                                </div>
+                            </td>
+                            <td>{{ issue.created_at.strftime('%Y-%m-%d %H:%M') if issue.created_at else 'N/A' }}</td>
+                            <td>
+                                {% if issue.status == 'open' or issue.is_active %}
+                                    <span class="status-badge status-open">Open</span>
+                                {% elif issue.status == 'in_progress' %}
+                                    <span class="status-badge status-in-progress">In Progress</span>
+                                {% elif issue.status == 'resolved' %}
+                                    <span class="status-badge status-resolved">Resolved</span>
+                                {% elif issue.status == 'rejected' %}
+                                    <span class="status-badge status-rejected">Rejected</span>
+                                {% else %}
+                                    <span class="status-badge status-pending">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('main.view_issue', issue_id=issue.issue_id or issue.id) }}" 
+                                   class="btn-custom more-btn">View</a>
+                                {% if issue.status == 'open' or issue.is_active %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
                 
                 <!-- Pagination -->
-                {% if total_pages > 1 %}
-                <nav aria-label="Issues pagination" class="mt-4">
+                {% if total_pages and total_pages > 1 %}
+                <nav aria-label="My reports pagination" class="mt-4">
                     <ul class="pagination justify-content-center">
                         {% if has_prev %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('platform.issue_management', page=current_page-1, status=status_filter, category=category_filter, search=request.args.get('search', '')) }}">
+                            <a class="page-link" href="{{ url_for('main.my_reports', page=current_page-1, status=status_filter, category=category_filter, search=request.args.get('search', '')) }}">
                                 Previous
                             </a>
                         </li>
@@ -495,7 +447,7 @@
                             </li>
                             {% elif page_num >= current_page - 2 and page_num <= current_page + 2 %}
                             <li class="page-item">
-                                <a class="page-link" href="{{ url_for('platform.issue_management', page=page_num, status=status_filter, category=category_filter, search=request.args.get('search', '')) }}">
+                                <a class="page-link" href="{{ url_for('main.my_reports', page=page_num, status=status_filter, category=category_filter, search=request.args.get('search', '')) }}">
                                     {{ page_num }}
                                 </a>
                             </li>
@@ -504,7 +456,7 @@
                         
                         {% if has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('platform.issue_management', page=current_page+1, status=status_filter, category=category_filter, search=request.args.get('search', '')) }}">
+                            <a class="page-link" href="{{ url_for('main.my_reports', page=current_page+1, status=status_filter, category=category_filter, search=request.args.get('search', '')) }}">
                                 Next
                             </a>
                         </li>
@@ -518,8 +470,18 @@
                 {% endif %}
                 
                 <div class="text-muted text-center mt-2">
-                    Showing {{ start_idx + 1 if start_idx is defined else 1 }} to {{ end_idx if end_idx is defined else total_issues }} of {{ total_issues }} issues
+                    Showing {{ issues|length }} of {{ total_count }} reports
                 </div>
+                {% else %}
+                <div class="text-center p-5">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted mb-3">No issues reported yet</h5>
+                    <p class="text-muted mb-4">You haven't submitted any issue reports yet.</p>
+                    <a href="{{ url_for('main.report_issue_form') }}" class="btn-custom primary-btn">
+                        <i class="fas fa-plus-circle me-2"></i>Report Your First Issue
+                    </a>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -538,15 +500,17 @@
                 window.location.href = url.toString();
             });
         }
+        
+        // Auto-expand description on hover
+        const descriptions = document.querySelectorAll('.issue-description');
+        descriptions.forEach(desc => {
+            desc.addEventListener('mouseenter', function() {
+                const fullText = this.dataset.fullText || this.textContent;
+                if (fullText.length > 100) {
+                    this.title = fullText;
+                }
+            });
+        });
     });
-    
-
-    function confirmResolve() {
-        return confirm('Are you sure you want to resolve this issue?');
-    }
-
-    function confirmReject() {
-        return confirm('Are you sure you want to reject this issue? This action cannot be undone.');
-    }
 </script>
 {% endblock %}

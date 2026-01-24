@@ -61,7 +61,7 @@ class ClassModel(BaseEntity[Class]):
             # Get course and venue names for notification
             course_venue_info = (
                 self.session.query(Course.name, Venue.name)
-                .join(Course, Course.course_id == cls.course_id)
+                .filter(Course.course_id == cls.course_id)
                 .join(Venue, Venue.venue_id == cls.venue_id)
                 .first()
             )

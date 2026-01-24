@@ -412,19 +412,28 @@
 <script src="https://js.stripe.com/v3/"></script>
 <script>
     // Initialize Stripe with your publishable key
-    const stripe = Stripe('{{ stripe_public_key }}');
+    const stripePublicKey = '{{ stripe_public_key }}';
+    
+    // Debug: Check if public key is loaded
+    if (!stripePublicKey || stripePublicKey === '' || stripePublicKey === 'None') {
+        console.error('Stripe public key is not configured!');
+        alert('Payment system is not configured. Please contact support.');
+    } else {
+        console.log('Stripe initialized with key:', stripePublicKey.substring(0, 20) + '...');
+    }
+    
+    const stripe = Stripe(stripePublicKey);
     const elements = stripe.elements();
     
     // Create card element with styling to match Register form inputs
     const cardElement = elements.create('card', {
         style: {
             base: {
-                fontSize: '0.95rem',
+                fontSize: '15px',  // Changed from rem to px
                 color: '#0f172a',
                 fontFamily: 'inherit',
                 '::placeholder': {
-                    color: '#94a3b8',
-                    opacity: 0.8
+                    color: '#94a3b8'
                 }
             },
             invalid: {
@@ -456,10 +465,19 @@
     form.addEventListener('submit', async function(event) {
         event.preventDefault();
         
+        // Check if terms are accepted
+        const termsCheckbox = document.querySelector('input[name="terms"]');
+        if (termsCheckbox && !termsCheckbox.checked) {
+            alert('Please accept the terms and conditions to continue.');
+            return;
+        }
+        
         // Disable submit button and show spinner
         submitButton.disabled = true;
         buttonText.classList.add('d-none');
         spinner.classList.remove('d-none');
+        
+        console.log('Starting payment processing...');
         
         try {
             // Create payment method
@@ -479,6 +497,7 @@
             
             if (error) {
                 // Show error
+                console.error('Stripe error:', error);
                 document.getElementById('card-errors').textContent = error.message;
                 // Re-enable button
                 submitButton.disabled = false;
@@ -487,6 +506,8 @@
                 return;
             }
             
+            console.log('Payment method created:', paymentMethod.id);
+            
             // Add payment method ID to form
             const paymentMethodInput = document.createElement('input');
             paymentMethodInput.type = 'hidden';
@@ -494,11 +515,12 @@
             paymentMethodInput.value = paymentMethod.id;
             form.appendChild(paymentMethodInput);
             
+            console.log('Submitting form...');
             // Submit form
             form.submit();
             
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Unexpected error:', error);
             document.getElementById('card-errors').textContent = 'An unexpected error occurred. Please try again.';
             submitButton.disabled = false;
             buttonText.classList.remove('d-none');

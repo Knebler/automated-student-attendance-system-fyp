@@ -245,7 +245,7 @@ def payment():
 
 @auth_bp.route('/process_payment', methods=['POST'])
 def process_payment():
-    """Process payment and complete registration (mock version without real Stripe calls)"""
+    """Process payment and complete registration with Stripe integration"""
     try:
         # Get registration data from form
         registration_data_json = request.form.get('registration_data')
@@ -255,19 +255,12 @@ def process_payment():
         
         registration_data = json.loads(registration_data_json)
         
-        # Mock payment method validation (skip actual validation in dev mode)
+        # Get payment method ID from Stripe.js
         payment_method_id = request.form.get('payment_method_id')
         
         if not payment_method_id:
-            # In development, allow bypassing real payment validation
-            # For production, you'd want to keep this check
-            if current_app.config.get('ENV') == 'development':
-                # Generate a mock payment method ID
-                import secrets
-                payment_method_id = f'pm_mock_{secrets.token_hex(8)}'
-            else:
-                flash('Payment information is required', 'danger')
-                return redirect(url_for('auth.payment'))
+            flash('Payment information is required', 'danger')
+            return redirect(url_for('auth.payment'))
         
         # Get subscription plan
         with get_session() as db_session:
@@ -278,43 +271,137 @@ def process_payment():
                 flash('Invalid subscription plan', 'danger')
                 return redirect(url_for('auth.register'))
             
-            # Generate mock Stripe IDs (no actual API calls)
-            import secrets
-            import time
-            
-            # Mock Stripe customer ID
-            stripe_customer_id = f'cus_mock_{secrets.token_hex(12)}'
-            
-            # Mock Stripe subscription ID
-            timestamp = int(time.time())
-            random_hex = secrets.token_hex(6)
-            stripe_subscription_id = f'sub_mock_{timestamp}_{random_hex}'
-            
-            # Update registration data with mock Stripe info
-            registration_data['stripe_customer_id'] = stripe_customer_id
-            registration_data['stripe_subscription_id'] = stripe_subscription_id
-            registration_data['mock_payment'] = True  # Flag to indicate mock payment
-            
-            # Store payment details for record (optional)
-            registration_data['payment_details'] = {
-                'amount': selected_plan.price_per_cycle,
-                'currency': 'usd',
-                'billing_cycle': selected_plan.billing_cycle,
-                'plan_name': selected_plan.name,
-                'payment_date': time.strftime('%Y-%m-%d %H:%M:%S'),
-                'transaction_id': f'txn_mock_{secrets.token_hex(8)}'
-            }
+            # Create Stripe customer
+            try:
+                current_app.logger.info(f"Creating Stripe customer for {registration_data.get('email')}")
+                
+                customer = stripe.Customer.create(
+                    email=registration_data.get('email'),
+                    name=registration_data.get('name'),
+                    payment_method=payment_method_id,
+                    invoice_settings={
+                        'default_payment_method': payment_method_id,
+                    },
+                    metadata={
+                        'institution_name': registration_data.get('institution_name', ''),
+                        'role': registration_data.get('role', '')
+                    }
+                )
+                
+                current_app.logger.info(f"Customer created: {customer.id}")
+                
+                # Create Stripe price object (amount in cents)
+                price_in_cents = int(selected_plan.price_per_cycle * 100)
+                
+                # Determine the recurring interval
+                interval = 'month' if selected_plan.billing_cycle.lower() == 'monthly' else 'year'
+                
+                current_app.logger.info(f"Creating price: ${selected_plan.price_per_cycle} ({interval})")
+                
+                # Create a price for the subscription
+                price = stripe.Price.create(
+                    unit_amount=price_in_cents,
+                    currency='usd',
+                    recurring={'interval': interval},
+                    product_data={
+                        'name': selected_plan.name
+                    }
+                )
+                
+                current_app.logger.info(f"Price created: {price.id}")
+                
+                # Create Stripe subscription with payment behavior
+                current_app.logger.info(f"Creating subscription for customer {customer.id}")
+                
+                subscription = stripe.Subscription.create(
+                    customer=customer.id,
+                    items=[{'price': price.id}],
+                    payment_behavior='default_incomplete',
+                    payment_settings={'payment_method_types': ['card']},
+                    expand=['latest_invoice.payment_intent'],
+                    metadata={
+                        'plan_name': selected_plan.name,
+                        'institution_name': registration_data.get('institution_name', '')
+                    }
+                )
+                
+                current_app.logger.info(f"Subscription created: {subscription.id}, status: {subscription.status}")
+                
+                # Handle payment intent confirmation
+                latest_invoice = subscription.latest_invoice
+                payment_intent = latest_invoice.payment_intent if latest_invoice else None
+                
+                if payment_intent:
+                    current_app.logger.info(f"Payment intent: {payment_intent.id}, status: {payment_intent.status}")
+                    
+                    # Confirm the payment intent
+                    if payment_intent.status == 'requires_payment_method':
+                        current_app.logger.info("Confirming payment intent...")
+                        payment_intent = stripe.PaymentIntent.confirm(
+                            payment_intent.id,
+                            payment_method=payment_method_id
+                        )
+                        current_app.logger.info(f"Payment confirmed: {payment_intent.status}")
+                    
+                    # Check if requires action (3D Secure)
+                    if payment_intent.status == 'requires_action':
+                        current_app.logger.warning("Payment requires additional action (3D Secure)")
+                        flash('Payment requires additional verification. Please complete the verification.', 'warning')
+                        return render_template('auth/payment_action.html',
+                                             client_secret=payment_intent.client_secret,
+                                             return_url=url_for('auth.complete_registration', _external=True))
+                
+                # Update registration data with Stripe info
+                registration_data['stripe_customer_id'] = customer.id
+                registration_data['stripe_subscription_id'] = subscription.id
+                registration_data['stripe_price_id'] = price.id
+                
+                # Store payment details for record
+                registration_data['payment_details'] = {
+                    'amount': selected_plan.price_per_cycle,
+                    'currency': 'usd',
+                    'billing_cycle': selected_plan.billing_cycle,
+                    'plan_name': selected_plan.name,
+                    'subscription_status': subscription.status,
+                    'payment_date': subscription.created
+                }
+                
+                current_app.logger.info("Payment processing completed successfully")
+                
+            except stripe.error.CardError as e:
+                # Card was declined
+                err = e.error
+                current_app.logger.error(f"Card declined: {err.message}")
+                flash(f'Payment failed: {err.message}', 'danger')
+                return redirect(url_for('auth.payment'))
+            except stripe.error.InvalidRequestError as e:
+                # Invalid parameters
+                current_app.logger.error(f"Invalid request to Stripe: {str(e)}")
+                flash(f'Payment configuration error: {str(e)}', 'danger')
+                return redirect(url_for('auth.payment'))
+            except stripe.error.AuthenticationError as e:
+                # Authentication with Stripe failed
+                current_app.logger.error(f"Stripe authentication failed: {str(e)}")
+                flash('Payment system configuration error. Please contact support.', 'danger')
+                return redirect(url_for('auth.payment'))
+            except stripe.error.StripeError as e:
+                # Other Stripe errors
+                current_app.logger.error(f"Stripe error: {str(e)}")
+                flash(f'Payment processing failed: {str(e)}', 'danger')
+                return redirect(url_for('auth.payment'))
             
         # Store updated registration data in session for the final registration step
         session['registration_data'] = registration_data
             
         # Show confirmation page before final registration
-        flash('Payment processed successfully (mock mode). Ready to complete registration.', 'success')
+        flash('Payment processed successfully! Completing your registration...', 'success')
         return redirect(url_for('auth.complete_registration'))
             
     except Exception as e:
-        current_app.logger.error(f"Payment processing error: {e}")
-        flash('An error occurred while processing payment', 'danger')
+        import traceback
+        error_trace = traceback.format_exc()
+        current_app.logger.error(f"Payment processing error: {str(e)}\n{error_trace}")
+        flash(f'An error occurred while processing payment: {str(e)}', 'danger')
         return redirect(url_for('auth.payment'))
 
 @auth_bp.route('/complete_registration', methods=['GET', 'POST'])

@@ -526,7 +526,7 @@ def issue_details(issue_id):
         return redirect(url_for('platform.issue_management'))
     
     context = {
-        'issue': result['issue'],
+        'issue': result.get('issue', {}),
         'comments': result.get('comments', []),
         'history': result.get('history', []),
     }
@@ -535,7 +535,7 @@ def issue_details(issue_id):
 
 @platform_bp.route('/issues/resolve/<int:issue_id>', methods=['POST'])
 @requires_roles('platform_manager')
-def resolve_issue(issue_id):
+def resolve_issue_platform_manager(issue_id):
     """Platform manager - resolve an issue"""
     resolver_id = session.get('user_id')
     resolution_notes = request.form.get('resolution_notes', '').strip()
@@ -559,7 +559,7 @@ def resolve_issue(issue_id):
 
 @platform_bp.route('/issues/reject/<int:issue_id>', methods=['POST'])
 @requires_roles('platform_manager')
-def reject_issue(issue_id):
+def reject_issue_platform_manager(issue_id):
     """Platform manager - reject an issue"""
     resolver_id = session.get('user_id')
     rejection_reason = request.form.get('rejection_reason', '').strip()
@@ -568,7 +568,7 @@ def reject_issue(issue_id):
         flash('Rejection reason is required', 'danger')
         return redirect(url_for('platform.issue_details', issue_id=issue_id))
     
-    result = PlatformIssueControl.reject_issue(
+    result = PlatformIssueControl.reject_issue_platform_manager(
         issue_id=issue_id,
         resolver_id=resolver_id,
         rejection_reason=rejection_reason

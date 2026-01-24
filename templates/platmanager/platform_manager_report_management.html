@@ -445,14 +445,14 @@
                                         </button>
                                         <ul class="dropdown-menu">
                                             <li>
-                                                <form method="POST" action="{{ url_for('platform.resolve_issue', issue_id=issue.issue_id) }}" 
+                                                <form method="POST" action="{{ url_for('platform.resolve_issue_platform_manager', issue_id=issue.issue_id) }}" 
                                                       class="d-inline" onsubmit="return confirmResolve()">
                                                     <input type="hidden" name="resolution_notes" value="Resolved by platform manager">
                                                     <button type="submit" class="dropdown-item text-success">Resolve</button>
                                                 </form>
                                             </li>
                                             <li>
-                                                <form method="POST" action="{{ url_for('platform.reject_issue', issue_id=issue.issue_id) }}" 
+                                                <form method="POST" action="{{ url_for('platform.reject_issue_platform_manager', issue_id=issue.issue_id) }}" 
                                                       class="d-inline" onsubmit="return confirmReject()">
                                                     <input type="hidden" name="rejection_reason" value="Rejected by platform manager">
                                                     <button type="submit" class="dropdown-item text-danger">Reject</button>

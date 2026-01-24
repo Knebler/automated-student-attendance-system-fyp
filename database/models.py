@@ -229,7 +229,7 @@ class AttendanceRecord(Base, BaseMixin):
     )
 
     attendance_id = Column(Integer, primary_key=True)
-    class_id = Column(Integer, ForeignKey("classes.class_id"), nullable=False, index=True)
+    class_id = Column(Integer, ForeignKey("classes.class_id", ondelete="CASCADE"), nullable=False, index=True)
     student_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, index=True)
 
     status = Column(AttendanceStatusEnum, nullable=False, index=True)
@@ -246,7 +246,7 @@ class AttendanceAppeal(Base, BaseMixin):
     __tablename__ = "attendance_appeals"
 
     appeal_id = Column(Integer, primary_key=True)
-    attendance_id = Column(Integer, ForeignKey("attendance_records.attendance_id"), nullable=False)
+    attendance_id = Column(Integer, ForeignKey("attendance_records.attendance_id", ondelete="CASCADE"), nullable=False)
     student_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
 
     status = Column(AttendanceAppealStatusEnum, nullable=False, server_default="pending")

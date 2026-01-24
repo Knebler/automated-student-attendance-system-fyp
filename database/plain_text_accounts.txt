@@ -19,3 +19,5 @@ Microsoft Azure Admin:  host=attendai-fyp-project.mysql.database.azure.com
                         port=3306
                         ssl-mode=REQUIRED
                         ssl-ca=combined-ca-certificates.pem
+
+Live website link: https://automated-student-attendance-system-fyp-1.onrender.com/

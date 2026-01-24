@@ -30,10 +30,10 @@ class ClassModel(BaseEntity[Class]):
                 Course.institution_id == institution_id
             )
         
-        # Update completed classes (end_time has passed and status is not 'completed')
+        # Update completed classes (end_time has passed and status is not 'completed' or 'cancelled')
         completed_classes = query.filter(
             Class.end_time < now,
-            Class.status != 'completed'
+            Class.status.notin_(['completed', 'cancelled'])
         ).all()
         
         for cls in completed_classes:
@@ -73,11 +73,11 @@ class ClassModel(BaseEntity[Class]):
                     )
                     self.session.add(new_record)
         
-        # Update in_progress classes (started but not ended, and status is 'scheduled')
+        # Update in_progress classes (started but not ended, and status is not 'in_progress', 'completed', or 'cancelled')
         in_progress_classes = query.filter(
             Class.start_time <= now,
             Class.end_time >= now,
-            Class.status == 'scheduled'
+            Class.status.notin_(['in_progress', 'completed', 'cancelled'])
         ).all()
         
         for cls in in_progress_classes:

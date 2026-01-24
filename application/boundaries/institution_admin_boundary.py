@@ -438,6 +438,258 @@ def add_class(course_id):
         flash(f'Error creating class: {str(e)}', 'error')
         return redirect(url_for('institution.add_class_form', course_id=course_id))
 
+@institution_bp.route('/manage_classes/<int:course_id>/edit_class/<int:class_id>', methods=['GET'])
+@requires_roles('admin')
+def edit_class_form(course_id, class_id):
+    """Display form to edit a class"""
+    institution_id = session.get('institution_id')
+    
+    with get_session() as db_session:
+        course_model = CourseModel(db_session)
+        class_model = ClassModel(db_session)
+        venue_model = VenueModel(db_session)
+        
+        # Verify course belongs to institution
+        course = course_model.get_by_id(course_id)
+        if not course or course.institution_id != institution_id:
+            flash('Course not found or access denied.', 'error')
+            return redirect(url_for('institution.manage_classes'))
+        
+        # Get the class to edit
+        cls = class_model.get_by_id(class_id)
+        if not cls or cls.course_id != course_id:
+            flash('Class not found or does not belong to this course.', 'error')
+            return redirect(url_for('institution.module_details', course_id=course_id))
+        
+        # Get available venues
+        venues = venue_model.get_all(institution_id=institution_id)
+        
+        context = {
+            'course': course.as_dict(),
+            'class': cls.as_dict(),
+            'venues': [{'venue_id': v.venue_id, 'name': v.name} for v in venues]
+        }
+    
+    return render_template('institution/admin/institution_admin_edit_class.html', **context)
+
+@institution_bp.route('/manage_classes/<int:course_id>/edit_class/<int:class_id>', methods=['POST'])
+@requires_roles('admin')
+def edit_class(course_id, class_id):
+    """Update a class"""
+    from datetime import datetime
+    
+    institution_id = session.get('institution_id')
+    
+    # Get form data
+    venue_id = request.form.get('venue_id')
+    start_time = request.form.get('start_time')
+    end_time = request.form.get('end_time')
+    
+    # Validate required fields
+    if not all([venue_id, start_time, end_time]):
+        flash('All fields are required.', 'error')
+        return redirect(url_for('institution.edit_class_form', course_id=course_id, class_id=class_id))
+    
+    try:
+        # Parse datetime strings
+        start_datetime = datetime.fromisoformat(start_time)
+        end_datetime = datetime.fromisoformat(end_time)
+        
+        # Validate times
+        if end_datetime <= start_datetime:
+            flash('End time must be after start time.', 'error')
+            return redirect(url_for('institution.edit_class_form', course_id=course_id, class_id=class_id))
+        
+        with get_session() as db_session:
+            course_model = CourseModel(db_session)
+            class_model = ClassModel(db_session)
+            
+            # Verify course belongs to institution
+            course = course_model.get_by_id(course_id)
+            if not course or course.institution_id != institution_id:
+                flash('Course not found or access denied.', 'error')
+                return redirect(url_for('institution.manage_classes'))
+            
+            # Verify class belongs to course
+            cls = class_model.get_by_id(class_id)
+            if not cls or cls.course_id != course_id:
+                flash('Class not found or does not belong to this course.', 'error')
+                return redirect(url_for('institution.module_details', course_id=course_id))
+            
+            # Update the class
+            class_model.update(
+                class_id,
+                venue_id=int(venue_id),
+                start_time=start_datetime,
+                end_time=end_datetime
+            )
+            
+            flash('Class updated successfully', 'success')
+            return redirect(url_for('institution.module_details', course_id=course_id))
+            
+    except ValueError as e:
+        flash(f'Invalid date/time format: {str(e)}', 'error')
+        return redirect(url_for('institution.edit_class_form', course_id=course_id, class_id=class_id))
+    except Exception as e:
+        flash(f'Error updating class: {str(e)}', 'error')
+        return redirect(url_for('institution.edit_class_form', course_id=course_id, class_id=class_id))
+
+@institution_bp.route('/manage_classes/<int:course_id>/cancel_class/<int:class_id>', methods=['POST'])
+@requires_roles('admin')
+def cancel_class(course_id, class_id):
+    """Cancel a class"""
+    institution_id = session.get('institution_id')
+    
+    with get_session() as db_session:
+        course_model = CourseModel(db_session)
+        class_model = ClassModel(db_session)
+        
+        # Verify course belongs to institution
+        course = course_model.get_by_id(course_id)
+        if not course or course.institution_id != institution_id:
+            flash('Course not found or access denied.', 'error')
+            return redirect(url_for('institution.manage_classes'))
+        
+        # Get the class
+        cls = class_model.get_by_id(class_id)
+        if not cls:
+            flash('Class not found.', 'error')
+            return redirect(url_for('institution.module_details', course_id=course_id))
+        
+        # Verify class belongs to the course
+        if cls.course_id != course_id:
+            flash('Class does not belong to this course.', 'error')
+            return redirect(url_for('institution.module_details', course_id=course_id))
+        
+        # Check if class is already completed
+        if cls.status == 'completed':
+            flash('Cannot cancel a completed class.', 'error')
+            return redirect(url_for('institution.module_details', course_id=course_id))
+        
+        # Check if class is already cancelled
+        if cls.status == 'cancelled':
+            flash('Class is already cancelled.', 'warning')
+            return redirect(url_for('institution.module_details', course_id=course_id))
+        
+        try:
+            # Update class status to cancelled
+            cls.status = 'cancelled'
+            
+            # Get all attendance records for this class
+            attendance_records = (
+                db_session.query(AttendanceRecord)
+                .filter(AttendanceRecord.class_id == class_id)
+                .all()
+            )
+            
+            # Update all attendance records to 'excused'
+            excused_count = 0
+            for record in attendance_records:
+                if record.status != 'excused':
+                    record.status = 'excused'
+                    if not record.notes:
+                        record.notes = 'Class cancelled by admin'
+                    else:
+                        record.notes += ' | Class cancelled by admin'
+                    excused_count += 1
+            
+            # Get all enrolled students who don't have attendance records yet
+            enrolled_students = (
+                db_session.query(User.user_id)
+                .join(CourseUser, CourseUser.user_id == User.user_id)
+                .filter(CourseUser.course_id == cls.course_id)
+                .filter(CourseUser.semester_id == cls.semester_id)
+                .filter(User.role == 'student')
+                .all()
+            )
+            
+            student_ids = [s[0] for s in enrolled_students]
+            
+            # Get students who already have attendance records
+            existing_student_ids = {r.student_id for r in attendance_records}
+            
+            # Create 'excused' records for students without attendance
+            created_count = 0
+            for student_id in student_ids:
+                if student_id not in existing_student_ids:
+                    new_record = AttendanceRecord(
+                        class_id=class_id,
+                        student_id=student_id,
+                        status='excused',
+                        marked_by='system',
+                        notes='Class cancelled by admin'
+                    )
+                    db_session.add(new_record)
+                    created_count += 1
+            
+            db_session.commit()
+            
+            total_affected = excused_count + created_count
+            flash(f'Class on {cls.start_time.strftime("%Y-%m-%d %H:%M")} has been cancelled successfully. {total_affected} student(s) marked as excused.', 'success')
+            return redirect(url_for('institution.module_details', course_id=course_id))
+            
+        except Exception as e:
+            db_session.rollback()
+            flash(f'Error cancelling class: {str(e)}', 'error')
+            return redirect(url_for('institution.module_details', course_id=course_id))
+
+@institution_bp.route('/manage_classes/<int:course_id>/delete_class/<int:class_id>', methods=['POST'])
+@requires_roles('admin')
+def delete_class(course_id, class_id):
+    """Delete a cancelled class and its attendance records"""
+    institution_id = session.get('institution_id')
+    
+    with get_session() as db_session:
+        course_model = CourseModel(db_session)
+        class_model = ClassModel(db_session)
+        
+        # Verify course belongs to institution
+        course = course_model.get_by_id(course_id)
+        if not course or course.institution_id != institution_id:
+            flash('Course not found or access denied.', 'error')
+            return redirect(url_for('institution.manage_classes'))
+        
+        # Get the class
+        cls = class_model.get_by_id(class_id)
+        if not cls:
+            flash('Class not found.', 'error')
+            return redirect(url_for('institution.module_details', course_id=course_id))
+        
+        # Verify class belongs to the course
+        if cls.course_id != course_id:
+            flash('Class does not belong to this course.', 'error')
+            return redirect(url_for('institution.module_details', course_id=course_id))
+        
+        # Only allow deletion of cancelled classes
+        if cls.status != 'cancelled':
+            flash('Only cancelled classes can be deleted. Please cancel the class first.', 'error')
+            return redirect(url_for('institution.module_details', course_id=course_id))
+        
+        try:
+            # Store class details for the success message before deletion
+            class_time = cls.start_time.strftime("%Y-%m-%d %H:%M")
+            
+            # Count records that will be deleted (for user feedback)
+            attendance_count = (
+                db_session.query(AttendanceRecord)
+                .filter(AttendanceRecord.class_id == class_id)
+                .count()
+            )
+            
+            # Delete the class - CASCADE will automatically delete:
+            # 1. All attendance_records (via class_id FK with CASCADE)
+            # 2. All attendance_appeals (via attendance_id FK with CASCADE)
+            db_session.delete(cls)
+            db_session.commit()
+            
+            flash(f'Class on {class_time} has been permanently deleted along with {attendance_count} attendance record(s).', 'success')
+            return redirect(url_for('institution.module_details', course_id=course_id))
+            
+        except Exception as e:
+            db_session.rollback()
+            flash(f'Error deleting class: {str(e)}', 'error')
+            return redirect(url_for('institution.module_details', course_id=course_id))
+
 @institution_bp.route('/institution_profile')
 @requires_roles('admin')
 def institution_profile():
@@ -551,6 +803,7 @@ def attendance_class_details(class_id):
             "class_id": class_id,
             "course_id": class_obj.course_id if class_obj else None,
             "course_name": class_model.get_course_name(class_id),
+            "class_status": class_obj.status if class_obj else None,
         }
     return render_template('institution/admin/institution_admin_attendance_management_class_details.html', **context)
 

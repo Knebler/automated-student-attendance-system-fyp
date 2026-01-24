@@ -1,6 +1,5 @@
 {% if session.role in ['student', 'lecturer', 'admin'] %}
 <style>
-    /* Report Issue Button Container */
     .report-issue-button-container {
         position: fixed;
         bottom: 2rem;
@@ -8,31 +7,122 @@
         z-index: 1000;
     }
     
-    /* Floating Action Button */
+    .report-issue-fab-container {
+        position: relative;
+        filter: drop-shadow(0 4px 12px rgba(220, 38, 38, 0.3));
+    }
+    
     .report-issue-fab {
-        width: 60px;
+        width: auto;
+        min-width: 200px;
         height: 60px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+        border-radius: 12px;
+        background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
         color: white;
         border: none;
         cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        box-shadow: 
+            0 8px 20px rgba(220, 38, 38, 0.4),
+            0 4px 8px rgba(0, 0, 0, 0.1),
+            inset 0 2px 0 rgba(255, 255, 255, 0.2);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.5rem;
+        font-size: 1.1rem;
+        font-weight: 600;
         transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        padding: 0 1.5rem;
+    }
+    
+    .fab-content {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        z-index: 2;
         position: relative;
     }
     
+    .fab-content i {
+        font-size: 1.4rem;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+    
+    .fab-text {
+        letter-spacing: 0.5px;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+    
+    .fab-pulse {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+        height: 100%;
+        border-radius: 12px;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+        animation: ripple 2s infinite;
+    }
+    
+    @keyframes ripple {
+        0% {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        100% {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(1.2);
+        }
+    }
+    
     .report-issue-fab:hover {
-        transform: scale(1.1);
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+        transform: translateY(-3px);
+        box-shadow: 
+            0 12px 25px rgba(220, 38, 38, 0.5),
+            0 6px 12px rgba(0, 0, 0, 0.15),
+            inset 0 2px 0 rgba(255, 255, 255, 0.2);
+        background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%);
     }
     
     .report-issue-fab:active {
-        transform: scale(0.95);
+        transform: translateY(-1px);
+        box-shadow: 
+            0 4px 12px rgba(220, 38, 38, 0.4),
+            0 2px 4px rgba(0, 0, 0, 0.1),
+            inset 0 2px 0 rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Hover effect with glow */
+    .report-issue-fab::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(135deg, #dc2626, #ef4444, #f87171);
+        border-radius: 14px;
+        z-index: -1;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .report-issue-fab:hover::before {
+        opacity: 0.6;
+        animation: borderGlow 1.5s infinite;
+    }
+    
+    @keyframes borderGlow {
+        0%, 100% { opacity: 0.4; }
+        50% { opacity: 0.8; }
     }
     
     /* Modal Styles */
@@ -43,228 +133,470 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
+        background-color: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(4px);
         z-index: 1001;
         justify-content: center;
         align-items: center;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
     
     .report-issue-modal-content {
         background-color: white;
         width: 90%;
-        max-width: 600px;
+        max-width: 700px;
         max-height: 90vh;
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
         overflow: hidden;
         display: flex;
         flex-direction: column;
+        animation: slideUp 0.3s ease;
+    }
+    
+    @keyframes slideUp {
+        from { 
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to { 
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
     
     .modal-header {
-        background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
         color: white;
+        padding: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+    
+    .modal-header-content {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .modal-icon {
+        font-size: 2.5rem;
+        color: #f87171;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 0.75rem;
+        border-radius: 12px;
+    }
+    
+    .modal-header h3 {
+        margin: 0 0 0.5rem 0;
+        font-weight: 700;
+        font-size: 1.75rem;
+    }
+    
+    .modal-subtitle {
+        margin: 0;
+        opacity: 0.9;
+        font-size: 0.95rem;
+    }
+    
+    .modal-close {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: white;
+        font-size: 1.25rem;
+        cursor: pointer;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+    }
+    
+    .modal-close:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: rotate(90deg);
+    }
+    
+    .modal-body {
+        padding: 2rem;
+        overflow-y: auto;
+        flex-grow: 1;
+    }
+    
+    /* User Info Card */
+    .user-info-card {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-radius: 15px;
         padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    
+    .user-info-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .user-info-header i {
+        font-size: 1.75rem;
+        color: #64748b;
+    }
+    
+    .user-info-header h4 {
+        margin: 0;
+        color: #1e293b;
+        font-weight: 600;
+    }
+    
+    .user-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+    
+    .info-item {
+        background: white;
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .info-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #64748b;
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+    
+    .info-value {
+        color: #1e293b;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+    
+    /* Form Sections */
+    .form-section {
+        margin-bottom: 2rem;
+    }
+    
+    .section-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .section-icon {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    .section-header label {
+        display: block;
+        color: #1e293b;
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .section-description {
+        color: #64748b;
+        margin: 0;
+        font-size: 0.9rem;
+    }
+    
+    /* Category Select */
+    .category-select {
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        color: #1e293b;
+        cursor: pointer;
+        transition: all 0.3s;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 16px;
+    }
+    
+    .category-select:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        outline: none;
+    }
+    
+    /* Description Box */
+    .description-box {
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .description-header {
+        background: #f8fafc;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #e2e8f0;
         display: flex;
         justify-content: space-between;
         align-items: center;
     }
     
-    .modal-header h3 {
-        margin: 0;
+    .description-header span {
         font-weight: 600;
+        color: #1e293b;
     }
     
-    .modal-close {
-        background: none;
-        border: none;
-        color: white;
-        font-size: 2rem;
-        cursor: pointer;
-        line-height: 1;
-        padding: 0;
-        width: 30px;
-        height: 30px;
+    .description-stats {
+        display: flex;
+        gap: 1.5rem;
+    }
+    
+    .stat-item {
         display: flex;
         align-items: center;
-        justify-content: center;
+        gap: 0.5rem;
+        color: #64748b;
+        font-size: 0.9rem;
     }
     
-    .modal-close:hover {
-        opacity: 0.8;
+    .stat-item i {
+        font-size: 0.9rem;
     }
     
-    .modal-body {
+    .description-textarea {
+        border: none;
         padding: 1.5rem;
-        overflow-y: auto;
-        flex-grow: 1;
+        font-size: 1rem;
+        line-height: 1.6;
+        resize: vertical;
+        min-height: 150px;
+        max-height: 300px;
     }
     
-    .modal-footer {
+    .description-textarea:focus {
+        outline: none;
+        box-shadow: none;
+    }
+    
+    .description-footer {
+        background: #f8fafc;
         padding: 1rem 1.5rem;
-        background-color: #f8f9fa;
-        border-top: 1px solid #dee2e6;
+        border-top: 1px solid #e2e8f0;
+    }
+    
+    .requirements {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #64748b;
+        font-size: 0.9rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .progress-container {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .progress-bar {
+        flex-grow: 1;
+        height: 6px;
+        background: #e2e8f0;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #10b981 0%, #3b82f6 100%);
+        border-radius: 3px;
+        transition: width 0.3s;
+    }
+    
+    .progress-text {
+        color: #64748b;
+        font-size: 0.9rem;
+        font-weight: 500;
+        min-width: 80px;
+    }
+    
+    /* Validation Card */
+    .validation-card {
+        margin: 1.5rem 0;
+        padding: 1.5rem;
+        border-radius: 12px;
+        display: none;
+    }
+    
+    .validation-card.error {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #dc2626;
+    }
+    
+    .validation-card.warning {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        color: #d97706;
+    }
+    
+    .validation-card.success {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        color: #059669;
+    }
+    
+    /* Help Section */
+    .help-section {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+        border: 1px solid #bae6fd;
+    }
+    
+    .help-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .help-header i {
+        font-size: 1.5rem;
+        color: #0ea5e9;
+    }
+    
+    .help-header h5 {
+        margin: 0;
+        color: #0369a1;
+    }
+    
+    .help-tips {
+        display: grid;
+        gap: 1rem;
+    }
+    
+    .tip {
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .tip-content strong {
+        display: block;
+        color: #0c4a6e;
+        margin-bottom: 0.25rem;
+    }
+    
+    .tip-content p {
+        margin: 0;
+        color: #475569;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+    
+    /* Footer Buttons */
+    .modal-footer {
+        padding: 1.5rem 2rem;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
         display: flex;
         justify-content: flex-end;
         gap: 1rem;
     }
     
-    /* User Info Section */
-    .user-info-section {
-        background-color: var(--primary-light);
+    .btn {
+        padding: 0.75rem 1.5rem;
         border-radius: 10px;
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-        border-left: 4px solid var(--primary-color);
-    }
-    
-    .info-row {
-        display: flex;
-        margin-bottom: 0.5rem;
-    }
-    
-    .info-row:last-child {
-        margin-bottom: 0;
-    }
-    
-    .info-label {
         font-weight: 600;
-        color: var(--text-dark);
-        min-width: 100px;
-    }
-    
-    .info-value {
-        color: var(--text-dark);
-    }
-    
-    /* Form Styles */
-    .form-group {
-        margin-bottom: 1.5rem;
-    }
-    
-    .form-group label {
-        display: block;
-        margin-bottom: 0.5rem;
-        font-weight: 600;
-        color: var(--text-dark);
-    }
-    
-    .form-control {
-        width: 100%;
-        padding: 0.75rem;
-        border: 1px solid #ced4da;
-        border-radius: 8px;
-        font-family: inherit;
+        cursor: pointer;
+        transition: all 0.3s;
+        border: 2px solid;
         font-size: 1rem;
-        transition: border-color 0.3s;
-    }
-    
-    .form-control:focus {
-        outline: none;
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
-    }
-    
-    .form-footer {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 0.5rem;
-    }
-    
-    .word-count, .char-count {
-        color: var(--text-light);
-        font-size: 0.85rem;
-    }
-    
-    /* Validation Messages */
-    .validation-messages {
-        margin: 1rem 0;
-        padding: 1rem;
-        border-radius: 8px;
-        display: none;
-    }
-    
-    .validation-messages.error {
-        background-color: #f8d7da;
-        border: 1px solid #f5c6cb;
-        color: #721c24;
-        display: block;
-    }
-    
-    .validation-messages.success {
-        background-color: #d4edda;
-        border: 1px solid #c3e6cb;
-        color: #155724;
-        display: block;
-    }
-    
-    .validation-messages.warning {
-        background-color: #fff3cd;
-        border: 1px solid #ffeaa7;
-        color: #856404;
-        display: block;
-    }
-    
-    /* Tips Section */
-    .tips-section {
-        background-color: #f8f9fa;
-        border-radius: 10px;
-        padding: 1rem;
-        margin-top: 1.5rem;
-        border-left: 4px solid #ffc107;
-    }
-    
-    .tips-section h6 {
-        color: var(--text-dark);
-        margin-bottom: 0.5rem;
         display: flex;
         align-items: center;
         gap: 0.5rem;
     }
     
-    .tips-section ul {
-        margin: 0;
-        padding-left: 1.5rem;
-        color: var(--text-light);
+    .btn-outline {
+        background: white;
+        border-color: #cbd5e1;
+        color: #64748b;
     }
     
-    .tips-section li {
-        margin-bottom: 0.25rem;
-        font-size: 0.9rem;
-    }
-    
-    /* Button Styles */
-    .btn-primary, .btn-secondary {
-        padding: 0.75rem 1.5rem;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-        border: none;
-        font-size: 1rem;
+    .btn-outline:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+        color: #475569;
     }
     
     .btn-primary {
-        background-color: var(--primary-color);
+        background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+        border: none;
         color: white;
+        position: relative;
+        min-width: 140px;
     }
     
     .btn-primary:hover:not(:disabled) {
-        background-color: var(--primary-dark);
+        background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
     }
     
     .btn-primary:disabled {
-        background-color: #cccccc;
+        background: #cbd5e1;
         cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
     }
     
-    .btn-secondary {
-        background-color: #6c757d;
-        color: white;
+    .btn-text {
+        transition: opacity 0.3s;
     }
     
-    .btn-secondary:hover {
-        background-color: #5a6268;
+    .btn-loader {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .btn-primary.loading .btn-text {
+        opacity: 0;
+    }
+    
+    .btn-primary.loading .btn-loader {
+        opacity: 1;
     }
     
     /* Toast Container */
@@ -273,58 +605,22 @@
         bottom: 1rem;
         right: 1rem;
         z-index: 1002;
-        max-width: 350px;
+        max-width: 400px;
     }
     
     .toast {
-        background-color: white;
-        border-radius: 8px;
-        padding: 1rem;
+        background: white;
+        border-radius: 12px;
+        padding: 1.25rem;
         margin-bottom: 1rem;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
         border-left: 4px solid;
-        animation: slideIn 0.3s ease;
+        animation: slideInRight 0.3s ease;
+        position: relative;
+        overflow: hidden;
     }
     
-    .toast.success {
-        border-left-color: #28a745;
-    }
-    
-    .toast.error {
-        border-left-color: #dc3545;
-    }
-    
-    .toast.info {
-        border-left-color: #17a2b8;
-    }
-    
-    .toast-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 0.5rem;
-    }
-    
-    .toast-title {
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    
-    .toast-close {
-        background: none;
-        border: none;
-        font-size: 1.2rem;
-        cursor: pointer;
-        color: #6c757d;
-    }
-    
-    .toast-body {
-        color: var(--text-dark);
-    }
-    
-    @keyframes slideIn {
+    @keyframes slideInRight {
         from {
             transform: translateX(100%);
             opacity: 0;
@@ -335,17 +631,65 @@
         }
     }
     
+    .toast.success {
+        border-left-color: #10b981;
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    }
+    
+    .toast.error {
+        border-left-color: #ef4444;
+        background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    }
+    
+    .toast-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+    
+    .toast-title {
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #1e293b;
+    }
+    
+    .toast-close {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        cursor: pointer;
+        color: #64748b;
+        transition: color 0.3s;
+    }
+    
+    .toast-close:hover {
+        color: #dc2626;
+    }
+    
+    .toast-body {
+        color: #475569;
+        line-height: 1.5;
+    }
+    
     /* Responsive Design */
     @media (max-width: 768px) {
         .report-issue-button-container {
-            bottom: 1rem;
-            right: 1rem;
+            bottom: 1.5rem;
+            right: 1.5rem;
         }
         
         .report-issue-fab {
-            width: 50px;
-            height: 50px;
-            font-size: 1.25rem;
+            min-width: 180px;
+            height: 56px;
+            font-size: 1rem;
+            padding: 0 1.25rem;
+        }
+        
+        .fab-content i {
+            font-size: 1.3rem;
         }
         
         .report-issue-modal-content {
@@ -354,125 +698,193 @@
         }
         
         .modal-header {
-            padding: 1rem;
+            padding: 1.5rem;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
         }
         
         .modal-body {
-            padding: 1rem;
+            padding: 1.5rem;
+        }
+        
+        .user-info-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .description-stats {
+            flex-direction: column;
+            gap: 0.5rem;
         }
         
         .modal-footer {
-            padding: 1rem;
+            padding: 1.5rem;
+            flex-direction: column;
+        }
+        
+        .btn {
+            width: 100%;
+            justify-content: center;
         }
     }
     
     @media (max-width: 480px) {
-        .info-row {
+        .report-issue-fab {
+            min-width: 160px;
+            height: 52px;
+            padding: 0 1rem;
+        }
+        
+        .fab-text {
+            font-size: 0.95rem;
+        }
+        
+        .modal-header h3 {
+            font-size: 1.5rem;
+        }
+        
+        .modal-icon {
+            font-size: 2rem;
+        }
+        
+        .section-header {
             flex-direction: column;
+            gap: 0.75rem;
         }
         
-        .info-label {
-            margin-bottom: 0.25rem;
-        }
-        
-        .form-footer {
+        .progress-container {
             flex-direction: column;
-            gap: 0.25rem;
+            gap: 0.5rem;
         }
         
-        .modal-footer {
-            flex-direction: column;
-        }
-        
-        .btn-primary, .btn-secondary {
+        .progress-text {
+            text-align: center;
             width: 100%;
         }
     }
 </style>
 
 <div class="report-issue-button-container">
-    <!-- Floating Action Button -->
-    <button class="report-issue-fab" onclick="toggleIssueForm()" title="Report Platform Issue">
-        <i class="fas fa-exclamation-circle"></i>
-    </button>
+    <!-- Highly Visible Floating Action Button -->
+    <div class="report-issue-fab-container">
+        <button class="report-issue-fab" onclick="toggleIssueForm()" title="Report Platform Issue" aria-label="Report Platform Issue">
+            <div class="fab-content">
+                <span class="fab-text">Report Issue</span>
+            </div>
+            <div class="fab-pulse"></div>
+        </button>
+    </div>
     
     <!-- Issue Form Modal -->
     <div class="report-issue-modal" id="issueFormModal">
         <div class="report-issue-modal-content">
             <div class="modal-header">
-                <h3>Report Platform Issue</h3>
-                <button class="modal-close" onclick="toggleIssueForm()">&times;</button>
+                <div class="modal-header-content">
+                    <div>
+                        <h3>Report Platform Issue</h3>
+                        <p class="modal-subtitle">Help us improve AttendAI by reporting any problems you encounter</p>
+                    </div>
+                </div>
+                <button class="modal-close" onclick="toggleIssueForm()" aria-label="Close">
+                    X
+                </button>
             </div>
             
             <form id="issueReportForm" method="POST" action="{{ url_for('main.submit_issue_report') }}">
-                <div class="modal-body">
-                    <!-- User Information (Read-only) -->
-                    <div class="user-info-section">
-                        <div class="info-row">
-                            <span class="info-label">Reporter:</span>
-                            <span class="info-value">{{ session.get('name', 'User') }}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Role:</span>
-                            <span class="info-value">{{ session.role|title }}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Institution:</span>
-                            <span class="info-value">{{ session.get('institution_name', 'Institution') }}</span>
-                        </div>
-                    </div>
-                    
+                <div class="modal-body">                    
                     <!-- Issue Category -->
-                    <div class="form-group">
-                        <label for="issueCategory">Issue Category *</label>
-                        <select class="form-control" id="issueCategory" name="category" required>
-                            <option value="">Select a category</option>
-                            <option value="bug">Bug/Error</option>
-                            <option value="feature_request">Feature Request</option>
-                            <option value="ui_issue">UI/UX Issue</option>
-                            <option value="performance">Performance Issue</option>
-                            <option value="security">Security Concern</option>
-                            <option value="data_issue">Data Issue</option>
-                            <option value="account_issue">Account Issue</option>
-                            <option value="billing">Billing/Payment</option>
-                            <option value="other">Other</option>
-                        </select>
-                        <small class="form-text text-muted">Choose the most relevant category for your issue</small>
+                    <div class="form-section">
+                        <div class="section-header">
+                            <div>
+                                <label for="issueCategory">Issue Category *</label>
+                                <p class="section-description">Select the type of issue you're experiencing</p>
+                            </div>
+                        </div>
+                        <div class="category-options">
+                            <select class="form-control category-select" id="issueCategory" name="category" required>
+                                <option value="">Choose a category...</option>
+                                <option value="bug">Bug/Error</option>
+                                <option value="feature_request">Feature Request</option>
+                                <option value="ui_issue">UI/UX Issue</option>
+                                <option value="performance">Performance Issue</option>
+                                <option value="security">Security Concern</option>
+                                <option value="data_issue">Data Issue</option>
+                                <option value="account_issue">Account Issue</option>
+                                <option value="billing">Billing/Payment</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
                     </div>
                     
                     <!-- Issue Description -->
-                    <div class="form-group">
-                        <label for="issueDescription">Issue Description *</label>
-                        <textarea class="form-control" id="issueDescription" name="description" 
-                                  rows="5" placeholder="Please describe the issue in detail. Include steps to reproduce if applicable..." 
-                                  required></textarea>
-                        <div class="form-footer">
-                            <small class="word-count">Words: <span id="wordCount">0</span> (Minimum: 10)</small>
-                            <small class="char-count">Characters: <span id="charCount">0</span></small>
+                    <div class="form-section">
+                        <div class="section-header">
+                            <div>
+                                <label for="issueDescription">Issue Description *</label>
+                                <p class="section-description">Describe the issue in detail. The more information you provide, the better we can help.</p>
+                            </div>
+                        </div>
+                        <div class="description-box">
+                            <div class="description-header">
+                                <span>Detailed Description</span>
+                                <div class="description-stats">
+                                    <span class="stat-item" title="Word Count">
+                                        <i class="fas fa-font"></i>
+                                        <span id="wordCount">0</span> words
+                                    </span>
+                                    <span class="stat-item" title="Character Count">
+                                        <i class="fas fa-text-height"></i>
+                                        <span id="charCount">0</span> chars
+                                    </span>
+                                </div>
+                            </div>
+                            <textarea class="form-control description-textarea" id="issueDescription" name="description" 
+                                      rows="6" placeholder="Please include:
+• What you were trying to do
+• What actually happened
+• Steps to reproduce the issue
+• Screenshots if possible (describe them)
+• What you expected to happen
+• Any error messages you saw" 
+                                      required></textarea>
+                            <div class="description-footer">
+                                <div class="requirements">
+                                    <i class="fas fa-info-circle"></i>
+                                    Minimum 10 words required for detailed reports
+                                </div>
+                                <div class="progress-container">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                                    </div>
+                                    <div class="progress-text" id="progressText">0% complete</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
                     <!-- Validation Messages -->
-                    <div class="validation-messages" id="validationMessages">
+                    <div class="validation-card" id="validationMessages">
                         <!-- Will be populated by JavaScript -->
                     </div>
                     
-                    <!-- Tips Section -->
-                    <div class="tips-section">
-                        <h6><i class="fas fa-lightbulb"></i> Tips for effective issue reports:</h6>
-                        <ul>
-                            <li>Be specific and detailed about the problem</li>
-                            <li>Include steps to reproduce if possible</li>
-                            <li>Mention what you expected to happen vs what actually happened</li>
-                            <li>Avoid inappropriate language</li>
-                        </ul>
-                    </div>
                 </div>
                 
                 <div class="modal-footer">
-                    <button type="button" class="btn-secondary" onclick="toggleIssueForm()">Cancel</button>
-                    <button type="submit" class="btn-primary" id="submitBtn" disabled>
-                        <i class="fas fa-paper-plane"></i> Submit Report
+                    <button type="button" class="btn btn-outline" onclick="toggleIssueForm()">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                        <i class="fas fa-paper-plane"></i>
+                        <span class="btn-text">Submit Report</span>
+                        <span class="btn-loader" id="submitLoader">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </span>
                     </button>
                 </div>
             </form>
@@ -508,18 +920,31 @@
         
         document.getElementById('wordCount').textContent = '0';
         document.getElementById('charCount').textContent = '0';
+        document.getElementById('progressFill').style.width = '0%';
+        document.getElementById('progressText').textContent = '0% complete';
         document.getElementById('submitBtn').disabled = true;
         
         const validationMessages = document.getElementById('validationMessages');
         if (validationMessages) {
             validationMessages.style.display = 'none';
-            validationMessages.className = 'validation-messages';
+            validationMessages.className = 'validation-card';
             validationMessages.innerHTML = '';
         }
     }
     
-    // Word and character counting
+    // Update current date
     document.addEventListener('DOMContentLoaded', function() {
+        const dateElement = document.getElementById('currentDate');
+        if (dateElement && !dateElement.textContent) {
+            const now = new Date();
+            dateElement.textContent = now.toLocaleDateString('en-US', { 
+                month: 'long', 
+                day: 'numeric', 
+                year: 'numeric' 
+            });
+        }
+        
+        // Word and character counting with progress
         const descriptionTextarea = document.getElementById('issueDescription');
         const submitBtn = document.getElementById('submitBtn');
         
@@ -531,6 +956,11 @@
                 
                 document.getElementById('wordCount').textContent = words.length;
                 document.getElementById('charCount').textContent = chars;
+                
+                // Calculate progress (max 30 words = 100%)
+                const progress = Math.min((words.length / 30) * 100, 100);
+                document.getElementById('progressFill').style.width = `${progress}%`;
+                document.getElementById('progressText').textContent = `${Math.round(progress)}% complete`;
                 
                 // Update validation
                 validateContent(text);
@@ -561,28 +991,39 @@
         let isValid = hasText && hasCategory && hasEnoughWords;
         let message = '';
         let messageType = 'error';
+        let icon = 'exclamation-circle';
         
         if (!hasText) {
-            message = 'Please describe the issue';
+            message = 'Please describe the issue in detail';
         } else if (!hasCategory) {
-            message = 'Please select a category';
+            message = 'Please select a category for your issue';
         } else if (!hasEnoughWords) {
-            message = `Please provide more detail (${words.length}/10 words minimum)`;
+            message = `Please provide more detail (${words.length}/10 words). Detailed reports help us resolve issues faster.`;
             messageType = 'warning';
+            icon = 'exclamation-triangle';
+        } else if (words.length < 11) {
+            message = 'Good start! Consider adding more details for faster resolution.';
+            messageType = 'warning';
+            icon = 'exclamation-triangle';
+            isValid = true; // Still valid, just suggesting more detail
         } else {
-            message = 'Content looks good!';
+            message = 'Excellent! Your report contains enough detail for us to investigate.';
             messageType = 'success';
+            icon = 'check-circle';
         }
         
         // Update validation display
         if (validationMessages) {
             validationMessages.innerHTML = `
-                <div class="validation-message">
-                    <i class="fas fa-${messageType === 'error' ? 'exclamation-circle' : messageType === 'warning' ? 'exclamation-triangle' : 'check-circle'}"></i>
-                    ${message}
+                <div class="validation-content">
+                    <i class="fas fa-${icon}"></i>
+                    <div>
+                        <strong>${messageType === 'error' ? 'Required' : messageType === 'warning' ? 'Suggestion' : 'Great!'}</strong>
+                        <p>${message}</p>
+                    </div>
                 </div>
             `;
-            validationMessages.className = `validation-messages ${messageType}`;
+            validationMessages.className = `validation-card ${messageType}`;
             validationMessages.style.display = 'block';
         }
         
@@ -594,7 +1035,7 @@
         return isValid;
     }
     
-    // Form submission
+    // Form submission with loading state
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('issueReportForm');
         if (form) {
@@ -602,8 +1043,10 @@
                 e.preventDefault();
                 
                 const submitBtn = document.getElementById('submitBtn');
-                const originalText = submitBtn.innerHTML;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+                const submitLoader = document.getElementById('submitLoader');
+                
+                // Show loading state
+                submitBtn.classList.add('loading');
                 submitBtn.disabled = true;
                 
                 try {
@@ -640,9 +1083,12 @@
                     const data = await response.json();
                     
                     if (data.success) {
-                        showToast('success', 'Issue Reported Successfully', 'Your issue has been submitted. We will review it soon.');
-                        toggleIssueForm();
-                        clearForm();
+                        showToast('success', 'Issue Reported Successfully', 
+                            `Your issue (#${data.issue_id}) has been submitted. We will review it soon. Thank you for helping improve AttendAI!`);
+                        setTimeout(() => {
+                            toggleIssueForm();
+                            clearForm();
+                        }, 2000);
                     } else {
                         throw new Error(data.error || 'Submission failed');
                     }
@@ -650,7 +1096,8 @@
                 } catch (error) {
                     showToast('error', 'Submission Failed', error.message);
                 } finally {
-                    submitBtn.innerHTML = originalText;
+                    // Hide loading state
+                    submitBtn.classList.remove('loading');
                     submitBtn.disabled = false;
                 }
             });
@@ -667,22 +1114,30 @@
         toast.innerHTML = `
             <div class="toast-header">
                 <div class="toast-title">
-                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
                     ${title}
                 </div>
-                <button class="toast-close" onclick="this.parentElement.parentElement.remove()">&times;</button>
+                <button class="toast-close" onclick="this.parentElement.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
             <div class="toast-body">${message}</div>
         `;
         
         container.appendChild(toast);
         
-        // Auto-remove after 5 seconds
+        // Auto-remove after 8 seconds
         setTimeout(() => {
             if (toast.parentElement === container) {
-                container.removeChild(toast);
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (toast.parentElement === container) {
+                        container.removeChild(toast);
+                    }
+                }, 300);
             }
-        }, 5000);
+        }, 8000);
     }
     
     // Close modal when clicking outside

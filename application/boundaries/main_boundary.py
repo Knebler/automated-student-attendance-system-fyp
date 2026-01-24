@@ -272,7 +272,6 @@ def my_reports():
         return redirect(url_for('main.home'))
 
 @main_bp.route('/api/report-issue', methods=['POST'])
-@requires_roles_api(['student', 'lecturer', 'admin'])
 def api_report_issue():
     """API endpoint for submitting issue reports (for AJAX)"""
     try:
@@ -309,7 +308,6 @@ def api_report_issue():
         
         # Create the issue
         result = PlatformIssueControl.create_issue(
-            app=current_app,
             user_id=user_id,
             institution_id=institution_id,
             description=description,
@@ -329,7 +327,6 @@ def api_report_issue():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @main_bp.route('/api/validate-issue', methods=['POST'])
-@requires_roles_api(['student', 'lecturer', 'admin'])
 def api_validate_issue():
     """API endpoint for validating issue content before submission"""
     try:

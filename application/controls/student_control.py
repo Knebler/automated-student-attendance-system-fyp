@@ -5,7 +5,8 @@ from application.entities2.attendance_appeal import AttendanceAppealModel
 from application.entities2.user import UserModel
 from application.entities2.course import CourseModel
 from application.entities2.venue import VenueModel
-from application.entities2.announcement import AnnouncementModel  # NEW: Import AnnouncementModel
+from application.entities2.announcement import AnnouncementModel
+from application.entities2.notification import NotificationModel
 from datetime import datetime, date, timedelta
 from database.base import get_session
 from database.models import AttendanceAppealStatusEnum, AttendanceRecord, Class, Course, CourseUser, User, Venue, User as UserModelDB
@@ -652,7 +653,8 @@ class StudentControl:
                 class_model = ClassModel(db_session)
                 semester_model = SemesterModel(db_session)
                 attendance_model = AttendanceRecordModel(db_session)
-                announcement_model = AnnouncementModel(db_session)  # NEW: Add announcement model
+                announcement_model = AnnouncementModel(db_session)
+                notification_model = NotificationModel(db_session)
                 
                 # Get student info
                 student = user_model.get_by_id(user_id)
@@ -730,6 +732,9 @@ class StudentControl:
                 present_percent = ((p + l + e) / marked * 100) if marked > 0 else 0
                 absent_percent = (a / marked * 100) if marked > 0 else 0
                 
+                # Get unread notifications count
+                unread_notifications_count = notification_model.get_unread_count(user_id)
+                
                 # Get recent announcements for the student's institution
                 try:
                     # Get preview announcements (3 items) for dashboard
@@ -794,7 +799,8 @@ class StudentControl:
                         'excused_count': e,
                         'total_classes': total,
                         'present_percent': round(present_percent, 1),
-                        'absent_percent': round(absent_percent, 1)
+                        'absent_percent': round(absent_percent, 1),
+                        'unread_notifications_count': unread_notifications_count
                     },
                     'current_time': current_time.strftime('%I:%M %p'),
                     'current_date': current_date.strftime('%d %B %Y')

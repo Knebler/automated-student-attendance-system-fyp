@@ -249,7 +249,6 @@ def my_reports():
             return redirect(url_for('auth.login'))
         
         result = PlatformIssueControl.get_issues_by_user(
-            app=current_app,
             user_id=user_id,
             include_deleted=False
         )
@@ -262,7 +261,7 @@ def my_reports():
         categories = PlatformIssueControl.get_categories()
         
         return render_template(
-            'platform/my_reports.html',
+            'components/my_reports.html',
             issues=result['issues'],
             total_count=result['count'],
             categories=categories
@@ -353,7 +352,7 @@ def api_validate_issue():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @main_bp.route('/api/my-reports')
-@requires_roles(['student', 'lecturer', 'admin'])
+@requires_roles_api(['student', 'lecturer', 'admin'])
 def api_my_reports():
     """API endpoint for getting user's reports"""
     try:
@@ -363,7 +362,6 @@ def api_my_reports():
             return jsonify({'success': False, 'error': 'Authentication required'}), 401
         
         result = PlatformIssueControl.get_issues_by_user(
-            app=current_app,
             user_id=user_id,
             include_deleted=False
         )

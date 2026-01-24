@@ -333,25 +333,6 @@ def update_institution(institution_id):
     else:
         return jsonify(result), 400
 
-@platform_bp.route('/reports')
-@requires_roles('platform_manager')
-def report_management():
-    """Platform manager - reports overview"""
-    # TODO: query reports from DB
-    return render_template('platmanager/platform_manager_report_management.html')
-
-
-@platform_bp.route('/reports/<int:report_id>')
-def report_details(report_id):
-    """Platform manager - specific report details"""
-    auth_result = AuthControl.verify_session(current_app, session)
-    if not auth_result['success'] or auth_result['user'].get('user_type') != 'platform_manager':
-        flash('Access denied. Platform manager privileges required.', 'danger')
-        return redirect(url_for('auth.login'))
-    # TODO: fetch report by id from DB
-    return render_template('platmanager/platform_manager_report_management_report_details.html', user=auth_result['user'], report_id=report_id)
-
-
 @platform_bp.route('/performance')
 @requires_roles('platform_manager')
 def performance_management():

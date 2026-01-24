@@ -503,9 +503,11 @@ def edit_class(course_id, class_id):
         with get_session() as db_session:
             course_model = CourseModel(db_session)
             class_model = ClassModel(db_session)
+            venue_model = VenueModel(db_session)
             
             # Verify course belongs to institution
             course = course_model.get_by_id(course_id)
+            course_code = course.code if course else "Unknown"
             if not course or course.institution_id != institution_id:
                 flash('Course not found or access denied.', 'error')
                 return redirect(url_for('institution.manage_classes'))
@@ -522,6 +524,15 @@ def edit_class(course_id, class_id):
                 venue_id=int(venue_id),
                 start_time=start_datetime,
                 end_time=end_datetime
+            )
+            
+                 # Announcement update
+            announcement_model = AnnouncementModel(db_session)
+            announcement_model.create_announcement(
+                institution_id=institution_id,
+                requested_by_user_id=session.get('user_id'),
+                title=f'Class {course_code} - {class_id} Updated',
+                content=f"Class {course_code} - {class_id} has been updated to {start_time} - {end_time} at {venue_model.get_by_id(int(venue_id)).name}."
             )
             
             flash('Class updated successfully', 'success')

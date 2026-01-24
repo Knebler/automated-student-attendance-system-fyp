@@ -1,0 +1,706 @@
+{% if session.role in ['student', 'lecturer', 'admin'] %}
+<style>
+    /* Report Issue Button Container */
+    .report-issue-button-container {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        z-index: 1000;
+    }
+    
+    /* Floating Action Button */
+    .report-issue-fab {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+        color: white;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .report-issue-fab:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    }
+    
+    .report-issue-fab:active {
+        transform: scale(0.95);
+    }
+    
+    /* Modal Styles */
+    .report-issue-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1001;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .report-issue-modal-content {
+        background-color: white;
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .modal-header {
+        background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+        color: white;
+        padding: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .modal-header h3 {
+        margin: 0;
+        font-weight: 600;
+    }
+    
+    .modal-close {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 2rem;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal-close:hover {
+        opacity: 0.8;
+    }
+    
+    .modal-body {
+        padding: 1.5rem;
+        overflow-y: auto;
+        flex-grow: 1;
+    }
+    
+    .modal-footer {
+        padding: 1rem 1.5rem;
+        background-color: #f8f9fa;
+        border-top: 1px solid #dee2e6;
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+    }
+    
+    /* User Info Section */
+    .user-info-section {
+        background-color: var(--primary-light);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid var(--primary-color);
+    }
+    
+    .info-row {
+        display: flex;
+        margin-bottom: 0.5rem;
+    }
+    
+    .info-row:last-child {
+        margin-bottom: 0;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: var(--text-dark);
+        min-width: 100px;
+    }
+    
+    .info-value {
+        color: var(--text-dark);
+    }
+    
+    /* Form Styles */
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    }
+    
+    .form-footer {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 0.5rem;
+    }
+    
+    .word-count, .char-count {
+        color: var(--text-light);
+        font-size: 0.85rem;
+    }
+    
+    /* Validation Messages */
+    .validation-messages {
+        margin: 1rem 0;
+        padding: 1rem;
+        border-radius: 8px;
+        display: none;
+    }
+    
+    .validation-messages.error {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+        display: block;
+    }
+    
+    .validation-messages.success {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+        display: block;
+    }
+    
+    .validation-messages.warning {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+        display: block;
+    }
+    
+    /* Tips Section */
+    .tips-section {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-top: 1.5rem;
+        border-left: 4px solid #ffc107;
+    }
+    
+    .tips-section h6 {
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .tips-section ul {
+        margin: 0;
+        padding-left: 1.5rem;
+        color: var(--text-light);
+    }
+    
+    .tips-section li {
+        margin-bottom: 0.25rem;
+        font-size: 0.9rem;
+    }
+    
+    /* Button Styles */
+    .btn-primary, .btn-secondary {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        border: none;
+        font-size: 1rem;
+    }
+    
+    .btn-primary {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+        background-color: var(--primary-dark);
+    }
+    
+    .btn-primary:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+    }
+    
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background-color: #5a6268;
+    }
+    
+    /* Toast Container */
+    .toast-container {
+        position: fixed;
+        bottom: 1rem;
+        right: 1rem;
+        z-index: 1002;
+        max-width: 350px;
+    }
+    
+    .toast {
+        background-color: white;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border-left: 4px solid;
+        animation: slideIn 0.3s ease;
+    }
+    
+    .toast.success {
+        border-left-color: #28a745;
+    }
+    
+    .toast.error {
+        border-left-color: #dc3545;
+    }
+    
+    .toast.info {
+        border-left-color: #17a2b8;
+    }
+    
+    .toast-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .toast-title {
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .toast-close {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        cursor: pointer;
+        color: #6c757d;
+    }
+    
+    .toast-body {
+        color: var(--text-dark);
+    }
+    
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .report-issue-button-container {
+            bottom: 1rem;
+            right: 1rem;
+        }
+        
+        .report-issue-fab {
+            width: 50px;
+            height: 50px;
+            font-size: 1.25rem;
+        }
+        
+        .report-issue-modal-content {
+            width: 95%;
+            max-height: 85vh;
+        }
+        
+        .modal-header {
+            padding: 1rem;
+        }
+        
+        .modal-body {
+            padding: 1rem;
+        }
+        
+        .modal-footer {
+            padding: 1rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .info-row {
+            flex-direction: column;
+        }
+        
+        .info-label {
+            margin-bottom: 0.25rem;
+        }
+        
+        .form-footer {
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .modal-footer {
+            flex-direction: column;
+        }
+        
+        .btn-primary, .btn-secondary {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="report-issue-button-container">
+    <!-- Floating Action Button -->
+    <button class="report-issue-fab" onclick="toggleIssueForm()" title="Report Platform Issue">
+        <i class="fas fa-exclamation-circle"></i>
+    </button>
+    
+    <!-- Issue Form Modal -->
+    <div class="report-issue-modal" id="issueFormModal">
+        <div class="report-issue-modal-content">
+            <div class="modal-header">
+                <h3>Report Platform Issue</h3>
+                <button class="modal-close" onclick="toggleIssueForm()">&times;</button>
+            </div>
+            
+            <form id="issueReportForm" method="POST" action="{{ url_for('main.submit_issue_report') }}">
+                <div class="modal-body">
+                    <!-- User Information (Read-only) -->
+                    <div class="user-info-section">
+                        <div class="info-row">
+                            <span class="info-label">Reporter:</span>
+                            <span class="info-value">{{ session.get('name', 'User') }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Role:</span>
+                            <span class="info-value">{{ session.role|title }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Institution:</span>
+                            <span class="info-value">{{ session.get('institution_name', 'Institution') }}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Issue Category -->
+                    <div class="form-group">
+                        <label for="issueCategory">Issue Category *</label>
+                        <select class="form-control" id="issueCategory" name="category" required>
+                            <option value="">Select a category</option>
+                            <option value="bug">Bug/Error</option>
+                            <option value="feature_request">Feature Request</option>
+                            <option value="ui_issue">UI/UX Issue</option>
+                            <option value="performance">Performance Issue</option>
+                            <option value="security">Security Concern</option>
+                            <option value="data_issue">Data Issue</option>
+                            <option value="account_issue">Account Issue</option>
+                            <option value="billing">Billing/Payment</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <small class="form-text text-muted">Choose the most relevant category for your issue</small>
+                    </div>
+                    
+                    <!-- Issue Description -->
+                    <div class="form-group">
+                        <label for="issueDescription">Issue Description *</label>
+                        <textarea class="form-control" id="issueDescription" name="description" 
+                                  rows="5" placeholder="Please describe the issue in detail. Include steps to reproduce if applicable..." 
+                                  required></textarea>
+                        <div class="form-footer">
+                            <small class="word-count">Words: <span id="wordCount">0</span> (Minimum: 10)</small>
+                            <small class="char-count">Characters: <span id="charCount">0</span></small>
+                        </div>
+                    </div>
+                    
+                    <!-- Validation Messages -->
+                    <div class="validation-messages" id="validationMessages">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                    
+                    <!-- Tips Section -->
+                    <div class="tips-section">
+                        <h6><i class="fas fa-lightbulb"></i> Tips for effective issue reports:</h6>
+                        <ul>
+                            <li>Be specific and detailed about the problem</li>
+                            <li>Include steps to reproduce if possible</li>
+                            <li>Mention what you expected to happen vs what actually happened</li>
+                            <li>Avoid inappropriate language</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="toggleIssueForm()">Cancel</button>
+                    <button type="submit" class="btn-primary" id="submitBtn" disabled>
+                        <i class="fas fa-paper-plane"></i> Submit Report
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Success/Error Toast -->
+    <div class="toast-container" id="toastContainer"></div>
+</div>
+
+<script>
+    let issueFormVisible = false;
+    
+    function toggleIssueForm() {
+        const modal = document.getElementById('issueFormModal');
+        if (!modal) return;
+        
+        issueFormVisible = !issueFormVisible;
+        modal.style.display = issueFormVisible ? 'flex' : 'none';
+        
+        if (issueFormVisible) {
+            document.body.style.overflow = 'hidden';
+            document.getElementById('issueDescription').focus();
+        } else {
+            document.body.style.overflow = '';
+            clearForm();
+        }
+    }
+    
+    function clearForm() {
+        const form = document.getElementById('issueReportForm');
+        if (form) form.reset();
+        
+        document.getElementById('wordCount').textContent = '0';
+        document.getElementById('charCount').textContent = '0';
+        document.getElementById('submitBtn').disabled = true;
+        
+        const validationMessages = document.getElementById('validationMessages');
+        if (validationMessages) {
+            validationMessages.style.display = 'none';
+            validationMessages.className = 'validation-messages';
+            validationMessages.innerHTML = '';
+        }
+    }
+    
+    // Word and character counting
+    document.addEventListener('DOMContentLoaded', function() {
+        const descriptionTextarea = document.getElementById('issueDescription');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        if (descriptionTextarea) {
+            descriptionTextarea.addEventListener('input', function() {
+                const text = this.value.trim();
+                const words = text ? text.split(/\s+/).filter(word => word.length > 0) : [];
+                const chars = text.length;
+                
+                document.getElementById('wordCount').textContent = words.length;
+                document.getElementById('charCount').textContent = chars;
+                
+                // Update validation
+                validateContent(text);
+            });
+        }
+        
+        // Validate on category change too
+        const categorySelect = document.getElementById('issueCategory');
+        if (categorySelect) {
+            categorySelect.addEventListener('change', function() {
+                const text = descriptionTextarea.value.trim();
+                validateContent(text);
+            });
+        }
+    });
+    
+    function validateContent(text) {
+        const category = document.getElementById('issueCategory').value;
+        const validationMessages = document.getElementById('validationMessages');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        // Basic validation
+        const words = text ? text.split(/\s+/).filter(word => word.length > 0) : [];
+        const hasText = text.length > 0;
+        const hasCategory = category.length > 0;
+        const hasEnoughWords = words.length >= 10;
+        
+        let isValid = hasText && hasCategory && hasEnoughWords;
+        let message = '';
+        let messageType = 'error';
+        
+        if (!hasText) {
+            message = 'Please describe the issue';
+        } else if (!hasCategory) {
+            message = 'Please select a category';
+        } else if (!hasEnoughWords) {
+            message = `Please provide more detail (${words.length}/10 words minimum)`;
+            messageType = 'warning';
+        } else {
+            message = 'Content looks good!';
+            messageType = 'success';
+        }
+        
+        // Update validation display
+        if (validationMessages) {
+            validationMessages.innerHTML = `
+                <div class="validation-message">
+                    <i class="fas fa-${messageType === 'error' ? 'exclamation-circle' : messageType === 'warning' ? 'exclamation-triangle' : 'check-circle'}"></i>
+                    ${message}
+                </div>
+            `;
+            validationMessages.className = `validation-messages ${messageType}`;
+            validationMessages.style.display = 'block';
+        }
+        
+        // Update submit button
+        if (submitBtn) {
+            submitBtn.disabled = !isValid;
+        }
+        
+        return isValid;
+    }
+    
+    // Form submission
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('issueReportForm');
+        if (form) {
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const submitBtn = document.getElementById('submitBtn');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+                submitBtn.disabled = true;
+                
+                try {
+                    // Perform AJAX validation first
+                    const validationResponse = await fetch('{{ url_for("main.api_validate_issue") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            description: document.getElementById('issueDescription').value,
+                            category: document.getElementById('issueCategory').value
+                        })
+                    });
+                    
+                    const validationData = await validationResponse.json();
+                    
+                    if (!validationData.success || !validationData.validation.is_appropriate) {
+                        throw new Error(validationData.validation.reason || 'Content validation failed');
+                    }
+                    
+                    // Submit the form
+                    const response = await fetch('{{ url_for("main.api_report_issue") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            description: document.getElementById('issueDescription').value,
+                            category: document.getElementById('issueCategory').value
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        showToast('success', 'Issue Reported Successfully', 'Your issue has been submitted. We will review it soon.');
+                        toggleIssueForm();
+                        clearForm();
+                    } else {
+                        throw new Error(data.error || 'Submission failed');
+                    }
+                    
+                } catch (error) {
+                    showToast('error', 'Submission Failed', error.message);
+                } finally {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            });
+        }
+    });
+    
+    // Toast notification system
+    function showToast(type, title, message) {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+        
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `
+            <div class="toast-header">
+                <div class="toast-title">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                    ${title}
+                </div>
+                <button class="toast-close" onclick="this.parentElement.parentElement.remove()">&times;</button>
+            </div>
+            <div class="toast-body">${message}</div>
+        `;
+        
+        container.appendChild(toast);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (toast.parentElement === container) {
+                container.removeChild(toast);
+            }
+        }, 5000);
+    }
+    
+    // Close modal when clicking outside
+    window.addEventListener('click', function(event) {
+        const modal = document.getElementById('issueFormModal');
+        if (modal && event.target === modal) {
+            toggleIssueForm();
+        }
+    });
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            const modal = document.getElementById('issueFormModal');
+            if (modal && issueFormVisible) {
+                toggleIssueForm();
+            }
+        }
+    });
+</script>
+{% endif %}

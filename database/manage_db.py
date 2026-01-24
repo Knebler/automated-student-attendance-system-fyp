@@ -347,6 +347,152 @@ def seed_testimonials():
         session.commit()
         print(f"Added {len(testimonials)} testimonials")
 
+def seed_platform_issues():
+    """Seed platform issues table with realistic dummy data"""
+    with get_session() as session:
+        # Get users and institutions for creating realistic issues
+        users = session.query(User).filter(User.role.in_(["student", "lecturer", "admin"])).all()
+        institutions = session.query(Institution).all()
+        
+        # Issue categories
+        categories = [
+            "technical",
+            "billing", 
+            "feature_request",
+            "bug",
+            "account",
+            "performance", 
+            "ui_ux",
+            "other"
+        ]
+        
+        # Create realistic issue descriptions based on categories
+        issue_descriptions = {
+            "technical": [
+                "Facial recognition not working properly in classroom lighting conditions",
+                "System crashes when trying to mark attendance for large classes"
+            ],
+            "billing": [
+                "Incorrect billing amount charged for monthly subscription",
+                "Payment gateway integration not working for international cards"
+            ],
+            "feature_request": [
+                "Request for bulk attendance import from CSV files",
+                "Need custom report templates for different departments",
+                "Advanced analytics dashboard with predictive insights"
+            ],
+            "bug": [
+                "Attendance marked twice for the same student in system records",
+                "Date/time display incorrect in semester reports (off by 1 day)",
+                "Password reset emails containing expired links"
+            ],
+            "account": [
+                "Cannot reset password - reset emails not being received",
+                "Account access suddenly revoked without notification"
+            ],
+            "performance": [
+                "Dashboard loading extremely slow during morning peak hours (8-9 AM)",
+                "Attendance marking taking 5+ seconds per student in classes of 50+",
+                "Memory usage climbing steadily without garbage collection"
+            ],
+            "ui_ux": [
+                "Attendance marking interface confusing for new lecturers - needs simplification"
+            ],
+            "other": [
+                "General feedback about platform usability and user experience",
+                "General inquiry about platform scalability and future roadmap"
+            ]
+        }
+        
+        # Generate issues
+        issues = []
+        num_issues = 50  # Number of issues to create
+        
+        for i in range(num_issues):
+            # Select random user and institution
+            user = random.choice(users)
+            
+            # Make sure user's institution is used
+            user_institution = next((inst for inst in institutions if inst.institution_id == user.institution_id), institutions[0])
+            
+            # Select random category
+            category = random.choice(categories)
+            
+            # Create description from category-specific templates
+            description = random.choice(issue_descriptions[category])
+            
+            # Add some variability and details to descriptions
+            details = []
+            
+            # Add frequency/occurrence
+            if random.random() < 0.4:
+                frequencies = ["daily", "multiple times per week", "every Monday", "during peak hours", "randomly"]
+                details.append(f"Occurs {random.choice(frequencies)}.")
+            
+            # Add impact statement
+            if random.random() < 0.3:
+                impacts = [
+                    "This affects all students in my classes.",
+                    "This creates extra work for our IT department."
+                ]
+                details.append(f"Impact: {random.choice(impacts)}")
+            
+            # Add attempted solutions
+            if random.random() < 0.25:
+                solutions = [
+                    "Tried clearing cache and cookies.",
+                    "Checked system requirements and all are met."
+                ]
+                details.append(f"Attempted: {random.choice(solutions)}")
+            
+            # Add urgency if needed
+            if random.random() < 0.2:
+                urgencies = [
+                    "Need resolution before end of semester.",
+                    "Preventing new staff onboarding."
+                ]
+                details.append(f"Urgency: {random.choice(urgencies)}")
+            
+            # Combine description with details
+            if details:
+                description += "\n\n" + "\n".join(details)
+            
+            # Add device/browser info (30% chance)
+            if random.random() < 0.3:
+                devices = [
+                    "Device: Windows 10, Chrome 120",
+                    "Device: Windows 11, Edge 119"
+                ]
+                description += f"\n\n{random.choice(devices)}"
+            
+            # Set created_at date - issues from last 90 days
+            days_ago = random.randint(0, 90)
+            created_at = datetime.now() - timedelta(days=days_ago)
+            
+            # For some issues, set deleted_at (soft delete simulation)
+            deleted_at = None
+            if random.random() < 0.1:  # 10% of issues are "deleted"
+                deleted_days = random.randint(1, days_ago)
+                deleted_at = created_at + timedelta(days=deleted_days)
+            
+            # Create the issue (matching your actual model)
+            issue = PlatformIssue(
+                user_id=user.user_id,
+                institution_id=user_institution.institution_id,
+                description=description,
+                category=category,
+                created_at=created_at,
+                deleted_at=deleted_at
+            )
+            
+            issues.append(issue)
+        
+        # Add all issues to session
+        session.add_all(issues)
+        session.commit()
+        print(f"Total Issues Created: {len(issues)}")
+
+
 def seed_database():
     import random
     zip_dict = lambda keys, list_of_values: [dict(zip(keys, values)) for values in list_of_values]
@@ -480,6 +626,10 @@ def seed_database():
             for _ in range(5):
                 content = f"Notification {random.randint(1, 100)} for user {user_id}"
                 s.execute(text(f"INSERT INTO Notifications (user_id, content) VALUES ({user_id}, '{content}')"))
+
+    if row_count("Platform_Issues") == 0:
+        seed_platform_issues()
+
     print(f"Added 5 notifications to each user")
     print("Database seeded, models created")
 

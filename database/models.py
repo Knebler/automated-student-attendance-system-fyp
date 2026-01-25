@@ -215,6 +215,10 @@ class Class(Base, BaseMixin):
     start_time = Column(DateTime, nullable=False)
     end_time = Column(DateTime, nullable=False)
     
+    # Notification tracking flags
+    notification_30min_sent = Column(Boolean, server_default="0")
+    notification_started_sent = Column(Boolean, server_default="0")
+    
     def as_sanitized_dict(self):
         data = self.as_dict()
         return data

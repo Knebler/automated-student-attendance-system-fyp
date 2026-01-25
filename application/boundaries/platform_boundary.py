@@ -333,25 +333,6 @@ def update_institution(institution_id):
     else:
         return jsonify(result), 400
 
-@platform_bp.route('/reports')
-@requires_roles('platform_manager')
-def report_management():
-    """Platform manager - reports overview"""
-    # TODO: query reports from DB
-    return render_template('platmanager/platform_manager_report_management.html')
-
-
-@platform_bp.route('/reports/<int:report_id>')
-def report_details(report_id):
-    """Platform manager - specific report details"""
-    auth_result = AuthControl.verify_session(current_app, session)
-    if not auth_result['success'] or auth_result['user'].get('user_type') != 'platform_manager':
-        flash('Access denied. Platform manager privileges required.', 'danger')
-        return redirect(url_for('auth.login'))
-    # TODO: fetch report by id from DB
-    return render_template('platmanager/platform_manager_report_management_report_details.html', user=auth_result['user'], report_id=report_id)
-
-
 @platform_bp.route('/performance')
 @requires_roles('platform_manager')
 def performance_management():
@@ -1194,7 +1175,7 @@ def issue_details(issue_id):
         return redirect(url_for('platform.issue_management'))
     
     context = {
-        'issue': result['issue'],
+        'issue': result.get('issue', {}),
         'comments': result.get('comments', []),
         'history': result.get('history', []),
     }
@@ -1203,7 +1184,7 @@ def issue_details(issue_id):
 
 @platform_bp.route('/issues/resolve/<int:issue_id>', methods=['POST'])
 @requires_roles('platform_manager')
-def resolve_issue(issue_id):
+def resolve_issue_platform_manager(issue_id):
     """Platform manager - resolve an issue"""
     resolver_id = session.get('user_id')
     resolution_notes = request.form.get('resolution_notes', '').strip()
@@ -1212,7 +1193,7 @@ def resolve_issue(issue_id):
         flash('Resolution notes are required', 'danger')
         return redirect(url_for('platform.issue_details', issue_id=issue_id))
     
-    result = PlatformIssueControl.resolve_issue(
+    result = PlatformIssueControl.resolve_issue_platform_manager(
         issue_id=issue_id,
         resolver_id=resolver_id,
         resolution_notes=resolution_notes
@@ -1227,7 +1208,7 @@ def resolve_issue(issue_id):
 
 @platform_bp.route('/issues/reject/<int:issue_id>', methods=['POST'])
 @requires_roles('platform_manager')
-def reject_issue(issue_id):
+def reject_issue_platform_manager(issue_id):
     """Platform manager - reject an issue"""
     resolver_id = session.get('user_id')
     rejection_reason = request.form.get('rejection_reason', '').strip()
@@ -1236,7 +1217,7 @@ def reject_issue(issue_id):
         flash('Rejection reason is required', 'danger')
         return redirect(url_for('platform.issue_details', issue_id=issue_id))
     
-    result = PlatformIssueControl.reject_issue(
+    result = PlatformIssueControl.reject_issue_platform_manager(
         issue_id=issue_id,
         resolver_id=resolver_id,
         rejection_reason=rejection_reason
@@ -1246,55 +1227,6 @@ def reject_issue(issue_id):
         flash('Issue rejected', 'success')
     else:
         flash(result.get('error', 'Failed to reject issue'), 'danger')
-    
-    return redirect(url_for('platform.issue_details', issue_id=issue_id))
-
-@platform_bp.route('/issues/comment/<int:issue_id>', methods=['POST'])
-@requires_roles('platform_manager')
-def add_issue_comment(issue_id):
-    """Platform manager - add comment to an issue"""
-    commenter_id = session.get('user_id')
-    comment_text = request.form.get('comment', '').strip()
-    
-    if not comment_text:
-        flash('Comment text is required', 'danger')
-        return redirect(url_for('platform.issue_details', issue_id=issue_id))
-    
-    result = PlatformIssueControl.add_comment_to_issue(
-        issue_id=issue_id,
-        commenter_id=commenter_id,
-        comment_text=comment_text,
-        is_platform_manager=True
-    )
-    
-    if result['success']:
-        flash('Comment added successfully', 'success')
-    else:
-        flash(result.get('error', 'Failed to add comment'), 'danger')
-    
-    return redirect(url_for('platform.issue_details', issue_id=issue_id))
-
-@platform_bp.route('/issues/update-priority/<int:issue_id>', methods=['POST'])
-@requires_roles('platform_manager')
-def update_issue_priority(issue_id):
-    """Platform manager - update issue priority"""
-    new_priority = request.form.get('priority', '').strip()
-    updater_id = session.get('user_id')
-    
-    if not new_priority or new_priority not in ['low', 'medium', 'high', 'critical']:
-        flash('Invalid priority level', 'danger')
-        return redirect(url_for('platform.issue_details', issue_id=issue_id))
-    
-    result = PlatformIssueControl.update_issue_priority(
-        issue_id=issue_id,
-        new_priority=new_priority,
-        updater_id=updater_id
-    )
-    
-    if result['success']:
-        flash('Priority updated successfully', 'success')
-    else:
-        flash(result.get('error', 'Failed to update priority'), 'danger')
     
     return redirect(url_for('platform.issue_details', issue_id=issue_id))
 
@@ -1316,30 +1248,6 @@ def get_recent_issues():
     limit = int(request.args.get('limit', 5))
     
     result = PlatformIssueControl.get_recent_issues(limit=limit)
-    
-    if result['success']:
-        return jsonify(result)
-    else:
-        return jsonify(result), 500
-
-@platform_bp.route('/api/issues/category-distribution')
-@requires_roles_api('platform_manager')
-def get_issue_category_distribution():
-    """Get issue category distribution (for charts)"""
-    result = PlatformIssueControl.get_issue_category_distribution()
-    
-    if result['success']:
-        return jsonify(result)
-    else:
-        return jsonify(result), 500
-
-@platform_bp.route('/api/issues/status-timeline')
-@requires_roles_api('platform_manager')
-def get_issue_status_timeline():
-    """Get issue status timeline (for charts)"""
-    days = int(request.args.get('days', 30))
-    
-    result = PlatformIssueControl.get_issue_status_timeline(days=days)
     
     if result['success']:
         return jsonify(result)

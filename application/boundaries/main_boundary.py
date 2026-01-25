@@ -345,7 +345,7 @@ def submit_issue_report():
 @main_bp.route('/my-reports')
 @requires_roles(['student', 'lecturer', 'admin'])
 def my_reports():
-    """Display user's submitted issue reports"""
+    """Display user's submitted issue reports with pagination and filtering"""
     try:
         user_id = session.get('user_id')
         
@@ -353,32 +353,80 @@ def my_reports():
             flash('You must be logged in to view your reports', 'danger')
             return redirect(url_for('auth.login'))
         
+        # Get filter parameters
+        status_filter = request.args.get('status', '')
+        category_filter = request.args.get('category', '')
+        search_term = request.args.get('search', '').strip()
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 10))
+        
+        # Get filtered issues
         result = PlatformIssueControl.get_issues_by_user(
-            app=current_app,
             user_id=user_id,
-            include_deleted=False
         )
         
         if not result['success']:
             flash(f'Error loading your reports: {result["error"]}', 'danger')
             return redirect(url_for('main.home'))
         
-        # Get categories for filter display
+        # Get categories for filter dropdown
         categories = PlatformIssueControl.get_categories()
         
         return render_template(
-            'platform/my_reports.html',
+            'components/my_reports.html',
             issues=result['issues'],
             total_count=result['count'],
-            categories=categories
+            categories=categories,
+            status_filter=status_filter,
+            category_filter=category_filter,
+            current_page=result.get('current_page', page),
+            total_pages=result.get('total_pages', 1),
+            has_prev=result.get('has_prev', False),
+            has_next=result.get('has_next', False),
+            per_page=per_page
         )
         
     except Exception as e:
         flash(f'Error loading your reports: {str(e)}', 'danger')
         return redirect(url_for('main.home'))
 
+@main_bp.route('/my-reports/<int:issue_id>')
+@requires_roles(['student', 'lecturer', 'admin'])
+def view_issue(issue_id):
+    """View details of a specific issue reported by the user"""
+    try:
+        user_id = session.get('user_id')
+        
+        if not user_id:
+            flash('You must be logged in to view issue details', 'danger')
+            return redirect(url_for('auth.login'))
+        
+        # Get issue details (user can only view their own issues)
+        result = PlatformIssueControl.get_issue_by_id_and_user(
+            issue_id=issue_id,
+            user_id=user_id
+        )
+        
+        if not result['success']:
+            flash(result.get('error', 'Issue not found or access denied'), 'danger')
+            return redirect(url_for('main.my_reports'))
+        
+        # Get comments and history if available
+        comments = result.get('comments', [])
+        history = result.get('history', [])
+        
+        return render_template(
+            'components/issue_details.html',
+            issue=result['issue'],
+            comments=comments,
+            history=history
+        )
+        
+    except Exception as e:
+        flash(f'Error loading issue details: {str(e)}', 'danger')
+        return redirect(url_for('main.my_reports'))
+
 @main_bp.route('/api/report-issue', methods=['POST'])
-@requires_roles_api(['student', 'lecturer', 'admin'])
 def api_report_issue():
     """API endpoint for submitting issue reports (for AJAX)"""
     try:
@@ -415,7 +463,6 @@ def api_report_issue():
         
         # Create the issue
         result = PlatformIssueControl.create_issue(
-            app=current_app,
             user_id=user_id,
             institution_id=institution_id,
             description=description,
@@ -435,7 +482,6 @@ def api_report_issue():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @main_bp.route('/api/validate-issue', methods=['POST'])
-@requires_roles_api(['student', 'lecturer', 'admin'])
 def api_validate_issue():
     """API endpoint for validating issue content before submission"""
     try:
@@ -458,7 +504,7 @@ def api_validate_issue():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @main_bp.route('/api/my-reports')
-@requires_roles(['student', 'lecturer', 'admin'])
+@requires_roles_api(['student', 'lecturer', 'admin'])
 def api_my_reports():
     """API endpoint for getting user's reports"""
     try:
@@ -468,7 +514,6 @@ def api_my_reports():
             return jsonify({'success': False, 'error': 'Authentication required'}), 401
         
         result = PlatformIssueControl.get_issues_by_user(
-            app=current_app,
             user_id=user_id,
             include_deleted=False
         )

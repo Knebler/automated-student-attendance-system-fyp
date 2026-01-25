@@ -1,0 +1,334 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Announcements - AttendAI{% endblock %}
+
+{% block content %}
+<style>
+    /* Announcements Page Styles */
+    .announcements-page {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    /* Page Header */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        position: relative;
+    }
+
+    .page-header::after {
+        content: "";
+        position: absolute;
+        bottom: -10px;
+        left: 0;
+        width: 120px;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary-dark), #3b82f6);
+        border-radius: 4px;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-dark);
+    }
+
+    .breadcrumb {
+        color: var(--text-light);
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+
+    .breadcrumb a {
+        color: var(--primary-dark);
+        text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+
+    /* Card Styles */
+    .card-custom {
+        background: white;
+        border-radius: 14px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header-custom {
+        background: linear-gradient(135deg, var(--primary-dark), #3b82f6);
+        color: white;
+        padding: 1.2rem 1.5rem;
+        font-weight: 600;
+        font-size: 1.1rem;
+        border-bottom: none;
+    }
+
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    /* Announcement Item Styles */
+    .announcement-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .announcement-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        transform: translateY(-2px);
+        border-color: var(--primary-dark);
+    }
+
+    .announcement-card:last-child {
+        margin-bottom: 0;
+    }
+
+    .announcement-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+        gap: 1rem;
+    }
+
+    .announcement-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin: 0;
+        flex: 1;
+    }
+
+    .announcement-date {
+        color: var(--text-light);
+        font-size: 0.9rem;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .announcement-date::before {
+        content: "📅";
+    }
+
+    .announcement-meta {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+        color: var(--text-light);
+    }
+
+    .announcement-author {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .announcement-author::before {
+        content: "👤";
+    }
+
+    .announcement-content {
+        color: var(--text-secondary);
+        line-height: 1.6;
+        font-size: 0.95rem;
+    }
+
+    .announcement-content p {
+        margin: 0;
+        white-space: pre-wrap;
+    }
+
+    .announcement-preview {
+        color: var(--text-secondary);
+        line-height: 1.6;
+        margin-bottom: 0.5rem;
+    }
+
+    .read-more {
+        color: var(--primary-dark);
+        font-weight: 500;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .read-more:hover {
+        text-decoration: underline;
+    }
+
+    /* Expanded State */
+    .announcement-card.expanded {
+        background: #f8fafc;
+        border-color: var(--primary-dark);
+    }
+
+    .announcement-card.expanded .announcement-content {
+        display: block;
+    }
+
+    .announcement-card.collapsed .announcement-content {
+        display: none;
+    }
+
+    /* No Announcements Message */
+    .no-announcements {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--text-light);
+    }
+
+    .no-announcements-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .no-announcements h3 {
+        font-size: 1.3rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+    }
+
+    .no-announcements p {
+        color: var(--text-light);
+    }
+
+    /* Button Styles */
+    .btn-custom {
+        padding: 0.7rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-back {
+        background: #f1f5f9;
+        color: var(--text-dark);
+    }
+
+    .btn-back:hover {
+        background: #e2e8f0;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .announcement-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .announcement-date {
+            margin-top: 0.5rem;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+
+<div class="announcements-page">
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <div>
+            <h1 class="page-title">📢 All Announcements</h1>
+            <div class="breadcrumb">
+                <a href="{{ url_for('student.dashboard') }}">Dashboard</a> / 
+                <span>Announcements</span>
+            </div>
+        </div>
+        <a href="{{ url_for('student.dashboard') }}" class="btn-custom btn-back">← Back to Dashboard</a>
+    </div>
+
+    <!-- Announcements List -->
+    <div class="card-custom">
+        <div class="card-header-custom">
+            Institution Announcements
+            {% if all_announcements %}
+                <span style="opacity: 0.9; font-weight: normal; font-size: 0.9rem;">
+                    ({{ all_announcements|length }} announcement{{ 's' if all_announcements|length != 1 else '' }})
+                </span>
+            {% endif %}
+        </div>
+        <div class="card-body-custom">
+            {% if all_announcements %}
+                {% for announcement in all_announcements %}
+                <div class="announcement-card collapsed" id="announcement-{{ loop.index }}" onclick="toggleAnnouncement({{ loop.index }})">
+                    <div class="announcement-header">
+                        <h2 class="announcement-title">{{ announcement.title }}</h2>
+                        <span class="announcement-date">{{ announcement.date }}</span>
+                    </div>
+                    
+                    {% if announcement.author %}
+                    <div class="announcement-meta">
+                        <span class="announcement-author">{{ announcement.author }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="announcement-preview">
+                        {% if announcement.content|length > 200 %}
+                            {{ announcement.content[:200] }}...
+                            <span class="read-more">Read more →</span>
+                        {% else %}
+                            {{ announcement.content }}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="announcement-content">
+                        <p>{{ announcement.content }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-announcements">
+                    <div class="no-announcements-icon">📢</div>
+                    <h3>No Announcements Yet</h3>
+                    <p>There are currently no announcements from your institution.</p>
+                    <p>Check back later for updates.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleAnnouncement(index) {
+    const card = document.getElementById(`announcement-${index}`);
+    const preview = card.querySelector('.announcement-preview');
+    const content = card.querySelector('.announcement-content');
+    
+    if (card.classList.contains('collapsed')) {
+        // Expand
+        card.classList.remove('collapsed');
+        card.classList.add('expanded');
+        if (preview) preview.style.display = 'none';
+        if (content) content.style.display = 'block';
+    } else {
+        // Collapse
+        card.classList.remove('expanded');
+        card.classList.add('collapsed');
+        if (preview) preview.style.display = 'block';
+        if (content) content.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

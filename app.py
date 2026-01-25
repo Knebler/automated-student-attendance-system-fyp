@@ -11,6 +11,8 @@ from application import create_app
 from application.boundaries.platform_boundary import platform_bp
 from application.boundaries.student_boundary import student_bp
 from application.boundaries.main_boundary import main_bp
+from apscheduler.schedulers.background import BackgroundScheduler
+import atexit
 
 from database.models import Base
 
@@ -108,6 +110,48 @@ def create_flask_app(config_name='default'):
     csrf.exempt(platform_bp)
     csrf.exempt(student_bp)
     csrf.exempt(main_bp)
+
+    # Initialize and start the background scheduler for class notifications
+    scheduler = BackgroundScheduler()
+    
+    def update_all_class_statuses():
+        """Background job to update class statuses and send notifications"""
+        try:
+            with app.app_context():
+                from database.base import get_session
+                from application.entities2.classes import ClassModel
+                
+                with get_session() as db_session:
+                    class_model = ClassModel(db_session)
+                    updated_count = class_model.update_class_statuses()
+                    if updated_count > 0:
+                        app.logger.info(f"Background scheduler: Updated {updated_count} class(es) and sent notifications")
+        except Exception as e:
+            app.logger.error(f"Error in background class status update: {e}")
+    
+    # Schedule the job to run every 2 minutes
+    scheduler.add_job(
+        func=update_all_class_statuses,
+        trigger="interval",
+        minutes=2,
+        id='update_class_statuses_job',
+        name='Update class statuses and send notifications',
+        replace_existing=True
+    )
+    
+    # Start the scheduler
+    scheduler.start()
+    app.logger.info("Background scheduler started - checking class statuses every 2 minutes")
+    
+    # Run an immediate check on startup
+    try:
+        update_all_class_statuses()
+        app.logger.info("Initial class status check completed on startup")
+    except Exception as e:
+        app.logger.error(f"Error in initial class status check: {e}")
+    
+    # Shut down the scheduler when the app exits
+    atexit.register(lambda: scheduler.shutdown())
 
     return app
 

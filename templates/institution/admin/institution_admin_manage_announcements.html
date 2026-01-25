@@ -1,0 +1,499 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Manage Announcements - AttendAI{% endblock %}
+
+{% block content %}
+<div class="class-management">
+    <h1 class="page-title mb-4">Manage Announcements</h1>
+
+    <div class="card-custom">
+        <div class="card-header-custom">Announcements</div>
+        <div class="card-body-custom">
+            <div class="announcement-actions">
+                <a href="#" class="btn-primary-custom">+ New Announcement</a>
+            </div>
+
+            <div class="table-responsive">
+                <table class="classes-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Audience</th>
+                            <th>Created At</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Sample row 1 -->
+                        <tr>
+                            <td>Welcome to Spring Semester 2026</td>
+                            <td>
+                                <span class="badge-students">Students</span>
+                            </td>
+                            <td>2026-01-15 10:30</td>
+                            <td>
+                                <span class="status sent">Sent</span>
+                            </td>
+                            <td class="actions">
+                                <button type="button" class="btn-manage btn-view">View</button>
+                                <button type="button" class="btn-manage btn-delete" data-title="Welcome to Spring Semester 2026">Delete</button>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td>Important: Class Schedule Changes</td>
+                            <td>
+                                <span class="badge-lecturers">Lecturers</span>
+                            </td>
+                            <td>2026-01-20 14:15</td>
+                            <td>
+                                <span class="status sent">Sent</span>
+                            </td>
+                            <td class="actions">
+                                <button type="button" class="btn-manage btn-view">View</button>
+                                <button type="button" class="btn-manage btn-delete" data-title="Important: Class Schedule Changes">Delete</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Final Exam Schedule Released</td>
+                            <td>
+                                <span class="badge-students">Students</span>
+                            </td>
+                            <td>2026-01-22 09:00</td>
+                            <td>
+                                <span class="status sent">Sent</span>
+                            </td>
+                            <td class="actions">
+                                <button type="button" class="btn-manage btn-view">View</button>
+                                <button type="button" class="btn-manage btn-delete" data-title="Final Exam Schedule Released">Delete</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteAnnouncementModal" tabindex="-1" aria-labelledby="deleteAnnouncementModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteAnnouncementModalLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Warning:</strong> This action cannot be undone.</p>
+                <p>You are about to delete the announcement: <strong id="delete-modal-title"></strong></p>
+                <div class="mt-3">
+                    <label for="delete-confirm-input" class="form-label">Type <strong>DELETE</strong> to confirm:</label>
+                    <input type="text" class="form-control" id="delete-confirm-input" placeholder="DELETE">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-custom" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn-custom" id="delete-confirm-btn" disabled>Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+
+    .class-management {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .page-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        color: #001641;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .announcement-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 1.5rem;
+    }
+
+    .btn-primary-custom {
+        background-color: #001641;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        border: 2px solid #001641;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        font-family: 'Montserrat', sans-serif;
+        display: inline-block;
+    }
+
+    .btn-primary-custom:hover {
+        background-color: #FFFFFF;
+        color: #001641;
+        transform: scale(1.05);
+    }
+
+    .card-custom {
+        background: #FFFFFF;
+        border-radius: 12px;
+        border: 2px solid #001641;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header-custom {
+        padding: 1rem 1.25rem;
+        font-weight: 700;
+        font-size: 1.1rem;
+        background: #001641;
+        color: #FFFFFF;
+        border-bottom: 2px solid #001641;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .card-body-custom {
+        padding: 1.25rem;
+        background: #f8fafc;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        background: #FFFFFF;
+        border-radius: 8px;
+    }
+
+    .classes-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .classes-table thead {
+        background-color: #001641;
+        color: #FFFFFF;
+    }
+
+    .classes-table th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.9rem;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .classes-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 0.9rem;
+        vertical-align: middle;
+        color: #001641;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .classes-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .classes-table tbody tr:hover {
+        background-color: #f8fafc;
+    }
+
+    .badge-students {
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 6px;
+        display: inline-block;
+        font-family: 'Montserrat', sans-serif;
+        color: #166534;
+        background-color: #dcfce7;
+        border: 1px solid #166534;
+    }
+
+    .badge-lecturers {
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 6px;
+        display: inline-block;
+        font-family: 'Montserrat', sans-serif;
+        color: #7c3aed;
+        background-color: #ede9fe;
+        border: 1px solid #7c3aed;
+    }
+
+    .status {
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 6px;
+        display: inline-block;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .status.sent {
+        color: #166534;
+        background-color: #dcfce7;
+        border: 1px solid #166534;
+    }
+
+    .actions {
+        text-align: center;
+    }
+
+    .btn-manage {
+        padding: 0.5rem 1.25rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        color: #FFFFFF;
+        border: 2px solid;
+        cursor: pointer;
+        font-weight: 600;
+        font-family: 'Montserrat', sans-serif;
+        transition: all 0.2s ease;
+        margin: 0 0.25rem;
+    }
+
+    .btn-manage:hover {
+        transform: scale(1.05);
+    }
+
+    .btn-manage.btn-view {
+        background-color: #6b7280;
+        border-color: #6b7280;
+    }
+
+    .btn-manage.btn-view:hover {
+        background-color: #4b5563;
+        border-color: #4b5563;
+    }
+
+    .btn-manage.btn-delete {
+        background-color: #dc2626;
+        border-color: #dc2626;
+    }
+
+    .btn-manage.btn-delete:hover {
+        background-color: #b91c1c;
+        border-color: #b91c1c;
+    }
+
+    .btn-danger-custom {
+        background-color: #dc2626;
+        border-color: #dc2626;
+        color: white;
+    }
+
+    .btn-danger-custom:hover:not(:disabled) {
+        background-color: #b91c1c;
+        border-color: #b91c1c;
+    }
+
+    .btn-danger-custom:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* Modal styling - clean white card design matching Quick Actions card */
+    .modal-backdrop {
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    #deleteAnnouncementModal .modal-dialog {
+        max-width: 500px;
+        margin-top: 2rem;
+        transform: translateY(-40px);
+    }
+
+    #deleteAnnouncementModal .modal-content {
+        background: #FFFFFF;
+        border: none;
+        border-radius: 14px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+    }
+
+    #deleteAnnouncementModal .modal-header {
+        background: #f8fafc;
+        color: #001641;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-radius: 14px 14px 0 0;
+    }
+
+    #deleteAnnouncementModal .modal-title {
+        font-weight: 700;
+        font-size: 1.25rem;
+        font-family: 'Montserrat', sans-serif;
+        color: #001641;
+        margin: 0;
+    }
+
+    #deleteAnnouncementModal .btn-close {
+        filter: none;
+        opacity: 0.6;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        line-height: 1;
+        color: #001641;
+        padding: 0;
+        width: auto;
+        height: auto;
+    }
+
+    #deleteAnnouncementModal .btn-close:hover {
+        opacity: 1;
+        color: #001641;
+    }
+
+    #deleteAnnouncementModal .modal-body {
+        padding: 1.5rem;
+        font-family: 'Montserrat', sans-serif;
+        color: #001641;
+    }
+
+    #deleteAnnouncementModal .modal-footer {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid #e5e7eb;
+        background: #FFFFFF;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+        border-radius: 0 0 14px 14px;
+    }
+
+    .form-control {
+        border: 2px solid #001641;
+        border-radius: 8px;
+        padding: 0.75rem;
+        width: 100%;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .form-control:focus {
+        border-color: #001641;
+        box-shadow: 0 0 0 3px rgba(0, 22, 65, 0.1);
+        outline: none;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #001641;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    #deleteAnnouncementModal .modal-footer .btn-custom:first-child {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        font-family: 'Montserrat', sans-serif;
+        transition: all 0.2s ease;
+        border: 2px solid #001641;
+        cursor: pointer;
+        background-color: #FFFFFF;
+        color: #001641;
+    }
+
+    #deleteAnnouncementModal .modal-footer .btn-custom:first-child:hover {
+        background-color: #f8fafc;
+    }
+
+    #deleteAnnouncementModal .modal-footer .btn-custom:last-child {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        font-family: 'Montserrat', sans-serif;
+        transition: all 0.2s ease;
+        border: 2px solid #001641;
+        cursor: pointer;
+        background-color: #001641;
+        color: #FFFFFF;
+    }
+
+    #deleteAnnouncementModal .modal-footer .btn-custom:last-child:hover:not(:disabled) {
+        background-color: #002d6b;
+        border-color: #002d6b;
+    }
+
+    #deleteAnnouncementModal .modal-footer .btn-custom:last-child:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background-color: #6b7280;
+        border-color: #6b7280;
+    }
+
+    @media (max-width: 768px) {
+        .class-management {
+            padding: 10px;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+        }
+
+        .classes-table {
+            font-size: 0.8rem;
+        }
+
+        .classes-table th,
+        .classes-table td {
+            padding: 0.75rem 0.5rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Delete confirmation modal
+        const deleteButtons = document.querySelectorAll('.btn-delete');
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteAnnouncementModal'));
+        const deleteConfirmInput = document.getElementById('delete-confirm-input');
+        const deleteConfirmBtn = document.getElementById('delete-confirm-btn');
+        
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const title = this.getAttribute('data-title');
+                
+                document.getElementById('delete-modal-title').textContent = title;
+                deleteConfirmInput.value = '';
+                deleteConfirmBtn.disabled = true;
+                
+                deleteModal.show();
+            });
+        });
+
+        // Enable delete button only when "DELETE" is typed
+        deleteConfirmInput.addEventListener('input', function() {
+            if (this.value === 'DELETE') {
+                deleteConfirmBtn.disabled = false;
+            } else {
+                deleteConfirmBtn.disabled = true;
+            }
+        });
+
+        // Reset on modal close
+        document.getElementById('deleteAnnouncementModal').addEventListener('hidden.bs.modal', function() {
+            deleteConfirmInput.value = '';
+            deleteConfirmBtn.disabled = true;
+        });
+    });
+</script>
+
+{% endblock %}

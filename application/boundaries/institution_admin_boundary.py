@@ -1319,4 +1319,10 @@ def update_class_statuses():
         'updated_count': updated_count,
         'message': f'Successfully updated {updated_count} class(es)'
     })
+
+@institution_bp.route('/admin/announcements')
+@requires_roles('admin')
+def manage_announcements():
+    """Render the Manage Announcements page (stub route)"""
+    return render_template('institution/admin/institution_admin_manage_announcements.html')
             

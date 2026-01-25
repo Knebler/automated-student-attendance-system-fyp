@@ -86,3 +86,12 @@
 .main-container .card-custom .card-body-custom {
     background: #ffffff;
 }
+
+/* Feature card icon animation */
+.feature-icon {
+    transition: transform 0.25s ease;
+}
+
+.feature-card:hover .feature-icon {
+    transform: scale(1.05) translateY(-2px);
+}

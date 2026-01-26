@@ -1323,6 +1323,103 @@ def update_class_statuses():
 @institution_bp.route('/admin/announcements')
 @requires_roles('admin')
 def manage_announcements():
-    """Render the Manage Announcements page (stub route)"""
-    return render_template('institution/admin/institution_admin_manage_announcements.html')
+    with get_session() as db_session:
+        institution_id = session.get('institution_id')
+        announcement_model = AnnouncementModel(db_session)
+        announcements = announcement_model.get_by_institution(institution_id)
+        # Convert to dictionaries to avoid DetachedInstanceError
+        announcements_data = [
+            {
+                'announcement_id': a.announcement_id,
+                'title': a.title,
+                'content': a.content,
+                'date_posted': a.date_posted,
+                'requested_by_user_id': a.requested_by_user_id
+            }
+            for a in announcements
+        ]
+    return render_template('institution/admin/institution_admin_manage_announcements.html', announcements=announcements_data)
+
+@institution_bp.route('/admin/announcements/create', methods=['GET'])
+@requires_roles('admin')
+def create_announcement_form():
+    """Display form to create a new announcement"""
+    return render_template('institution/admin/institution_admin_create_announcement.html')
+
+@institution_bp.route('/admin/announcements/create', methods=['POST'])
+@requires_roles('admin')
+def create_announcement():
+    """Create a new announcement"""
+    title = request.form.get('title')
+    content = request.form.get('content')
+    institution_id = session.get('institution_id')
+    user_id = session.get('user_id')
+    
+    if not all([title, content]):
+        flash('Title and content are required', 'error')
+        return redirect(url_for('institution.create_announcement_form'))
+    
+    with get_session() as db_session:
+        announcement_model = AnnouncementModel(db_session)
+        announcement_model.create_announcement(
+            institution_id=institution_id,
+            requested_by_user_id=user_id,
+            title=title,
+            content=content
+        )
+    
+    flash('Announcement created successfully', 'success')
+    return redirect(url_for('institution.manage_announcements'))
+
+@institution_bp.route('/admin/announcements/<int:announcement_id>/view', methods=['GET'])
+@requires_roles('admin')
+def view_announcement(announcement_id):
+    """View announcement details"""
+    institution_id = session.get('institution_id')
+    
+    with get_session() as db_session:
+        announcement_model = AnnouncementModel(db_session)
+        announcement = announcement_model.get_by_id(announcement_id)
+        
+        if not announcement or announcement.institution_id != institution_id:
+            flash('Announcement not found', 'error')
+            return redirect(url_for('institution.manage_announcements'))
+        
+        user_model = UserModel(db_session)
+        created_by = user_model.get_by_id(announcement.requested_by_user_id)
+        
+        # Convert to dictionaries to avoid DetachedInstanceError
+        announcement_data = {
+            'announcement_id': announcement.announcement_id,
+            'title': announcement.title,
+            'content': announcement.content,
+            'date_posted': announcement.date_posted,
+            'requested_by_user_id': announcement.requested_by_user_id
+        }
+        
+        created_by_data = {
+            'name': created_by.name if created_by else 'Unknown'
+        }
+    
+    return render_template('institution/admin/institution_admin_view_announcement.html', 
+                         announcement=announcement_data, created_by=created_by_data)
+
+@institution_bp.route('/admin/announcements/<int:announcement_id>/delete', methods=['POST'])
+@requires_roles('admin')
+def delete_announcement(announcement_id):
+    """Delete an announcement"""
+    institution_id = session.get('institution_id')
+    
+    with get_session() as db_session:
+        announcement_model = AnnouncementModel(db_session)
+        announcement = announcement_model.get_by_id(announcement_id)
+        
+        if not announcement or announcement.institution_id != institution_id:
+            flash('Announcement not found', 'error')
+            return redirect(url_for('institution.manage_announcements'))
+        
+        announcement_model.delete(announcement_id)
+    
+    flash('Announcement deleted successfully', 'success')
+    return redirect(url_for('institution.manage_announcements'))
             

@@ -1,0 +1,225 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}View Announcement - AttendAI{% endblock %}
+
+{% block content %}
+<div class="view-announcement">
+    <div class="header-actions">
+        <h1 class="page-title mb-4">Announcement Details</h1>
+        <a href="{{ url_for('institution.manage_announcements') }}" class="btn-back">← Back to Announcements</a>
+    </div>
+
+    <div class="card-custom">
+        <div class="card-header-custom">{{ announcement['title'] }}</div>
+        <div class="card-body-custom">
+            <div class="announcement-meta">
+                <div class="meta-item">
+                    <span class="meta-label">Posted On:</span>
+                    <span class="meta-value">{{ announcement['date_posted'].strftime('%B %d, %Y at %I:%M %p') if announcement['date_posted'] else 'N/A' }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Posted By:</span>
+                    <span class="meta-value">{{ created_by['name'] }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Status:</span>
+                    <span class="status-badge sent">Sent</span>
+                </div>
+            </div>
+
+            <div class="announcement-content">
+                <h3 class="content-header">Content</h3>
+                <div class="content-text">{{ announcement['content'] }}</div>
+            </div>
+
+            <div class="announcement-actions">
+                <form method="POST" action="{{ url_for('institution.delete_announcement', announcement_id=announcement['announcement_id']) }}" 
+                      onsubmit="return confirm('Are you sure you want to delete this announcement? This action cannot be undone.');">
+                    <button type="submit" class="btn-delete-custom">Delete Announcement</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+
+    .view-announcement {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .header-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .page-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #001641;
+        font-family: 'Montserrat', sans-serif;
+        margin: 0;
+    }
+
+    .btn-back {
+        background-color: #FFFFFF;
+        color: #001641;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        border: 2px solid #001641;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .btn-back:hover {
+        background-color: #f8fafc;
+    }
+
+    .card-custom {
+        background: #FFFFFF;
+        border-radius: 12px;
+        border: 2px solid #001641;
+        overflow: hidden;
+    }
+
+    .card-header-custom {
+        padding: 1.5rem;
+        font-weight: 700;
+        font-size: 1.3rem;
+        background: #001641;
+        color: #FFFFFF;
+        border-bottom: 2px solid #001641;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .card-body-custom {
+        padding: 2rem;
+        background: #FFFFFF;
+    }
+
+    .announcement-meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        padding: 1.5rem;
+        background: #f8fafc;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+
+    .meta-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .meta-label {
+        font-weight: 600;
+        color: #6b7280;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .meta-value {
+        font-weight: 500;
+        color: #001641;
+        font-size: 1rem;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .status-badge {
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 6px;
+        display: inline-block;
+        font-family: 'Montserrat', sans-serif;
+        width: fit-content;
+    }
+
+    .status-badge.sent {
+        color: #166534;
+        background-color: #dcfce7;
+        border: 1px solid #166534;
+    }
+
+    .announcement-content {
+        margin-bottom: 2rem;
+    }
+
+    .content-header {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #001641;
+        margin-bottom: 1rem;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .content-text {
+        line-height: 1.8;
+        color: #374151;
+        font-size: 1rem;
+        font-family: 'Montserrat', sans-serif;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+
+    .announcement-actions {
+        padding-top: 2rem;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .btn-delete-custom {
+        background-color: #dc2626;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        border: 2px solid #dc2626;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .btn-delete-custom:hover {
+        background-color: #b91c1c;
+        border-color: #b91c1c;
+    }
+
+    @media (max-width: 768px) {
+        .view-announcement {
+            padding: 10px;
+        }
+
+        .header-actions {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+        }
+
+        .announcement-meta {
+            grid-template-columns: 1fr;
+        }
+
+        .card-body-custom {
+            padding: 1.25rem;
+        }
+    }
+</style>
+{% endblock %}

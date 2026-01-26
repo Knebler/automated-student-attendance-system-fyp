@@ -168,7 +168,7 @@ class SubscriptionModel(BaseEntity[Subscription]):
         
         if subscription.is_active and (subscription.end_date is None or subscription.end_date >= now):
             return 'active'
-        elif not subscription.is_active and subscription.end_date is None:
+        elif not subscription.is_active:
             return 'pending'
         elif not subscription.is_active and subscription.end_date and subscription.end_date >= now:
             return 'suspended'
@@ -367,3 +367,143 @@ class SubscriptionModel(BaseEntity[Subscription]):
             })
         
         return result
+    
+    def search_with_filters(
+        self,
+        search_term: str = '',
+        status: str = '',
+        plan: str = '',
+        include_pending: bool = False
+    ) -> List[Dict[str, Any]]:
+        """Search subscriptions with filters and return joined data with institutions.
+        
+        Args:
+            search_term: Search in institution name, contact person, contact email
+            status: Filter by status ('active', 'suspended', 'pending', 'expired')
+            plan: Filter by plan name ('starter', 'pro', 'enterprise', 'custom')
+            include_pending: Whether to include pending subscriptions (False by default)
+            
+        Returns:
+            List of dictionaries with subscription and institution data
+        """
+        # Start with base query joining Subscription with Institution
+        query = (
+            self.session.query(Subscription, Institution, SubscriptionPlan)
+            .join(Institution, Subscription.subscription_id == Institution.subscription_id)
+            .outerjoin(SubscriptionPlan, Subscription.plan_id == SubscriptionPlan.plan_id)
+        )
+        
+        # Apply search filter
+        if search_term:
+            search_pattern = f'%{search_term}%'
+            query = query.filter(
+                or_(
+                    Institution.name.ilike(search_pattern),
+                    Institution.poc_name.ilike(search_pattern),
+                    Institution.poc_email.ilike(search_pattern),
+                    Institution.address.ilike(search_pattern)
+                )
+            )
+        
+        # Apply status filter
+        now = datetime.now()
+        if status:
+            if status == 'active':
+                query = query.filter(
+                    Subscription.is_active == True,
+                    or_(
+                        Subscription.end_date.is_(None),
+                        Subscription.end_date >= now
+                    )
+                )
+            elif status == 'suspended':
+                query = query.filter(
+                    Subscription.is_active == False,
+                    Subscription.end_date.isnot(None),
+                    Subscription.end_date >= now
+                )
+            elif status == 'pending':
+                query = query.filter(
+                    Subscription.is_active == False,
+                    Subscription.end_date.is_(None)
+                )
+            elif status == 'expired':
+                query = query.filter(
+                    Subscription.end_date.isnot(None),
+                    Subscription.end_date < now
+                )
+        elif not include_pending:
+            # Exclude pending by default if no specific status filter
+            query = query.filter(
+                or_(
+                    Subscription.end_date.isnot(None),  # Has end date (suspended, active, expired)
+                    Subscription.is_active == True  # Or is active with no end date
+                )
+            )
+        
+        # Apply plan filter
+        if plan:
+            if plan == 'none':
+                query = query.filter(Subscription.plan_id.is_(None))
+            else:
+                query = query.filter(SubscriptionPlan.name.ilike(f'%{plan}%'))
+        
+        # Order by latest first
+        query = query.order_by(Subscription.created_at.desc())
+        
+        # Execute query
+        results = query.all()
+        
+        # Format results
+        formatted_results = []
+        for subscription, institution, plan_obj in results:
+            # Determine current status
+            if subscription.is_active and (subscription.end_date is None or subscription.end_date >= now):
+                current_status = 'active'
+            elif not subscription.is_active and subscription.end_date is None:
+                current_status = 'pending'
+            elif not subscription.is_active and subscription.end_date and subscription.end_date >= now:
+                current_status = 'suspended'
+            elif subscription.end_date and subscription.end_date < now:
+                current_status = 'expired'
+            else:
+                current_status = 'unknown'
+            
+            # Get avatar initials
+            if institution:
+                name_parts = institution.name.split()
+                if len(name_parts) >= 2:
+                    initials = name_parts[0][0] + name_parts[-1][0]
+                else:
+                    initials = institution.name[:2].upper()
+            else:
+                initials = '??'
+            
+            formatted_results.append({
+                'subscription_id': subscription.subscription_id,
+                'institution_id': institution.institution_id if institution else None,
+                'name': institution.name if institution else 'Unknown',
+                'institution_name': institution.name if institution else 'Unknown',
+                'location': institution.address if institution else '',
+                'address': institution.address if institution else '',
+                'poc_name': institution.poc_name if institution else '',
+                'poc_email': institution.poc_email if institution else '',
+                'poc_phone': institution.poc_phone if institution else '',
+                'contact_person': institution.poc_name if institution else '',
+                'contact_email': institution.poc_email if institution else '',
+                'contact_phone': institution.poc_phone if institution else '',
+                'plan_id': subscription.plan_id,
+                'plan_name': plan_obj.name if plan_obj else 'none',
+                'plan': plan_obj.name.lower() if plan_obj else 'none',
+                'start_date': subscription.start_date,
+                'end_date': subscription.end_date,
+                'is_active': subscription.is_active,
+                'status': current_status,
+                'created_at': subscription.created_at,
+                'initials': initials,
+                'subscription_start_date': subscription.start_date.strftime('%b %d, %Y') if subscription.start_date else '',
+                'subscription_end_date': subscription.end_date.strftime('%b %d, %Y') if subscription.end_date else '',
+                'request_date': subscription.created_at.strftime('%b %d, %Y') if subscription.created_at else ''
+            })
+        
+        return formatted_results

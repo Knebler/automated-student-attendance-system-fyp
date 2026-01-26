@@ -1517,7 +1517,7 @@
     function processSubscriptionRequest(requestId, action, institutionName) {
         const actionText = action === 'approve' ? 'approve' : 'reject';
         if (confirm(`Are you sure you want to ${actionText} subscription request for "${institutionName}"?`)) {
-            fetch(`/api/subscription-requests/${requestId}/process`, {
+            fetch(`api/subscription-requests/${requestId}/process`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -125,6 +125,58 @@ class PlatformControl:
                 'error': f'Error fetching subscription requests: {str(e)}'
             }
     
+    def get_subscriptions_with_institutions(
+        search: str = '',
+        status: str = '',
+        plan: str = '',
+        page: int = 1,
+        per_page: int = 5
+    ) -> Dict[str, Any]:
+        """Get subscriptions with institution details and filters."""
+        try:
+            with get_session() as db_session:
+                subscription_model = SubscriptionModel(db_session)
+                institution_model = InstitutionModel(db_session)
+                
+                # Get subscriptions with filters
+                subscriptions = subscription_model.search_with_filters(
+                    search_term=search,
+                    status=status,
+                    plan=plan
+                )
+                
+                # Filter out pending subscriptions for main institutions table
+                # (they'll appear in subscription requests table instead)
+                active_subscriptions = [sub for sub in subscriptions if sub.get('status') != 'pending']
+                
+                # Apply pagination to active subscriptions only
+                total_active = len(active_subscriptions)
+                total_pages = (total_active + per_page - 1) // per_page if total_active > 0 else 1
+                start_idx = (page - 1) * per_page
+                end_idx = min(start_idx + per_page, total_active)
+                paginated_subscriptions = active_subscriptions[start_idx:end_idx]
+                
+                return {
+                    'success': True,
+                    'subscriptions': paginated_subscriptions,
+                    'pagination': {
+                        'current_page': page,
+                        'total_pages': total_pages,
+                        'total_items': total_active,
+                        'per_page': per_page,
+                        'has_prev': page > 1,
+                        'has_next': page < total_pages,
+                        'start_idx': start_idx + 1 if total_active > 0 else 0,
+                        'end_idx': end_idx,
+                    },
+                    'total_all_subscriptions': len(subscriptions)  # includes pending
+                }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Error fetching subscriptions: {str(e)}'
+            }
+
     def create_institution_profile(institution_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new institution profile with subscription."""
         try:

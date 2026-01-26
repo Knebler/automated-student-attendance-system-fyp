@@ -10,68 +10,46 @@
         <div class="card-header-custom">Announcements</div>
         <div class="card-body-custom">
             <div class="announcement-actions">
-                <a href="#" class="btn-primary-custom">+ New Announcement</a>
+                <a href="{{ url_for('institution.create_announcement_form') }}" class="btn-primary-custom">+ New Announcement</a>
             </div>
 
+            {% if announcements %}
             <div class="table-responsive">
                 <table class="classes-table">
                     <thead>
                         <tr>
                             <th>Title</th>
-                            <th>Audience</th>
+                            <th>Content Preview</th>
                             <th>Created At</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Sample row 1 -->
+                        {% for announcement in announcements %}
                         <tr>
-                            <td>Welcome to Spring Semester 2026</td>
-                            <td>
-                                <span class="badge-students">Students</span>
-                            </td>
-                            <td>2026-01-15 10:30</td>
+                            <td>{{ announcement['title'] }}</td>
+                            <td>{{ announcement['content'][:100] }}{% if announcement['content']|length > 100 %}...{% endif %}</td>
+                            <td>{{ announcement['date_posted'].strftime('%Y-%m-%d %H:%M') if announcement['date_posted'] else 'N/A' }}</td>
                             <td>
                                 <span class="status sent">Sent</span>
                             </td>
                             <td class="actions">
-                                <button type="button" class="btn-manage btn-view">View</button>
-                                <button type="button" class="btn-manage btn-delete" data-title="Welcome to Spring Semester 2026">Delete</button>
+                                <a href="{{ url_for('institution.view_announcement', announcement_id=announcement['announcement_id']) }}" class="btn-manage btn-view">View</a>
+                                <button type="button" class="btn-manage btn-delete" 
+                                        data-id="{{ announcement['announcement_id'] }}"
+                                        data-title="{{ announcement['title'] }}">Delete</button>
                             </td>
                         </tr>
-
-                        <tr>
-                            <td>Important: Class Schedule Changes</td>
-                            <td>
-                                <span class="badge-lecturers">Lecturers</span>
-                            </td>
-                            <td>2026-01-20 14:15</td>
-                            <td>
-                                <span class="status sent">Sent</span>
-                            </td>
-                            <td class="actions">
-                                <button type="button" class="btn-manage btn-view">View</button>
-                                <button type="button" class="btn-manage btn-delete" data-title="Important: Class Schedule Changes">Delete</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Final Exam Schedule Released</td>
-                            <td>
-                                <span class="badge-students">Students</span>
-                            </td>
-                            <td>2026-01-22 09:00</td>
-                            <td>
-                                <span class="status sent">Sent</span>
-                            </td>
-                            <td class="actions">
-                                <button type="button" class="btn-manage btn-view">View</button>
-                                <button type="button" class="btn-manage btn-delete" data-title="Final Exam Schedule Released">Delete</button>
-                            </td>
-                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
+            {% else %}
+            <div class="empty-state">
+                <p>No announcements yet. Click "+ New Announcement" to create one.</p>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -251,7 +229,7 @@
     }
 
     .btn-manage {
-        padding: 0.5rem 1.25rem;
+        padding: 0.5rem 1rem;
         border-radius: 6px;
         font-size: 0.85rem;
         color: #FFFFFF;
@@ -261,20 +239,25 @@
         font-family: 'Montserrat', sans-serif;
         transition: all 0.2s ease;
         margin: 0 0.25rem;
+        text-decoration: none;
+        display: inline-block;
+        min-width: 80px;
+        text-align: center;
     }
 
     .btn-manage:hover {
         transform: scale(1.05);
+        color: #FFFFFF;
     }
 
     .btn-manage.btn-view {
-        background-color: #6b7280;
-        border-color: #6b7280;
+        background-color: #001641;
+        border-color: #001641;
     }
 
     .btn-manage.btn-view:hover {
-        background-color: #4b5563;
-        border-color: #4b5563;
+        background-color: #002d6b;
+        border-color: #002d6b;
     }
 
     .btn-manage.btn-delete {
@@ -285,6 +268,14 @@
     .btn-manage.btn-delete:hover {
         background-color: #b91c1c;
         border-color: #b91c1c;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #6b7280;
+        font-size: 1rem;
+        font-family: 'Montserrat', sans-serif;
     }
 
     .btn-danger-custom {
@@ -301,6 +292,14 @@
     .btn-danger-custom:disabled {
         opacity: 0.5;
         cursor: not-allowed;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #6b7280;
+        font-size: 1rem;
+        font-family: 'Montserrat', sans-serif;
     }
 
     /* Modal styling - clean white card design matching Quick Actions card */
@@ -467,9 +466,12 @@
         const deleteConfirmInput = document.getElementById('delete-confirm-input');
         const deleteConfirmBtn = document.getElementById('delete-confirm-btn');
         
+        let deleteAnnouncementId = null;
+        
         deleteButtons.forEach(button => {
             button.addEventListener('click', function() {
                 const title = this.getAttribute('data-title');
+                deleteAnnouncementId = this.getAttribute('data-id');
                 
                 document.getElementById('delete-modal-title').textContent = title;
                 deleteConfirmInput.value = '';
@@ -477,6 +479,23 @@
                 
                 deleteModal.show();
             });
+        });
+        
+        // Handle delete confirmation
+        deleteConfirmBtn.addEventListener('click', function() {
+            if (deleteAnnouncementId && deleteConfirmInput.value === 'DELETE') {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                //csrf token input
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrf_token';
+                csrfInput.value = '{{ csrf_token() }}';
+                form.appendChild(csrfInput);
+                form.action = `{{ url_for('institution.delete_announcement', announcement_id=0) }}`.replace('/0/', `/${deleteAnnouncementId}/`);
+                document.body.appendChild(form);
+                form.submit();
+            }
         });
 
         // Enable delete button only when "DELETE" is typed

@@ -91,7 +91,7 @@
             display: inline-block;
         }
 
-        .nav-link-custom::after {
+        .nav-link-custom::before {
             content: '';
             position: absolute;
             bottom: -2px;
@@ -108,12 +108,107 @@
             color: #e2e8f0;
         }
 
-        .nav-link-custom:hover::after {
+        .nav-link-custom:hover::before {
             transform: scaleX(1);
         }
 
-        .nav-link-custom.active::after {
+        .nav-link-custom.active::before {
             transform: scaleX(1);
+        }
+
+        /* Management dropdown styles */
+        .nav-links-custom .dropdown {
+            position: relative;
+        }
+
+        .nav-links-custom .dropdown-toggle {
+            cursor: pointer;
+        }
+
+        /* navbar management dropdown toggle */
+        .nav-links-custom .dropdown-toggle::after {
+            content: '';
+            display: inline-block;
+            margin-left: 6px;
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 5px solid white;
+            vertical-align: middle;
+            transition: transform 0.2s ease;
+        }
+
+        .nav-links-custom .dropdown:hover > .dropdown-toggle::after,
+        .nav-links-custom .dropdown-toggle[aria-expanded="true"]::after {
+            transform: rotate(180deg);
+        }
+
+        /* dropdown hover style */
+        .nav-links-custom .dropdown:hover > .dropdown-menu,
+        .nav-links-custom .dropdown-menu:hover {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .nav-links-custom .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            z-index: 1000;
+            display: none;
+            min-width: 10rem;
+            padding: 0.5rem 0;
+            margin: 0.125rem 0 0;
+            font-size: 0.85rem;
+            color: #212529;
+            text-align: left;
+            list-style: none;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(-5px);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .nav-links-custom .dropdown-menu.show {
+            display: block !important;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .nav-links-custom .dropdown-item {
+            display: block;
+            width: 100%;
+            padding: 0.5rem 1.5rem;
+            clear: both;
+            font-weight: 400;
+            color: #212529;
+            text-align: inherit;
+            white-space: nowrap;
+            background-color: transparent;
+            border: 0;
+            text-decoration: none;
+            margin: 0.25rem 0.5rem;
+            border-radius: 8px;
+        }
+
+        .nav-links-custom .dropdown-item:hover,
+        .nav-links-custom .dropdown-item:focus {
+            color: #16181b;
+            text-decoration: none;
+            background-color: #f8f9fa;
+        }
+
+        .nav-links-custom .dropdown-item.active {
+            color: #fff;
+            text-decoration: none;
+            background-color: #001641;
         }
 
         /* Main Content Container */
@@ -532,6 +627,33 @@
             
             if (!menu.contains(event.target) && !toggler.contains(event.target)) {
                 menu.classList.remove('show');
+            }
+        });
+
+        // Initialize dropdowns
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
+            dropdownElementList.map(function(dropdownToggleEl) {
+                return new bootstrap.Dropdown(dropdownToggleEl);
+            });
+        });
+
+        // management dropdown hover 
+        document.addEventListener('DOMContentLoaded', function() {
+            const managementDropdown = document.querySelector('#managementDropdown');
+            if (managementDropdown) {
+                const dropdown = managementDropdown.closest('.dropdown');
+                const dropdownMenu = dropdown.querySelector('.dropdown-menu');
+                
+                if (dropdown && dropdownMenu) {
+                    dropdown.addEventListener('mouseenter', function() {
+                        dropdownMenu.classList.add('show');
+                    });
+                    
+                    dropdown.addEventListener('mouseleave', function() {
+                        dropdownMenu.classList.remove('show');
+                    });
+                }
             }
         });
 

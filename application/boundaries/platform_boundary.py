@@ -339,6 +339,7 @@ def get_institution_details(institution_id):
         return jsonify(result), 404
     
 @platform_bp.route('/api/institutions/<int:institution_id>/update', methods=['POST'])
+@requires_roles_api('platform_manager')
 def update_institution(institution_id):
     """Update institution profile"""
     data = request.json

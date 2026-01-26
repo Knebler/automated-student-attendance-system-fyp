@@ -453,6 +453,7 @@ class PlatformControl:
         try:
             with get_session() as db_session:
                 institution_model = InstitutionModel(db_session)
+                subscription_model = SubscriptionModel(db_session)
                 
                 # Check if institution exists
                 institution = institution_model.get_by_id(institution_id)
@@ -462,32 +463,139 @@ class PlatformControl:
                         'error': 'Institution not found.'
                     }
                 
+                # Map form field names to model field names for institution
+                institution_updates = {}
+                
+                # Institution fields mapping from form to model
+                field_mapping = {
+                    'name': 'name',
+                    'location': 'address',  # form 'location' maps to 'address' field
+                    'contact_person': 'poc_name',
+                    'contact_email': 'poc_email', 
+                    'contact_phone': 'poc_phone'
+                }
+                
+                for form_field, model_field in field_mapping.items():
+                    if form_field in update_data and update_data[form_field]:
+                        institution_updates[model_field] = update_data[form_field]
+                
                 # Check if updating email and it's already in use
-                if 'poc_email' in update_data:
-                    existing_by_email = institution_model.get_by_email(update_data['poc_email'])
+                if 'poc_email' in institution_updates:
+                    existing_by_email = institution_model.get_by_email(institution_updates['poc_email'])
                     if existing_by_email and existing_by_email.institution_id != institution_id:
                         return {
                             'success': False,
                             'error': 'This email is already associated with another institution.'
                         }
                 
-                # Update institution
-                updated_institution = institution_model.update_institution(
-                    institution_id=institution_id,
-                    **update_data
-                )
+                # Update institution if there are changes
+                if institution_updates:
+                    updated_institution = institution_model.update_institution(
+                        institution_id=institution_id,
+                        **institution_updates
+                    )
+                else:
+                    updated_institution = institution
+                
+                # Handle subscription updates
+                # First, get the subscription ID from the institution
+                subscription_id = institution.subscription_id if hasattr(institution, 'subscription_id') else None
+                
+                if subscription_id:
+                    # Get the subscription
+                    subscription = subscription_model.get_by_subscription_id(subscription_id)
+                    
+                    if subscription:
+                        # Handle plan update - need to find plan by name
+                        if 'plan' in update_data and update_data['plan']:
+                            plan_name = update_data['plan']
+                            # Find the plan by name
+                            from database.models import SubscriptionPlan
+                            plan = db_session.query(SubscriptionPlan).filter(
+                                SubscriptionPlan.name.ilike(f'%{plan_name}%')
+                            ).first()
+                            
+                            if plan:
+                                subscription.plan_id = plan.plan_id
+                            else:
+                                # If plan not found, try to match common plan names
+                                plan_mapping = {
+                                    'starter': 'Starter',
+                                    'pro': 'Professional',
+                                    'enterprise': 'Enterprise',
+                                    'custom': 'Custom'
+                                }
+                                if plan_name in plan_mapping:
+                                    plan = db_session.query(SubscriptionPlan).filter(
+                                        SubscriptionPlan.name == plan_mapping[plan_name]
+                                    ).first()
+                                    if plan:
+                                        subscription.plan_id = plan.plan_id
+                        
+                        # Handle status update
+                        if 'status' in update_data and update_data['status']:
+                            new_status = update_data['status']
+                            now = datetime.now()
+                            
+                            if new_status == 'active':
+                                subscription.is_active = True
+                                # Set end date to 1 year from now if not set
+                                if not subscription.end_date:
+                                    subscription.end_date = now + timedelta(days=365)
+                            elif new_status == 'suspended':
+                                subscription.is_active = False
+                                # Ensure end date is set (for suspended status)
+                                if not subscription.end_date:
+                                    subscription.end_date = now + timedelta(days=365)
+                            elif new_status == 'pending':
+                                subscription.is_active = False
+                                subscription.end_date = None
+                            elif new_status == 'expired':
+                                subscription.is_active = False
+                                # Set end date to past if not set
+                                if not subscription.end_date:
+                                    subscription.end_date = now - timedelta(days=1)
+                        
+                        # Handle date updates
+                        if 'start_date' in update_data and update_data['start_date']:
+                            try:
+                                subscription.start_date = datetime.strptime(update_data['start_date'], '%Y-%m-%d')
+                            except ValueError:
+                                # Try different format if needed
+                                pass
+                        
+                        if 'end_date' in update_data and update_data['end_date']:
+                            try:
+                                subscription.end_date = datetime.strptime(update_data['end_date'], '%Y-%m-%d')
+                            except ValueError:
+                                # Try different format if needed
+                                pass
+                        
+                        # Handle max_users (if your Subscription model has this field)
+                        if 'max_users' in update_data and update_data['max_users']:
+                            # Check if subscription has max_users field
+                            if hasattr(subscription, 'max_users'):
+                                try:
+                                    subscription.max_users = int(update_data['max_users'])
+                                except (ValueError, TypeError):
+                                    pass
                 
                 # Also update admin user if email or name changed
-                if 'poc_email' in update_data or 'poc_name' in update_data:
+                if 'poc_email' in institution_updates or 'poc_name' in institution_updates:
                     user_model = UserModel(db_session)
-                    admin_user = user_model.get_by_email(institution.poc_email)
+                    # Get current admin email before it changes
+                    current_email = institution.poc_email
+                    admin_user = user_model.get_by_email(current_email)
                     if admin_user:
-                        if 'poc_email' in update_data:
-                            admin_user.email = update_data['poc_email']
-                        if 'poc_name' in update_data:
-                            admin_user.name = update_data['poc_name']
+                        if 'poc_email' in institution_updates:
+                            admin_user.email = institution_updates['poc_email']
+                        if 'poc_name' in institution_updates:
+                            admin_user.name = institution_updates['poc_name']
                 
                 db_session.commit()
+                
+                # Get updated institution data
+                updated_institution = institution_model.get_by_id(institution_id)
                 
                 return {
                     'success': True,
@@ -496,6 +604,11 @@ class PlatformControl:
                 }
                 
         except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
+            print(f"Error in update_institution_profile: {str(e)}")
+            print(f"Traceback: {error_details}")
+            
             if 'db_session' in locals():
                 db_session.rollback()
             return {

@@ -1512,8 +1512,135 @@ function filterTable(type) {
     }
 }
 
+// About Us Section Functions
+function editAboutIntro() {
+    if (aboutIntroData) {
+        document.getElementById('introTitle').value = aboutIntroData.title || '';
+        document.getElementById('introDescription').value = aboutIntroData.description || '';
+    }
+    document.getElementById('aboutIntroModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function editAboutStory() {
+    if (aboutStoryData) {
+        document.getElementById('storyTitle').value = aboutStoryData.title || '';
+        document.getElementById('storyContent').value = aboutStoryData.content || '';
+    }
+    document.getElementById('aboutStoryModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function editMissionVision(type) {
+    const item = missionVisionData.find(mv => mv.type === type);
+    document.getElementById('missionVisionModalTitle').textContent = `Edit ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+    document.getElementById('mvType').value = type;
+    
+    if (item) {
+        document.getElementById('mvTitle').value = item.title || '';
+        document.getElementById('mvContent').value = item.content || '';
+    } else {
+        document.getElementById('mvTitle').value = '';
+        document.getElementById('mvContent').value = '';
+    }
+    
+    document.getElementById('missionVisionModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+async function saveAboutIntro(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    
+    const data = {
+        title: formData.get('title'),
+        description: formData.get('description')
+    };
+    
+    try {
+        const response = await fetch('/platform/api/about-intro/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            closeModal('aboutIntro');
+            window.location.reload();
+        } else {
+            alert(result.message || 'Failed to update intro');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while saving');
+    }
+}
+
+async function saveAboutStory(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    
+    const data = {
+        title: formData.get('title'),
+        content: formData.get('content')
+    };
+    
+    try {
+        const response = await fetch('/platform/api/about-story/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            closeModal('aboutStory');
+            window.location.reload();
+        } else {
+            alert(result.message || 'Failed to update story');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while saving');
+    }
+}
+
+async function saveMissionVision(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    
+    const data = {
+        type: formData.get('type'),
+        title: formData.get('title'),
+        content: formData.get('content')
+    };
+    
+    try {
+        const response = await fetch('/platform/api/mission-vision/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            closeModal('missionVision');
+            window.location.reload();
+        } else {
+            alert(result.message || 'Failed to update mission/vision');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while saving');
+    }
+}
+
 // Close modals on click outside
-['heroModal', 'statsModal', 'featuresModal'].forEach(modalId => {
+['heroModal', 'statsModal', 'featuresModal', 'aboutIntroModal', 'aboutStoryModal', 'missionVisionModal'].forEach(modalId => {
     document.getElementById(modalId).addEventListener('click', function(e) {
         if (e.target === this) {
             closeModal(modalId.replace('Modal', ''));
@@ -1524,7 +1651,7 @@ function filterTable(type) {
 // Close modals with Escape key
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-        ['hero', 'stats', 'features'].forEach(type => closeModal(type));
+        ['hero', 'stats', 'features', 'aboutIntro', 'aboutStory', 'missionVision'].forEach(type => closeModal(type));
     }
 });
 </script>

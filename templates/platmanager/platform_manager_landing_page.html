@@ -1264,14 +1264,25 @@ function openModal(type, mode, itemId = null) {
     form.reset();
     
     if (mode === 'add') {
-        document.getElementById(`${type}ModalTitle`).textContent = `Add ${type === 'hero' ? 'Hero Feature' : type === 'stats' ? 'Stat' : 'Feature'}`;
-        document.getElementById(`${type}SubmitBtnText`).textContent = `Add ${type === 'hero' ? 'Hero Feature' : type === 'stats' ? 'Stat' : 'Feature'}`;
+        let title = 'Add Item';
+        if (type === 'hero') title = 'Add Hero Feature';
+        else if (type === 'stats') title = 'Add Stat';
+        else if (type === 'features') title = 'Add Feature';
+        else if (type === 'team') title = 'Add Team Member';
+        else if (type === 'valuesTab') title = 'Add Value';
+        
+        document.getElementById(`${type}ModalTitle`).textContent = title;
+        document.getElementById(`${type}SubmitBtnText`).textContent = title;
         
         // Set defaults
         if (type === 'hero') {
             document.getElementById('heroIsActive').checked = true;
         } else if (type === 'stats') {
             document.getElementById('statIsActive').checked = true;
+        } else if (type === 'team') {
+            document.getElementById('teamIsActive').checked = true;
+        } else if (type === 'valuesTab') {
+            document.getElementById('valueIsActive').checked = true;
         } else {
             document.getElementById('isActive').checked = true;
         }
@@ -1375,6 +1386,35 @@ async function saveItem(event, type) {
         url = data.stat_id 
             ? `/platform/api/stats/${data.stat_id}/update`
             : '/platform/api/stats/create';
+    } else if (type === 'team') {
+        idField = 'team_member_id';
+        const contributions = formData.get('contributions').split('\n').filter(c => c.trim());
+        const skills = formData.get('skills').split('\n').filter(s => s.trim());
+        data = {
+            team_member_id: formData.get(idField) || null,
+            name: formData.get('name'),
+            role: formData.get('role'),
+            description: formData.get('description'),
+            contributions: contributions,
+            skills: skills,
+            display_order: parseInt(formData.get('display_order')),
+            is_active: document.getElementById('teamIsActive').checked
+        };
+        url = data.team_member_id 
+            ? `/platform/api/team-members/${data.team_member_id}/update`
+            : '/platform/api/team-members/create';
+    } else if (type === 'valuesTab') {
+        idField = 'value_id';
+        data = {
+            value_id: formData.get(idField) || null,
+            title: formData.get('title'),
+            description: formData.get('description'),
+            display_order: parseInt(formData.get('display_order')),
+            is_active: document.getElementById('valueIsActive').checked
+        };
+        url = data.value_id 
+            ? `/platform/api/values/${data.value_id}/update`
+            : '/platform/api/values/create';
     } else {
         idField = 'feature_id';
         data = {
@@ -1423,6 +1463,10 @@ async function toggleStatus(type, id, currentStatus) {
         url = `/platform/api/hero-features/${id}/toggle-status`;
     } else if (type === 'stats') {
         url = `/platform/api/stats/${id}/toggle-status`;
+    } else if (type === 'team') {
+        url = `/platform/api/team-members/${id}/toggle-status`;
+    } else if (type === 'valuesTab') {
+        url = `/platform/api/values/${id}/toggle-status`;
     } else {
         url = `/platform/api/features/${id}/toggle-status`;
     }
@@ -1455,6 +1499,10 @@ async function deleteItem(type, id, name) {
         url = `/platform/api/hero-features/${id}/delete`;
     } else if (type === 'stats') {
         url = `/platform/api/stats/${id}/delete`;
+    } else if (type === 'team') {
+        url = `/platform/api/team-members/${id}/delete`;
+    } else if (type === 'valuesTab') {
+        url = `/platform/api/values/${id}/delete`;
     } else {
         url = `/platform/api/features/${id}/delete`;
     }
@@ -1492,6 +1540,20 @@ function filterTable(type) {
             const label = row.dataset.label;
             row.style.display = label.includes(searchTerm) ? '' : 'none';
         });
+    } else if (type === 'team') {
+        rows = document.querySelectorAll('#teamTableBody tr');
+        searchTerm = document.getElementById('teamSearchInput').value.toLowerCase();
+        rows.forEach(row => {
+            const name = row.dataset.name.toLowerCase();
+            row.style.display = name.includes(searchTerm) ? '' : 'none';
+        });
+    } else if (type === 'valuesTab') {
+        rows = document.querySelectorAll('#valuesTableBody tr');
+        searchTerm = document.getElementById('valuesSearchInput').value.toLowerCase();
+        rows.forEach(row => {
+            const title = row.dataset.title.toLowerCase();
+            row.style.display = title.includes(searchTerm) ? '' : 'none';
+        });
     } else {
         rows = document.querySelectorAll('#featuresTableBody tr');
         const status = document.getElementById('statusFilter').value;
@@ -1509,6 +1571,41 @@ function filterTable(type) {
             
             row.style.display = (statusMatch && typeMatch && searchMatch) ? '' : 'none';
         });
+    }
+}
+
+function editTeamMember(id) {
+    const item = teamMembersData.find(tm => tm.team_member_id === id);
+    if (item) {
+        document.getElementById('teamModalTitle').textContent = 'Edit Team Member';
+        document.getElementById('teamSubmitBtnText').textContent = 'Update Team Member';
+        document.getElementById('teamMemberId').value = item.team_member_id;
+        document.getElementById('teamName').value = item.name;
+        document.getElementById('teamRole').value = item.role;
+        document.getElementById('teamDescription').value = item.description;
+        document.getElementById('teamContributions').value = item.contributions.join('\n');
+        document.getElementById('teamSkills').value = item.skills.join('\n');
+        document.getElementById('teamDisplayOrder').value = item.display_order;
+        document.getElementById('teamIsActive').checked = item.is_active;
+        
+        document.getElementById('teamModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function editValue(id) {
+    const item = valuesData.find(v => v.value_id === id);
+    if (item) {
+        document.getElementById('valuesTabModalTitle').textContent = 'Edit Value';
+        document.getElementById('valuesTabSubmitBtnText').textContent = 'Update Value';
+        document.getElementById('valueId').value = item.value_id;
+        document.getElementById('valueTitle').value = item.title;
+        document.getElementById('valueDescription').value = item.description;
+        document.getElementById('valueDisplayOrder').value = item.display_order;
+        document.getElementById('valueIsActive').checked = item.is_active;
+        
+        document.getElementById('valuesTabModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
     }
 }
 
@@ -1619,7 +1716,7 @@ async function saveMissionVision(event) {
     };
     
     try {
-        const response = await fetch('/platform/api/mission-vision/update', {
+        const response = await fetch(`/platform/api/mission-vision/${data.type}/update`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
@@ -1640,7 +1737,7 @@ async function saveMissionVision(event) {
 }
 
 // Close modals on click outside
-['heroModal', 'statsModal', 'featuresModal', 'aboutIntroModal', 'aboutStoryModal', 'missionVisionModal'].forEach(modalId => {
+['heroModal', 'statsModal', 'featuresModal', 'teamModal', 'valuesTabModal', 'aboutIntroModal', 'aboutStoryModal', 'missionVisionModal'].forEach(modalId => {
     document.getElementById(modalId).addEventListener('click', function(e) {
         if (e.target === this) {
             closeModal(modalId.replace('Modal', ''));
@@ -1651,7 +1748,7 @@ async function saveMissionVision(event) {
 // Close modals with Escape key
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-        ['hero', 'stats', 'features', 'aboutIntro', 'aboutStory', 'missionVision'].forEach(type => closeModal(type));
+        ['hero', 'stats', 'features', 'team', 'valuesTab', 'aboutIntro', 'aboutStory', 'missionVision'].forEach(type => closeModal(type));
     }
 });
 </script>

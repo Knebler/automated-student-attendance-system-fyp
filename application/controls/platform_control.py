@@ -12,6 +12,12 @@ from application.entities2.user import UserModel
 from application.entities2.institution import InstitutionModel
 from application.entities2.subscription import SubscriptionModel
 from application.entities2.subscription_plans import SubscriptionPlanModel
+from database.models import (
+    User, Institution, Subscription, SubscriptionPlan,
+    Course, Venue, Semester, Announcement, Notification,
+    CourseUser, Class, AttendanceRecord, FacialData,
+    Testimonial, PlatformIssue, ReportSchedule
+)
 
 class PlatformControl:
     """Control class for platform manager business logic"""
@@ -816,4 +822,168 @@ class PlatformControl:
             return {
                 'success': False,
                 'error': f'Error checking registration status: {str(e)}'
+            }
+        
+    def delete_institution_completely(
+        institution_id: int,
+        reviewer_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Delete an institution completely with all associated data."""
+        try:
+            with get_session() as db_session:
+                institution_model = InstitutionModel(db_session)
+                subscription_model = SubscriptionModel(db_session)
+                user_model = UserModel(db_session)
+                
+                # Get institution details
+                institution = institution_model.get_by_id(institution_id)
+                if not institution:
+                    return {
+                        'success': False,
+                        'error': f'Institution with ID {institution_id} not found.'
+                    }
+                
+                institution_name = institution.name
+                subscription_id = institution.subscription_id
+                
+                # Track what we're deleting
+                deletion_summary = {
+                    'institution_name': institution_name,
+                    'subscription_id': subscription_id,
+                    'deleted_users': 0,
+                    'deleted_courses': 0,
+                    'deleted_venues': 0,
+                    'deleted_semesters': 0,
+                    'deleted_facial_data': 0,
+                    'deleted_attendance_records': 0,
+                    'deleted_classes': 0,
+                    'deleted_announcements': 0,
+                    'deleted_notifications': 0,
+                    'deleted_testimonials': 0,
+                    'deleted_platform_issues': 0
+                }
+                
+                # Get all users associated with this institution
+                users = db_session.query(User).filter(
+                    User.institution_id == institution_id
+                ).all()
+                
+                user_ids = [user.user_id for user in users]
+                deletion_summary['deleted_users'] = len(user_ids)
+                
+                if user_ids:
+                    # Delete facial data for all users
+                    facial_deleted = db_session.query(FacialData).filter(
+                        FacialData.user_id.in_(user_ids)
+                    ).delete(synchronize_session=False)
+                    deletion_summary['deleted_facial_data'] = facial_deleted
+                    
+                    # Delete attendance records for all users as students
+                    attendance_deleted = db_session.query(AttendanceRecord).filter(
+                        AttendanceRecord.student_id.in_(user_ids)
+                    ).delete(synchronize_session=False)
+                    deletion_summary['deleted_attendance_records'] = attendance_deleted
+                    
+                    # Delete notifications for all users
+                    notifications_deleted = db_session.query(Notification).filter(
+                        Notification.user_id.in_(user_ids)
+                    ).delete(synchronize_session=False)
+                    deletion_summary['deleted_notifications'] = notifications_deleted
+                    
+                    # Delete testimonials by these users
+                    testimonials_deleted = db_session.query(Testimonial).filter(
+                        Testimonial.user_id.in_(user_ids)
+                    ).delete(synchronize_session=False)
+                    deletion_summary['deleted_testimonials'] = testimonials_deleted
+                    
+                    # Delete course enrollments for all users
+                    db_session.query(CourseUser).filter(
+                        CourseUser.user_id.in_(user_ids)
+                    ).delete(synchronize_session=False)
+                    
+                    # Delete platform issues reported by these users
+                    platform_issues_deleted = db_session.query(PlatformIssue).filter(
+                        PlatformIssue.user_id.in_(user_ids)
+                    ).delete(synchronize_session=False)
+                    deletion_summary['deleted_platform_issues'] = platform_issues_deleted
+                    
+                    # Delete users themselves
+                    db_session.query(User).filter(
+                        User.institution_id == institution_id
+                    ).delete(synchronize_session=False)
+                
+                # Delete classes where users from this institution are lecturers
+                # First get all classes where lecturer is from this institution
+                if user_ids:
+                    classes_deleted = db_session.query(Class).filter(
+                        Class.lecturer_id.in_(user_ids)
+                    ).delete(synchronize_session=False)
+                    deletion_summary['deleted_classes'] = classes_deleted
+                
+                # Delete institution-specific data
+                # Delete courses
+                courses_deleted = db_session.query(Course).filter(
+                    Course.institution_id == institution_id
+                ).delete(synchronize_session=False)
+                deletion_summary['deleted_courses'] = courses_deleted
+                
+                # Delete venues
+                venues_deleted = db_session.query(Venue).filter(
+                    Venue.institution_id == institution_id
+                ).delete(synchronize_session=False)
+                deletion_summary['deleted_venues'] = venues_deleted
+                
+                # Delete semesters
+                semesters_deleted = db_session.query(Semester).filter(
+                    Semester.institution_id == institution_id
+                ).delete(synchronize_session=False)
+                deletion_summary['deleted_semesters'] = semesters_deleted
+                
+                # Delete announcements
+                announcements_deleted = db_session.query(Announcement).filter(
+                    Announcement.institution_id == institution_id
+                ).delete(synchronize_session=False)
+                deletion_summary['deleted_announcements'] = announcements_deleted
+                
+                # Delete report schedules
+                db_session.query(ReportSchedule).filter(
+                    ReportSchedule.institution_id == institution_id
+                ).delete(synchronize_session=False)
+                
+                # Delete the institution
+                db_session.delete(institution)
+                
+                # Delete the subscription (if exists)
+                deleted_subscription = False
+                if subscription_id:
+                    subscription = subscription_model.get_by_id(subscription_id)
+                    if subscription:
+                        db_session.delete(subscription)
+                        deleted_subscription = True
+                
+                # Commit all deletions
+                db_session.commit()
+                
+                result = {
+                    'success': True,
+                    'message': f'Institution "{institution_name}" and all associated data deleted successfully.',
+                    'institution_id': institution_id,
+                    'institution_name': institution_name,
+                    'subscription_id': subscription_id,
+                    'subscription_deleted': deleted_subscription,
+                    'deletion_summary': deletion_summary
+                }
+                
+                # Add reviewer info if provided
+                if reviewer_id:
+                    result['reviewer_id'] = reviewer_id
+                
+                return result
+                
+        except Exception as e:
+            if 'db_session' in locals():
+                db_session.rollback()
+            return {
+                'success': False,
+                'error': f'Error deleting institution: {str(e)}'
             }

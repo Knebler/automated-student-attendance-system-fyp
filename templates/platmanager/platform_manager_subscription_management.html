@@ -868,6 +868,23 @@
         opacity: 1;
     }
 
+    .btn-delete {
+        background-color: #dc2626;
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-delete:hover {
+        background-color: #b91c1c;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+    }
+
 </style>
 
 <div class="platform-manager-subscription-management">
@@ -1232,185 +1249,6 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Search functionality
-        const searchInput = document.getElementById('searchInput');
-        const searchButton = document.getElementById('searchButton');
-        const statusFilter = document.getElementById('statusFilter');
-        const planFilter = document.getElementById('planFilter');
-        const resetFilters = document.getElementById('resetFilters');
-
-        function applyFilters() {
-            const searchTerm = searchInput.value.trim();
-            const statusValue = statusFilter.value;
-            const planValue = planFilter.value;
-            
-            // Build URL with filters
-            let url = new URL(window.location.href);
-            let params = new URLSearchParams(url.search);
-            
-            if (searchTerm) {
-                params.set('search', searchTerm);
-            } else {
-                params.delete('search');
-            }
-            
-            if (statusValue) {
-                params.set('status', statusValue);
-            } else {
-                params.delete('status');
-            }
-            
-            if (planValue) {
-                params.set('plan', planValue);
-            } else {
-                params.delete('plan');
-            }
-            
-            // Reset to page 1 when filtering
-            params.set('page', '1');
-            
-            // Navigate to filtered page
-            window.location.href = url.pathname + '?' + params.toString();
-        }
-
-        // Search button click
-        searchButton.addEventListener('click', applyFilters);
-        
-        // Search input enter key
-        searchInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                applyFilters();
-            }
-        });
-
-        // Filter change
-        statusFilter.addEventListener('change', applyFilters);
-        planFilter.addEventListener('change', applyFilters);
-
-        // Reset filters
-        resetFilters.addEventListener('click', function() {
-            window.location.href = "{{ url_for('platform.subscription_management') }}";
-        });
-
-        // Create Institution Button
-        const createInstitutionBtn = document.getElementById('createInstitutionBtn');
-        createInstitutionBtn.addEventListener('click', function() {
-            // Create modal for adding institution
-            const modal = document.createElement('div');
-            modal.className = 'modal-overlay';
-            modal.innerHTML = `
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3>Create Institution Profile</h3>
-                        <button class="modal-close">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="createInstitutionForm">
-                            <div class="form-group">
-                                <label for="institutionName">Institution Name *</label>
-                                <input type="text" id="institutionName" placeholder="Enter institution name" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="institutionLocation">Location</label>
-                                <input type="text" id="institutionLocation" placeholder="Enter city, country">
-                            </div>
-                            <div class="form-group">
-                                <label for="institutionPlan">Subscription Plan</label>
-                                <select id="institutionPlan" required>
-                                    <option value="">Select Plan</option>
-                                    <option value="starter">Starter (100 users)</option>
-                                    <option value="pro">Professional (500 users)</option>
-                                    <option value="enterprise">Enterprise (Unlimited)</option>
-                                    <option value="custom">Custom</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="institutionStatus">Status</label>
-                                <select id="institutionStatus">
-                                    <option value="active">Active</option>
-                                    <option value="pending">Pending</option>
-                                    <option value="suspended">Suspended</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="contactName">Contact Person *</label>
-                                <input type="text" id="contactName" placeholder="Enter contact name" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="contactEmail">Contact Email *</label>
-                                <input type="email" id="contactEmail" placeholder="Enter contact email" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="contactPhone">Contact Phone</label>
-                                <input type="tel" id="contactPhone" placeholder="Enter contact phone">
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn-custom btn-outline-custom btn-cancel">Cancel</button>
-                        <button class="btn-custom btn-submit" type="button" id="submitInstitutionForm">Create Institution</button>
-                    </div>
-                </div>
-            `;
-            
-            document.body.appendChild(modal);
-            
-            // Close modal functionality
-            const closeModal = () => {
-                document.body.removeChild(modal);
-            };
-            
-            modal.querySelector('.modal-close').addEventListener('click', closeModal);
-            modal.querySelector('.btn-cancel').addEventListener('click', closeModal);
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal) closeModal();
-            });
-            
-            // Form submission
-            modal.querySelector('#submitInstitutionForm').addEventListener('click', function() {
-                const form = modal.querySelector('#createInstitutionForm');
-                if (!form.checkValidity()) {
-                    form.reportValidity();
-                    return;
-                }
-                
-                const institutionData = {
-                    name: document.getElementById('institutionName').value,
-                    location: document.getElementById('institutionLocation').value,
-                    contact_name: document.getElementById('contactName').value,
-                    contact_email: document.getElementById('contactEmail').value,
-                    contact_phone: document.getElementById('contactPhone').value,
-                    plan: document.getElementById('institutionPlan').value,
-                    status: document.getElementById('institutionStatus').value
-                };
-                
-                // Send API request
-                fetch('/api/institutions/create', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(institutionData)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showAlert(`Institution "${institutionData.name}" created successfully!`, 'success');
-                        closeModal();
-                        // Reload page to show new institution
-                        setTimeout(() => window.location.reload(), 1500);
-                    } else {
-                        showAlert(`Error: ${data.error}`, 'error');
-                    }
-                })
-                .catch(error => {
-                    showAlert(`Error creating institution: ${error.message}`, 'error');
-                });
-            });
-        });
-    });
-
     // JavaScript functions for actions
     function viewInstitutionDetails(institutionId) {
         fetch(`/platform/api/institutions/${institutionId}`)
@@ -1461,6 +1299,7 @@
                             </div>
                             <div class="modal-footer">
                                 <button class="btn-custom btn-outline-custom btn-cancel">Close</button>
+                                <button class="btn-custom btn-delete" onclick="deleteInstitution('${institutionId}', '${data.institution.name.replace(/'/g, "\\'")}')">Delete Institution</button>
                             </div>
                         </div>
                     `;
@@ -1483,6 +1322,36 @@
             .catch(error => {
                 showAlert(`Error fetching institution details: ${error.message}`, 'error');
             });
+    }
+
+    function deleteInstitution(institutionId, institutionName) {
+        if (confirm(`⚠️ WARNING: Are you sure you want to delete "${institutionName}"?\n\nThis action will permanently delete:\n• The institution profile\n• All subscription data\n• All user accounts\n• All related records\n\nThis action cannot be undone!`)) {
+            fetch(`api/institutions/${institutionId}/delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ confirm: true })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(`Institution "${institutionName}" has been successfully deleted.`, 'success');
+                    // Close any open modal
+                    const modal = document.querySelector('.modal-overlay');
+                    if (modal) {
+                        document.body.removeChild(modal);
+                    }
+                    // Reload page to reflect changes
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    showAlert(`Error: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                showAlert(`Error deleting institution: ${error.message}`, 'error');
+            });
+        }
     }
 
     function editInstitution(institutionId) {

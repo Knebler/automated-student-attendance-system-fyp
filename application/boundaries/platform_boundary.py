@@ -626,6 +626,42 @@ def search_issues():
         return jsonify(result)
     else:
         return jsonify(result), 500
+    
+@platform_bp.route('/api/institutions/<int:institution_id>/delete', methods=['POST'])
+@requires_roles_api('platform_manager')
+def delete_institution_api(institution_id):
+    """API endpoint to delete an institution completely."""
+    
+    # Get confirmation from request JSON (optional but recommended)
+    data = request.json or {}
+    confirm = data.get('confirm', False)
+    
+    # Get reviewer ID from session (current platform manager)
+    reviewer_id = session.get('user_id')
+    
+    # Optional: Add a confirmation requirement for safety
+    if not confirm:
+        return jsonify({
+            'success': False,
+            'error': 'Deletion requires explicit confirmation. Set "confirm": true in request body.',
+            'requires_confirmation': True,
+            'institution_id': institution_id
+        }), 400
+    
+    # Call PlatformControl method
+    result = PlatformControl.delete_institution_completely(
+        institution_id=institution_id,
+        reviewer_id=reviewer_id
+    )
+    
+    if result['success']:
+        return jsonify(result), 200
+    else:
+        # Return appropriate status code based on error
+        status_code = 404 if 'not found' in result.get('error', '').lower() else 400
+        return jsonify(result), status_code
+    
+
 
 @platform_bp.route('/api/debug-session', methods=['GET'])
 def debug_session():

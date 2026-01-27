@@ -231,8 +231,7 @@
 <style>
 /* Layout */
 .lecturer-dashboard {
-    max-width: 1400px;
-    margin: 0 auto;
+    width: 100%;
 }
 
 /* Header */
@@ -306,9 +305,23 @@
 
 /* Grid */
 .dashboard-grid {
-    display: grid;
-    grid-template-columns: 2fr 1.3fr;
-    gap: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    align-items: flex-start;
+}
+
+.dashboard-grid > * {
+    min-width: 0;
+    width: 100%;
+    flex: 1 1 400px;
+}
+
+/* Stack to single column on smaller screen */
+@media (max-width: 992px) {
+    .dashboard-grid > * {
+        flex: 1 1 100%;
+    }
 }
 
 /* Cards */
@@ -910,9 +923,10 @@
 }
 
 /* Responsive */
-@media (max-width: 900px) {
+@media (max-width: 990px) {
     .dashboard-grid {
         grid-template-columns: 1fr;
+        gap: 24px;
     }
     
     .welcome-title {

@@ -7,8 +7,7 @@
 <style>
     /* Student Attendance Management Specific Styles */
     .student-attendance-management {
-        max-width: 1400px;
-        margin: 0 auto;
+        width: 100%;
     }
 
     .page-header {
@@ -43,12 +42,21 @@
         font-weight: 500;
     }
 
-    /* Attendance Grid */
-    .attendance-grid {
+    
+    /* 3-column layout */
+    .student-attendance-management .attendance-grid {
         display: grid;
-        grid-template-columns: 320px 1fr 1fr;
-        gap: 1.5rem;
+        grid-template-columns: 1fr 1.8fr 1.3fr;
+        gap: 24px;
         align-items: start;
+    }
+
+    /* Remove fixed widths to prevent wrapping */
+    .left-column,
+    .dashboard-col-left,
+    .dashboard-col-middle,
+    .dashboard-col-right {
+        min-width: 0;
     }
 
     .left-column {
@@ -123,36 +131,79 @@
     /* Monthly Statistics */
     .months-grid {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1.5rem;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        justify-items: center;
+        align-items: start;
+        justify-content: center;
+        margin: 0 auto;
+        box-sizing: border-box;
+    }
+
+    /* ensure Monthly Attendance card doesn't clip content */
+    .card-custom:has(.months-grid) {
+        overflow: visible;
+    }
+    
+    .card-custom:has(.months-grid) .card-body-custom {
+        overflow: visible;
     }
 
     .month-item {
-        background-color: var(--primary-light);
-        border: 1px solid var(--border-color);
-        border-radius: 10px;
+        width: 260px;
+        max-width: 100%;
+        background-color: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
         padding: 1.25rem;
-        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: box-shadow 0.2s ease;
+        margin: 0;
+        box-sizing: border-box;
+    }
+
+    .month-item:hover {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Monthly Attendance card */
+    .student-attendance-management .month-item {
+        padding: 1rem;
+        gap: 8px;
+    }
+
+    .student-attendance-management .month-header {
+        gap: 6px;
+    }
+
+    .student-attendance-management .month-stats {
+        gap: 6px;
     }
 
     .month-header {
         display: flex;
-        justify-content: space-between;
+        flex-direction: column;
         align-items: center;
-        margin-bottom: 1rem;
+        gap: 8px;
+        width: 100%;
     }
 
     .month-title {
         font-size: 1rem;
         font-weight: 600;
         color: var(--text-dark);
+        margin: 0;
     }
 
     .month-status {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         font-weight: 600;
-        padding: 0.25rem 0.5rem;
-        border-radius: 20px;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
         display: inline-block;
     }
 
@@ -170,10 +221,11 @@
 
     /* Charts */
     .chart-container {
-        position: relative;
-        width: 120px;
-        height: 120px;
-        margin: 0 auto 1rem;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        line-height: 0;
     }
 
     .chart-container.large {
@@ -182,43 +234,60 @@
     }
 
     .chart {
-        width: 100%;
-        height: 100%;
+        width: 120px;
+        height: 120px;
+        display: block;
+        margin: 0 auto;
+    }
+
+    /* Monthly Attendance card */
+    .student-attendance-management .months-grid .chart {
+        width: 95px;
+        height: 95px;
+        display: block;
+        margin: 0 auto;
     }
 
     .chart svg {
         width: 100%;
         height: 100%;
         transform: rotate(-90deg);
+        display: block;
     }
 
     .chart-bg {
         fill: none;
-        stroke: #e2e8f0;
+        stroke: #e0e7ef;
         stroke-width: 12;
     }
 
-    .chart-present {
-        fill: none;
-        stroke: #059669;
-        stroke-width: 12;
-        stroke-linecap: round;
-        transition: stroke-dashoffset 1s ease;
+    .chart-segment {
+        stroke: none;
+        transition: opacity 0.3s ease;
     }
 
-    .chart-absent {
-        fill: none;
-        stroke: #dc2626;
-        stroke-width: 12;
-        stroke-linecap: round;
-        transition: stroke-dashoffset 1s ease 0.3s;
+    .chart-segment-present {
+        fill: #15c285;
+    }
+
+    .chart-segment-late {
+        fill: #f59e0b;
+    }
+
+    .chart-segment-excused {
+        fill: #6098e7;
+    }
+
+    .chart-segment-absent {
+        fill: #ef4444;
     }
 
     /* Month Stats */
     .month-stats {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: 8px;
+        width: 100%;
     }
 
     .stat {
@@ -237,19 +306,19 @@
     }
 
     .stat-value.present {
-        color: #059669;
+        color: #14b8a6;
     }
 
     .stat-value.late {
-        color: #c56c05;
+        color: #f59e0b;
     }
 
     .stat-value.excused {
-        color: #e2e605;
+        color: #94a3b8;
     }
 
     .stat-value.absent {
-        color: #dc2626;
+        color: #ef4444;
     }
 
     /* Term Overview */
@@ -260,74 +329,169 @@
     }
 
     .overall-stats {
+        padding: 1.5rem;
+        background-color: white;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Term Overview layout --- */
+    .term-summary {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .term-top {
         display: flex;
         align-items: center;
-        gap: 2rem;
-        padding: 1.5rem;
-        background-color: var(--primary-light);
-        border-radius: 12px;
-        border: 1px solid var(--border-color);
+        gap: 20px;
+        justify-content: flex-start;
     }
 
-    .overall-info {
+    .term-pie {
+        flex: 0 0 140px;
+        width: 140px;
+        height: 140px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+    }
+
+    .term-pie .chart-container {
+        width: 100%;
+        height: 100%;
+    }
+
+    .term-pie .chart-container.large {
+        width: 100%;
+        height: 100%;
+    }
+
+    .term-pie svg,
+    .term-pie canvas,
+    .term-pie img,
+    .term-pie .chart {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
+    .student-attendance-management .term-pie {
+        flex: 0 0 154px;
+        width: 154px;
+        height: 154px;
+    }
+
+    .student-attendance-management .term-top {
+        gap: 26px;
+    }
+
+    .student-attendance-management .overall-stats {
+        width: 100%;
+    }
+
+    .term-main {
         flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: left;
     }
 
-    .overall-title {
-        font-size: 1.1rem;
-        font-weight: 600;
+    .term-title {
+        font-weight: 800;
+        font-size: 18px;
+        line-height: 1.2;
+        margin-bottom: 6px;
         color: var(--text-dark);
-        margin-bottom: 0.5rem;
     }
 
-    .overall-percentage {
-        font-size: 2.5rem;
-        font-weight: bold;
+    .term-percent {
+        font-weight: 900;
+        font-size: 44px;
+        line-height: 1;
         color: var(--primary-dark);
-        margin-bottom: 0.75rem;
+    }
+
+    /* term attednance alert layout */
+    .term-status-row {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        margin-top: 16px;
     }
 
     .status-badge {
-        display: inline-flex;
+        display: flex;
+        justify-content: center;
         align-items: center;
         gap: 0.5rem;
         background-color: #d1fae5;
         color: #065f46;
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
+        padding: 12px 16px;
+        border-radius: 16px;
         font-size: 0.85rem;
         font-weight: 600;
-        margin-bottom: 1rem;
         border: 1px solid #10b981;
+        width: 90%;
+        max-width: 520px;
+        margin: 0 auto;
+        line-height: 1.4;
+        text-align: center;
     }
 
     .status-dot {
-        width: 8px;
-        height: 8px;
-        background-color: #059669;
-        border-radius: 50%;
+        display: none;
     }
 
-    .overall-details {
+    /* Stats aligned */
+    .term-stats {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: 10px;
+        margin-top: 16px;
     }
 
-    .detail {
+    .term-stat {
         display: flex;
+        align-items: baseline;
         justify-content: space-between;
-        align-items: center;
+        gap: 12px;
         font-size: 0.9rem;
     }
 
-    .detail-label {
-        color: var(--text-light);
+    .term-stat span {
+        color: #6b7280;
     }
 
-    .detail-value {
+    .term-stat strong {
         font-weight: 600;
         color: var(--text-dark);
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+        .term-top {
+            flex-direction: column;
+            align-items: center;
+        }
+        .term-pie {
+            margin-bottom: 12px;
+        }
+        .term-main {
+            text-align: center;
+        }
+        .term-status-row {
+            justify-content: center;
+        }
+        .status-badge {
+            width: 100%;
+            max-width: 100%;
+        }
     }
 
     /* Absent Classes */
@@ -356,6 +520,15 @@
         background-color: var(--primary-light);
         padding: 0.25rem 0.75rem;
         border-radius: 20px;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.2s ease;
+    }
+
+    .section-count:hover {
+        background-color: var(--primary-dark);
+        color: white;
+        text-decoration: none;
     }
 
     .absent-list {
@@ -366,20 +539,20 @@
     }
 
     .absent-item {
-        background-color: var(--primary-light);
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        padding: 1rem;
-        /* display: flex; */
+        background-color: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1.25rem;
         justify-content: space-between;
         align-items: center;
         transition: all 0.3s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
     .absent-item:hover {
-        background-color: #f1f5f9;
+        background-color: white;
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 
     .absent-info {
@@ -447,23 +620,31 @@
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
+        transition: all 0.2s ease;
     }
 
     .view-all-link:hover {
         text-decoration: underline;
+        color: var(--primary-dark);
     }
 
     /* Responsive Design */
-    @media (max-width: 1200px) {
-        .attendance-grid {
-            grid-template-columns: 1fr 1fr;
+    @media (max-width: 992px) {
+        .attendance-grid,
+        .student-attendance-management .attendance-grid {
+            grid-template-columns: 1fr;
+            gap: 24px;
         }
+    }
 
-        .left-column {
-            grid-column: span 2;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
+    @media (max-width: 1100px) {
+        .months-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .month-item {
+            width: 100%;
+            max-width: 280px;
         }
     }
 
@@ -472,16 +653,13 @@
             font-size: 1.75rem;
         }
 
-        .attendance-grid {
+        .attendance-grid,
+        .student-attendance-management .attendance-grid {
             grid-template-columns: 1fr;
         }
 
         .left-column {
             grid-column: span 1;
-            grid-template-columns: 1fr;
-        }
-
-        .months-grid {
             grid-template-columns: 1fr;
         }
 
@@ -548,9 +726,9 @@
     </div>
 
     <!-- Attendance Grid -->
-    <div class="attendance-grid">
+    <div class="attendance-grid dashboard-3col">
         <!-- Left Column -->
-        <div class="left-column">
+        <div class="left-column dashboard-col-left">
             <!-- Term Information Card -->
             <div class="card-custom mb-4">
                 <div class="card-header-custom">Term Information</div>
@@ -587,6 +765,7 @@
         </div>
 
         <!-- Middle Column - Monthly Statistics -->
+        <div class="dashboard-col-middle">
         <div class="card-custom">
             <div class="card-header-custom">Monthly Attendance</div>
             <div class="card-body-custom">
@@ -602,7 +781,12 @@
                             {% endif %}
                         </div>
                         <div class="chart-container">
-                            <div class="chart" data-percent="{{report.present_percent|round(1)}}" data-absent="{{report.absent_percent|round(1)}}"></div>
+                            <div class="chart" 
+                                 data-present="{{report.present}}" 
+                                 data-late="{{report.late}}" 
+                                 data-excused="{{report.excused}}" 
+                                 data-absent="{{report.absent}}" 
+                                 data-total="{{report.total_classes}}"></div>
                         </div>
                         <div class="month-stats">
                             <div class="stat">
@@ -631,36 +815,52 @@
                 </div>
             </div>
         </div>
+        </div>
 
         <!-- Right Column - Term Overview -->
+        <div class="dashboard-col-right">
         <div class="card-custom">
             <div class="card-header-custom">Term Overview</div>
             <div class="card-body-custom">
                 <!-- Overall Attendance -->
                 <div class="term-overview">
                     <div class="overall-stats">
-                        <div class="chart-container large">
-                            <div class="chart" id="overall-chart" data-percent="{{overview.present_percent|round(1)}}" data-absent="{{overview.absent_percent|round(1)}}"></div>
-                        </div>
-                        <div class="overall-info">
-                            <h3 class="overall-title">Term Attendance</h3>
-                            <div class="overall-percentage" id="overall-percentage">{{overview.present_percent|round(1)}}%</div>
-                            <div class="status-badge" id="status-badge">
-                                <span class="status-dot" id="status-dot"></span>
-                                <span class="status-text" id="status-text">Loading status...</span>
+                        <div class="term-summary">
+                            <!-- Pie chart -->
+                            <div class="term-top">
+                                <div class="term-pie">
+                                    <div class="chart-container large">
+                                        <div class="chart" id="overall-chart" 
+                                             data-present="{{overview.present}}" 
+                                             data-late="{{overview.late}}" 
+                                             data-excused="{{overview.excused}}" 
+                                             data-absent="{{overview.absent}}" 
+                                             data-total="{{overview.marked}}"></div>
+                                    </div>
+                                </div>
+                                <div class="term-main">
+                                    <div class="term-title">Term Attendance</div>
+                                    <div class="term-percent" id="overall-percentage">{{overview.present_percent|round(1)}}%</div>
+                                </div>
                             </div>
-                            <div class="overall-details">
-                                <div class="detail">
-                                    <span class="detail-label">Present:</span>
-                                    <span class="detail-value" id="present-count">{{overview.present}}</span>
+                            <div class="term-status-row">
+                                <div class="status-badge" id="status-badge">
+                                    <span class="status-dot" id="status-dot"></span>
+                                    <span class="status-text" id="status-text">Loading status...</span>
                                 </div>
-                                <div class="detail">
-                                    <span class="detail-label">Absent:</span>
-                                    <span class="detail-value" id="absent-count">{{overview.absent}}</span>
+                            </div>
+                            <div class="term-stats">
+                                <div class="term-stat">
+                                    <span>Present:</span>
+                                    <strong id="present-count">{{overview.present}}</strong>
                                 </div>
-                                <div class="detail">
-                                    <span class="detail-label">Required:</span>
-                                    <span class="detail-value" id="required-percent">≥{{term_info.cutoff}}%</span>
+                                <div class="term-stat">
+                                    <span>Absent:</span>
+                                    <strong id="absent-count">{{overview.absent}}</strong>
+                                </div>
+                                <div class="term-stat">
+                                    <span>Required:</span>
+                                    <strong id="required-percent">≥{{term_info.cutoff}}%</strong>
                                 </div>
                             </div>
                         </div>
@@ -670,11 +870,11 @@
                     <div class="absent-section">
                         <div class="section-header">
                             <h3 class="section-title">Absent Classes</h3>
-                            <span class="section-count">{{classes|length}} classes</span>
+                            <a href="{{ url_for('student.appeal_management') }}" class="section-count">{{classes|length}} classes</a>
                         </div>
 
-                        <div class="absent-list">
-                            {% for class in classes %}
+                        <div class="absent-list" id="absent-list-card">
+                            {% for class in classes[:2] %}
                             <div class="absent-item">
                                 <div class="absent-info">
                                     <div class="absent-class">
@@ -711,17 +911,43 @@
                 </div>
             </div>
         </div>
+        </div>
     </div>
 </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Function to create circular progress chart
-        function createProgressChart(container, presentPercent, absentPercent) {
+        function createDonutChart(container, present, late, excused, absent, total) {
+            // Convert to numbers, handle undefined values
+            present = parseFloat(present) || 0;
+            late = parseFloat(late) || 0;
+            excused = parseFloat(excused) || 0;
+            absent = parseFloat(absent) || 0;
+            total = parseFloat(total) || 0;
+            
+            //Empty chart when there is no data
+            if (total === 0) {
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.setAttribute('viewBox', '0 0 100 100');
+                svg.setAttribute('class', 'chart-svg');
+                
+                const bgCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                bgCircle.setAttribute('class', 'chart-bg');
+                bgCircle.setAttribute('cx', '50');
+                bgCircle.setAttribute('cy', '50');
+                bgCircle.setAttribute('r', '40');
+                svg.appendChild(bgCircle);
+                
+                container.innerHTML = '';
+                container.appendChild(svg);
+                return;
+            }
+            
             const radius = 40;
-            const circumference = 2 * Math.PI * radius;
-            const presentOffset = circumference - (presentPercent / 100 * circumference);
-            const absentOffset = circumference - (absentPercent / 100 * circumference);
+            const centerX = 50;
+            const centerY = 50;
+            const innerRadius = 28;
             
             const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
             svg.setAttribute('viewBox', '0 0 100 100');
@@ -730,51 +956,102 @@
             // Background circle
             const bgCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             bgCircle.setAttribute('class', 'chart-bg');
-            bgCircle.setAttribute('cx', '50');
-            bgCircle.setAttribute('cy', '50');
+            bgCircle.setAttribute('cx', centerX.toString());
+            bgCircle.setAttribute('cy', centerY.toString());
             bgCircle.setAttribute('r', radius.toString());
             svg.appendChild(bgCircle);
             
-            // Present circle (green)
-            const presentCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            presentCircle.setAttribute('class', 'chart-present');
-            presentCircle.setAttribute('cx', '50');
-            presentCircle.setAttribute('cy', '50');
-            presentCircle.setAttribute('r', radius.toString());
-            presentCircle.setAttribute('stroke-dasharray', circumference.toString());
-            presentCircle.setAttribute('stroke-dashoffset', presentOffset.toString());
-            svg.appendChild(presentCircle);
+            // Helper function to create arc path for donut
+            function createArc(startAngle, endAngle, innerR, outerR) {
+                // Convert angles to radians, starting from 12 o'clock: -90 degrees
+                const startRad = (startAngle - 90) * Math.PI / 180;
+                const endRad = (endAngle - 90) * Math.PI / 180;
+                
+                // Calculate points on outer and inner circles
+                const x1 = centerX + outerR * Math.cos(startRad);
+                const y1 = centerY + outerR * Math.sin(startRad);
+                const x2 = centerX + outerR * Math.cos(endRad);
+                const y2 = centerY + outerR * Math.sin(endRad);
+                
+                const x3 = centerX + innerR * Math.cos(endRad);
+                const y3 = centerY + innerR * Math.sin(endRad);
+                const x4 = centerX + innerR * Math.cos(startRad);
+                const y4 = centerY + innerR * Math.sin(startRad);
+                
+                const angleDiff = endAngle - startAngle;
+                const largeArc = angleDiff > 180 ? 1 : 0;
+                
+                // Draw a donut 
+                let path = `M ${x1} ${y1}`; // Start point outside
+                path += ` A ${outerR} ${outerR} 0 ${largeArc} 1 ${x2} ${y2}`; // Outside curve
+                path += ` L ${x3} ${y3}`; // Go to inside
+                path += ` A ${innerR} ${innerR} 0 ${largeArc} 0 ${x4} ${y4}`; // Inside curve
+                path += ` Z`;
+                                
+                return path;
+            }
             
-            // Absent circle (red) - layered on top
-            const absentCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            absentCircle.setAttribute('class', 'chart-absent');
-            absentCircle.setAttribute('cx', '50');
-            absentCircle.setAttribute('cy', '50');
-            absentCircle.setAttribute('r', radius.toString());
-            absentCircle.setAttribute('stroke-dasharray', circumference.toString());
-            absentCircle.setAttribute('stroke-dashoffset', absentOffset.toString());
-            svg.appendChild(absentCircle);
+            // Calculation
+            
+            let currentAngle = 0;
+            const totalMarked = present + late + excused + absent;
+            
+            // Present
+            if (present > 0) {
+                const presentAngle = (present / totalMarked) * 360;
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', createArc(currentAngle, currentAngle + presentAngle, innerRadius, radius));
+                path.setAttribute('class', 'chart-segment chart-segment-present');
+                svg.appendChild(path);
+                currentAngle += presentAngle;
+            }
+            
+            // Late
+            if (late > 0) {
+                const lateAngle = (late / totalMarked) * 360;
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', createArc(currentAngle, currentAngle + lateAngle, innerRadius, radius));
+                path.setAttribute('class', 'chart-segment chart-segment-late');
+                svg.appendChild(path);
+                currentAngle += lateAngle;
+            }
+            
+            // Excused
+            if (excused > 0) {
+                const excusedAngle = (excused / totalMarked) * 360;
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', createArc(currentAngle, currentAngle + excusedAngle, innerRadius, radius));
+                path.setAttribute('class', 'chart-segment chart-segment-excused');
+                svg.appendChild(path);
+                currentAngle += excusedAngle;
+            }
+            
+            // Absent
+            if (absent > 0) {
+                const absentAngle = (absent / totalMarked) * 360;
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', createArc(currentAngle, currentAngle + absentAngle, innerRadius, radius));
+                path.setAttribute('class', 'chart-segment chart-segment-absent');
+                svg.appendChild(path);
+            }
             
             // Clear container and add SVG
             container.innerHTML = '';
             container.appendChild(svg);
-            
-            // Add animation
-            setTimeout(() => {
-                presentCircle.style.strokeDashoffset = presentOffset;
-                absentCircle.style.strokeDashoffset = absentOffset;
-            }, 100);
         }
         
         // Initialize all monthly charts
         document.querySelectorAll('.chart').forEach(chart => {
             if (chart.id !== 'overall-chart') {
                 const container = chart.closest('.chart-container');
-                const presentPercent = parseFloat(chart.getAttribute('data-percent'));
-                const absentPercent = parseFloat(chart.getAttribute('data-absent'));
+                const present = chart.getAttribute('data-present');
+                const late = chart.getAttribute('data-late');
+                const excused = chart.getAttribute('data-excused');
+                const absent = chart.getAttribute('data-absent');
+                const total = chart.getAttribute('data-total');
                 
-                if (container && !isNaN(presentPercent) && !isNaN(absentPercent)) {
-                    createProgressChart(container, presentPercent, absentPercent);
+                if (container) {
+                    createDonutChart(container, present, late, excused, absent, total);
                 }
             }
         });
@@ -841,9 +1118,33 @@
         
         // Update overall chart with fetched data
         function updateOverallChart(stats) {
-            const overallChartContainer = document.querySelector('#overall-chart').closest('.chart-container');
-            if (overallChartContainer && !isNaN(stats.overall_percent) && !isNaN(stats.absent_percent)) {
-                createProgressChart(overallChartContainer, stats.overall_percent, stats.absent_percent);
+            const overallChart = document.getElementById('overall-chart');
+            if (overallChart) {
+                const overallChartContainer = overallChart.closest('.chart-container');
+                // API returns present_count = present + late + excused, so keep only the real present count
+
+                let present, late, excused, absent, total;
+                
+                if (stats.present_count !== undefined) {
+                    // From API: present_count includes late + excused, so present = present_count - late_count - excused_count
+
+                    late = stats.late_count || 0;
+                    excused = stats.excused_count || 0;
+                    present = (stats.present_count || 0) - late - excused;
+                    absent = stats.absent_count || 0;
+                    total = stats.marked_count || stats.total_count || 0;
+                } else {
+                    // Use template data if no real data is available
+                    present = parseFloat(overallChart.getAttribute('data-present')) || 0;
+                    late = parseFloat(overallChart.getAttribute('data-late')) || 0;
+                    excused = parseFloat(overallChart.getAttribute('data-excused')) || 0;
+                    absent = parseFloat(overallChart.getAttribute('data-absent')) || 0;
+                    total = parseFloat(overallChart.getAttribute('data-total')) || 0;
+                }
+                
+                if (overallChartContainer) {
+                    createDonutChart(overallChartContainer, present, late, excused, absent, total);
+                }
             }
         }
         
@@ -866,7 +1167,7 @@
                 statusBadge.style.color = '#dc2626';
                 statusBadge.style.borderColor = '#dc2626';
                 statusDot.style.backgroundColor = '#dc2626';
-                statusText.textContent = `Below Requirement (${presentPercent.toFixed(1)}% vs ${requiredPercent}%)`;
+                statusText.textContent = `Below Requirement (≤${requiredPercent}%)`;
             }
         }
         
@@ -909,11 +1210,16 @@
         const overallChart = document.getElementById('overall-chart');
         if (overallChart) {
             const overallContainer = overallChart.closest('.chart-container');
-            const presentPercent = parseFloat(overallChart.getAttribute('data-percent')) || 0;
-            const absentPercent = parseFloat(overallChart.getAttribute('data-absent')) || 0;
+            // overview.present = present + late + excused, skeep only the real present count
+            const presentCombined = parseFloat(overallChart.getAttribute('data-present')) || 0;
+            const late = parseFloat(overallChart.getAttribute('data-late')) || 0;
+            const excused = parseFloat(overallChart.getAttribute('data-excused')) || 0;
+            const present = presentCombined - late - excused;
+            const absent = parseFloat(overallChart.getAttribute('data-absent')) || 0;
+            const total = parseFloat(overallChart.getAttribute('data-total')) || 0;
             
-            if (overallContainer && !isNaN(presentPercent) && !isNaN(absentPercent)) {
-                createProgressChart(overallContainer, presentPercent, absentPercent);
+            if (overallContainer) {
+                createDonutChart(overallContainer, present, late, excused, absent, total);
             }
         }
         

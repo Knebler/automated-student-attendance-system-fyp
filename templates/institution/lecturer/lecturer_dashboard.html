@@ -176,6 +176,7 @@
         <div class="modal-body">
             <div class="notifications-header-actions">
                 <button id="markAllReadBtn" class="btn-mark-all-read">Mark All as Read</button>
+                <button id="clearAllBtn" class="btn-clear-all">Clear All</button>
             </div>
             <div id="notificationsList" class="notifications-list">
                 <!-- Notifications will be loaded here dynamically -->
@@ -302,6 +303,24 @@
     border-radius: 12px;
     font-size: 0.8rem;
     margin-left: 0.5rem;
+}
+
+
+.btn-clear-all {
+    background: transparent;
+    border: 1px solid #dc2626;
+    color: #dc2626;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    margin-left: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.btn-clear-all:hover {
+    background: #dc2626;
+    color: white;
 }
 
 /* Grid */
@@ -1247,6 +1266,27 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error('Error marking all notifications as read:', error);
         });
     }
+
+    function clearAllNotifications() {
+        fetch('{{ url_for("institution_lecturer.clear_all_notifications") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.querySelectorAll('.notification-item').forEach(item => {
+                    item.remove();
+                });
+                updateNotificationBadge();
+            }
+        })
+        .catch(error => {
+            console.error('Error clearing all notifications:', error);
+        });
+    }
     
     function updateNotificationBadge() {
         const badge = document.querySelector('#notificationBell .notification-badge');
@@ -1293,6 +1333,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const markAllReadBtn = document.getElementById('markAllReadBtn');
     if (markAllReadBtn) {
         markAllReadBtn.addEventListener('click', markAllNotificationsAsRead);
+    }
+    
+    // Clear all notifications button
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', clearAllNotifications);
     }
     
     // Announcement Detail Modal functions

@@ -230,6 +230,57 @@
         box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
     }
 
+    .btn-facial-data {
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        background: linear-gradient(135deg, #059669, #10b981);
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-facial-data:hover {
+        background: linear-gradient(135deg, #047857, #059669);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-facial-data .btn-icon {
+        font-size: 1.1rem;
+    }
+
+    /* Facial Data Status */
+    .facial-data-status {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .facial-data-status.registered {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+
+    .facial-data-status.not-registered {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+
     /* Classes List - Matched to Lecturer Style */
     .classes-list {
         display: flex;
@@ -448,6 +499,44 @@
         font-weight: 600;
         color: var(--text-dark);
         font-size: 1rem;
+        text-align: center;
+    }
+
+    .links-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+    }
+
+    .link-item {
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1rem;
+        text-decoration: none;
+        color: var(--text-dark);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .link-item:hover {
+        background: #f1f5f9;
+        transform: translateY(-2px);
+        text-decoration: none;
+        color: var(--text-dark);
+    }
+
+    .link-icon {
+        font-size: 1.5rem;
+    }
+
+    .link-text {
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-align: center;
     }
 
     /* No data messages */
@@ -468,10 +557,21 @@
         opacity: 0.8;
     }
 
+    /* Profile Actions */
+    .profile-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
     /* Responsive Design - Matched to Lecturer Dashboard */
     @media (max-width: 1024px) {
         .dashboard-grid {
             grid-template-columns: 1fr 1fr;
+        }
+        
+        .links-grid {
+            grid-template-columns: repeat(2, 1fr);
         }
     }
 
@@ -516,6 +616,10 @@
             margin-left: 0;
         }
 
+        .links-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
         .stat-breakdown {
             flex-direction: column;
             gap: 0.5rem;
@@ -533,6 +637,10 @@
 
         .class-actions {
             flex-direction: column;
+        }
+
+        .links-grid {
+            grid-template-columns: 1fr;
         }
     }
 </style>
@@ -562,7 +670,7 @@
     <!-- Dashboard Grid -->
     <div class="dashboard-grid">
         <!-- Student Profile & Stats Card -->
-        <div class="card-custom dashboard-card">
+        <div class="card-custom">
             <div class="card-header-custom">Student Profile</div>
             <div class="card-body-custom">
                 <div class="profile-content">
@@ -612,14 +720,33 @@
                     </div>
                     
                     <div class="profile-actions mt-4">
-                        <a href="{{ url_for('student.profile') }}" class="btn-custom btn-manage">Manage Profile</a>
+                        <!-- Facial Data Status -->
+                        {% if facial_data_registered %}
+                        <div class="facial-data-status registered">
+                            <span>✅</span>
+                            <span>Facial data registered</span>
+                        </div>
+                        {% else %}
+                        <div class="facial-data-status not-registered">
+                            <span>⚠️</span>
+                            <span>Facial data not registered</span>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Update Facial Data Button -->
+                        <a href="{{ url_for('student.update_facial_data') }}" class="btn-facial-data">
+                            <span class="btn-icon">📸</span>
+                            <span>{{ 'Update Facial Data' if facial_data_registered else 'Register Facial Data' }}</span>
+                        </a>
+                        
+                        <a href="{{ url_for('student.profile') }}" class="btn-manage">Manage Profile</a>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Today's Classes Card -->
-        <div class="card-custom dashboard-card">
+        <div class="card-custom">
             <div class="card-header-custom">
                 Today's Classes 
                 {% if today_classes|length > 0 %}
@@ -688,7 +815,7 @@
         </div>
 
         <!-- Announcements & Quick Links Card -->
-        <div class="card-custom dashboard-card">
+        <div class="card-custom">
             <div class="card-header-custom">Announcements & Quick Links</div>
             <div class="card-body-custom">
                 <!-- Announcements Section -->
@@ -714,34 +841,38 @@
                     
                     {% if announcements %}
                     <div class="announcements-actions">
-                        <a href="{{ url_for('student.announcements') }}" class="btn-custom btn-view-all">View All Announcements</a>
+                        <a href="#" class="btn-custom btn-view-all">View All Announcements</a>
                     </div>
                     {% endif %}
                 </div>
 
-                <!-- Quick Action Section -->
+                <!-- Quick Links Section -->
                 <div class="quick-links">
-                    <div class="links-title mb-3">Quick Actions</div>
-                    <div class="quick-actions">
-                        <a href="{{ url_for('student.attendance') }}" class="quick-action-button qa-unified">
-                            <span class="quick-action-icon">📊</span>
-                            <span class="quick-action-text">My Attendance</span>
+                    <div class="links-title mb-3">Quick Access</div>
+                    <div class="links-grid">
+                        <a href="{{ url_for('student.attendance') }}" class="link-item">
+                            <span class="link-icon">📊</span>
+                            <span class="link-text">My Attendance</span>
                         </a>
-                        <a href="{{ url_for('student.appeal_management') }}" class="quick-action-button qa-unified">
-                            <span class="quick-action-icon">📝</span>
-                            <span class="quick-action-text">Submit Appeal</span>
+                        <a href="{{ url_for('student.update_facial_data') }}" class="link-item">
+                            <span class="link-icon">📸</span>
+                            <span class="link-text">Facial Data</span>
                         </a>
-                        <a href="{{ url_for('student.attendance_history') }}" class="quick-action-button qa-unified">
-                            <span class="quick-action-icon">📚</span>
-                            <span class="quick-action-text">Attendance History</span>
+                        <a href="{{ url_for('student.appeal_management') }}" class="link-item">
+                            <span class="link-icon">📝</span>
+                            <span class="link-text">Submit Appeal</span>
                         </a>
-                        <a href="{{ url_for('student.absent_records') }}" class="quick-action-button qa-unified">
-                            <span class="quick-action-icon">📅</span>
-                            <span class="quick-action-text">Absent Records</span>
+                        <a href="{{ url_for('student.attendance_history') }}" class="link-item">
+                            <span class="link-icon">📚</span>
+                            <span class="link-text">History</span>
                         </a>
-                        <a href="{{ url_for('student.profile') }}" class="quick-action-button qa-unified">
-                            <span class="quick-action-icon">🏫</span>
-                            <span class="quick-action-text">My Profile</span>
+                        <a href="{{ url_for('student.absent_records') }}" class="link-item">
+                            <span class="link-icon">📅</span>
+                            <span class="link-text">Absent Records</span>
+                        </a>
+                        <a href="{{ url_for('student.profile') }}" class="link-item">
+                            <span class="link-icon">🏫</span>
+                            <span class="link-text">My Profile</span>
                         </a>
                     </div>
                 </div>
@@ -749,207 +880,6 @@
         </div>
     </div>
 </div>
-
-<!-- Notifications Modal -->
-<div id="notificationsModal" class="modal-overlay" aria-hidden="true" style="display: none;">
-    <div class="modal-card">
-        <div class="modal-header">
-            <h2>Notifications</h2>
-            <button id="closeNotificationsModal" class="modal-close" aria-label="Close">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div class="notifications-header-actions">
-                <button id="markAllReadBtn" class="btn-mark-all-read">Mark All as Read</button>
-                <button id="clearAllBtn" class="btn-clear-all">Clear All</button>
-            </div>
-            <div id="notificationsList" class="notifications-list">
-                <!-- Notifications will be loaded here dynamically -->
-                <div class="loading-message">Loading notifications...</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<style>
-/* Modal Styles */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-    backdrop-filter: blur(2px);
-}
-
-.modal-card {
-    background: white;
-    border-radius: 14px;
-    width: 90%;
-    max-width: 600px;
-    max-height: 90vh;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    animation: modalSlideIn 0.3s ease-out;
-}
-
-@keyframes modalSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem;
-    border-bottom: 1px solid #e5e7eb;
-}
-
-.modal-header h2 {
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--text-dark);
-}
-
-.modal-close {
-    background: transparent;
-    border: none;
-    font-size: 1.8rem;
-    color: var(--text-light);
-    cursor: pointer;
-    width: 2rem;
-    height: 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-    line-height: 1;
-}
-
-.modal-close:hover {
-    background: #f1f5f9;
-    color: var(--text-dark);
-}
-
-.modal-body {
-    padding: 1.5rem;
-    overflow-y: auto;
-    flex: 1;
-}
-
-/* Notifications Styles */
-.notifications-header-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 1rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #e5e7eb;
-}
-
-.btn-mark-all-read {
-    background: transparent;
-    border: 1px solid var(--primary-dark);
-    color: var(--primary-dark);
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
-}
-
-.btn-mark-all-read:hover {
-    background: var(--primary-dark);
-    color: white;
-}
-
-.btn-clear-all {
-    background: transparent;
-    border: 1px solid #dc2626;
-    color: #dc2626;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    margin-left: 0.5rem;
-    transition: all 0.2s ease;
-}
-
-.btn-clear-all:hover {
-    background: #dc2626;
-    color: white;
-}
-
-.notifications-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    max-height: 60vh;
-    overflow-y: auto;
-}
-
-.notification-item {
-    background: #f8fafc;
-    border-radius: 12px;
-    padding: 1rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border-left: 4px solid transparent;
-    position: relative;
-}
-
-.notification-item.unread {
-    background: #eff6ff;
-    border-left-color: var(--primary-dark);
-}
-
-.notification-item:hover {
-    background: white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    transform: translateY(-2px);
-}
-
-.notification-content {
-    font-size: 0.95rem;
-    color: var(--text-dark);
-    margin: 0 0 0.5rem 0;
-    line-height: 1.5;
-}
-
-.notification-time {
-    font-size: 0.8rem;
-    color: var(--text-light);
-}
-
-.notification-item.unread .notification-content {
-    font-weight: 500;
-}
-
-.no-notifications-message {
-    text-align: center;
-    padding: 3rem 1rem;
-    color: var(--text-light);
-}
-
-.loading-message {
-    text-align: center;
-    padding: 2rem;
-    color: var(--text-light);
-}
-</style>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
@@ -969,203 +899,13 @@ document.addEventListener("DOMContentLoaded", () => {
     updateTime();
     setInterval(updateTime, 60000);
     
-    // Notification bell click handler - opens notifications modal
+    // Notification bell click handler
     const notificationBell = document.getElementById('notificationBell');
-    console.log('Notification bell element:', notificationBell);
     if (notificationBell) {
         notificationBell.addEventListener('click', () => {
-            console.log('Notification bell clicked!');
-            openNotificationsModal();
-        });
-    } else {
-        console.error('Notification bell element not found!');
-    }
-    
-    // Notifications Modal functions
-    function openNotificationsModal() {
-        console.log('Opening notifications modal...');
-        const modal = document.getElementById('notificationsModal');
-        console.log('Modal element:', modal);
-        if (modal) {
-            modal.style.display = 'flex';
-            modal.setAttribute('aria-hidden', 'false');
-            loadNotifications();
-        } else {
-            console.error('Notifications modal not found!');
-        }
-    }
-    
-    function closeNotificationsModal() {
-        const modal = document.getElementById('notificationsModal');
-        if (modal) {
-            modal.style.display = 'none';
-            modal.setAttribute('aria-hidden', 'true');
-        }
-    }
-    
-    function loadNotifications() {
-        const notificationsList = document.getElementById('notificationsList');
-        if (!notificationsList) return;
-        
-        notificationsList.innerHTML = '<div class="loading-message">Loading notifications...</div>';
-        
-        fetch('{{ url_for("student.get_notifications") }}')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.notifications) {
-                    if (data.notifications.length === 0) {
-                        notificationsList.innerHTML = '<div class="no-notifications-message"><p>📭 No notifications</p><p class="small-text">You\'re all caught up!</p></div>';
-                    } else {
-                        notificationsList.innerHTML = '';
-                        data.notifications.forEach(notif => {
-                            const notifItem = document.createElement('div');
-                            notifItem.className = 'notification-item' + (notif.acknowledged ? '' : ' unread');
-                            notifItem.dataset.notificationId = notif.notification_id;
-                            notifItem.innerHTML = `
-                                <p class="notification-content">${escapeHtml(notif.content)}</p>
-                                <span class="notification-time">${notif.created_at_relative}</span>
-                            `;
-                            notifItem.addEventListener('click', () => {
-                                if (!notif.acknowledged) {
-                                    markNotificationAsRead(notif.notification_id);
-                                }
-                            });
-                            notificationsList.appendChild(notifItem);
-                        });
-                    }
-                } else {
-                    notificationsList.innerHTML = '<div class="no-notifications-message"><p>❌ Failed to load notifications</p></div>';
-                }
-            })
-            .catch(error => {
-                console.error('Error loading notifications:', error);
-                notificationsList.innerHTML = '<div class="no-notifications-message"><p>❌ Error loading notifications</p></div>';
-            });
-    }
-    
-    function markNotificationAsRead(notificationId) {
-        fetch(`{{ url_for("student.mark_notification_read", notification_id=0) }}`.replace('0', notificationId), {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const notifItem = document.querySelector(`.notification-item[data-notification-id="${notificationId}"]`);
-                if (notifItem) {
-                    notifItem.classList.remove('unread');
-                }
-                updateNotificationBadge();
-            }
-        })
-        .catch(error => {
-            console.error('Error marking notification as read:', error);
+            alert('Notifications feature coming soon!');
         });
     }
-    
-    function markAllNotificationsAsRead() {
-        fetch('{{ url_for("student.mark_all_notifications_read") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                document.querySelectorAll('.notification-item.unread').forEach(item => {
-                    item.classList.remove('unread');
-                });
-                updateNotificationBadge();
-            }
-        })
-        .catch(error => {
-            console.error('Error marking all notifications as read:', error);
-        });
-    }
-    
-    function clearAllNotifications() {
-        fetch('{{ url_for("student.clear_all_notifications") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                loadNotifications();
-            }
-        })
-        .catch(error => {
-            console.error('Error clearing all notifications:', error);
-        });
-    }
-    
-    function updateNotificationBadge() {
-        const badge = document.querySelector('#notificationBell .notification-badge');
-        const bell = document.getElementById('notificationBell');
-        if (badge && bell) {
-            const unreadCount = document.querySelectorAll('.notification-item.unread').length;
-            if (unreadCount > 0) {
-                badge.textContent = unreadCount;
-                badge.style.display = 'flex';
-            } else {
-                badge.style.display = 'none';
-            }
-        }
-    }
-    
-    function escapeHtml(text) {
-        const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
-        };
-        return text.replace(/[&<>"']/g, m => map[m]);
-    }
-    
-    // Close notifications modal button
-    const closeNotificationsModalBtn = document.getElementById('closeNotificationsModal');
-    if (closeNotificationsModalBtn) {
-        closeNotificationsModalBtn.addEventListener('click', closeNotificationsModal);
-    }
-    
-    // Close notifications modal on backdrop click
-    const notificationsModal = document.getElementById('notificationsModal');
-    if (notificationsModal) {
-        notificationsModal.addEventListener('click', (e) => {
-            if (e.target === notificationsModal) {
-                closeNotificationsModal();
-            }
-        });
-    }
-    
-    // Mark all as read button
-    const markAllReadBtn = document.getElementById('markAllReadBtn');
-    if (markAllReadBtn) {
-        markAllReadBtn.addEventListener('click', markAllNotificationsAsRead);
-    }
-    
-    // Clear all notifications button
-    const clearAllBtn = document.getElementById('clearAllBtn');
-    if (clearAllBtn) {
-        clearAllBtn.addEventListener('click', clearAllNotifications);
-    }
-    
-    // Close modal on Escape key
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            const notificationsModal = document.getElementById('notificationsModal');
-            if (notificationsModal && notificationsModal.style.display !== 'none') {
-                closeNotificationsModal();
-            }
-        }
-    });
     
     // Check-in button functionality
     document.querySelectorAll('.btn-checkin').forEach(button => {
@@ -1173,22 +913,18 @@ document.addEventListener("DOMContentLoaded", () => {
             const classId = this.dataset.classId;
             const classCode = this.closest('.class-item').querySelector('.class-code').textContent;
             
-            // Show check-in modal or process directly
             const checkInMethod = confirm(`Check in for ${classCode}?\n\nPlease ensure you are in the correct classroom.`);
             
             if (checkInMethod) {
-                // Simulate API call to check-in
                 button.textContent = 'Checking In...';
                 button.disabled = true;
                 
-                // In a real implementation, you would make an API call here
                 setTimeout(() => {
                     alert(`Successfully checked in for ${classCode}!`);
                     button.textContent = 'Checked In';
                     button.style.backgroundColor = '#10b981';
                     button.disabled = true;
                     
-                    // Update attendance status display
                     const statusElement = this.closest('.class-item').querySelector('.status-badge');
                     if (statusElement) {
                         statusElement.textContent = 'Present';
@@ -1204,23 +940,7 @@ document.addEventListener("DOMContentLoaded", () => {
         button.addEventListener('click', function() {
             const classId = this.dataset.classId;
             const classCode = this.closest('.class-item').querySelector('.class-code').textContent;
-            
-            // In a real implementation, this would navigate to class details or show a modal
             alert(`Viewing details for ${classCode}\n\nClass ID: ${classId}`);
-        });
-    });
-    
-    // Add click handlers for class items
-    document.querySelectorAll('.class-item').forEach(item => {
-        item.addEventListener('click', (e) => {
-            // Don't trigger if clicking on buttons
-            if (!e.target.closest('.btn-custom')) {
-                const classId = item.dataset.classId;
-                if (classId) {
-                    // Navigate to class details or attendance view
-                    alert('Class details view coming soon!');
-                }
-            }
         });
     });
 });

@@ -3,284 +3,6 @@
 {% block title %}User Management - Platform Manager{% endblock %}
 
 {% block content %}
-<div class="platform-manager-user-management">
-    <!-- Page Header -->
-    <div class="page-header mb-4">
-        <h1 class="page-title">User Management</h1>
-        <div class="breadcrumb">
-            <a href="{{ url_for('platform.platform_dashboard') }}">Dashboard</a> / 
-            <span>User Management</span>
-        </div>
-        <p class="page-subtitle">View all registered users and manage admin accounts.</p>
-    </div>
-
-    <!-- Dashboard Grid -->
-    <div class="dashboard-grid">
-        <!-- Left Column -->
-        <div class="left-column">
-            <!-- User Overview Card -->
-            <div class="card-custom mb-4">
-                <div class="card-header-custom">User Overview</div>
-                <div class="card-body-custom">
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <div class="stat-label">Total Users</div>
-                            <div class="stat-value">{{ overview_stats.user_count }}</div>
-                            <div class="stat-change positive">+{{ overview_stats.user_change_percentage }}% this month</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-label">Institution Admins</div>
-                            <div class="stat-value">{{ overview_stats.admin_count }}</div>
-                            <div class="stat-change positive">+{{ overview_stats.admin_change_percentage }}% this month</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-label">Lecturers</div>
-                            <div class="stat-value">{{ overview_stats.lecturer_count }}</div>
-                            <div class="stat-change positive">+{{ overview_stats.lecturer_change_percentage }}% this month</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-label">Students</div>
-                            <div class="stat-value">{{ overview_stats.student_count }}</div>
-                            <div class="stat-change positive">+{{ overview_stats.student_change_percentage }}% this month</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Quick Actions Card -->
-            <div class="card-custom">
-                <div class="card-header-custom">Quick Actions</div>
-                <div class="card-body-custom">
-                    <div class="quick-actions">
-                        <button class="btn-custom btn-add-admin" id="addAdminBtn">
-                            <span class="btn-icon">➕</span>
-                            Add Admin Account
-                        </button>
-                        
-                        <div class="search-section mt-3">
-                            <div class="search-box">
-                                <input type="text" placeholder="Search by name, ID, or email..." class="search-input">
-                                <button class="btn-custom btn-search">Search</button>
-                            </div>
-                        </div>
-
-                        <div class="filter-section mt-3">
-                            <select class="filter-select">
-                                <option value="">All Roles</option>
-                                <option value="admin">Institution Admin</option>
-                                <option value="lecturer">Lecturer</option>
-                                <option value="student">Student</option>
-                            </select>
-                            <select class="filter-select">
-                                <option value="">All Status</option>
-                                <option value="active">Active</option>
-                                <option value="suspended">Suspended</option>
-                                <option value="pending">Pending</option>
-                            </select>
-                            <button class="btn-custom btn-outline-custom btn-reset">Reset Filters</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Right Column -->
-        <div class="right-column">
-            <div class="card-custom">
-                <div class="card-header-custom">
-                    <div class="header-content">
-                        <span>Users Information</span>
-                        <span class="user-count" id="userCount">Loading...</span>
-                    </div>
-                </div>
-                <div class="card-body-custom">
-                    <!-- Table Container -->
-                    <div class="table-container">
-                        <table class="users-table">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>ID</th>
-                                    <th>Role</th>
-                                    <th>Institution</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="usersTableBody">
-                                <tr>
-                                    <td colspan="6" class="loading">Loading users...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Pagination -->
-                    <div class="pagination-section">
-                        <div class="pagination-info" id="paginationInfo">
-                            Loading...
-                        </div>
-                        <div class="pagination-controls">
-                            <button class="btn-custom btn-outline-custom btn-prev" id="btnPrev" disabled>Previous</button>
-                            <span class="page-numbers">
-                                Page 
-                                <span class="page-current" id="currentPage">1</span>
-                                /
-                                <span class="page-link" id="totalPages">1</span>
-                            </span>
-                            <button class="btn-custom btn-outline-custom btn-next" id="btnNext" disabled>Next</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-let currentPage = 1;
-const perPage = 5;
-
-// Get initials from name
-function getInitials(name) {
-    return name
-        .split(' ')
-        .map(word => word[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2);
-}
-
-// Fetch users data
-async function fetchUsers(page) {
-    try {
-        const response = await fetch(`/platform/users/retrieve?page=${page}&per_page=${perPage}`);
-        
-        if (!response.ok) {
-            throw new Error('Failed to fetch users');
-        }
-        
-        const data = await response.json();
-        renderUsers(data);
-        updatePagination(data);
-        currentPage = page;
-    } catch (error) {
-        console.error('Error fetching users:', error);
-        document.getElementById('usersTableBody').innerHTML = `
-            <tr>
-                <td colspan="6" class="error">Failed to load users. Please try again.</td>
-            </tr>
-        `;
-    }
-}
-
-// Render users in table
-function renderUsers(data) {
-    const tbody = document.getElementById('usersTableBody');
-    
-    if (data.items.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="6" class="loading">No users found.</td>
-            </tr>
-        `;
-        return;
-    }
-
-    tbody.innerHTML = data.items.map(user => `
-        <tr>
-            <td>
-                <div class="user-info">
-                    <div class="user-avatar">${getInitials(user.name)}</div>
-                    <div class="user-details">
-                        <div class="user-name">${user.name}</div>
-                        <div class="user-email">${user.email}</div>
-                    </div>
-                </div>
-            </td>
-            <td>${user.user_id}</td>
-            <td>
-                <span class="role-badge ${user.role}">${user.role}</span>
-            </td>
-            <td>${user.institution_name}</td>
-            <td>
-                <span class="status-badge ${user.is_active ? 'active' : 'suspended'}">
-                    ${user.is_active ? 'Active' : 'Suspended'}
-                </span>
-            </td>
-            <td>
-                <div class="action-buttons">
-                    <button class="btn-action btn-view" title="View Details" onclick="viewUser(${user.user_id})">
-                        <span class="action-icon">👁️</span>
-                    </button>
-                    <button class="btn-action btn-edit" title="Edit User" onclick="editUser(${user.user_id})">
-                        <span class="action-icon">✏️</span>
-                    </button>
-                    <button class="btn-action btn-activate" title="Activate User" onclick="activateUser(${user.user_id})">
-                        <span class="action-icon">✅</span>
-                    </button>
-                </div>
-            </td>
-        </tr>
-    `).join('');
-}
-
-// Update pagination controls
-function updatePagination(data) {
-    const start = (data.page - 1) * data.per_page + 1;
-    const end = Math.min(data.page * data.per_page, data.total);
-    
-    // Update user count
-    document.getElementById('userCount').textContent = 
-        `Showing ${start}-${end} of ${data.total} users`;
-    
-    // Update pagination info
-    document.getElementById('paginationInfo').textContent = 
-        `Showing ${start}-${end} of ${data.total} users`;
-    
-    // Update page numbers
-    document.getElementById('currentPage').textContent = data.page;
-    document.getElementById('totalPages').textContent = data.pages;
-    
-    // Update button states
-    const btnPrev = document.getElementById('btnPrev');
-    const btnNext = document.getElementById('btnNext');
-    
-    btnPrev.disabled = data.page === 1;
-    btnNext.disabled = data.page === data.pages;
-}
-
-// Action button handlers (implement as needed)
-function viewUser(userId) {
-    console.log('View user:', userId);
-    // Implement view logic
-}
-
-function editUser(userId) {
-    console.log('Edit user:', userId);
-    // Implement edit logic
-}
-
-function activateUser(userId) {
-    console.log('Activate user:', userId);
-    // Implement activate logic
-}
-
-// Event listeners
-document.getElementById('btnPrev').addEventListener('click', () => {
-    if (currentPage > 1) {
-        fetchUsers(currentPage - 1);
-    }
-});
-
-document.getElementById('btnNext').addEventListener('click', () => {
-    fetchUsers(currentPage + 1);
-});
-
-// Initial load
-fetchUsers(1);
-</script>
-
 <style>
     /* Platform Manager User Management Specific Styles */
     .platform-manager-user-management {
@@ -766,6 +488,282 @@ fetchUsers(1);
         padding: 0 0.25rem;
     }
 
+    /* Modal Specific Styles - Add these */
+    .alert-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        max-width: 400px;
+    }
+    
+    .alert-custom {
+        padding: 1rem 1.25rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        animation: slideInRight 0.3s ease forwards;
+    }
+    
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    .alert-custom.success {
+        background-color: #d1fae5;
+        color: #065f46;
+        border: 1px solid #10b981;
+    }
+    
+    .alert-custom.error {
+        background-color: #fef2f2;
+        color: #dc2626;
+        border: 1px solid #dc2626;
+    }
+    
+    .alert-custom.warning {
+        background-color: #fef3c7;
+        color: #92400e;
+        border: 1px solid #f59e0b;
+    }
+    
+    .alert-custom.info {
+        background-color: #e0f2fe;
+        color: #075985;
+        border: 1px solid #0ea5e9;
+    }
+    
+    .alert-custom .btn-close {
+        background: none;
+        border: none;
+        font-size: 1.25rem;
+        cursor: pointer;
+        padding: 0;
+        margin-left: 1rem;
+        opacity: 0.7;
+        transition: opacity 0.2s ease;
+    }
+    
+    .alert-custom .btn-close:hover {
+        opacity: 1;
+    }
+    
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        opacity: 0;
+        animation: fadeIn 0.3s ease forwards;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    .modal-content {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: slideUp 0.3s ease forwards;
+    }
+    
+    @keyframes slideUp {
+        from { 
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to { 
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .modal-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .modal-header h3 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+    
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--text-light);
+        padding: 0.25rem;
+        line-height: 1;
+        transition: color 0.2s ease;
+    }
+    
+    .modal-close:hover {
+        color: var(--primary-dark);
+    }
+    
+    .modal-body {
+        padding: 1.5rem;
+    }
+    
+    .modal-footer {
+        padding: 1.5rem;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+    }
+    
+    /* Modal Form Styles */
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        font-size: 0.9rem;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.9rem;
+        background-color: white;
+        color: var(--text-dark);
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-dark);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .form-control:invalid {
+        border-color: #dc2626;
+    }
+    
+    .text-muted {
+        font-size: 0.8rem;
+        color: var(--text-light);
+        display: block;
+        margin-top: 0.25rem;
+    }
+    
+    /* User Details View Styles */
+    .user-details-view {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    
+    .detail-section {
+        background-color: var(--primary-light);
+        padding: 1.25rem;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .detail-section h4 {
+        margin: 0 0 1rem 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--primary-dark);
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 0.5rem;
+    }
+    
+    .detail-row {
+        margin: 0.75rem 0;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .detail-row strong {
+        color: var(--text-dark);
+        min-width: 120px;
+        display: inline-block;
+    }
+    
+    .detail-row span {
+        color: var(--text-dark);
+        flex: 1;
+    }
+    
+    .loading {
+        text-align: center;
+        padding: 2rem;
+        color: var(--text-light);
+        font-style: italic;
+    }
+    
+    .error {
+        text-align: center;
+        padding: 2rem;
+        color: #dc2626;
+        font-weight: 500;
+    }
+    
+    /* Button Styles */
+    .btn-primary-custom {
+        background-color: var(--primary-dark);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary-custom:hover:not(:disabled) {
+        background-color: #1e293b;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-primary-custom:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
     /* Responsive Design */
     @media (max-width: 1200px) {
         .dashboard-grid {
@@ -866,4 +864,788 @@ fetchUsers(1);
     }
 </style>
 
+<div class="platform-manager-user-management">
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <h1 class="page-title">User Management</h1>
+        <div class="breadcrumb">
+            <a href="{{ url_for('platform.platform_dashboard') }}">Dashboard</a> / 
+            <span>User Management</span>
+        </div>
+        <p class="page-subtitle">View all registered users and manage admin accounts.</p>
+    </div>
+
+    <!-- Dashboard Grid -->
+    <div class="dashboard-grid">
+        <!-- Left Column -->
+        <div class="left-column">
+            <!-- User Overview Card -->
+            <div class="card-custom mb-4">
+                <div class="card-header-custom">User Overview</div>
+                <div class="card-body-custom">
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Total Users</div>
+                            <div class="stat-value">{{ overview_stats.user_count }}</div>
+                            <div class="stat-change positive">+{{ overview_stats.user_change_percentage }}% this month</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Institution Admins</div>
+                            <div class="stat-value">{{ overview_stats.admin_count }}</div>
+                            <div class="stat-change positive">+{{ overview_stats.admin_change_percentage }}% this month</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Lecturers</div>
+                            <div class="stat-value">{{ overview_stats.lecturer_count }}</div>
+                            <div class="stat-change positive">+{{ overview_stats.lecturer_change_percentage }}% this month</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Students</div>
+                            <div class="stat-value">{{ overview_stats.student_count }}</div>
+                            <div class="stat-change positive">+{{ overview_stats.student_change_percentage }}% this month</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions Card -->
+            <div class="card-custom">
+                <div class="card-header-custom">Quick Actions</div>
+                <div class="card-body-custom">
+                    <div class="quick-actions">
+                        <button class="btn-custom btn-add-admin" id="addAdminBtn">
+                            <span class="btn-icon">➕</span>
+                            Add Admin Account
+                        </button>
+                        
+                        <div class="search-section mt-3">
+                            <div class="search-box">
+                                <input type="text" placeholder="Search by name, ID, or email..." class="search-input">
+                                <button class="btn-custom btn-search">Search</button>
+                            </div>
+                        </div>
+
+                        <div class="filter-section mt-3">
+                            <select class="filter-select">
+                                <option value="">All Roles</option>
+                                <option value="admin">Institution Admin</option>
+                                <option value="lecturer">Lecturer</option>
+                                <option value="student">Student</option>
+                            </select>
+                            <select class="filter-select">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="suspended">Suspended</option>
+                                <option value="pending">Pending</option>
+                            </select>
+                            <button class="btn-custom btn-outline-custom btn-reset">Reset Filters</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="right-column">
+            <div class="card-custom">
+                <div class="card-header-custom">
+                    <div class="header-content">
+                        <span>Users Information</span>
+                        <span class="user-count" id="userCount">Loading...</span>
+                    </div>
+                </div>
+                <div class="card-body-custom">
+                    <!-- Table Container -->
+                    <div class="table-container">
+                        <table class="users-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>ID</th>
+                                    <th>Role</th>
+                                    <th>Institution</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <tr>
+                                    <td colspan="6" class="loading">Loading users...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="pagination-section">
+                        <div class="pagination-info" id="paginationInfo">
+                            Loading...
+                        </div>
+                        <div class="pagination-controls">
+                            <button class="btn-custom btn-outline-custom btn-prev" id="btnPrev" disabled>Previous</button>
+                            <span class="page-numbers">
+                                Page 
+                                <span class="page-current" id="currentPage">1</span>
+                                /
+                                <span class="page-link" id="totalPages">1</span>
+                            </span>
+                            <button class="btn-custom btn-outline-custom btn-next" id="btnNext" disabled>Next</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Templates (Add these BEFORE the closing script tag) -->
+<div id="addAdminModalTemplate" style="display: none;">
+    <div class="modal-overlay">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>Add Admin Account</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="addAdminForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="adminName">Full Name *</label>
+                        <input type="text" id="adminName" name="name" required 
+                            class="form-control" placeholder="Enter full name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="adminEmail">Email Address *</label>
+                        <input type="email" id="adminEmail" name="email" required 
+                            class="form-control" placeholder="admin@example.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="adminInstitution">Institution *</label>
+                        <select id="adminInstitution" name="institution_id" required class="form-control">
+                            <option value="">Select Institution</option>
+                            {% if institutions %}
+                                {% for institution in institutions %}
+                                    <option value="{{ institution.institution_id }}">{{ institution.name }}</option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="adminPhone">Phone Number</label>
+                        <input type="tel" id="adminPhone" name="phone" 
+                            class="form-control" placeholder="+1 (555) 123-4567">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="adminPassword">Initial Password *</label>
+                        <input type="password" id="adminPassword" name="password" required 
+                            class="form-control" placeholder="Enter temporary password">
+                        <small class="text-muted">User will be prompted to change password on first login</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" name="send_welcome_email" checked>
+                            Send welcome email with login instructions
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn-custom btn-outline-custom btn-cancel">Cancel</button>
+                    <button type="submit" class="btn-custom btn-primary-custom">Create Admin Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="viewUserModalTemplate" style="display: none;">
+    <div class="modal-overlay">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3>User Details</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="user-details-view">
+                    <div class="detail-section">
+                        <h4>Personal Information</h4>
+                        <div class="detail-row">
+                            <strong>Name:</strong>
+                            <span id="viewUserName">Loading...</span>
+                        </div>
+                        <div class="detail-row">
+                            <strong>Email:</strong>
+                            <span id="viewUserEmail">Loading...</span>
+                        </div>
+                        <div class="detail-row">
+                            <strong>Phone:</strong>
+                            <span id="viewUserPhone">Loading...</span>
+                        </div>
+                        <div class="detail-row">
+                            <strong>User ID:</strong>
+                            <span id="viewUserId">Loading...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h4>Account Information</h4>
+                        <div class="detail-row">
+                            <strong>Role:</strong>
+                            <span id="viewUserRole" class="role-badge"></span>
+                        </div>
+                        <div class="detail-row">
+                            <strong>Status:</strong>
+                            <span id="viewUserStatus" class="status-badge"></span>
+                        </div>
+                        <div class="detail-row">
+                            <strong>Institution:</strong>
+                            <span id="viewUserInstitution">Loading...</span>
+                        </div>
+                        <div class="detail-row">
+                            <strong>Account Created:</strong>
+                            <span id="viewUserCreatedAt">Loading...</span>
+                        </div>
+                    </div>    
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn-custom btn-outline-custom btn-cancel">Close</button>
+                <button type="button" class="btn-custom btn-edit" id="editFromViewBtn">Edit User</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="editUserModalTemplate" style="display: none;">
+    <div class="modal-overlay">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>Edit User</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="editUserForm">
+                <input type="hidden" id="editUserId" name="user_id">
+                
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="editUserName">Full Name *</label>
+                        <input type="text" id="editUserName" name="name" required 
+                            class="form-control" placeholder="Enter full name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editUserEmail">Email Address *</label>
+                        <input type="email" id="editUserEmail" name="email" required 
+                            class="form-control" placeholder="user@example.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editUserPhone">Phone Number</label>
+                        <input type="tel" id="editUserPhone" name="phone" 
+                            class="form-control" placeholder="+1 (555) 123-4567">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editUserRole">Role *</label>
+                        <select id="editUserRole" name="role" required class="form-control">
+                            <option value="admin">Institution Admin</option>
+                            <option value="lecturer">Lecturer</option>
+                            <option value="student">Student</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editUserInstitution">Institution</label>
+                        <select id="editUserInstitution" name="institution_id" class="form-control">
+                            <option value="">No Institution</option>
+                            {% if institutions %}
+                                {% for institution in institutions %}
+                                    <option value="{{ institution.institution_id }}">{{ institution.name }}</option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editUserStatus">Account Status *</label>
+                        <select id="editUserStatus" name="is_active" required class="form-control">
+                            <option value="true">Active</option>
+                            <option value="false">Suspended</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editUserPassword">Reset Password (Optional)</label>
+                        <input type="password" id="editUserPassword" name="password" 
+                            class="form-control" placeholder="Leave blank to keep current password">
+                        <small class="text-muted">Only enter if you want to change the password</small>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn-custom btn-outline-custom btn-cancel">Cancel</button>
+                    <button type="submit" class="btn-custom btn-primary-custom">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables
+let currentPage = 1;
+const perPage = 5;
+let currentViewUserId = null;
+
+// Modal Management Functions
+function openModal(modalTemplateId, data = null) {
+    const template = document.getElementById(modalTemplateId);
+    const modalClone = template.innerHTML;
+    
+    const modalContainer = document.createElement('div');
+    modalContainer.innerHTML = modalClone;
+    const modal = modalContainer.firstElementChild;
+    
+    document.body.appendChild(modal);
+    
+    // Set up close functionality
+    const closeModal = () => {
+        document.body.removeChild(modal);
+    };
+    
+    // Close on X button
+    modal.querySelector('.modal-close').addEventListener('click', closeModal);
+    
+    // Close on cancel buttons
+    modal.querySelectorAll('.btn-cancel').forEach(btn => {
+        btn.addEventListener('click', closeModal);
+    });
+    
+    // Close on overlay click
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) closeModal();
+    });
+    
+    return { modal, closeModal };
+}
+
+// Add Admin Modal
+function openAddAdminModal() {
+    const { modal, closeModal } = openModal('addAdminModalTemplate');
+    
+    const form = modal.querySelector('#addAdminForm');
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        submitAddAdminForm(e, closeModal);
+    });
+}
+
+// View User Modal
+async function openViewUserModal(userId) {
+    currentViewUserId = userId;
+    
+    const { modal, closeModal } = openModal('viewUserModalTemplate');
+    
+    try {
+        const response = await fetch(`api/users/${userId}`);
+        if (!response.ok) throw new Error('Failed to fetch user details');
+        
+        const userData = await response.json();
+        renderUserDetails(modal, userData);
+        
+        // Edit button functionality
+        modal.querySelector('#editFromViewBtn').addEventListener('click', () => {
+            closeModal();
+            openEditUserModal(userId);
+        });
+        
+    } catch (error) {
+        console.error('Error fetching user details:', error);
+        showAlert('Failed to load user details. Please try again.', 'error');
+        closeModal();
+    }
+}
+
+function renderUserDetails(modal, user) {
+    modal.querySelector('#viewUserName').textContent = user.name || 'N/A';
+    modal.querySelector('#viewUserEmail').textContent = user.email || 'N/A';
+    modal.querySelector('#viewUserPhone').textContent = user.phone || 'N/A';
+    modal.querySelector('#viewUserId').textContent = user.user_id || 'N/A';
+    
+    // Role badge
+    const roleBadge = modal.querySelector('#viewUserRole');
+    roleBadge.textContent = user.role || 'N/A';
+    roleBadge.className = 'role-badge ' + (user.role || '');
+    
+    // Status badge
+    const statusBadge = modal.querySelector('#viewUserStatus');
+    const isActive = user.is_active !== false;
+    statusBadge.textContent = isActive ? 'Active' : 'Suspended';
+    statusBadge.className = 'status-badge ' + (isActive ? 'active' : 'suspended');
+    
+    modal.querySelector('#viewUserInstitution').textContent = user.institution_name || 'No Institution';
+    modal.querySelector('#viewUserCreatedAt').textContent = 
+        user.created_at ? new Date(user.created_at).toLocaleString() : 'N/A';
+}
+
+// Edit User Modal
+async function openEditUserModal(userId) {
+    try {
+        const response = await fetch(`api/users/${userId}`);
+        if (!response.ok) throw new Error('Failed to fetch user details');
+        
+        const userData = await response.json();
+        
+        const { modal, closeModal } = openModal('editUserModalTemplate');
+        populateEditForm(modal, userData);
+        
+        const form = modal.querySelector('#editUserForm');
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitEditUserForm(e, userId, closeModal);
+        });
+        
+    } catch (error) {
+        console.error('Error fetching user details:', error);
+        showAlert('Failed to load user details for editing. Please try again.', 'error');
+    }
+}
+
+function populateEditForm(modal, user) {
+    modal.querySelector('#editUserId').value = user.user_id;
+    modal.querySelector('#editUserName').value = user.name || '';
+    modal.querySelector('#editUserEmail').value = user.email || '';
+    modal.querySelector('#editUserPhone').value = user.phone || '';
+    modal.querySelector('#editUserRole').value = user.role || 'student';
+    modal.querySelector('#editUserInstitution').value = user.institution_id || '';
+    modal.querySelector('#editUserStatus').value = user.is_active !== false ? 'true' : 'false';
+    modal.querySelector('#editUserPassword').value = '';
+}
+
+// Form Submission Functions
+async function submitAddAdminForm(event, closeModal) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    // Basic validation
+    if (!data.name || !data.email || !data.institution_id || !data.password) {
+        showAlert('Please fill in all required fields.', 'error');
+        return false;
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(data.email)) {
+        showAlert('Please enter a valid email address.', 'error');
+        return false;
+    }
+    
+    // Show loading state
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Creating...';
+    submitBtn.disabled = true;
+    
+    try {
+        const response = await fetch('api/users/create-admin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert('Admin account created successfully!', 'success');
+            closeModal();
+            
+            // Refresh the users list
+            setTimeout(() => {
+                fetchUsers(currentPage);
+            }, 1500);
+        } else {
+            showAlert(`Error: ${result.error || 'Failed to create admin account'}`, 'error');
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        }
+    } catch (error) {
+        showAlert(`Error: ${error.message}`, 'error');
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    }
+    
+    return false;
+}
+
+async function submitEditUserForm(event, userId, closeModal) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    // Basic validation
+    if (!data.name || !data.email || !data.role) {
+        showAlert('Please fill in all required fields.', 'error');
+        return false;
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(data.email)) {
+        showAlert('Please enter a valid email address.', 'error');
+        return false;
+    }
+    
+    // Convert boolean string to actual boolean
+    data.is_active = data.is_active === 'true';
+    
+    // Remove password if empty
+    if (!data.password) {
+        delete data.password;
+    }
+    
+    // Show loading state
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Saving...';
+    submitBtn.disabled = true;
+    
+    try {
+        const response = await fetch(`api/users/${userId}/update`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert('User updated successfully!', 'success');
+            closeModal();
+            
+            // Refresh the users list
+            setTimeout(() => {
+                fetchUsers(currentPage);
+            }, 1500);
+        } else {
+            showAlert(`Error: ${result.error || 'Failed to update user'}`, 'error');
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        }
+    } catch (error) {
+        showAlert(`Error: ${error.message}`, 'error');
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    }
+    
+    return false;
+}
+
+// Alert function (matching subscription management)
+function showAlert(message, type) {
+    // Create alert element
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert-custom ${type}`;
+    
+    // Find alert container or create one
+    let alertContainer = document.querySelector('.alert-container');
+    if (!alertContainer) {
+        alertContainer = document.createElement('div');
+        alertContainer.className = 'alert-container';
+        document.querySelector('.platform-manager-user-management').insertBefore(alertContainer, 
+            document.querySelector('.platform-manager-user-management').firstChild);
+    }
+    
+    // Add alert to container
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()">×</button>
+    `;
+    
+    alertContainer.appendChild(alertDiv);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentElement) {
+            alertDiv.style.opacity = '0';
+            alertDiv.style.transition = 'opacity 0.5s';
+            setTimeout(() => {
+                if (alertDiv.parentElement) {
+                    alertDiv.parentElement.removeChild(alertDiv);
+                }
+            }, 500);
+        }
+    }, 5000);
+}
+
+// Get initials from name
+function getInitials(name) {
+    return name
+        .split(' ')
+        .map(word => word[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
+}
+
+// Fetch users data
+async function fetchUsers(page) {
+    try {
+        const response = await fetch(`/platform/users/retrieve?page=${page}&per_page=${perPage}`);
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch users');
+        }
+        
+        const data = await response.json();
+        renderUsers(data);
+        updatePagination(data);
+        currentPage = page;
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        document.getElementById('usersTableBody').innerHTML = `
+            <tr>
+                <td colspan="6" class="error">Failed to load users. Please try again.</td>
+            </tr>
+        `;
+    }
+}
+
+// Render users in table
+function renderUsers(data) {
+    const tbody = document.getElementById('usersTableBody');
+    
+    if (data.items.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="loading">No users found.</td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = data.items.map(user => `
+        <tr>
+            <td>
+                <div class="user-info">
+                    <div class="user-avatar">${getInitials(user.name)}</div>
+                    <div class="user-details">
+                        <div class="user-name">${user.name}</div>
+                        <div class="user-email">${user.email}</div>
+                    </div>
+                </div>
+            </td>
+            <td>${user.user_id}</td>
+            <td>
+                <span class="role-badge ${user.role}">${user.role}</span>
+            </td>
+            <td>${user.institution_name}</td>
+            <td>
+                <span class="status-badge ${user.is_active ? 'active' : 'suspended'}">
+                    ${user.is_active ? 'Active' : 'Suspended'}
+                </span>
+            </td>
+            <td>
+                <div class="action-buttons">
+                    <button class="btn-action btn-view" title="View Details" onclick="openViewUserModal(${user.user_id})">
+                        <span class="action-icon">👁️</span>
+                    </button>
+                    <button class="btn-action btn-edit" title="Edit User" onclick="openEditUserModal(${user.user_id})">
+                        <span class="action-icon">✏️</span>
+                    </button>
+                    <button class="btn-action btn-activate" title="Activate User" onclick="activateUser(${user.user_id})">
+                        <span class="action-icon">✅</span>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Update pagination controls
+function updatePagination(data) {
+    const start = (data.page - 1) * data.per_page + 1;
+    const end = Math.min(data.page * data.per_page, data.total);
+    
+    // Update user count
+    document.getElementById('userCount').textContent = 
+        `Showing ${start}-${end} of ${data.total} users`;
+    
+    // Update pagination info
+    document.getElementById('paginationInfo').textContent = 
+        `Showing ${start}-${end} of ${data.total} users`;
+    
+    // Update page numbers
+    document.getElementById('currentPage').textContent = data.page;
+    document.getElementById('totalPages').textContent = data.pages;
+    
+    // Update button states
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+    
+    btnPrev.disabled = data.page === 1;
+    btnNext.disabled = data.page === data.pages;
+}
+
+// Action button handlers
+function activateUser(userId) {
+    if (confirm('Are you sure you want to activate this user?')) {
+        // Implement activation logic here
+        fetch(`api/users/${userId}/activate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                showAlert('User activated successfully!', 'success');
+                // Refresh the users list
+                setTimeout(() => {
+                    fetchUsers(currentPage);
+                }, 1500);
+            } else {
+                showAlert(`Error: ${result.error || 'Failed to activate user'}`, 'error');
+            }
+        })
+        .catch(error => {
+            showAlert(`Error: ${error.message}`, 'error');
+        });
+    }
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Add Admin button
+    document.getElementById('addAdminBtn').addEventListener('click', openAddAdminModal);
+    
+    // Pagination buttons
+    document.getElementById('btnPrev').addEventListener('click', () => {
+        if (currentPage > 1) {
+            fetchUsers(currentPage - 1);
+        }
+    });
+
+    document.getElementById('btnNext').addEventListener('click', () => {
+        fetchUsers(currentPage + 1);
+    });
+
+    // Initial load
+    fetchUsers(1);
+});
+</script>
 {% endblock %}

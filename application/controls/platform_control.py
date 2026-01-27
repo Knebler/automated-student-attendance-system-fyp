@@ -1097,3 +1097,312 @@ class PlatformControl:
                 'success': False,
                 'error': f'Error deleting institution: {str(e)}'
             }
+        
+    def create_admin_user(user_data):
+        """Create a new admin user account"""
+        try:
+            with get_session() as db_session:
+                user_model = UserModel(db_session)
+                
+                # Check if email already exists
+                existing_user = user_model.get_by_email(user_data.get('email'))
+                if existing_user:
+                    return {
+                        'success': False,
+                        'error': 'Email address already in use'
+                    }
+                
+                # Hash password
+                from werkzeug.security import generate_password_hash
+                password_hash = generate_password_hash(user_data.get('password', 'changeme123'))
+                
+                # Create the admin user
+                new_user = {
+                    'name': user_data.get('name'),
+                    'email': user_data.get('email'),
+                    'phone_number': user_data.get('phone'),
+                    'role': 'admin',
+                    'institution_id': user_data.get('institution_id'),
+                    'password_hash': password_hash,
+                    'is_active': True
+                }
+                
+                # Use the create method from BaseEntity
+                created_user = user_model.create(**new_user)
+                
+                db_session.commit()
+                
+                return {
+                    'success': True,
+                    'message': 'Admin account created successfully',
+                    'user': created_user.as_dict() if created_user else None
+                }
+                
+        except Exception as e:
+            if 'db_session' in locals():
+                db_session.rollback()
+            return {
+                'success': False,
+                'error': f'Error creating admin user: {str(e)}'
+            }
+
+    def get_user_details(user_id):
+        """Get detailed information about a user"""
+        try:
+            with get_session() as db_session:
+                user_model = UserModel(db_session)
+                
+                user = user_model.get_by_id(user_id)
+                if not user:
+                    return {
+                        'success': False,
+                        'error': 'User not found'
+                    }
+                
+                # Get institution name if applicable
+                institution_name = None
+                if user.institution_id:
+                    institution_model = InstitutionModel(db_session)
+                    institution = institution_model.get_by_id(user.institution_id)
+                    institution_name = institution.name if institution else None
+                
+                user_data = {
+                    'user_id': user.user_id,
+                    'name': user.name,
+                    'email': user.email,
+                    'phone': user.phone_number,
+                    'role': user.role,
+                    'institution_id': user.institution_id,
+                    'institution_name': institution_name,
+                    'is_active': user.is_active,
+                    'created_at': user.date_joined.isoformat() if user.date_joined else None,
+                }
+                
+                return {
+                    'success': True,
+                    'user': user_data
+                }
+                
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Error fetching user details: {str(e)}'
+            }
+
+    def update_user_profile(user_id, update_data):
+        """Update user profile information"""
+        try:
+            with get_session() as db_session:
+                user_model = UserModel(db_session)
+                
+                # Check if user exists
+                user = user_model.get_by_id(user_id)
+                if not user:
+                    return {
+                        'success': False,
+                        'error': 'User not found'
+                    }
+                
+                # Check if email is being updated and if it's already in use
+                if 'email' in update_data and update_data['email'] != user.email:
+                    existing_user = user_model.get_by_email(update_data['email'])
+                    if existing_user and existing_user.user_id != user_id:
+                        return {
+                            'success': False,
+                            'error': 'Email address already in use by another user'
+                        }
+                
+                # Prepare update data
+                user_updates = {}
+                allowed_fields = ['name', 'email', 'phone_number', 'role', 'institution_id', 'is_active']
+                
+                for field in allowed_fields:
+                    if field in update_data:
+                        if field == 'is_active':
+                            # Convert string to boolean if needed
+                            value = update_data[field]
+                            if isinstance(value, str):
+                                user_updates[field] = value.lower() == 'true'
+                            else:
+                                user_updates[field] = bool(value)
+                        else:
+                            # Map 'phone' to 'phone_number' for the model
+                            if field == 'phone':
+                                user_updates['phone_number'] = update_data[field]
+                            else:
+                                user_updates[field] = update_data[field]
+                
+                # Update password if provided
+                if 'password' in update_data and update_data['password']:
+                    # Hash the password before storing
+                    from werkzeug.security import generate_password_hash
+                    user_updates['password_hash'] = generate_password_hash(update_data['password'])
+                
+                # Update user using the existing update method
+                updated_user = user_model.update(user_id, **user_updates)
+                
+                db_session.commit()
+                
+                return {
+                    'success': True,
+                    'message': 'User updated successfully',
+                    'user': updated_user.as_dict() if updated_user else None
+                }
+                
+        except Exception as e:
+            if 'db_session' in locals():
+                db_session.rollback()
+            return {
+                'success': False,
+                'error': f'Error updating user: {str(e)}'
+            }
+
+    def toggle_user_status(user_id, action):
+        """Activate or suspend a user account"""
+        try:
+            with get_session() as db_session:
+                user_model = UserModel(db_session)
+                
+                user = user_model.get_by_id(user_id)
+                if not user:
+                    return {
+                        'success': False,
+                        'error': 'User not found'
+                    }
+                
+                new_status = action == 'activate'
+                
+                # Use existing suspend/unsuspend methods
+                if new_status:
+                    success = user_model.unsuspend(user_id)
+                else:
+                    success = user_model.suspend(user_id)
+                
+                if success:
+                    return {
+                        'success': True,
+                        'message': f'User {"activated" if new_status else "suspended"} successfully'
+                    }
+                else:
+                    return {
+                        'success': False,
+                        'error': f'Failed to {"activate" if new_status else "suspend"} user'
+                    }
+                    
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Error updating user status: {str(e)}'
+            }
+
+    def search_users(search_term='', role='', status='', page=1, per_page=10):
+        """Search users with filters - using existing pm_retrieve_page method"""
+        try:
+            with get_session() as db_session:
+                user_model = UserModel(db_session)
+                
+                # Build filters
+                filters = {}
+                if role:
+                    filters['role'] = role
+                if status:
+                    # Convert status string to boolean
+                    if status == 'active':
+                        filters['is_active'] = True
+                    elif status == 'suspended':
+                        filters['is_active'] = False
+                
+                # Get paginated results
+                result = user_model.pm_retrieve_page(page, per_page, **filters)
+                
+                # If search term provided, filter results manually
+                if search_term:
+                    search_term_lower = search_term.lower()
+                    filtered_items = []
+                    for item in result['items']:
+                        # Check if search term appears in name, email, or user_id
+                        if (search_term_lower in item.get('name', '').lower() or
+                            search_term_lower in item.get('email', '').lower() or
+                            str(search_term) in str(item.get('user_id', ''))):
+                            filtered_items.append(item)
+                    
+                    # Update result with filtered items
+                    result['items'] = filtered_items
+                    result['total'] = len(filtered_items)
+                    result['pages'] = (len(filtered_items) + per_page - 1) // per_page
+                
+                return {
+                    'success': True,
+                    'users': result['items'],
+                    'pagination': {
+                        'total': result['total'],
+                        'page': result['page'],
+                        'per_page': result['per_page'],
+                        'pages': result['pages']
+                    }
+                }
+                
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Error searching users: {str(e)}'
+            }
+
+    def get_user_count_by_role(role=None, institution_id=None):
+        """Get user count by role"""
+        try:
+            with get_session() as db_session:
+                user_model = UserModel(db_session)
+                
+                # Build query
+                query = db_session.query(User)
+                
+                if role:
+                    query = query.filter(User.role == role)
+                if institution_id:
+                    query = query.filter(User.institution_id == institution_id)
+                
+                count = query.count()
+                
+                return {
+                    'success': True,
+                    'count': count,
+                    'role': role,
+                    'institution_id': institution_id
+                }
+                
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Error counting users: {str(e)}'
+            }
+
+    def get_user_institutions():
+        """Get all institutions for user dropdown"""
+        try:
+            with get_session() as db_session:
+                institution_model = InstitutionModel(db_session)
+                
+                # Get all institutions
+                institutions = institution_model.get_all()
+                
+                institution_list = []
+                for inst in institutions:
+                    institution_list.append({
+                        'institution_id': inst.institution_id,
+                        'name': inst.name,
+                        'address': inst.address,
+                        'status': 'active' if inst.subscription and inst.subscription.is_active else 'inactive'
+                    })
+                
+                return {
+                    'success': True,
+                    'institutions': institution_list,
+                    'count': len(institution_list)
+                }
+                
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Error fetching institutions: {str(e)}'
+            }

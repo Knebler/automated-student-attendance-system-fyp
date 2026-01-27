@@ -50,6 +50,51 @@
                 </div>
             </div>
 
+            <!-- Subscription Details Section -->
+            <div class="section-container mt-4">
+                <h3 class="section-title mb-3">Subscription Details</h3>
+                <div class="info-box {% if institution.user_count > institution.max_allowed_users %}info-box-danger{% endif %}">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Subscription Plan:</span>
+                            <span class="info-value">{{ institution.subscription_plan_name }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Subscription Start Date:</span>
+                            <span class="info-value">{{ institution.subscription_start_date.strftime('%d %b %Y') }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Subscription End Date:</span>
+                            <span class="info-value">{{ institution.subscription_end_date.strftime('%d %b %Y') }}</span>
+                        </div>
+                        {%if institution.user_count > institution.max_allowed_users%}
+                        <div class="info-item">
+                            <span class="info-label-danger">User Count:</span>
+                            <span class="info-value-danger">{{ institution.user_count }}/{{ institution.max_allowed_users }}</span>
+                        </div>
+                        {% else %}
+                        <div class="info-item">
+                            <span class="info-label">User Count:</span>
+                            <span class="info-value">{{ institution.user_count }}/{{ institution.max_allowed_users }}</span>
+                        </div>
+                        {% endif %}
+                        
+                    </div>
+                    {% if institution.user_count > institution.max_allowed_users %}
+                    <div class="warning-message mt-3">
+                        <svg class="warning-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2L1 21h22L12 2zm0 3.99L19.53 19H4.47L12 5.99zM11 16v-2h2v2h-2zm0-4V9h2v3h-2z"/>
+                        </svg>
+                        <div class="warning-content">
+                            <strong>Warning:</strong> Your institution has exceeded the maximum user limit for your current subscription plan. 
+                            If this is not resolved by your renewal date ({{ institution.subscription_end_date.strftime('%d %b %Y') }}), 
+                            you will automatically be charged for the next tier of subscription.
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
             <!-- Action Buttons -->
             <div class="action-section mt-4">
                 <a href="{{ url_for('institution.institution_dashboard') }}" class="btn-custom btn-outline">Back to Dashboard</a>
@@ -108,7 +153,7 @@
         font-size: 1.75rem;
         font-weight: 700;
         margin: 0;
-        color: #FFFFFF;
+        color: #001641;
         font-family: 'Montserrat', sans-serif;
     }
 
@@ -138,6 +183,13 @@
         padding: 1.5rem;
     }
 
+    .info-box-danger {
+        background: #ffebee;
+        border: 2px solid #d32f2f;
+        border-radius: 8px;
+        padding: 1.5rem;
+    }
+
     .info-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -148,6 +200,65 @@
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
+    }
+
+    .info-item-danger {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        color: red;
+    }
+
+    .info-label-danger {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: red;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .info-value-danger {
+        font-size: 1rem;
+        color: red;
+        font-weight: 500;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .warning-message {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        background: #fff3cd;
+        border: 2px solid #ff6b6b;
+        border-radius: 6px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+
+    .warning-icon {
+        width: 24px;
+        height: 24px;
+        color: #d32f2f;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .warning-content {
+        flex: 1;
+        font-size: 0.9rem;
+        color: #663c00;
+        line-height: 1.5;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .warning-content strong {
+        color: #d32f2f;
+        font-weight: 700;
+    }
+
+    .mt-3 {
+        margin-top: 1rem;
     }
 
     .info-label {

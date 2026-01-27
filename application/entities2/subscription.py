@@ -368,6 +368,7 @@ class SubscriptionModel(BaseEntity[Subscription]):
         
         return result
     
+    
     def search_with_filters(
         self,
         search_term: str = '',

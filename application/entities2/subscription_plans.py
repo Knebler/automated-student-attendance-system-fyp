@@ -53,6 +53,11 @@ class SubscriptionPlanModel(BaseEntity[SubscriptionPlan]):
         """Return the features JSON for a plan or None if not found."""
         plan = self.get_by_plan_id(plan_id)
         return plan.features if plan else None
+    
+    def get_max_users_allowed(self, plan_id: int) -> Optional[int]:
+        """Return the maximum number of users allowed for a plan or None if not found."""
+        plan = self.get_by_plan_id(plan_id)
+        return plan.max_users if plan else None
 
     def get_paginated_active(self, page: int = 1, per_page: int = 10) -> Dict[str, Any]:
         """Return paginated active plans using the shared pagination helper."""

@@ -314,7 +314,7 @@
     }
 
     .stat-value.excused {
-        color: #94a3b8;
+        color: #6098e7;
     }
 
     .stat-value.absent {
@@ -576,6 +576,23 @@
         font-size: 0.85rem;
     }
 
+    /* Course code + badge row */
+    .absent-section .absent-class .flex-column.justify-between {
+        display: flex;
+        flex-direction: row !important;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 12px;
+        width: 100%;
+    }
+    .absent-section .absent-class {
+        text-align: left;
+    }
+    .absent-section .absent-class strong {
+        font-size: 22px;
+        font-weight: 700;
+    }
+
     .absent-details {
         display: grid;
         grid-template-columns: repeat(1, auto);
@@ -606,10 +623,16 @@
         text-decoration: none;
     }
 
+    /* Appeal button */
+    .absent-section .absent-item .btn-appeal {
+        display: block;
+        margin: 16px auto 0;
+    }
+
     .view-all {
         text-align: center;
         padding-top: 1rem;
-        border-top: 1px solid var(--border-color);
+        border-top: none;
     }
 
     .view-all-link {

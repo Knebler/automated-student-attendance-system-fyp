@@ -23,6 +23,7 @@ def institution_dashboard():
         user_model = UserModel(db_session)
         institution_model = InstitutionModel(db_session)
         sub_model = SubscriptionModel(db_session)
+        sub_plan_model = SubscriptionPlanModel(db_session)
         class_model = ClassModel(db_session)
         
         # Update class statuses on dashboard load
@@ -33,6 +34,8 @@ def institution_dashboard():
 
         sub = sub_model.get_by_id(institution.subscription_id)
         sub_active = True if sub and sub.is_active else False
+        max_users_allowed = sub_plan_model.get_max_users_allowed(sub.plan_id) if sub else None
+        total_users = user_model.count_by_institution(institution_id=institution_id)
 
         context = {
             "institution": {
@@ -42,6 +45,8 @@ def institution_dashboard():
             },
             "overview": user_model.admin_user_stats(institution_id),
             "classes": class_model.admin_dashboard_classes_today(institution_id),
+            "max_users_allowed": max_users_allowed,
+            "total_users": total_users
         }
 
     return render_template('institution/admin/institution_admin_dashboard.html',

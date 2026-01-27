@@ -20,6 +20,8 @@
                         {% else %}
                         <p><span>Status</span><span class="badge danger">Inactive</span></p>
                         {% endif %}
+                        <p><span>Users Allowed</span>{{total_users}} / {{ max_users_allowed if max_users_allowed else 'Unlimited' }}</p>
+                        {% if total_users > max_users_allowed %}<p><span class="badge danger">Over Limit</span></p>{% endif %}
                         <p><span>Renewal</span>{{ institution.renewal.strftime('%d %b %Y') }}</p>
                     </div>
                     <div class="institution-actions">

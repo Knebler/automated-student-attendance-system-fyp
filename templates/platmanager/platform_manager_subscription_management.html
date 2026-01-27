@@ -1397,7 +1397,6 @@
                                     <option value="starter">Starter (100 users)</option>
                                     <option value="pro">Professional (500 users)</option>
                                     <option value="enterprise">Enterprise (Unlimited)</option>
-                                    <option value="custom">Custom</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -1461,7 +1460,7 @@
                 };
                 
                 // Send API request
-                fetch('/api/institutions/create', {
+                fetch('api/institutions/create', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

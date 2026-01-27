@@ -422,7 +422,7 @@ class InstitutionModel(BaseEntity[Institution]):
         poc_name: str,
         poc_email: str,
         poc_phone: str,
-        plan_name: str = 'Starter',
+        plan_name: str = 'starter',
         status: str = 'active'
     ) -> Dict[str, Any]:
         """Create a new institution with subscription details.
@@ -431,13 +431,24 @@ class InstitutionModel(BaseEntity[Institution]):
         """
         
         try:
-            # First, find the plan by name
+            # First, find the plan by id
+            plan_id = 0
+            match plan_name:
+                case 'starter':
+                    plan_id = 1
+                case 'pro':
+                    plan_id = 2
+                case 'enterprise':
+                    plan_id = 3
+                case _:
+                    plan_id = 1
+
             plan = self.session.query(SubscriptionPlan).filter(
-                SubscriptionPlan.name == plan_name
+                SubscriptionPlan.plan_id == plan_id
             ).first()
             
             if not plan:
-                raise ValueError(f"Plan '{plan_name}' not found")
+                raise ValueError(f"Plan '{plan_id}' not found")
             
             # Create subscription
             subscription = Subscription(

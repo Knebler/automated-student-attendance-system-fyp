@@ -947,7 +947,7 @@ def seed_platform_issues():
             
             # For some issues, set deleted_at (soft delete simulation)
             deleted_at = None
-            if random.random() < 0.1:  # 10% of issues are "deleted"
+            if random.random() < 0.1 and days_ago > 0:  # 10% of issues are "deleted"
                 deleted_days = random.randint(1, days_ago)
                 deleted_at = created_at + timedelta(days=deleted_days)
             

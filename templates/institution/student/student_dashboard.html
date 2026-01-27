@@ -6,8 +6,7 @@
 <style>
     /* Student Dashboard Styles - Matched to Lecturer Dashboard */
     .student-dashboard {
-        max-width: 1400px;
-        margin: 0 auto;
+        width: 100%;
     }
 
     /* Welcome Header - Matched */
@@ -83,12 +82,12 @@
         margin-left: 0.5rem;
     }
 
-    /* Grid */
-    .dashboard-grid {
-        display: grid;
-        grid-template-columns: 1.2fr 1fr 1fr;
-        gap: 1.5rem;
-        align-items: start;
+    
+    /* Remove fixed widths to prevent wrapping */
+    .dashboard-col-left,
+    .dashboard-col-middle,
+    .dashboard-col-right {
+        min-width: 0;
     }
 
     /* Cards */
@@ -230,7 +229,7 @@
         box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
     }
 
-    /* Classes List - Matched to Lecturer Style */
+    /* Classes List */
     .classes-list {
         display: flex;
         flex-direction: column;
@@ -364,7 +363,7 @@
         color: white;
     }
 
-    /* Announcements - Matched to Lecturer Style */
+    /* Announcements */
     .announcements-list {
         display: flex;
         flex-direction: column;
@@ -468,10 +467,11 @@
         opacity: 0.8;
     }
 
-    /* Responsive Design - Matched to Lecturer Dashboard */
-    @media (max-width: 1024px) {
+    /* Responsive Design */
+    @media (max-width: 990px) {
         .dashboard-grid {
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr;
+            gap: 24px;
         }
     }
 
@@ -488,10 +488,6 @@
 
         .datetime-display {
             font-size: 1rem;
-        }
-
-        .dashboard-grid {
-            grid-template-columns: 1fr;
         }
 
         .class-details {
@@ -560,8 +556,9 @@
     </div>
 
     <!-- Dashboard Grid -->
-    <div class="dashboard-grid">
+    <div class="dashboard-grid dashboard-3col">
         <!-- Student Profile & Stats Card -->
+        <div class="dashboard-col-left">
         <div class="card-custom dashboard-card">
             <div class="card-header-custom">Student Profile</div>
             <div class="card-body-custom">
@@ -617,8 +614,10 @@
                 </div>
             </div>
         </div>
+        </div>
 
         <!-- Today's Classes Card -->
+        <div class="dashboard-col-middle">
         <div class="card-custom dashboard-card">
             <div class="card-header-custom">
                 Today's Classes 
@@ -686,8 +685,10 @@
                 {% endif %}
             </div>
         </div>
+        </div>
 
         <!-- Announcements & Quick Links Card -->
+        <div class="dashboard-col-right">
         <div class="card-custom dashboard-card">
             <div class="card-header-custom">Announcements & Quick Links</div>
             <div class="card-body-custom">
@@ -746,6 +747,7 @@
                     </div>
                 </div>
             </div>
+        </div>
         </div>
     </div>
 </div>

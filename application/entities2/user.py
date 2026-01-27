@@ -137,4 +137,10 @@ class UserModel(BaseEntity[User]):
             User.role == role
         ).all()
         
+    def count_by_institution(self, institution_id: int) -> int:
+        """Count users by institution ID."""
+        return self.session.query(func.count(User.user_id)).filter(
+            User.institution_id == institution_id
+        ).scalar()
+        
     

@@ -1214,7 +1214,7 @@ class PlatformControl:
                 
                 # Prepare update data
                 user_updates = {}
-                allowed_fields = ['name', 'email', 'phone_number', 'role', 'institution_id', 'is_active']
+                allowed_fields = ['name', 'email', 'phone', 'role', 'institution_id', 'is_active']
                 
                 for field in allowed_fields:
                     if field in update_data:

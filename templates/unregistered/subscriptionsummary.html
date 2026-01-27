@@ -365,23 +365,48 @@
             </tr>
         </thead>
         <tbody>
+            {# Collect all unique features from all plans #}
+            {% set all_features = [] %}
+            {% for plan in subscription_plans %}
+                {% if plan.features.custom_features %}
+                    {% for feature in plan.features.custom_features %}
+                        {% set feature_lower = feature|lower %}
+                        {% set feature_exists = namespace(found=false) %}
+                        {% for existing in all_features %}
+                            {% if existing|lower == feature_lower %}
+                                {% set feature_exists.found = true %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if not feature_exists.found %}
+                            {% set _ = all_features.append(feature) %}
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+            
+            {# First row: Max Students #}
             <tr>
                 <td class="feature-name">Maximum Students</td>
                 {% for plan in subscription_plans %}
                 <td>{{ plan.features.max_students or plan.max_users }}</td>
                 {% endfor %}
             </tr>
+            
+            {# Dynamic rows for each unique feature #}
+            {% for feature in all_features %}
             <tr>
-                <td class="feature-name">Attendance Methods</td>
-                {% for plan in subscription_plans %}
-                <td>{{ plan.features.checkin_methods or 'Standard' }}</td>
-                {% endfor %}
-            </tr>
-            <tr>
-                <td class="feature-name">AI Face Recognition</td>
+                <td class="feature-name">{{ feature }}</td>
                 {% for plan in subscription_plans %}
                 <td>
-                    {% if plan.features.ai_recognition %}
+                    {% set has_feature = namespace(found=false) %}
+                    {% if plan.features.custom_features %}
+                        {% for plan_feature in plan.features.custom_features %}
+                            {% if plan_feature|lower == feature|lower %}
+                                {% set has_feature.found = true %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                    {% if has_feature.found %}
                     <span class="checkmark">✓</span>
                     {% else %}
                     <span class="xmark">✗</span>
@@ -389,48 +414,7 @@
                 </td>
                 {% endfor %}
             </tr>
-            <tr>
-                <td class="feature-name">Real-time Analytics</td>
-                {% for plan in subscription_plans %}
-                <td>
-                    {% if plan.features.realtime_analytics or plan.features.predictive_analytics %}
-                    <span class="checkmark">✓</span>
-                    {% else %}
-                    <span class="xmark">✗</span>
-                    {% endif %}
-                </td>
-                {% endfor %}
-            </tr>
-            <tr>
-                <td class="feature-name">Custom Reports</td>
-                {% for plan in subscription_plans %}
-                <td>
-                    {% if plan.features.custom_reports %}
-                    <span class="checkmark">✓</span>
-                    {% else %}
-                    <span class="xmark">✗</span>
-                    {% endif %}
-                </td>
-                {% endfor %}
-            </tr>
-            <tr>
-                <td class="feature-name">API Access</td>
-                {% for plan in subscription_plans %}
-                <td>
-                    {% if plan.features.api_access %}
-                    <span class="checkmark">✓</span>
-                    {% else %}
-                    <span class="xmark">✗</span>
-                    {% endif %}
-                </td>
-                {% endfor %}
-            </tr>
-            <tr>
-                <td class="feature-name">Support</td>
-                {% for plan in subscription_plans %}
-                <td>{{ plan.features.support or 'Email' }}</td>
-                {% endfor %}
-            </tr>
+            {% endfor %}
         </tbody>
     </table>
 </div>

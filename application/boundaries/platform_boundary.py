@@ -11,7 +11,7 @@ from application.entities2.subscription import SubscriptionModel
 from application.entities2.testimonial import TestimonialModel
 from application.entities2.user import UserModel
 from database.base import get_session
-from database.models import User, Feature, HeroFeature, Stat, AboutIntro, AboutStory, AboutMissionVision, TeamMember, AboutValue
+from database.models import User, Feature, HeroFeature, Stat, AboutIntro, AboutStory, AboutMissionVision, TeamMember, AboutValue, SubscriptionPlan
 
 platform_bp = Blueprint('platform', __name__)
 
@@ -527,6 +527,17 @@ def landing_page_management():
         total_values = len(values)
         active_values = sum(1 for v in values if v.is_active)
         
+        # Get subscription plans
+        subscription_plans = db_session.query(SubscriptionPlan).order_by(SubscriptionPlan.plan_id).all()
+        subscription_plans_list = []
+        for sp in subscription_plans:
+            sp_dict = sp.as_dict()
+            sp_dict['features'] = json.loads(sp.features) if sp.features else {}
+            subscription_plans_list.append(sp_dict)
+        
+        total_subscription_plans = len(subscription_plans)
+        active_subscription_plans = sum(1 for sp in subscription_plans if sp.is_active)
+        
     context = {
         'hero_features': hero_features_list,
         'total_hero_features': total_hero_features,
@@ -550,7 +561,10 @@ def landing_page_management():
         'active_team_members': active_team_members,
         'values': values_list,
         'total_values': total_values,
-        'active_values': active_values
+        'active_values': active_values,
+        'subscription_plans': subscription_plans_list,
+        'total_subscription_plans': total_subscription_plans,
+        'active_subscription_plans': active_subscription_plans
     }
     
     return render_template('platmanager/platform_manager_landing_page.html', **context)
@@ -1330,6 +1344,123 @@ def delete_institution_api(institution_id):
         status_code = 404 if 'not found' in result.get('error', '').lower() else 400
         return jsonify(result), status_code
     
+
+
+# ====================
+# SUBSCRIPTION PLANS API
+# ====================
+
+@platform_bp.route('/api/subscription-plans/create', methods=['POST'])
+@requires_roles_api('platform_manager')
+def create_subscription_plan():
+    """Create a new subscription plan"""
+    import json as json_lib
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            # Create new subscription plan
+            new_plan = SubscriptionPlan(
+                name=data['name'],
+                description=data.get('description', ''),
+                price_per_cycle=float(data['price_per_cycle']),
+                billing_cycle=data['billing_cycle'],
+                max_users=int(data['max_users']),
+                features=json_lib.dumps(data.get('features', {})),
+                is_active=data.get('is_active', True)
+            )
+            
+            db_session.add(new_plan)
+            db_session.commit()
+            
+            plan_dict = new_plan.as_dict()
+            plan_dict['features'] = json_lib.loads(new_plan.features) if new_plan.features else {}
+            
+            return jsonify({'success': True, 'plan': plan_dict}), 201
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@platform_bp.route('/api/subscription-plans/<int:plan_id>/update', methods=['POST'])
+@requires_roles_api('platform_manager')
+def update_subscription_plan(plan_id):
+    """Update a subscription plan"""
+    import json as json_lib
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            plan = db_session.query(SubscriptionPlan).filter_by(plan_id=plan_id).first()
+            
+            if not plan:
+                return jsonify({'success': False, 'error': 'Subscription plan not found'}), 404
+            
+            # Update fields
+            plan.name = data.get('name', plan.name)
+            plan.description = data.get('description', plan.description)
+            plan.price_per_cycle = float(data.get('price_per_cycle', plan.price_per_cycle))
+            plan.billing_cycle = data.get('billing_cycle', plan.billing_cycle)
+            plan.max_users = int(data.get('max_users', plan.max_users))
+            
+            if 'features' in data:
+                plan.features = json_lib.dumps(data['features'])
+            
+            if 'is_active' in data:
+                plan.is_active = data['is_active']
+            
+            db_session.commit()
+            
+            plan_dict = plan.as_dict()
+            plan_dict['features'] = json_lib.loads(plan.features) if plan.features else {}
+            
+            return jsonify({'success': True, 'plan': plan_dict}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@platform_bp.route('/api/subscription-plans/<int:plan_id>/toggle-status', methods=['POST'])
+@requires_roles_api('platform_manager')
+def toggle_subscription_plan_status(plan_id):
+    """Toggle the active status of a subscription plan"""
+    try:
+        with get_session() as db_session:
+            plan = db_session.query(SubscriptionPlan).filter_by(plan_id=plan_id).first()
+            
+            if not plan:
+                return jsonify({'success': False, 'error': 'Subscription plan not found'}), 404
+            
+            plan.is_active = not plan.is_active
+            db_session.commit()
+            
+            return jsonify({'success': True, 'is_active': plan.is_active}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@platform_bp.route('/api/subscription-plans/<int:plan_id>/delete', methods=['POST'])
+@requires_roles_api('platform_manager')
+def delete_subscription_plan(plan_id):
+    """Delete a subscription plan"""
+    try:
+        with get_session() as db_session:
+            plan = db_session.query(SubscriptionPlan).filter_by(plan_id=plan_id).first()
+            
+            if not plan:
+                return jsonify({'success': False, 'error': 'Subscription plan not found'}), 404
+            
+            # Check if any subscriptions are using this plan
+            from database.models import Subscription
+            active_subscriptions = db_session.query(Subscription).filter_by(plan_id=plan_id, is_active=True).count()
+            
+            if active_subscriptions > 0:
+                return jsonify({
+                    'success': False, 
+                    'error': f'Cannot delete plan with {active_subscriptions} active subscriptions'
+                }), 400
+            
+            db_session.delete(plan)
+            db_session.commit()
+            
+            return jsonify({'success': True}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
 
 
 @platform_bp.route('/api/debug-session', methods=['GET'])

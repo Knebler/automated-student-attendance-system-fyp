@@ -329,6 +329,51 @@
         margin-top: 2rem;
     }
 
+    .feature-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .feature-item {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .feature-item input {
+        flex: 1;
+    }
+
+    .btn-remove-feature {
+        background-color: #dc2626;
+        color: white;
+        border: none;
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.9rem;
+    }
+
+    .btn-remove-feature:hover {
+        background-color: #b91c1c;
+    }
+
+    .btn-add-feature {
+        background-color: var(--primary);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+
+    .btn-add-feature:hover {
+        background-color: var(--primary-dark);
+    }
+
     .empty-state {
         text-align: center;
         padding: 3rem;
@@ -402,6 +447,9 @@
     </button>
     <button class="tab-button" onclick="switchTab('values')">
         💎 Values
+    </button>
+    <button class="tab-button" onclick="switchTab('subscriptions')">
+        💳 Subscription Plans
     </button>
 </div>
 
@@ -890,6 +938,77 @@
     </div>
 </div>
 
+<!-- Subscription Plans Tab -->
+<div id="subscriptions-tab" class="tab-content">
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>{{ total_subscription_plans }}</h3>
+            <p>Total Plans</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ active_subscription_plans }}</h3>
+            <p>Active Plans</p>
+        </div>
+    </div>
+
+    <div class="filter-section">
+        <div class="table-header">
+            <h2>Manage Subscription Plans</h2>
+            <button class="btn-custom" onclick="openModal('subscriptions', 'add')">
+                <i class="bi bi-plus-circle"></i> Add Subscription Plan
+            </button>
+        </div>
+    </div>
+
+    <div class="content-table">
+        {% if subscription_plans %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Plan Name</th>
+                    <th>Price</th>
+                    <th>Billing Cycle</th>
+                    <th>Max Users</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="subscriptionsTableBody">
+                {% for plan in subscription_plans %}
+                <tr>
+                    <td><strong>{{ plan.name }}</strong></td>
+                    <td>${{ "%.2f"|format(plan.price_per_cycle) }}</td>
+                    <td>{{ plan.billing_cycle|capitalize }}</td>
+                    <td>{{ plan.max_users }}</td>
+                    <td>
+                        <span class="badge badge-{{ 'success' if plan.is_active else 'secondary' }}">
+                            {{ 'Active' if plan.is_active else 'Inactive' }}
+                        </span>
+                    </td>
+                    <td class="action-buttons">
+                        <button class="btn-icon btn-edit" onclick="editSubscriptionPlan({{ plan.plan_id }})" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn-icon btn-toggle" onclick="toggleStatus('subscriptions', {{ plan.plan_id }}, {{ plan.is_active|lower }})" title="Toggle Status">
+                            <i class="bi bi-toggle-{{ 'on' if plan.is_active else 'off' }}"></i>
+                        </button>
+                        <button class="btn-icon btn-delete" onclick="deleteItem('subscriptions', {{ plan.plan_id }}, '{{ plan.name }}')" title="Delete">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <p>No subscription plans found</p>
+            <button class="btn-custom" onclick="openModal('subscriptions', 'add')">Add Your First Plan</button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
 <!-- Hero Feature Modal -->
 <div id="heroModal" class="modal-overlay">
     <div class="modal-content">
@@ -1237,6 +1356,76 @@
     </div>
 </div>
 
+<!-- Subscription Plan Modal -->
+<div id="subscriptionsModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="subscriptionsModalTitle">Add Subscription Plan</h2>
+            <button class="modal-close" onclick="closeModal('subscriptions')">&times;</button>
+        </div>
+        <form id="subscriptionsForm" onsubmit="saveItem(event, 'subscriptions')">
+            <input type="hidden" id="planId" name="plan_id">
+            <div class="form-group">
+                <label for="planName">Plan Name*</label>
+                <input type="text" id="planName" name="name" required maxlength="100">
+            </div>
+            <div class="form-group">
+                <label for="planDescription">Description*</label>
+                <textarea id="planDescription" name="description" required rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="planPrice">Price per Cycle*</label>
+                <input type="number" id="planPrice" name="price_per_cycle" required min="0" step="0.01">
+                <small>Enter the price in dollars (e.g., 19.99)</small>
+            </div>
+            <div class="form-group">
+                <label for="planBillingCycle">Billing Cycle*</label>
+                <select id="planBillingCycle" name="billing_cycle" required>
+                    <option value="monthly">Monthly</option>
+                    <option value="quarterly">Quarterly</option>
+                    <option value="annual">Annual</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="planMaxUsers">Max Users*</label>
+                <input type="number" id="planMaxUsers" name="max_users" required min="1">
+            </div>
+            <div class="form-group">
+                <label for="planMaxStudents">Max Students (Display)*</label>
+                <input type="text" id="planMaxStudents" name="max_students" required placeholder="e.g., 50, 500, Unlimited">
+            </div>
+            <div class="form-group">
+                <label>Plan Features</label>
+                <div id="featuresList" class="feature-list">
+                    <!-- Features will be added dynamically -->
+                </div>
+                <button type="button" class="btn-add-feature" onclick="addFeatureField()">
+                    <i class="bi bi-plus-circle"></i> Add Feature
+                </button>
+                <small>Add features that will be displayed on the subscription page (e.g., "AI face recognition", "24/7 support")</small>
+            </div>
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" id="planIsPopular" name="is_popular">
+                    Mark as Popular
+                </label>
+            </div>
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" id="planIsActive" name="is_active" checked>
+                    Active
+                </label>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-custom btn-outline-custom" onclick="closeModal('subscriptions')">Cancel</button>
+                <button type="submit" class="btn-custom">
+                    <span id="subscriptionsSubmitBtnText">Add Plan</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 // Data from backend
 const heroFeaturesData = {{ hero_features|tojson|safe }};
@@ -1247,6 +1436,9 @@ const aboutStoryData = {{ about_story|tojson|safe }};
 const missionVisionData = {{ mission_vision|tojson|safe }};
 let teamMembersData = {{ team_members|tojson|safe }};
 let valuesData = {{ values|tojson|safe }};
+let subscriptionPlansData = {{ subscription_plans|tojson|safe }};
+
+let featureCounter = 0;
 
 function switchTab(tab) {
     // Update tab buttons
@@ -1263,6 +1455,14 @@ function openModal(type, mode, itemId = null) {
     const form = document.getElementById(`${type}Form`);
     form.reset();
     
+    // Clear features for subscription modal
+    if (type === 'subscriptions') {
+        clearFeatureFields();
+        if (mode === 'add') {
+            addFeatureField(); // Add one empty field by default
+        }
+    }
+    
     if (mode === 'add') {
         let title = 'Add Item';
         if (type === 'hero') title = 'Add Hero Feature';
@@ -1270,6 +1470,7 @@ function openModal(type, mode, itemId = null) {
         else if (type === 'features') title = 'Add Feature';
         else if (type === 'team') title = 'Add Team Member';
         else if (type === 'valuesTab') title = 'Add Value';
+        else if (type === 'subscriptions') title = 'Add Subscription Plan';
         
         document.getElementById(`${type}ModalTitle`).textContent = title;
         document.getElementById(`${type}SubmitBtnText`).textContent = title;
@@ -1283,6 +1484,8 @@ function openModal(type, mode, itemId = null) {
             document.getElementById('teamIsActive').checked = true;
         } else if (type === 'valuesTab') {
             document.getElementById('valueIsActive').checked = true;
+        } else if (type === 'subscriptions') {
+            document.getElementById('planIsActive').checked = true;
         } else {
             document.getElementById('isActive').checked = true;
         }
@@ -1415,6 +1618,27 @@ async function saveItem(event, type) {
         url = data.value_id 
             ? `/platform/api/values/${data.value_id}/update`
             : '/platform/api/values/create';
+    } else if (type === 'subscriptions') {
+        idField = 'plan_id';
+        const customFeatures = getFeatureValues();
+        const features = {
+            max_students: formData.get('max_students'),
+            is_popular: document.getElementById('planIsPopular').checked,
+            custom_features: customFeatures
+        };
+        data = {
+            plan_id: formData.get(idField) || null,
+            name: formData.get('name'),
+            description: formData.get('description'),
+            price_per_cycle: parseFloat(formData.get('price_per_cycle')),
+            billing_cycle: formData.get('billing_cycle'),
+            max_users: parseInt(formData.get('max_users')),
+            features: features,
+            is_active: document.getElementById('planIsActive').checked
+        };
+        url = data.plan_id 
+            ? `/platform/api/subscription-plans/${data.plan_id}/update`
+            : '/platform/api/subscription-plans/create';
     } else {
         idField = 'feature_id';
         data = {
@@ -1467,6 +1691,8 @@ async function toggleStatus(type, id, currentStatus) {
         url = `/platform/api/team-members/${id}/toggle-status`;
     } else if (type === 'valuesTab') {
         url = `/platform/api/values/${id}/toggle-status`;
+    } else if (type === 'subscriptions') {
+        url = `/platform/api/subscription-plans/${id}/toggle-status`;
     } else {
         url = `/platform/api/features/${id}/toggle-status`;
     }
@@ -1503,6 +1729,8 @@ async function deleteItem(type, id, name) {
         url = `/platform/api/team-members/${id}/delete`;
     } else if (type === 'valuesTab') {
         url = `/platform/api/values/${id}/delete`;
+    } else if (type === 'subscriptions') {
+        url = `/platform/api/subscription-plans/${id}/delete`;
     } else {
         url = `/platform/api/features/${id}/delete`;
     }
@@ -1605,6 +1833,86 @@ function editValue(id) {
         document.getElementById('valueIsActive').checked = item.is_active;
         
         document.getElementById('valuesTabModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function addFeatureField(value = '') {
+    const featuresList = document.getElementById('featuresList');
+    const featureItem = document.createElement('div');
+    featureItem.className = 'feature-item';
+    featureItem.innerHTML = `
+        <input type="text" class="plan-feature-input" placeholder="e.g., AI face recognition" value="${value}">
+        <button type="button" class="btn-remove-feature" onclick="removeFeatureField(this)">
+            <i class="bi bi-trash"></i>
+        </button>
+    `;
+    featuresList.appendChild(featureItem);
+    featureCounter++;
+}
+
+function removeFeatureField(button) {
+    button.parentElement.remove();
+}
+
+function clearFeatureFields() {
+    document.getElementById('featuresList').innerHTML = '';
+    featureCounter = 0;
+}
+
+function getFeatureValues() {
+    const inputs = document.querySelectorAll('.plan-feature-input');
+    return Array.from(inputs)
+        .map(input => input.value.trim())
+        .filter(value => value !== '');
+}
+
+function editSubscriptionPlan(id) {
+    const item = subscriptionPlansData.find(sp => sp.plan_id === id);
+    if (item) {
+        document.getElementById('subscriptionsModalTitle').textContent = 'Edit Subscription Plan';
+        document.getElementById('subscriptionsSubmitBtnText').textContent = 'Update Plan';
+        document.getElementById('planId').value = item.plan_id;
+        document.getElementById('planName').value = item.name;
+        document.getElementById('planDescription').value = item.description;
+        document.getElementById('planPrice').value = item.price_per_cycle;
+        document.getElementById('planBillingCycle').value = item.billing_cycle;
+        document.getElementById('planMaxUsers').value = item.max_users;
+        
+        // Features
+        const features = item.features || {};
+        document.getElementById('planMaxStudents').value = features.max_students || '';
+        document.getElementById('planIsPopular').checked = features.is_popular || false;
+        document.getElementById('planIsActive').checked = item.is_active;
+        
+        // Clear and populate feature fields
+        clearFeatureFields();
+        
+        // Add existing features from the features object
+        const featureKeys = ['attendance_tracking', 'checkin_methods', 'reports', 'support', 
+                            'realtime_analytics', 'custom_reports', 'predictive_analytics', 
+                            'api_access', 'custom_integrations'];
+        
+        // Get all feature values that exist
+        featureKeys.forEach(key => {
+            if (features[key] && typeof features[key] === 'string') {
+                addFeatureField(features[key]);
+            }
+        });
+        
+        // If custom_features array exists, add those too
+        if (features.custom_features && Array.isArray(features.custom_features)) {
+            features.custom_features.forEach(feature => {
+                addFeatureField(feature);
+            });
+        }
+        
+        // If no features were added, add one empty field
+        if (featureCounter === 0) {
+            addFeatureField();
+        }
+        
+        document.getElementById('subscriptionsModal').classList.add('active');
         document.body.style.overflow = 'hidden';
     }
 }
@@ -1737,7 +2045,7 @@ async function saveMissionVision(event) {
 }
 
 // Close modals on click outside
-['heroModal', 'statsModal', 'featuresModal', 'teamModal', 'valuesTabModal', 'aboutIntroModal', 'aboutStoryModal', 'missionVisionModal'].forEach(modalId => {
+['heroModal', 'statsModal', 'featuresModal', 'teamModal', 'valuesTabModal', 'subscriptionsModal', 'aboutIntroModal', 'aboutStoryModal', 'missionVisionModal'].forEach(modalId => {
     document.getElementById(modalId).addEventListener('click', function(e) {
         if (e.target === this) {
             closeModal(modalId.replace('Modal', ''));
@@ -1748,7 +2056,7 @@ async function saveMissionVision(event) {
 // Close modals with Escape key
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-        ['hero', 'stats', 'features', 'team', 'valuesTab', 'aboutIntro', 'aboutStory', 'missionVision'].forEach(type => closeModal(type));
+        ['hero', 'stats', 'features', 'team', 'valuesTab', 'subscriptions', 'aboutIntro', 'aboutStory', 'missionVision'].forEach(type => closeModal(type));
     }
 });
 </script>

@@ -146,7 +146,18 @@ def features():
 @main_bp.route('/subscriptions')
 def subscriptions():
     """Public Subscription summary page"""
-    return render_template('unregistered/subscriptionsummary.html')
+    import json
+    with get_session() as db_session:
+        # Get active subscription plans
+        plans = db_session.query(SubscriptionPlan).filter_by(is_active=True).order_by(SubscriptionPlan.plan_id).all()
+        
+        plans_data = []
+        for plan in plans:
+            plan_dict = plan.as_dict()
+            plan_dict['features'] = json.loads(plan.features) if plan.features else {}
+            plans_data.append(plan_dict)
+    
+    return render_template('unregistered/subscriptionsummary.html', subscription_plans=plans_data)
 
 @main_bp.route('/testimonials')
 def testimonials():

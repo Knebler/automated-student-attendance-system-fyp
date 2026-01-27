@@ -220,8 +220,7 @@ class PlatformControl:
                     poc_name=institution_data.get('contact_name', ''),
                     poc_email=institution_data.get('contact_email', ''),
                     poc_phone=institution_data.get('contact_phone', ''),
-                    plan=institution_data.get('plan', 'starter'),
-                    status=institution_data.get('status', 'active')
+                    status=institution_data.get('status', 'pending')
                 )
                 
                 # Create admin user for the institution
@@ -231,9 +230,7 @@ class PlatformControl:
                 # Get the subscription to set admin user
                 subscription = subscription_model.get_by_id(created_institution['subscription_id'])
                 if subscription:
-                    # Generate a temporary password
-                    import secrets
-                    temp_password = secrets.token_urlsafe(12)
+                    temp_password = "password"
                     password_hash = bcrypt.hashpw(temp_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
                     
                     # Create admin user

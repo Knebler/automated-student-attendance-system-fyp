@@ -987,7 +987,7 @@ def mark_notification_read(notification_id):
 def mark_all_notifications_read():
     """API endpoint to mark all notifications as read"""
     try:
-        lecturer_id = get_lecturer_id()
+        lecturer_id = session.get('user_id')
         if not lecturer_id:
             return jsonify({'success': False, 'error': 'User not authenticated'}), 401
         

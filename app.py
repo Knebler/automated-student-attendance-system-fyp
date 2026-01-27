@@ -11,6 +11,7 @@ from application import create_app
 from application.boundaries.platform_boundary import platform_bp
 from application.boundaries.student_boundary import student_bp
 from application.boundaries.main_boundary import main_bp
+from application.boundaries.lecturer_boundary import lecturer_bp
 from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
 
@@ -110,6 +111,7 @@ def create_flask_app(config_name='default'):
     csrf.exempt(platform_bp)
     csrf.exempt(student_bp)
     csrf.exempt(main_bp)
+    csrf.exempt(lecturer_bp)
 
     # Initialize and start the background scheduler for class notifications
     scheduler = BackgroundScheduler()

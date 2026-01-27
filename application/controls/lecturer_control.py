@@ -1,6 +1,6 @@
 from datetime import datetime, date, timedelta
 from typing import List, Dict, Optional, Any
-import app
+from flask import current_app
 from database.base import get_session
 from application.entities2.classes import ClassModel
 from application.entities2.course import CourseModel
@@ -100,7 +100,7 @@ class LecturerControl:
                 }
             
         except Exception as e:
-            app.logger.error(f"Error getting lecturer dashboard data: {e}")
+            current_app.logger.error(f"Error getting lecturer dashboard data: {e}")
             return {
                 'success': False,
                 'error': str(e)
@@ -141,7 +141,7 @@ class LecturerControl:
                 }
                 
         except Exception as e:
-            app.logger.error(f"Error getting lecturer courses: {e}")
+            current_app.logger.error(f"Error getting lecturer courses: {e}")
             return {
                 'success': False,
                 'error': str(e)
@@ -212,7 +212,7 @@ class LecturerControl:
                 }
                 
         except Exception as e:
-            app.logger.error(f"Error getting lecturer classes: {e}")
+            current_app.logger.error(f"Error getting lecturer classes: {e}")
             return {
                 'success': False,
                 'error': str(e)
@@ -303,7 +303,7 @@ class LecturerControl:
                 }
                 
         except Exception as e:
-            app.logger.error(f"Error getting class details for attendance: {e}")
+            current_app.logger.error(f"Error getting class details for attendance: {e}")
             return {
                 'success': False,
                 'error': str(e)
@@ -428,7 +428,7 @@ class LecturerControl:
                     }
                 
         except Exception as e:
-            app.logger.error(f"Error getting timetable data: {e}")
+            current_app.logger.error(f"Error getting timetable data: {e}")
             return {
                 'success': False,
                 'error': str(e)
@@ -567,7 +567,7 @@ class LecturerControl:
                 }
                 
         except Exception as e:
-            app.logger.error(f"Error getting attendance statistics: {e}")
+            current_app.logger.error(f"Error getting attendance statistics: {e}")
             return {
                 'success': False,
                 'error': str(e)
@@ -586,7 +586,7 @@ class LecturerControl:
                 return class_obj.lecturer_id == lecturer_id
                 
         except Exception as e:
-            app.logger.error(f"Error verifying lecturer class access: {e}")
+            current_app.logger.error(f"Error verifying lecturer class access: {e}")
             return False
         
     def get_lecturer_classes_in_date_range(lecturer_id, start_date, end_date, course_filter=None, class_type_filter=None):

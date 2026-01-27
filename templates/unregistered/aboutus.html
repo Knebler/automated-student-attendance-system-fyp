@@ -1,3 +1,4 @@
+
 {% extends "layouts/base.html" %}
 
 {% block title %}About Us - AttendAI{% endblock %}
@@ -192,6 +193,40 @@
         color: var(--text-dark);
         line-height: 1.6;
         text-align: center;
+    }
+
+    /* Values Cards */
+    .value-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .value-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .value-emoji {
+        position: relative;
+        top: -15px;
+        text-align: center;
+        font-size: 2.25rem;
+        margin-bottom: 0.75rem;
+        line-height: 1;
+        transition: transform 0.3s ease;
+    }
+
+    .value-card:hover .value-emoji {
+        transform: scale(1.1);
+    }
+
+    @media (hover: none) {
+        .value-card:hover {
+            transform: none;
+        }
+
+        .value-card:hover .value-emoji {
+            transform: none;
+        }
     }
 
     /* Team Contributions Modal */
@@ -457,6 +492,7 @@
                 <ul>
                     <li>Wireframe Development</li>
                     <li>Project Requirement Document</li>
+                    <li>Frontend optimization</li>
                     <li>Preliminary User Manual</li>
                     <li>Presentation Slides</li>
                 </ul>
@@ -500,22 +536,25 @@
 <!-- Values Section -->
 <h2 class="section-title">Our Values</h2>
 <div class="team-grid">
-    <div class="team-card card-custom" style="justify-content: center;">
+    <div class="team-card card-custom value-card" style="justify-content: center;">
         <div class="team-card-content">
+            <div class="value-emoji">💡</div>
             <h3>Innovation</h3>
             <p>Constantly pushing boundaries with AI and machine learning to deliver cutting-edge solutions.</p>
         </div>
     </div>
 
-    <div class="team-card card-custom" style="justify-content: center;">
+    <div class="team-card card-custom value-card" style="justify-content: center;">
         <div class="team-card-content">
+            <div class="value-emoji">🛡️</div>
             <h3>Reliability</h3>
             <p>99.9% uptime guarantee with robust, secure systems you can trust.</p>
         </div>
     </div>
 
-    <div class="team-card card-custom" style="justify-content: center;">
+    <div class="team-card card-custom value-card" style="justify-content: center;">
         <div class="team-card-content">
+            <div class="value-emoji">👥</div>
             <h3>User-Centric</h3>
             <p>Designed with real users in mind for intuitive, frictionless experiences.</p>
         </div>

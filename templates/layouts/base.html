@@ -214,17 +214,17 @@
         /* Main Content Container */
         .main-container {
             flex: 1;
-            max-width: 1200px;
+            max-width: 1400px;
             width: 100%;
             margin: 0 auto;
-            padding: 2rem;
+            padding: 2rem 24px;
         }
 
         /* Alert Messages */
         .alert-container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 2rem auto 0 auto;
-            padding: 0 2rem;
+            padding: 0 24px;
         }
 
         .alert-custom {
@@ -448,11 +448,12 @@
         }
 
         .footer-content {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 0 24px;
         }
 
         .footer-custom .nav-link-custom {
@@ -464,6 +465,38 @@
 
         .footer-custom .nav-link-custom:hover {
             opacity: 0.8;
+        }
+
+        /* fix all dashbpard 3-column layout */
+        .dashboard-3col {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            align-items: flex-start;
+        }
+
+        /* prevent overflow */
+        .dashboard-3col > * {
+            min-width: 0;
+            width: 100%;
+        }
+
+        .dashboard-col-left,
+        .dashboard-col-right {
+            flex: 1 1 340px;
+        }
+
+        .dashboard-col-middle {
+            flex: 2 1 560px;
+        }
+
+        /* Stack to single column on smaller screen */
+        @media (max-width: 990px) {
+            .dashboard-col-left,
+            .dashboard-col-middle,
+            .dashboard-col-right {
+                flex: 1 1 100%;
+            }
         }
 
         /* Utility Classes */
@@ -488,11 +521,11 @@
         /* Responsive Design */
         @media (max-width: 768px) {
             .main-container {
-                padding: 1rem;
+                padding: 1rem 16px;
             }
 
             .alert-container {
-                padding: 0 1rem;
+                padding: 0 16px;
             }
 
             .footer-content {

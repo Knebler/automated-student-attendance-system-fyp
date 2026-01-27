@@ -149,6 +149,11 @@ def subscription_management():
     requests_result = PlatformControl.get_subscription_requests(limit=5)
     stats_result = PlatformControl.get_subscription_statistics()
     
+    # Get subscription plans for dropdowns
+    with get_session() as db_session:
+        subscription_plans = db_session.query(SubscriptionPlan).filter_by(is_active=True).all()
+        plans_list = [{'plan_id': p.plan_id, 'name': p.name, 'max_users': p.max_users} for p in subscription_plans]
+    
     # Check for errors
     if not subscriptions_result['success']:
         flash(subscriptions_result.get('error', 'Error loading subscriptions'), 'danger')
@@ -193,6 +198,7 @@ def subscription_management():
         'institutions': institutions_for_template,
         'subscription_requests': subscription_requests,
         'stats': stats,
+        'subscription_plans': plans_list,
         
         # Pagination data
         'current_page': pagination.get('current_page', page),

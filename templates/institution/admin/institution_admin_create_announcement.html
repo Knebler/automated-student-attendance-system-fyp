@@ -1,0 +1,171 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Create Announcement - AttendAI{% endblock %}
+
+{% block content %}
+<div class="create-announcement">
+    <h1 class="page-title mb-4">Create New Announcement</h1>
+
+    <div class="card-custom">
+        <div class="card-header-custom">Announcement Details</div>
+        <div class="card-body-custom">
+            <form method="POST" action="{{ url_for('institution.create_announcement') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="form-group">
+                    <label for="title" class="form-label">Title <span class="required">*</span></label>
+                    <input type="text" class="form-control" id="title" name="title" required 
+                           placeholder="Enter announcement title">
+                </div>
+
+                <div class="form-group">
+                    <label for="content" class="form-label">Content <span class="required">*</span></label>
+                    <textarea class="form-control" id="content" name="content" rows="8" required
+                              placeholder="Enter announcement content"></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <a href="{{ url_for('institution.manage_announcements') }}" class="btn-secondary-custom">Cancel</a>
+                    <button type="submit" class="btn-primary-custom">Create Announcement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+
+    .create-announcement {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .page-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        color: #001641;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .card-custom {
+        background: #FFFFFF;
+        border-radius: 12px;
+        border: 2px solid #001641;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header-custom {
+        padding: 1rem 1.25rem;
+        font-weight: 700;
+        font-size: 1.1rem;
+        background: #001641;
+        color: #FFFFFF;
+        border-bottom: 2px solid #001641;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+        background: #f8fafc;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #001641;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .required {
+        color: #dc2626;
+    }
+
+    .form-control {
+        border: 2px solid #001641;
+        border-radius: 8px;
+        padding: 0.75rem;
+        width: 100%;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.95rem;
+    }
+
+    .form-control:focus {
+        border-color: #001641;
+        box-shadow: 0 0 0 3px rgba(0, 22, 65, 0.1);
+        outline: none;
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 150px;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .btn-primary-custom, .btn-secondary-custom {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        font-family: 'Montserrat', sans-serif;
+        border: 2px solid #001641;
+        cursor: pointer;
+        font-size: 0.95rem;
+    }
+
+    .btn-primary-custom {
+        background-color: #001641;
+        color: white;
+    }
+
+    .btn-primary-custom:hover {
+        background-color: #002d6b;
+        border-color: #002d6b;
+    }
+
+    .btn-secondary-custom {
+        background-color: #FFFFFF;
+        color: #001641;
+        display: inline-block;
+    }
+
+    .btn-secondary-custom:hover {
+        background-color: #f8fafc;
+    }
+
+    @media (max-width: 768px) {
+        .create-announcement {
+            padding: 10px;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn-primary-custom, .btn-secondary-custom {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}

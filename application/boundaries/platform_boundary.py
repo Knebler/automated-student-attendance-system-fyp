@@ -136,8 +136,8 @@ def subscription_management():
     status_filter = request.args.get('status', '')
     plan_filter = request.args.get('plan', '')
     
-    # Use PlatformControl to get data
-    institutions_result = PlatformControl.get_institutions_with_filters(
+    # Get subscriptions (not institutions) with filters
+    subscriptions_result = PlatformControl.get_subscriptions_with_institutions(
         search=search,
         status=status_filter,
         plan=plan_filter,
@@ -145,17 +145,18 @@ def subscription_management():
         per_page=PER_PAGE
     )
     
+    # Get pending subscription requests separately
     requests_result = PlatformControl.get_subscription_requests(limit=5)
     stats_result = PlatformControl.get_subscription_statistics()
     
     # Check for errors
-    if not institutions_result['success']:
-        flash(institutions_result.get('error', 'Error loading institutions'), 'danger')
-        institutions = []
+    if not subscriptions_result['success']:
+        flash(subscriptions_result.get('error', 'Error loading subscriptions'), 'danger')
+        subscriptions = []
         pagination = {}
     else:
-        institutions = institutions_result['institutions']
-        pagination = institutions_result['pagination']
+        subscriptions = subscriptions_result['subscriptions']
+        pagination = subscriptions_result['pagination']
     
     if not requests_result['success']:
         flash(requests_result.get('error', 'Error loading subscription requests'), 'danger')
@@ -169,8 +170,27 @@ def subscription_management():
     else:
         stats = stats_result['statistics']
     
+    # Transform subscriptions to match template structure
+    institutions_for_template = []
+    for sub in subscriptions:
+        # Extract institution data from subscription
+        institution_data = {
+            'institution_id': sub.get('institution_id'),
+            'subscription_id': sub.get('subscription_id'),
+            'name': sub.get('institution_name', 'Unknown'),
+            'location': sub.get('institution_location', ''),
+            'initials': sub.get('initials', ''),
+            'plan': sub.get('plan_name', 'none'),
+            'status': sub.get('status', 'inactive'),
+            'subscription_start_date': sub.get('start_date', ''),
+            'subscription_end_date': sub.get('end_date', ''),
+            'contact_person': sub.get('contact_person', ''),
+            'contact_email': sub.get('contact_email', '')
+        }
+        institutions_for_template.append(institution_data)
+    
     context = {
-        'institutions': institutions,
+        'institutions': institutions_for_template,
         'subscription_requests': subscription_requests,
         'stats': stats,
         
@@ -190,7 +210,7 @@ def subscription_management():
         
         # Statistics
         'active_institutions': stats.get('active_institutions', 0),
-        'suspended_subscriptions': stats.get('suspended_subscriptions', 0),  # Fixed field name
+        'suspended_subscriptions': stats.get('suspended_subscriptions', 0),
         'pending_requests': stats.get('pending_requests', 0),
         'new_institutions_quarter': stats.get('new_institutions_quarter', 0),
         'expired_subscriptions': stats.get('expired_subscriptions', 0),
@@ -319,6 +339,7 @@ def get_institution_details(institution_id):
         return jsonify(result), 404
     
 @platform_bp.route('/api/institutions/<int:institution_id>/update', methods=['POST'])
+@requires_roles_api('platform_manager')
 def update_institution(institution_id):
     """Update institution profile"""
     data = request.json
@@ -1274,6 +1295,42 @@ def search_issues():
         return jsonify(result)
     else:
         return jsonify(result), 500
+    
+@platform_bp.route('/api/institutions/<int:institution_id>/delete', methods=['POST'])
+@requires_roles_api('platform_manager')
+def delete_institution_api(institution_id):
+    """API endpoint to delete an institution completely."""
+    
+    # Get confirmation from request JSON (optional but recommended)
+    data = request.json or {}
+    confirm = data.get('confirm', False)
+    
+    # Get reviewer ID from session (current platform manager)
+    reviewer_id = session.get('user_id')
+    
+    # Optional: Add a confirmation requirement for safety
+    if not confirm:
+        return jsonify({
+            'success': False,
+            'error': 'Deletion requires explicit confirmation. Set "confirm": true in request body.',
+            'requires_confirmation': True,
+            'institution_id': institution_id
+        }), 400
+    
+    # Call PlatformControl method
+    result = PlatformControl.delete_institution_completely(
+        institution_id=institution_id,
+        reviewer_id=reviewer_id
+    )
+    
+    if result['success']:
+        return jsonify(result), 200
+    else:
+        # Return appropriate status code based on error
+        status_code = 404 if 'not found' in result.get('error', '').lower() else 400
+        return jsonify(result), status_code
+    
+
 
 @platform_bp.route('/api/debug-session', methods=['GET'])
 def debug_session():

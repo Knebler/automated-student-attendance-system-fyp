@@ -12,6 +12,12 @@ from application.entities2.user import UserModel
 from application.entities2.institution import InstitutionModel
 from application.entities2.subscription import SubscriptionModel
 from application.entities2.subscription_plans import SubscriptionPlanModel
+from database.models import (
+    User, Institution, Subscription, SubscriptionPlan,
+    Course, Venue, Semester, Announcement, Notification,
+    CourseUser, Class, AttendanceRecord, FacialData,
+    Testimonial, PlatformIssue, ReportSchedule
+)
 
 class PlatformControl:
     """Control class for platform manager business logic"""
@@ -125,6 +131,58 @@ class PlatformControl:
                 'error': f'Error fetching subscription requests: {str(e)}'
             }
     
+    def get_subscriptions_with_institutions(
+        search: str = '',
+        status: str = '',
+        plan: str = '',
+        page: int = 1,
+        per_page: int = 5
+    ) -> Dict[str, Any]:
+        """Get subscriptions with institution details and filters."""
+        try:
+            with get_session() as db_session:
+                subscription_model = SubscriptionModel(db_session)
+                institution_model = InstitutionModel(db_session)
+                
+                # Get subscriptions with filters
+                subscriptions = subscription_model.search_with_filters(
+                    search_term=search,
+                    status=status,
+                    plan=plan
+                )
+                
+                # Filter out pending subscriptions for main institutions table
+                # (they'll appear in subscription requests table instead)
+                active_subscriptions = [sub for sub in subscriptions if sub.get('status') != 'pending']
+                
+                # Apply pagination to active subscriptions only
+                total_active = len(active_subscriptions)
+                total_pages = (total_active + per_page - 1) // per_page if total_active > 0 else 1
+                start_idx = (page - 1) * per_page
+                end_idx = min(start_idx + per_page, total_active)
+                paginated_subscriptions = active_subscriptions[start_idx:end_idx]
+                
+                return {
+                    'success': True,
+                    'subscriptions': paginated_subscriptions,
+                    'pagination': {
+                        'current_page': page,
+                        'total_pages': total_pages,
+                        'total_items': total_active,
+                        'per_page': per_page,
+                        'has_prev': page > 1,
+                        'has_next': page < total_pages,
+                        'start_idx': start_idx + 1 if total_active > 0 else 0,
+                        'end_idx': end_idx,
+                    },
+                    'total_all_subscriptions': len(subscriptions)  # includes pending
+                }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Error fetching subscriptions: {str(e)}'
+            }
+
     def create_institution_profile(institution_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new institution profile with subscription."""
         try:
@@ -395,6 +453,7 @@ class PlatformControl:
         try:
             with get_session() as db_session:
                 institution_model = InstitutionModel(db_session)
+                subscription_model = SubscriptionModel(db_session)
                 
                 # Check if institution exists
                 institution = institution_model.get_by_id(institution_id)
@@ -404,32 +463,139 @@ class PlatformControl:
                         'error': 'Institution not found.'
                     }
                 
+                # Map form field names to model field names for institution
+                institution_updates = {}
+                
+                # Institution fields mapping from form to model
+                field_mapping = {
+                    'name': 'name',
+                    'location': 'address',  # form 'location' maps to 'address' field
+                    'contact_person': 'poc_name',
+                    'contact_email': 'poc_email', 
+                    'contact_phone': 'poc_phone'
+                }
+                
+                for form_field, model_field in field_mapping.items():
+                    if form_field in update_data and update_data[form_field]:
+                        institution_updates[model_field] = update_data[form_field]
+                
                 # Check if updating email and it's already in use
-                if 'poc_email' in update_data:
-                    existing_by_email = institution_model.get_by_email(update_data['poc_email'])
+                if 'poc_email' in institution_updates:
+                    existing_by_email = institution_model.get_by_email(institution_updates['poc_email'])
                     if existing_by_email and existing_by_email.institution_id != institution_id:
                         return {
                             'success': False,
                             'error': 'This email is already associated with another institution.'
                         }
                 
-                # Update institution
-                updated_institution = institution_model.update_institution(
-                    institution_id=institution_id,
-                    **update_data
-                )
+                # Update institution if there are changes
+                if institution_updates:
+                    updated_institution = institution_model.update_institution(
+                        institution_id=institution_id,
+                        **institution_updates
+                    )
+                else:
+                    updated_institution = institution
+                
+                # Handle subscription updates
+                # First, get the subscription ID from the institution
+                subscription_id = institution.subscription_id if hasattr(institution, 'subscription_id') else None
+                
+                if subscription_id:
+                    # Get the subscription
+                    subscription = subscription_model.get_by_subscription_id(subscription_id)
+                    
+                    if subscription:
+                        # Handle plan update - need to find plan by name
+                        if 'plan' in update_data and update_data['plan']:
+                            plan_name = update_data['plan']
+                            # Find the plan by name
+                            from database.models import SubscriptionPlan
+                            plan = db_session.query(SubscriptionPlan).filter(
+                                SubscriptionPlan.name.ilike(f'%{plan_name}%')
+                            ).first()
+                            
+                            if plan:
+                                subscription.plan_id = plan.plan_id
+                            else:
+                                # If plan not found, try to match common plan names
+                                plan_mapping = {
+                                    'starter': 'Starter',
+                                    'pro': 'Professional',
+                                    'enterprise': 'Enterprise',
+                                    'custom': 'Custom'
+                                }
+                                if plan_name in plan_mapping:
+                                    plan = db_session.query(SubscriptionPlan).filter(
+                                        SubscriptionPlan.name == plan_mapping[plan_name]
+                                    ).first()
+                                    if plan:
+                                        subscription.plan_id = plan.plan_id
+                        
+                        # Handle status update
+                        if 'status' in update_data and update_data['status']:
+                            new_status = update_data['status']
+                            now = datetime.now()
+                            
+                            if new_status == 'active':
+                                subscription.is_active = True
+                                # Set end date to 1 year from now if not set
+                                if not subscription.end_date:
+                                    subscription.end_date = now + timedelta(days=365)
+                            elif new_status == 'suspended':
+                                subscription.is_active = False
+                                # Ensure end date is set (for suspended status)
+                                if not subscription.end_date:
+                                    subscription.end_date = now + timedelta(days=365)
+                            elif new_status == 'pending':
+                                subscription.is_active = False
+                                subscription.end_date = None
+                            elif new_status == 'expired':
+                                subscription.is_active = False
+                                # Set end date to past if not set
+                                if not subscription.end_date:
+                                    subscription.end_date = now - timedelta(days=1)
+                        
+                        # Handle date updates
+                        if 'start_date' in update_data and update_data['start_date']:
+                            try:
+                                subscription.start_date = datetime.strptime(update_data['start_date'], '%Y-%m-%d')
+                            except ValueError:
+                                # Try different format if needed
+                                pass
+                        
+                        if 'end_date' in update_data and update_data['end_date']:
+                            try:
+                                subscription.end_date = datetime.strptime(update_data['end_date'], '%Y-%m-%d')
+                            except ValueError:
+                                # Try different format if needed
+                                pass
+                        
+                        # Handle max_users (if your Subscription model has this field)
+                        if 'max_users' in update_data and update_data['max_users']:
+                            # Check if subscription has max_users field
+                            if hasattr(subscription, 'max_users'):
+                                try:
+                                    subscription.max_users = int(update_data['max_users'])
+                                except (ValueError, TypeError):
+                                    pass
                 
                 # Also update admin user if email or name changed
-                if 'poc_email' in update_data or 'poc_name' in update_data:
+                if 'poc_email' in institution_updates or 'poc_name' in institution_updates:
                     user_model = UserModel(db_session)
-                    admin_user = user_model.get_by_email(institution.poc_email)
+                    # Get current admin email before it changes
+                    current_email = institution.poc_email
+                    admin_user = user_model.get_by_email(current_email)
                     if admin_user:
-                        if 'poc_email' in update_data:
-                            admin_user.email = update_data['poc_email']
-                        if 'poc_name' in update_data:
-                            admin_user.name = update_data['poc_name']
+                        if 'poc_email' in institution_updates:
+                            admin_user.email = institution_updates['poc_email']
+                        if 'poc_name' in institution_updates:
+                            admin_user.name = institution_updates['poc_name']
                 
                 db_session.commit()
+                
+                # Get updated institution data
+                updated_institution = institution_model.get_by_id(institution_id)
                 
                 return {
                     'success': True,
@@ -438,6 +604,11 @@ class PlatformControl:
                 }
                 
         except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
+            print(f"Error in update_institution_profile: {str(e)}")
+            print(f"Traceback: {error_details}")
+            
             if 'db_session' in locals():
                 db_session.rollback()
             return {
@@ -764,4 +935,168 @@ class PlatformControl:
             return {
                 'success': False,
                 'error': f'Error checking registration status: {str(e)}'
+            }
+        
+    def delete_institution_completely(
+        institution_id: int,
+        reviewer_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Delete an institution completely with all associated data."""
+        try:
+            with get_session() as db_session:
+                institution_model = InstitutionModel(db_session)
+                subscription_model = SubscriptionModel(db_session)
+                user_model = UserModel(db_session)
+                
+                # Get institution details
+                institution = institution_model.get_by_id(institution_id)
+                if not institution:
+                    return {
+                        'success': False,
+                        'error': f'Institution with ID {institution_id} not found.'
+                    }
+                
+                institution_name = institution.name
+                subscription_id = institution.subscription_id
+                
+                # Track what we're deleting
+                deletion_summary = {
+                    'institution_name': institution_name,
+                    'subscription_id': subscription_id,
+                    'deleted_users': 0,
+                    'deleted_courses': 0,
+                    'deleted_venues': 0,
+                    'deleted_semesters': 0,
+                    'deleted_facial_data': 0,
+                    'deleted_attendance_records': 0,
+                    'deleted_classes': 0,
+                    'deleted_announcements': 0,
+                    'deleted_notifications': 0,
+                    'deleted_testimonials': 0,
+                    'deleted_platform_issues': 0
+                }
+                
+                # Get all users associated with this institution
+                users = db_session.query(User).filter(
+                    User.institution_id == institution_id
+                ).all()
+                
+                user_ids = [user.user_id for user in users]
+                deletion_summary['deleted_users'] = len(user_ids)
+                
+                if user_ids:
+                    # Delete facial data for all users
+                    facial_deleted = db_session.query(FacialData).filter(
+                        FacialData.user_id.in_(user_ids)
+                    ).delete(synchronize_session=False)
+                    deletion_summary['deleted_facial_data'] = facial_deleted
+                    
+                    # Delete attendance records for all users as students
+                    attendance_deleted = db_session.query(AttendanceRecord).filter(
+                        AttendanceRecord.student_id.in_(user_ids)
+                    ).delete(synchronize_session=False)
+                    deletion_summary['deleted_attendance_records'] = attendance_deleted
+                    
+                    # Delete notifications for all users
+                    notifications_deleted = db_session.query(Notification).filter(
+                        Notification.user_id.in_(user_ids)
+                    ).delete(synchronize_session=False)
+                    deletion_summary['deleted_notifications'] = notifications_deleted
+                    
+                    # Delete testimonials by these users
+                    testimonials_deleted = db_session.query(Testimonial).filter(
+                        Testimonial.user_id.in_(user_ids)
+                    ).delete(synchronize_session=False)
+                    deletion_summary['deleted_testimonials'] = testimonials_deleted
+                    
+                    # Delete course enrollments for all users
+                    db_session.query(CourseUser).filter(
+                        CourseUser.user_id.in_(user_ids)
+                    ).delete(synchronize_session=False)
+                    
+                    # Delete platform issues reported by these users
+                    platform_issues_deleted = db_session.query(PlatformIssue).filter(
+                        PlatformIssue.user_id.in_(user_ids)
+                    ).delete(synchronize_session=False)
+                    deletion_summary['deleted_platform_issues'] = platform_issues_deleted
+                    
+                    # Delete users themselves
+                    db_session.query(User).filter(
+                        User.institution_id == institution_id
+                    ).delete(synchronize_session=False)
+                
+                # Delete classes where users from this institution are lecturers
+                # First get all classes where lecturer is from this institution
+                if user_ids:
+                    classes_deleted = db_session.query(Class).filter(
+                        Class.lecturer_id.in_(user_ids)
+                    ).delete(synchronize_session=False)
+                    deletion_summary['deleted_classes'] = classes_deleted
+                
+                # Delete institution-specific data
+                # Delete courses
+                courses_deleted = db_session.query(Course).filter(
+                    Course.institution_id == institution_id
+                ).delete(synchronize_session=False)
+                deletion_summary['deleted_courses'] = courses_deleted
+                
+                # Delete venues
+                venues_deleted = db_session.query(Venue).filter(
+                    Venue.institution_id == institution_id
+                ).delete(synchronize_session=False)
+                deletion_summary['deleted_venues'] = venues_deleted
+                
+                # Delete semesters
+                semesters_deleted = db_session.query(Semester).filter(
+                    Semester.institution_id == institution_id
+                ).delete(synchronize_session=False)
+                deletion_summary['deleted_semesters'] = semesters_deleted
+                
+                # Delete announcements
+                announcements_deleted = db_session.query(Announcement).filter(
+                    Announcement.institution_id == institution_id
+                ).delete(synchronize_session=False)
+                deletion_summary['deleted_announcements'] = announcements_deleted
+                
+                # Delete report schedules
+                db_session.query(ReportSchedule).filter(
+                    ReportSchedule.institution_id == institution_id
+                ).delete(synchronize_session=False)
+                
+                # Delete the institution
+                db_session.delete(institution)
+                
+                # Delete the subscription (if exists)
+                deleted_subscription = False
+                if subscription_id:
+                    subscription = subscription_model.get_by_id(subscription_id)
+                    if subscription:
+                        db_session.delete(subscription)
+                        deleted_subscription = True
+                
+                # Commit all deletions
+                db_session.commit()
+                
+                result = {
+                    'success': True,
+                    'message': f'Institution "{institution_name}" and all associated data deleted successfully.',
+                    'institution_id': institution_id,
+                    'institution_name': institution_name,
+                    'subscription_id': subscription_id,
+                    'subscription_deleted': deleted_subscription,
+                    'deletion_summary': deletion_summary
+                }
+                
+                # Add reviewer info if provided
+                if reviewer_id:
+                    result['reviewer_id'] = reviewer_id
+                
+                return result
+                
+        except Exception as e:
+            if 'db_session' in locals():
+                db_session.rollback()
+            return {
+                'success': False,
+                'error': f'Error deleting institution: {str(e)}'
             }

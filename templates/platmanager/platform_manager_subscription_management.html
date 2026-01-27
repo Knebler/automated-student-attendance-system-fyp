@@ -868,6 +868,81 @@
         opacity: 1;
     }
 
+    .btn-delete {
+        background-color: #dc2626;
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-delete:hover {
+        background-color: #b91c1c;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+    }
+
+    .form-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.9rem;
+        background-color: white;
+        color: var(--text-dark);
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-dark);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .form-control:invalid {
+        border-color: #dc2626;
+    }
+
+    .btn-primary-custom {
+        background-color: var(--primary-dark);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary-custom:hover:not(:disabled) {
+        background-color: #1e293b;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-primary-custom:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .btn-link {
+        text-decoration: none;
+    }
+
 </style>
 
 <div class="platform-manager-subscription-management">
@@ -1410,7 +1485,6 @@
             });
         });
     });
-
     // JavaScript functions for actions
     function viewInstitutionDetails(institutionId) {
         fetch(`/platform/api/institutions/${institutionId}`)
@@ -1461,6 +1535,7 @@
                             </div>
                             <div class="modal-footer">
                                 <button class="btn-custom btn-outline-custom btn-cancel">Close</button>
+                                <button class="btn-custom btn-delete" onclick="deleteInstitution('${institutionId}', '${data.institution.name.replace(/'/g, "\\'")}')">Delete Institution</button>
                             </div>
                         </div>
                     `;
@@ -1485,8 +1560,246 @@
             });
     }
 
+    function deleteInstitution(institutionId, institutionName) {
+        if (confirm(`⚠️ WARNING: Are you sure you want to delete "${institutionName}"?\n\nThis action will permanently delete:\n• The institution profile\n• All subscription data\n• All user accounts\n• All related records\n\nThis action cannot be undone!`)) {
+            fetch(`api/institutions/${institutionId}/delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ confirm: true })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(`Institution "${institutionName}" has been successfully deleted.`, 'success');
+                    // Close any open modal
+                    const modal = document.querySelector('.modal-overlay');
+                    if (modal) {
+                        document.body.removeChild(modal);
+                    }
+                    // Reload page to reflect changes
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    showAlert(`Error: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                showAlert(`Error deleting institution: ${error.message}`, 'error');
+            });
+        }
+    }
+
     function editInstitution(institutionId) {
-        showAlert(`Edit institution ${institutionId} - Feature coming soon`, 'info');
+        // Fetch institution data first
+        fetch(`/platform/api/institutions/${institutionId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showEditModal(data, institutionId);
+                } else {
+                    showAlert(`Error: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                showAlert(`Error fetching institution data: ${error.message}`, 'error');
+            });
+    }
+
+    function showEditModal(data, institutionId) {
+        const institution = data.institution;
+        const subscription = data.subscription;
+        const plan = data.plan;
+        
+        // Create edit modal
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 800px;">
+                <div class="modal-header">
+                    <h3>Edit Institution: ${institution.name}</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <form id="editInstitutionForm" onsubmit="return submitEditForm(event, '${institutionId}')">
+                    <div class="modal-body">
+                        <div class="form-section">
+                            <h4 style="color: var(--primary-dark); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border-color);">Basic Information</h4>
+                            
+                            <div class="form-group">
+                                <label for="editName">Institution Name *</label>
+                                <input type="text" id="editName" name="name" value="${institution.name}" required 
+                                    class="form-control" placeholder="Enter institution name">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="editLocation">Location *</label>
+                                <input type="text" id="editLocation" name="location" value="${institution.location || institution.address || ''}" required 
+                                    class="form-control" placeholder="Enter institution location">
+                            </div>
+                            
+                            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div class="form-group">
+                                    <label for="editContactPerson">Contact Person *</label>
+                                    <input type="text" id="editContactPerson" name="contact_person" 
+                                        value="${institution.poc_name || institution.contact_person || ''}" required 
+                                        class="form-control" placeholder="Contact person name">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="editContactEmail">Contact Email *</label>
+                                    <input type="email" id="editContactEmail" name="contact_email" 
+                                        value="${institution.poc_email || institution.contact_email || ''}" required 
+                                        class="form-control" placeholder="contact@example.com">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="editContactPhone">Contact Phone</label>
+                                <input type="tel" id="editContactPhone" name="contact_phone" 
+                                    value="${institution.poc_phone || ''}" 
+                                    class="form-control" placeholder="+1 (555) 123-4567">
+                            </div>
+                        </div>
+                        
+                        <div class="form-section" style="margin-top: 2rem;">
+                            <h4 style="color: var(--primary-dark); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border-color);">Subscription Information</h4>
+                            
+                            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div class="form-group">
+                                    <label for="editPlan">Subscription Plan *</label>
+                                    <select id="editPlan" name="plan" class="form-control" required>
+                                        <option value="">Select a plan</option>
+                                        <option value="starter" ${plan && plan.name === 'starter' ? 'selected' : ''}>Starter</option>
+                                        <option value="pro" ${plan && plan.name === 'pro' ? 'selected' : ''}>Professional</option>
+                                        <option value="enterprise" ${plan && plan.name === 'enterprise' ? 'selected' : ''}>Enterprise</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="editStatus">Status *</label>
+                                    <select id="editStatus" name="status" class="form-control" required>
+                                        <option value="active" ${subscription && subscription.is_active ? 'selected' : ''}>Active</option>
+                                        <option value="suspended" ${subscription && !subscription.is_active ? 'selected' : ''}>Suspended</option>
+                                        <option value="pending">Pending</option>
+                                        <option value="expired">Expired</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div class="form-group">
+                                    <label for="editStartDate">Subscription Start Date</label>
+                                    <input type="date" id="editStartDate" name="start_date" 
+                                        value="${subscription ? new Date(subscription.start_date).toISOString().split('T')[0] : ''}" 
+                                        class="form-control">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="editEndDate">Subscription End Date</label>
+                                    <input type="date" id="editEndDate" name="end_date" 
+                                        value="${subscription ? new Date(subscription.end_date).toISOString().split('T')[0] : ''}" 
+                                        class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${data.admin_users.length > 0 ? `
+                        <div class="form-section" style="margin-top: 2rem;">
+                            <h4 style="color: var(--primary-dark); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border-color);">Admin Users</h4>
+                            ${data.admin_users.map((user, index) => `
+                                <div class="admin-user" style="background-color: var(--primary-light); padding: 1rem; border-radius: 8px; margin-bottom: 0.75rem; border: 1px solid var(--border-color);">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <div>
+                                            <p style="margin: 0.25rem 0;"><strong>${user.name}</strong></p>
+                                            <p style="margin: 0.25rem 0; font-size: 0.85rem; color: var(--text-light);">${user.email}</p>
+                                        </div>
+                                        <span class="status-badge ${user.is_active ? 'active' : 'suspended'}" style="font-size: 0.7rem; padding: 0.25rem 0.75rem;">
+                                            ${user.is_active ? 'Active' : 'Inactive'}
+                                        </span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn-custom btn-outline-custom btn-cancel">Cancel</button>
+                        <button type="submit" class="btn-custom btn-primary-custom">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        const closeModal = () => {
+            document.body.removeChild(modal);
+        };
+        
+        modal.querySelector('.modal-close').addEventListener('click', closeModal);
+        modal.querySelector('.btn-cancel').addEventListener('click', closeModal);
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) closeModal();
+        });
+    }
+
+    function submitEditForm(event, institutionId) {
+        event.preventDefault();
+        
+        const form = event.target;
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+        
+        // Validate required fields
+        if (!data.name || !data.location || !data.contact_person || !data.contact_email || !data.plan || !data.status) {
+            showAlert('Please fill in all required fields.', 'error');
+            return false;
+        }
+        
+        // Add institution ID to data
+        data.institution_id = institutionId;
+        
+        // Show loading state
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Saving...';
+        submitBtn.disabled = true;
+        
+        fetch(`api/institutions/${institutionId}/update`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                showAlert('Institution updated successfully!', 'success');
+                
+                // Close modal after a delay
+                setTimeout(() => {
+                    const modal = document.querySelector('.modal-overlay');
+                    if (modal) {
+                        document.body.removeChild(modal);
+                    }
+                    // Reload page to reflect changes
+                    window.location.reload();
+                }, 1500);
+            } else {
+                showAlert(`Error: ${result.error || 'Failed to update institution'}`, 'error');
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            showAlert(`Error: ${error.message}`, 'error');
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        });
+        
+        return false;
     }
 
     function updateSubscriptionStatus(subscriptionId, newStatus, institutionName) {
@@ -1517,7 +1830,7 @@
     function processSubscriptionRequest(requestId, action, institutionName) {
         const actionText = action === 'approve' ? 'approve' : 'reject';
         if (confirm(`Are you sure you want to ${actionText} subscription request for "${institutionName}"?`)) {
-            fetch(`/api/subscription-requests/${requestId}/process`, {
+            fetch(`api/subscription-requests/${requestId}/process`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

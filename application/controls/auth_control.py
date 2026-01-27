@@ -177,6 +177,8 @@ class AuthControl:
                     stripe_subscription_id=institution_data.get('stripe_subscription_id')  # Will be set when payment is processed
                 )
 
+                SubscriptionModel.update_subscription_status(subscription_model, subscription.subscription_id, "pending")
+
                 # Create institution
                 institution = institution_model.create(
                     name=inst_name,

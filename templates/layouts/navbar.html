@@ -11,13 +11,12 @@
           {% set current_endpoint = request.endpoint if request.endpoint else None %}
           {% set current_path = request.path if request.path else None %}
           {% if user_role == 'platform_manager' %}
-              <!-- TODO: Implement proper routing for these sub pages -->
-               <li><a class="nav-link-custom{% if current_endpoint == 'platform.platform_dashboard' %} active{% endif %}" href="{{ url_for('platform.platform_dashboard') }}">Dashboard</a></li>
+              <li><a class="nav-link-custom{% if current_endpoint == 'platform.platform_dashboard' %} active{% endif %}" href="{{ url_for('platform.platform_dashboard') }}">Dashboard</a></li>
               <li><a class="nav-link-custom{% if current_endpoint == 'platform.user_management' %} active{% endif %}" href="{{ url_for('platform.user_management') }}">Users</a></li>
               <li><a class="nav-link-custom{% if current_endpoint == 'platform.subscription_management' %} active{% endif %}" href="{{ url_for('platform.subscription_management') }}">Institutions/Subscriptions</a></li>
               <li><a class="nav-link-custom{% if current_endpoint == 'platform.testimonial_review' %} active{% endif %}" href="{{ url_for('platform.testimonial_review') }}">Testimonials</a></li>
-              <li><a class="nav-link-custom{% if current_endpoint == 'platform.performance_management' %} active{% endif %}" href="{{ url_for('platform.performance_management') }}">Performance</a></li>
-              <li><a class="nav-link-custom{% if current_endpoint == 'platform.settings_management' %} active{% endif %}" href="{{ url_for('platform.settings_management') }}">Settings</a></li>
+              <!-- <li><a class="nav-link-custom{% if current_endpoint == 'platform.performance_management' %} active{% endif %}" href="{{ url_for('platform.performance_management') }}">Performance</a></li>
+              <li><a class="nav-link-custom{% if current_endpoint == 'platform.settings_management' %} active{% endif %}" href="{{ url_for('platform.settings_management') }}">Settings</a></li> -->
               <li><a class="nav-link-custom{% if current_endpoint == 'platform.issue_management' %} active{% endif %}" href="{{ url_for('platform.issue_management') }}">Platform Issues</a></li>
               <li><a class="nav-link-custom" href="{{ url_for('platform.landing_page_management') }}">Landing Page</a></li>
      
@@ -37,7 +36,6 @@
               <li><a class="nav-link-custom{% if current_endpoint == 'institution.import_data' %} active{% endif %}" href="{{ url_for('institution.import_data') }}">Import Data</a></li>
               <li><a class="nav-link-custom{% if current_endpoint == 'main.my_reports' %} active{% endif %}" href="{{ url_for('main.my_reports') }}">My Reports</a></li>
           {% elif user_role == 'lecturer' %}
-              <!-- TODO: Implement proper routing for these sub pages -->
               <li><a class="nav-link-custom{% if current_endpoint == 'institution_lecturer.lecturer_dashboard' %} active{% endif %}" href="{{ url_for('institution_lecturer.lecturer_dashboard') }}">Dashboard</a></li>
               <li><a class="nav-link-custom{% if current_endpoint == 'institution_lecturer.timetable' %} active{% endif %}" href="{{ url_for('institution_lecturer.timetable') }}">View Timetable</a></li>
               <li><a class="nav-link-custom{% if current_endpoint == 'institution_lecturer.attendance_statistics' %} active{% endif %}" href="{{ url_for('institution_lecturer.attendance_statistics') }}">View Attendance Statistics</a></li>
@@ -45,7 +43,6 @@
               <li><a class="nav-link-custom{% if current_endpoint == 'main.my_reports' %} active{% endif %}" href="{{ url_for('main.my_reports') }}">My Reports</a></li>
 
           {% elif user_role == 'student' %}
-              <!-- TODO: Implement proper routing for these sub pages -->
               <li><a class="nav-link-custom{% if current_endpoint == 'student.dashboard' %} active{% endif %}" href="{{ url_for('student.dashboard') }}">Dashboard</a></li>
               <li><a class="nav-link-custom{% if current_endpoint == 'student.timetable' %} active{% endif %}" href="{{ url_for('student.timetable') }}">Timetable</a></li>
               <li><a class="nav-link-custom{% if current_endpoint == 'student.attendance' %} active{% endif %}" href="{{ url_for('student.attendance') }}">View My Attendance</a></li>

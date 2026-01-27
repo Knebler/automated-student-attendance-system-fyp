@@ -7,6 +7,9 @@ import random
 from base import root_engine, engine, get_session
 from models import *
 
+# Import the new models
+from models import Feature, HeroFeature, Stat, AboutIntro, AboutStory, AboutMissionVision, TeamMember, AboutValue
+
 def drop_database():
     with root_engine.connect() as conn:
         conn.execute(text(f"DROP DATABASE IF EXISTS {os.environ['DB_NAME']}"))
@@ -357,6 +360,469 @@ def seed_testimonials():
         session.commit()
         print(f"Added {len(testimonials)} testimonials")
 
+def seed_features():
+    with get_session() as session:
+        features_data = [
+            {
+                'slug': 'ai-face-recognition',
+                'icon': '🤖',
+                'title': 'AI-Powered Face Recognition',
+                'description': 'Automatically identify and mark attendance using advanced facial recognition technology with 99.8% accuracy. No more manual check-ins or proxy attendance.',
+                'details': '''Our advanced facial recognition system revolutionizes attendance tracking with unparalleled accuracy and efficiency.
+
+<h4>Key Features:</h4>
+<ul>
+    <li>99.8% accuracy rate with deep learning algorithms</li>
+    <li>Real-time face detection and recognition</li>
+    <li>Works in various lighting conditions</li>
+    <li>Anti-spoofing technology to prevent fraud</li>
+    <li>Privacy-focused with encrypted face data</li>
+</ul>
+
+<h4>How It Works:</h4>
+Students simply look at the camera during class entry. The system instantly identifies them and marks attendance automatically. The entire process takes less than 2 seconds per student.''',
+                'try_url': '/auth/register',
+                'is_advanced': False,
+                'display_order': 1
+            },
+            {
+                'slug': 'qr-mobile-checkins',
+                'icon': '📱',
+                'title': 'QR Code & Mobile Check-ins',
+                'description': 'Quick QR code scanning for fast check-ins. Students and staff can mark attendance with a simple scan using our mobile app or web interface.',
+                'details': '''Streamline attendance with quick QR code scanning and mobile check-ins for maximum flexibility.
+
+<h4>Benefits:</h4>
+<ul>
+    <li>Instant check-in via QR code scanning</li>
+    <li>Works on any smartphone or tablet</li>
+    <li>No special hardware required</li>
+    <li>Offline mode for areas with poor connectivity</li>
+    <li>Unique codes generated for each session</li>
+</ul>
+
+<h4>Perfect For:</h4>
+Large lecture halls, outdoor events, remote learning scenarios, and hybrid classrooms where facial recognition may not be practical.''',
+                'try_url': '/demo/qr-checkin',
+                'is_advanced': False,
+                'display_order': 2
+            },
+            {
+                'slug': 'real-time-analytics',
+                'icon': '📊',
+                'title': 'Real-time Analytics Dashboard',
+                'description': 'Monitor attendance patterns, trends, and statistics in real-time. Generate instant reports and identify at-risk students with predictive analytics.',
+                'details': '''Transform raw attendance data into actionable insights with our powerful analytics platform.
+
+<h4>Analytics Features:</h4>
+<ul>
+    <li>Live attendance tracking across all classes</li>
+    <li>Historical trend analysis and comparisons</li>
+    <li>Customizable reports and exports</li>
+    <li>Visual charts and graphs for easy interpretation</li>
+    <li>Automatic alerts for attendance issues</li>
+</ul>
+
+<h4>Insights You'll Get:</h4>
+Identify patterns like frequent absences, peak attendance times, course popularity, and early warning signs for students who may need additional support.''',
+                'try_url': '/demo/analytics',
+                'is_advanced': False,
+                'display_order': 3
+            },
+            {
+                'slug': 'automated-notifications',
+                'icon': '🔔',
+                'title': 'Automated Notifications',
+                'description': 'Send automatic alerts to students, parents, and staff about attendance status, upcoming classes, and important announcements via email or SMS.',
+                'details': '''Keep everyone informed with automated, customizable notification system.
+
+<h4>Notification Types:</h4>
+<ul>
+    <li>Absence alerts sent to students and parents</li>
+    <li>Class reminders and schedule changes</li>
+    <li>Low attendance warnings</li>
+    <li>Custom announcements and updates</li>
+    <li>Weekly/monthly attendance summaries</li>
+</ul>
+
+<h4>Delivery Options:</h4>
+Choose from email, SMS, push notifications, or in-app alerts. Set up custom rules for when and who receives notifications based on your institution's needs.''',
+                'try_url': '/demo/notifications',
+                'is_advanced': False,
+                'display_order': 4
+            },
+            {
+                'slug': 'advanced-security',
+                'icon': '🔒',
+                'title': 'Advanced Security & Compliance',
+                'description': 'Enterprise-grade security with data encryption, role-based access control, and GDPR compliance. Your data is protected with bank-level security.',
+                'details': '''Enterprise-grade security measures to protect sensitive attendance data.
+
+<h4>Security Features:</h4>
+<ul>
+    <li>End-to-end encryption for all data</li>
+    <li>Role-based access control (RBAC)</li>
+    <li>Two-factor authentication (2FA)</li>
+    <li>Regular security audits and updates</li>
+    <li>GDPR, FERPA, and SOC 2 compliance</li>
+</ul>
+
+<h4>Privacy Protection:</h4>
+We take data privacy seriously. All biometric data is encrypted, stored securely, and never shared with third parties. Students and staff have full control over their personal information.''',
+                'try_url': '/demo/security',
+                'is_advanced': False,
+                'display_order': 5
+            },
+            {
+                'slug': 'seamless-integrations',
+                'icon': '🔄',
+                'title': 'Seamless Integrations',
+                'description': 'Connect with existing systems like Google Classroom, Microsoft Teams, LMS platforms, and student information systems through our powerful API.',
+                'details': '''Connect AttendAI with your existing systems for a unified workflow.
+
+<h4>Integration Options:</h4>
+<ul>
+    <li>Google Classroom and Microsoft Teams</li>
+    <li>Popular LMS platforms (Canvas, Moodle, Blackboard)</li>
+    <li>Student Information Systems (SIS)</li>
+    <li>Calendar applications (Google Calendar, Outlook)</li>
+    <li>Custom integrations via REST API</li>
+</ul>
+
+<h4>Benefits:</h4>
+Sync attendance data automatically, reduce duplicate data entry, and create a seamless experience across all your educational technology tools.''',
+                'try_url': '/demo/integrations',
+                'is_advanced': False,
+                'display_order': 6
+            },
+            {
+                'slug': 'predictive-analytics',
+                'icon': '🎯',
+                'title': 'Predictive Analytics',
+                'description': 'AI algorithms predict student performance based on attendance patterns, helping educators identify at-risk students early and intervene proactively.',
+                'details': '''Use AI to predict student outcomes based on attendance patterns.
+
+<h4>Predictive Capabilities:</h4>
+<ul>
+    <li>Early identification of at-risk students</li>
+    <li>Performance prediction based on attendance</li>
+    <li>Intervention recommendations</li>
+    <li>Success probability scoring</li>
+    <li>Trend forecasting for future semesters</li>
+</ul>
+
+<h4>Impact:</h4>
+Studies show that early intervention based on attendance patterns can improve student retention by up to 25% and increase overall academic performance significantly.''',
+                'try_url': '/demo/predictive-analytics',
+                'is_advanced': True,
+                'display_order': 7
+            },
+            {
+                'slug': 'geolocation-tracking',
+                'icon': '🌐',
+                'title': 'Geolocation Tracking',
+                'description': 'Verify attendance based on location for remote or hybrid learning. Ensure students are in the right place at the right time with geofencing technology.',
+                'details': '''Verify attendance location for remote and hybrid learning environments.
+
+<h4>Location Features:</h4>
+<ul>
+    <li>GPS-based location verification</li>
+    <li>Geofencing for specific areas</li>
+    <li>Configurable radius settings</li>
+    <li>Privacy-conscious location tracking</li>
+    <li>Works for field trips and off-campus events</li>
+</ul>
+
+<h4>Use Cases:</h4>
+Perfect for hybrid learning, field trips, internships, practical sessions, and ensuring students attend the correct physical location for in-person requirements.''',
+                'try_url': '/demo/geolocation',
+                'is_advanced': True,
+                'display_order': 8
+            }
+        ]
+        
+        for feature_data in features_data:
+            feature = Feature(**feature_data)
+            session.add(feature)
+        
+        session.commit()
+        print(f"Added {len(features_data)} features")
+
+def seed_hero_features():
+    with get_session() as session:
+        hero_features_data = [
+            {
+                'title': 'AI-Powered Face Recognition',
+                'description': '99.8% accuracy for automatic attendance marking',
+                'summary': 'Automatically identify and mark attendance using advanced facial recognition technology.',
+                'icon': '🤖',
+                'bg_image': 'https://images.unsplash.com/photo-1677442136019-21780ecad995?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80',
+                'display_order': 1,
+                'is_active': True
+            },
+            {
+                'title': 'QR Code & Mobile Check-ins',
+                'description': 'Fast and convenient attendance marking',
+                'summary': 'Quick QR code scanning for fast check-ins using mobile app or web interface.',
+                'icon': '📱',
+                'bg_image': 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80',
+                'display_order': 2,
+                'is_active': True
+            },
+            {
+                'title': 'Real-time Analytics Dashboard',
+                'description': 'Monitor patterns and generate instant reports',
+                'summary': 'Monitor attendance patterns, trends, and statistics with predictive analytics.',
+                'icon': '📊',
+                'bg_image': 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80',
+                'display_order': 3,
+                'is_active': True
+            },
+            {
+                'title': 'Automated Notifications',
+                'description': 'Alerts via email or SMS',
+                'summary': 'Send automatic alerts about attendance status and upcoming classes.',
+                'icon': '🔔',
+                'bg_image': 'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80',
+                'display_order': 4,
+                'is_active': True
+            },
+            {
+                'title': 'Advanced Security & Compliance',
+                'description': 'Enterprise-grade security with data encryption',
+                'summary': 'Bank-level security with GDPR compliance and role-based access control.',
+                'icon': '🔒',
+                'bg_image': 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80',
+                'display_order': 5,
+                'is_active': True
+            },
+            {
+                'title': 'Seamless Integrations',
+                'description': 'Connect with Google Classroom, Microsoft Teams, and LMS',
+                'summary': 'Powerful API for connecting with existing systems and platforms.',
+                'icon': '🔄',
+                'bg_image': 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80',
+                'display_order': 6,
+                'is_active': True
+            }
+        ]
+        
+        for hero_data in hero_features_data:
+            hero_feature = HeroFeature(**hero_data)
+            session.add(hero_feature)
+        
+        session.commit()
+        print(f"Added {len(hero_features_data)} hero features")
+
+def seed_stats():
+    with get_session() as session:
+        stats_data = [
+            {
+                'value': '500+',
+                'label': 'Educational Institutions',
+                'display_order': 1,
+                'is_active': True
+            },
+            {
+                'value': '98%',
+                'label': 'Customer Satisfaction',
+                'display_order': 2,
+                'is_active': True
+            },
+            {
+                'value': '250K+',
+                'label': 'Students & Employees',
+                'display_order': 3,
+                'is_active': True
+            },
+            {
+                'value': '85%',
+                'label': 'Time Savings',
+                'display_order': 4,
+                'is_active': True
+            }
+        ]
+        
+        for stat_data in stats_data:
+            stat = Stat(**stat_data)
+            session.add(stat)
+        
+        session.commit()
+        print(f"Added {len(stats_data)} stats")
+
+def seed_about_intro():
+    with get_session() as session:
+        intro = AboutIntro(
+            title='About AttendAI',
+            description="We're revolutionizing attendance management with AI-powered solutions that make tracking, reporting, and analytics seamless for educational institutions and businesses worldwide.",
+            is_active=True
+        )
+        session.add(intro)
+        session.commit()
+        print("Added about intro")
+
+def seed_about_story():
+    with get_session() as session:
+        story = AboutStory(
+            title='Our Story',
+            content="Founded in 2025, AttendAI began as a student project at a leading technology university. Our team recognized the inefficiencies in traditional attendance tracking systems and set out to create a smarter solution. Today, we serve over 500 institutions across 30 countries, helping them save thousands of hours annually while improving accuracy and insights.",
+            is_active=True
+        )
+        session.add(story)
+        session.commit()
+        print("Added about story")
+
+def seed_about_mission_vision():
+    with get_session() as session:
+        mission_vision_data = [
+            {
+                'type': 'mission',
+                'title': 'Our Mission',
+                'content': 'To revolutionize attendance management through innovative AI technology, making it effortless for organizations to track, analyze, and optimize participation while providing actionable insights for better decision-making.',
+                'is_active': True
+            },
+            {
+                'type': 'vision',
+                'title': 'Our Vision',
+                'content': 'To become the global standard in attendance management systems, empowering every educational and corporate institution with smart, seamless, and scalable solutions that enhance productivity and engagement.',
+                'is_active': True
+            }
+        ]
+        
+        for mv_data in mission_vision_data:
+            mission_vision = AboutMissionVision(**mv_data)
+            session.add(mission_vision)
+        
+        session.commit()
+        print(f"Added {len(mission_vision_data)} mission/vision items")
+
+def seed_team_members():
+    import json
+    with get_session() as session:
+        team_data = [
+            {
+                'name': 'CHONG YE HAN',
+                'role': 'AI & Documentation Lead',
+                'description': 'Leads the AI development and comprehensive documentation efforts for AttendAI.',
+                'contributions': json.dumps([
+                    'Wireframe Development',
+                    'Project Requirement Document',
+                    'System Requirement Document',
+                    'Facial Recognition AI Training',
+                    'Technical Design Manual',
+                    'Technical Design Document',
+                    'System Requirement Specification'
+                ]),
+                'skills': json.dumps(['AI Development', 'Technical Documentation', 'System Architecture', 'Project Planning']),
+                'display_order': 1,
+                'is_active': True
+            },
+            {
+                'name': 'GOH CHING FONG',
+                'role': 'Project Lead',
+                'description': 'Manages frontend development and project workflow using Kanban methodology.',
+                'contributions': json.dumps([
+                    'Wireframe Development',
+                    'Project Requirement Document',
+                    'Technical Design Document',
+                    'Frontend Prototype Code',
+                    'Preliminary User Manual',
+                    'Technical Design Manual',
+                    'Debugging',
+                    'System Requirement Specification',
+                    'User Manual',
+                    'Kanban Master',
+                    'Presentation Slides'
+                ]),
+                'skills': json.dumps(['Frontend Development', 'Project Management', 'UI/UX Design', 'Documentation']),
+                'display_order': 2,
+                'is_active': True
+            },
+            {
+                'name': 'AARON JED FUSANA BERNARDO',
+                'role': 'Developer',
+                'description': 'Develops both frontend and backend components with a focus on system integration.',
+                'contributions': json.dumps([
+                    'Wireframe Development',
+                    'Project Requirement Document',
+                    'Backend Prototype Code',
+                    'Frontend Prototype Code',
+                    'Debugging',
+                    'System Requirement Specification',
+                    'Kanban Contributor'
+                ]),
+                'skills': json.dumps(['Full Stack Development', 'Backend Architecture', 'Debugging', 'System Integration']),
+                'display_order': 3,
+                'is_active': True
+            },
+            {
+                'name': 'WU JINGHAN',
+                'role': 'UI/UX & Documentation',
+                'description': 'Focuses on user interface design and creating comprehensive user documentation.',
+                'contributions': json.dumps([
+                    'Wireframe Development',
+                    'Project Requirement Document',
+                    'Preliminary User Manual',
+                    'Presentation Slides'
+                ]),
+                'skills': json.dumps(['UI/UX Design', 'User Documentation', 'Presentation Design', 'Wireframing']),
+                'display_order': 4,
+                'is_active': True
+            },
+            {
+                'name': 'LI JING YOUNG',
+                'role': 'Technical Documentation',
+                'description': 'Creates detailed technical documentation and design specifications.',
+                'contributions': json.dumps([
+                    'Wireframe Development',
+                    'Project Requirement Document',
+                    'Technical Design Manual',
+                    'Technical Design Document',
+                    'Presentation Slides',
+                    'System Requirement Specification'
+                ]),
+                'skills': json.dumps(['Technical Writing', 'System Design', 'Documentation', 'Presentation']),
+                'display_order': 5,
+                'is_active': True
+            }
+        ]
+        
+        for member_data in team_data:
+            team_member = TeamMember(**member_data)
+            session.add(team_member)
+        
+        session.commit()
+        print(f"Added {len(team_data)} team members")
+
+def seed_about_values():
+    with get_session() as session:
+        values_data = [
+            {
+                'title': 'Innovation',
+                'description': 'Constantly pushing boundaries with AI and machine learning to deliver cutting-edge solutions.',
+                'display_order': 1,
+                'is_active': True
+            },
+            {
+                'title': 'Reliability',
+                'description': '99.9% uptime guarantee with robust, secure systems you can trust.',
+                'display_order': 2,
+                'is_active': True
+            },
+            {
+                'title': 'User-Centric',
+                'description': 'Designed with real users in mind for intuitive, frictionless experiences.',
+                'display_order': 3,
+                'is_active': True
+            }
+        ]
+        
+        for value_data in values_data:
+            value = AboutValue(**value_data)
+            session.add(value)
+        
+        session.commit()
+        print(f"Added {len(values_data)} values")
 def seed_platform_issues():
     """Seed platform issues table with realistic dummy data"""
     with get_session() as session:
@@ -481,7 +947,7 @@ def seed_platform_issues():
             
             # For some issues, set deleted_at (soft delete simulation)
             deleted_at = None
-            if random.random() < 0.1:  # 10% of issues are "deleted"
+            if random.random() < 0.1 and days_ago > 0:  # 10% of issues are "deleted"
                 deleted_days = random.randint(1, days_ago)
                 deleted_at = created_at + timedelta(days=deleted_days)
             
@@ -614,6 +1080,30 @@ def seed_database():
     
     if row_count("Testimonials") == 0:
         seed_testimonials()
+    
+    if row_count("Features") == 0:
+        seed_features()
+    
+    if row_count("Hero_Features") == 0:
+        seed_hero_features()
+    
+    if row_count("Stats") == 0:
+        seed_stats()
+    
+    if row_count("About_Intro") == 0:
+        seed_about_intro()
+    
+    if row_count("About_Story") == 0:
+        seed_about_story()
+    
+    if row_count("About_Mission_Vision") == 0:
+        seed_about_mission_vision()
+    
+    if row_count("Team_Members") == 0:
+        seed_team_members()
+    
+    if row_count("About_Values") == 0:
+        seed_about_values()
 
     if row_count("Announcements") == 0:
         cols = [

@@ -287,78 +287,69 @@
 
 <!-- Plans Grid -->
 <div class="plans-grid">
-    <!-- Starter Plan -->
-    <div class="plan-card">
-        <h3 class="plan-title">Starter</h3>
-        <div class="plan-price">
-            <div class="price-amount">$19</div>
-            <div class="price-period">per month</div>
-        </div>
-        <div class="plan-content">
-            <ul class="plan-features">
-                <li><span class="feature-icon">✓</span> Up to 50 students</li>
-                <li><span class="feature-icon">✓</span> Basic attendance tracking</li>
-                <li><span class="feature-icon">✓</span> QR code check-ins</li>
-                <li><span class="feature-icon">✓</span> Monthly reports</li>
-                <li><span class="feature-icon">✓</span> Email support</li>
-                <li class="feature-unavailable"><span class="xmark">✗</span> AI face recognition</li>
-                <li class="feature-unavailable"><span class="xmark">✗</span> Advanced analytics</li>
-                <li class="feature-unavailable"><span class="xmark">✗</span> Priority support</li>
-            </ul>
-            <div class="plan-button">
-                <a href="{{ url_for('auth.register', selected_plan_id=1, role='institution_admin') }}" class="btn-custom btn-outline-custom">Get Started</a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Professional Plan (Most Popular) -->
-    <div class="plan-card popular">
+    {% for plan in subscription_plans %}
+    {% set features = plan.features %}
+    <div class="plan-card {% if features.is_popular %}popular{% endif %}">
+        {% if features.is_popular %}
         <div class="popular-badge">MOST POPULAR</div>
-        <h3 class="plan-title">Professional</h3>
+        {% endif %}
+        <h3 class="plan-title">{{ plan.name }}</h3>
         <div class="plan-price">
-            <div class="price-amount">$49</div>
-            <div class="price-period">per month</div>
+            <div class="price-amount">${{ "%.0f"|format(plan.price_per_cycle) }}</div>
+            <div class="price-period">per {{ plan.billing_cycle }}</div>
         </div>
         <div class="plan-content">
             <ul class="plan-features">
-                <li><span class="feature-icon">✓</span> Up to 500 students</li>
-                <li><span class="feature-icon">✓</span> Advanced attendance tracking</li>
-                <li><span class="feature-icon">✓</span> QR code + PIN check-ins</li>
-                <li><span class="feature-icon">✓</span> AI face recognition</li>
+                {% if features.max_students %}
+                <li><span class="feature-icon">✓</span> Up to {{ features.max_students }} students</li>
+                {% endif %}
+                
+                {# Display custom features #}
+                {% if features.custom_features %}
+                    {% for feature in features.custom_features %}
+                    <li><span class="feature-icon">✓</span> {{ feature }}</li>
+                    {% endfor %}
+                {% endif %}
+                
+                {# Legacy features support #}
+                {% if features.attendance_tracking %}
+                <li><span class="feature-icon">✓</span> {{ features.attendance_tracking }}</li>
+                {% endif %}
+                {% if features.checkin_methods %}
+                <li><span class="feature-icon">✓</span> {{ features.checkin_methods }}</li>
+                {% endif %}
+                {% if features.reports %}
+                <li><span class="feature-icon">✓</span> {{ features.reports }}</li>
+                {% endif %}
+                {% if features.support %}
+                <li><span class="feature-icon">✓</span> {{ features.support }}</li>
+                {% endif %}
+                {% if features.realtime_analytics %}
                 <li><span class="feature-icon">✓</span> Real-time analytics</li>
+                {% endif %}
+                {% if features.custom_reports %}
                 <li><span class="feature-icon">✓</span> Custom report generation</li>
-                <li><span class="feature-icon">✓</span> Priority email support</li>
-                <li class="feature-unavailable"><span class="xmark">✗</span> Dedicated account manager</li>
-            </ul>
-            <div class="plan-button">
-                <a href="{{ url_for('auth.register', selected_plan_id=2, role='institution_admin') }}" class="btn-custom" style="background-color: #059669; border-color: #059669;">Get Started</a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Enterprise Plan -->
-    <div class="plan-card">
-        <h3 class="plan-title">Enterprise</h3>
-        <div class="plan-price">
-            <div class="price-amount">$99</div>
-            <div class="price-period">per month</div>
-        </div>
-        <div class="plan-content">
-            <ul class="plan-features">
-                <li><span class="feature-icon">✓</span> Unlimited students</li>
-                <li><span class="feature-icon">✓</span> Enterprise-grade tracking</li>
-                <li><span class="feature-icon">✓</span> Multi-factor authentication</li>
-                <li><span class="feature-icon">✓</span> Advanced AI recognition</li>
+                {% endif %}
+                {% if features.predictive_analytics %}
                 <li><span class="feature-icon">✓</span> Predictive analytics</li>
+                {% endif %}
+                {% if features.api_access %}
                 <li><span class="feature-icon">✓</span> API access</li>
+                {% endif %}
+                {% if features.custom_integrations %}
                 <li><span class="feature-icon">✓</span> Custom integrations</li>
-                <li><span class="feature-icon">✓</span> 24/7 dedicated support</li>
+                {% endif %}
             </ul>
             <div class="plan-button">
-                <a href="{{ url_for('auth.register', selected_plan_id=3, role='institution_admin') }}" class="btn-custom">Get Started</a>
+                <a href="{{ url_for('auth.register', selected_plan_id=plan.plan_id, role='institution_admin') }}" 
+                   class="btn-custom {% if not features.is_popular %}btn-outline-custom{% endif %}"
+                   {% if features.is_popular %}style="background-color: #059669; border-color: #059669;"{% endif %}>
+                   Get Started
+                </a>
             </div>
         </div>
     </div>
+    {% endfor %}
 </div>
 
 <!-- Plan Comparison Table -->
@@ -368,54 +359,62 @@
         <thead>
             <tr>
                 <th>Features</th>
-                <th>Starter</th>
-                <th>Professional</th>
-                <th>Enterprise</th>
+                {% for plan in subscription_plans %}
+                <th>{{ plan.name }}</th>
+                {% endfor %}
             </tr>
         </thead>
         <tbody>
+            {# Collect all unique features from all plans #}
+            {% set all_features = [] %}
+            {% for plan in subscription_plans %}
+                {% if plan.features.custom_features %}
+                    {% for feature in plan.features.custom_features %}
+                        {% set feature_lower = feature|lower %}
+                        {% set feature_exists = namespace(found=false) %}
+                        {% for existing in all_features %}
+                            {% if existing|lower == feature_lower %}
+                                {% set feature_exists.found = true %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if not feature_exists.found %}
+                            {% set _ = all_features.append(feature) %}
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+            
+            {# First row: Max Students #}
             <tr>
                 <td class="feature-name">Maximum Students</td>
-                <td>50</td>
-                <td>500</td>
-                <td>Unlimited</td>
+                {% for plan in subscription_plans %}
+                <td>{{ plan.features.max_students or plan.max_users }}</td>
+                {% endfor %}
             </tr>
+            
+            {# Dynamic rows for each unique feature #}
+            {% for feature in all_features %}
             <tr>
-                <td class="feature-name">Attendance Methods</td>
-                <td>QR Code</td>
-                <td>QR Code + PIN</td>
-                <td>Multi-factor</td>
+                <td class="feature-name">{{ feature }}</td>
+                {% for plan in subscription_plans %}
+                <td>
+                    {% set has_feature = namespace(found=false) %}
+                    {% if plan.features.custom_features %}
+                        {% for plan_feature in plan.features.custom_features %}
+                            {% if plan_feature|lower == feature|lower %}
+                                {% set has_feature.found = true %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                    {% if has_feature.found %}
+                    <span class="checkmark">✓</span>
+                    {% else %}
+                    <span class="xmark">✗</span>
+                    {% endif %}
+                </td>
+                {% endfor %}
             </tr>
-            <tr>
-                <td class="feature-name">AI Face Recognition</td>
-                <td><span class="xmark">✗</span></td>
-                <td><span class="checkmark">✓</span></td>
-                <td><span class="checkmark">✓</span></td>
-            </tr>
-            <tr>
-                <td class="feature-name">Real-time Analytics</td>
-                <td><span class="xmark">✗</span></td>
-                <td><span class="checkmark">✓</span></td>
-                <td><span class="checkmark">✓</span></td>
-            </tr>
-            <tr>
-                <td class="feature-name">Custom Reports</td>
-                <td><span class="xmark">✗</span></td>
-                <td><span class="checkmark">✓</span></td>
-                <td><span class="checkmark">✓</span></td>
-            </tr>
-            <tr>
-                <td class="feature-name">API Access</td>
-                <td><span class="xmark">✗</span></td>
-                <td><span class="xmark">✗</span></td>
-                <td><span class="checkmark">✓</span></td>
-            </tr>
-            <tr>
-                <td class="feature-name">Support</td>
-                <td>Email</td>
-                <td>Priority Email</td>
-                <td>24/7 Dedicated</td>
-            </tr>
+            {% endfor %}
         </tbody>
     </table>
 </div>

@@ -1,0 +1,718 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Feature Management - Platform Manager{% endblock %}
+
+{% block content %}
+<style>
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-header h1 {
+        font-size: 2rem;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .page-header p {
+        color: var(--text-light);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+    }
+
+    .stat-card h3 {
+        font-size: 2rem;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-card p {
+        color: var(--text-light);
+        font-size: 0.9rem;
+    }
+
+    .filter-section {
+        background: white;
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .filter-controls {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .filter-controls select,
+    .filter-controls input {
+        padding: 0.5rem;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        font-size: 0.9rem;
+    }
+
+    .features-table {
+        background: white;
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .table-header h2 {
+        font-size: 1.25rem;
+        color: var(--text-dark);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    thead {
+        background-color: var(--primary-light);
+    }
+
+    th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        color: var(--text-dark);
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    td {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-dark);
+    }
+
+    tbody tr:hover {
+        background-color: var(--primary-light);
+    }
+
+    .feature-icon {
+        font-size: 2rem;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .badge-success {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+
+    .badge-warning {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+
+    .badge-info {
+        background-color: #dbeafe;
+        color: #1e40af;
+    }
+
+    .badge-secondary {
+        background-color: #f3f4f6;
+        color: #4b5563;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-icon {
+        padding: 0.5rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.9rem;
+    }
+
+    .btn-edit {
+        background-color: #dbeafe;
+        color: #1e40af;
+    }
+
+    .btn-edit:hover {
+        background-color: #bfdbfe;
+    }
+
+    .btn-delete {
+        background-color: #fee2e2;
+        color: #991b1b;
+    }
+
+    .btn-delete:hover {
+        background-color: #fecaca;
+    }
+
+    .btn-toggle {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+
+    .btn-toggle:hover {
+        background-color: #fde68a;
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 1rem;
+    }
+
+    .modal-overlay.active {
+        display: flex;
+    }
+
+    .modal-content {
+        background-color: white;
+        border-radius: 12px;
+        padding: 2rem;
+        max-width: 800px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .modal-header h2 {
+        font-size: 1.5rem;
+        color: var(--text-dark);
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--text-light);
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        font-size: 0.9rem;
+    }
+
+    .form-group textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    .form-group small {
+        display: block;
+        margin-top: 0.25rem;
+        color: var(--text-light);
+        font-size: 0.85rem;
+    }
+
+    .checkbox-group {
+        display: flex;
+        gap: 2rem;
+        margin-top: 1rem;
+    }
+
+    .checkbox-group label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: normal;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+        width: auto;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        margin-top: 2rem;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--text-light);
+    }
+
+    .empty-state p {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .filter-controls {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .filter-controls select,
+        .filter-controls input,
+        .filter-controls button {
+            width: 100%;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            font-size: 0.85rem;
+        }
+
+        th, td {
+            padding: 0.5rem;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<div class="page-header">
+    <h1>Feature Management</h1>
+    <p>Manage features displayed on the public features page</p>
+</div>
+
+<!-- Statistics -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3>{{ total_features }}</h3>
+        <p>Total Features</p>
+    </div>
+    <div class="stat-card">
+        <h3>{{ active_features }}</h3>
+        <p>Active Features</p>
+    </div>
+    <div class="stat-card">
+        <h3>{{ main_features_count }}</h3>
+        <p>Main Features</p>
+    </div>
+    <div class="stat-card">
+        <h3>{{ advanced_features_count }}</h3>
+        <p>Advanced Features</p>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="filter-section">
+    <div class="filter-controls">
+        <select id="statusFilter" onchange="filterFeatures()">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+        </select>
+        <select id="typeFilter" onchange="filterFeatures()">
+            <option value="">All Types</option>
+            <option value="main">Main Features</option>
+            <option value="advanced">Advanced Features</option>
+        </select>
+        <input type="text" id="searchInput" placeholder="Search features..." onkeyup="filterFeatures()">
+        <button class="btn-custom" onclick="openModal('add')">
+            ➕ Add New Feature
+        </button>
+    </div>
+</div>
+
+<!-- Features Table -->
+<div class="features-table">
+    <div class="table-header">
+        <h2>All Features</h2>
+    </div>
+    
+    {% if features %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Icon</th>
+                    <th>Title</th>
+                    <th>Slug</th>
+                    <th>Type</th>
+                    <th>Order</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="featuresTableBody">
+                {% for feature in features %}
+                <tr data-feature-id="{{ feature.feature_id }}" 
+                    data-status="{{ 'active' if feature.is_active else 'inactive' }}"
+                    data-type="{{ 'advanced' if feature.is_advanced else 'main' }}"
+                    data-title="{{ feature.title.lower() }}">
+                    <td class="feature-icon">{{ feature.icon }}</td>
+                    <td>
+                        <strong>{{ feature.title }}</strong><br>
+                        <small style="color: var(--text-light);">{{ feature.description[:80] }}...</small>
+                    </td>
+                    <td><code>{{ feature.slug }}</code></td>
+                    <td>
+                        {% if feature.is_advanced %}
+                            <span class="badge badge-info">Advanced</span>
+                        {% else %}
+                            <span class="badge badge-secondary">Main</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ feature.display_order }}</td>
+                    <td>
+                        {% if feature.is_active %}
+                            <span class="badge badge-success">Active</span>
+                        {% else %}
+                            <span class="badge badge-warning">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-icon btn-edit" onclick="editFeature({{ feature.feature_id }})" title="Edit">
+                                ✏️
+                            </button>
+                            <button class="btn-icon btn-toggle" onclick="toggleFeatureStatus({{ feature.feature_id }}, {{ 'true' if feature.is_active else 'false' }})" title="Toggle Active">
+                                {% if feature.is_active %}👁️{% else %}🚫{% endif %}
+                            </button>
+                            <button class="btn-icon btn-delete" onclick="deleteFeature({{ feature.feature_id }}, '{{ feature.title }}')" title="Delete">
+                                🗑️
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>No features found</p>
+        <button class="btn-custom" onclick="openModal('add')">Add Your First Feature</button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add/Edit Modal -->
+<div id="featureModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">Add New Feature</h2>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        
+        <form id="featureForm" onsubmit="saveFeature(event)">
+            <input type="hidden" id="featureId" name="feature_id">
+            
+            <div class="form-group">
+                <label for="slug">Slug (URL-friendly identifier)*</label>
+                <input type="text" id="slug" name="slug" required pattern="[a-z0-9-]+" 
+                       placeholder="e.g., ai-face-recognition">
+                <small>Use lowercase letters, numbers, and hyphens only</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="icon">Icon (Emoji)*</label>
+                <input type="text" id="icon" name="icon" required maxlength="10" 
+                       placeholder="🤖">
+                <small>Use a single emoji character</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="title">Title*</label>
+                <input type="text" id="title" name="title" required maxlength="200" 
+                       placeholder="e.g., AI-Powered Face Recognition">
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Short Description*</label>
+                <textarea id="description" name="description" required 
+                          placeholder="Brief description shown on feature cards..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="details">Detailed Description (HTML supported)</label>
+                <textarea id="details" name="details" rows="8" 
+                          placeholder="<h4>Key Features:</h4><ul><li>Feature 1</li><li>Feature 2</li></ul>"></textarea>
+                <small>HTML tags like &lt;h4&gt;, &lt;ul&gt;, &lt;li&gt;, &lt;strong&gt; are supported</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="tryUrl">Try URL (Link for demo/registration)</label>
+                <input type="text" id="tryUrl" name="try_url" 
+                       placeholder="/auth/register or /demo/feature-name">
+            </div>
+            
+            <div class="form-group">
+                <label for="displayOrder">Display Order*</label>
+                <input type="number" id="displayOrder" name="display_order" required min="0" 
+                       value="0" placeholder="0">
+                <small>Lower numbers appear first</small>
+            </div>
+            
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" id="isActive" name="is_active" checked>
+                    Active (visible to users)
+                </label>
+                <label>
+                    <input type="checkbox" id="isAdvanced" name="is_advanced">
+                    Advanced Feature
+                </label>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-custom btn-outline-custom" onclick="closeModal()">
+                    Cancel
+                </button>
+                <button type="submit" class="btn-custom">
+                    <span id="submitBtnText">Add Feature</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Features data from backend
+const featuresData = {{ features|tojson|safe }};
+
+function openModal(mode, featureId = null) {
+    const modal = document.getElementById('featureModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const form = document.getElementById('featureForm');
+    const submitBtn = document.getElementById('submitBtnText');
+    
+    form.reset();
+    
+    if (mode === 'add') {
+        modalTitle.textContent = 'Add New Feature';
+        submitBtn.textContent = 'Add Feature';
+        document.getElementById('featureId').value = '';
+        document.getElementById('isActive').checked = true;
+    } else if (mode === 'edit' && featureId) {
+        modalTitle.textContent = 'Edit Feature';
+        submitBtn.textContent = 'Update Feature';
+        
+        // Load feature data
+        const feature = featuresData.find(f => f.feature_id === featureId);
+        if (feature) {
+            document.getElementById('featureId').value = feature.feature_id;
+            document.getElementById('slug').value = feature.slug;
+            document.getElementById('icon').value = feature.icon;
+            document.getElementById('title').value = feature.title;
+            document.getElementById('description').value = feature.description;
+            document.getElementById('details').value = feature.details || '';
+            document.getElementById('tryUrl').value = feature.try_url || '';
+            document.getElementById('displayOrder').value = feature.display_order;
+            document.getElementById('isActive').checked = feature.is_active;
+            document.getElementById('isAdvanced').checked = feature.is_advanced;
+        }
+    }
+    
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+    const modal = document.getElementById('featureModal');
+    modal.classList.remove('active');
+    document.body.style.overflow = 'auto';
+}
+
+function editFeature(featureId) {
+    openModal('edit', featureId);
+}
+
+async function saveFeature(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const data = {
+        feature_id: formData.get('feature_id') || null,
+        slug: formData.get('slug'),
+        icon: formData.get('icon'),
+        title: formData.get('title'),
+        description: formData.get('description'),
+        details: formData.get('details'),
+        try_url: formData.get('try_url'),
+        display_order: parseInt(formData.get('display_order')),
+        is_active: document.getElementById('isActive').checked,
+        is_advanced: document.getElementById('isAdvanced').checked
+    };
+    
+    const url = data.feature_id 
+        ? `/platform/api/features/${data.feature_id}/update`
+        : '/platform/api/features/create';
+    
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(result.message || 'Feature saved successfully!');
+            window.location.reload();
+        } else {
+            alert(result.error || 'Failed to save feature');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while saving the feature');
+    }
+}
+
+async function toggleFeatureStatus(featureId, currentStatus) {
+    const newStatus = !currentStatus;
+    
+    try {
+        const response = await fetch(`/platform/api/features/${featureId}/toggle-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ is_active: newStatus })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            window.location.reload();
+        } else {
+            alert(result.error || 'Failed to toggle feature status');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while toggling feature status');
+    }
+}
+
+async function deleteFeature(featureId, featureTitle) {
+    if (!confirm(`Are you sure you want to delete "${featureTitle}"? This action cannot be undone.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/platform/api/features/${featureId}/delete`, {
+            method: 'POST'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('Feature deleted successfully!');
+            window.location.reload();
+        } else {
+            alert(result.error || 'Failed to delete feature');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while deleting the feature');
+    }
+}
+
+function filterFeatures() {
+    const statusFilter = document.getElementById('statusFilter').value;
+    const typeFilter = document.getElementById('typeFilter').value;
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    
+    const rows = document.querySelectorAll('#featuresTableBody tr');
+    
+    rows.forEach(row => {
+        const status = row.dataset.status;
+        const type = row.dataset.type;
+        const title = row.dataset.title;
+        
+        const statusMatch = !statusFilter || status === statusFilter;
+        const typeMatch = !typeFilter || type === typeFilter;
+        const searchMatch = !searchTerm || title.includes(searchTerm);
+        
+        if (statusMatch && typeMatch && searchMatch) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// Close modal when clicking outside
+document.getElementById('featureModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeModal();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeModal();
+    }
+});
+</script>
+
+{% endblock %}

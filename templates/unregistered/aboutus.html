@@ -385,142 +385,51 @@
 
 <!-- Intro Section -->
 <section class="intro-section">
-    <h2>About AttendAI</h2>
-    <p>We're revolutionizing attendance management with AI-powered solutions that make tracking, reporting, and analytics seamless for educational institutions and businesses worldwide.</p>
+    <h2>{{ intro.title }}</h2>
+    <p>{{ intro.description }}</p>
 </section>
 
 <!-- Our Story Card -->
 <section class="story-card card-custom">
-    <h2>Our Story</h2>
-    <p>Founded in 2025, AttendAI began as a student project at a leading technology university. Our team recognized the inefficiencies in traditional attendance tracking systems and set out to create a smarter solution. Today, we serve over 500 institutions across 30 countries, helping them save thousands of hours annually while improving accuracy and insights.</p>
+    <h2>{{ story.title }}</h2>
+    <p>{{ story.content }}</p>
 </section>
 
 <!-- Mission & Vision -->
 <h2 class="section-title">Our Mission & Vision</h2>
 <div class="mission-vision-grid">
     <div class="mission-card card-custom">
-        <h3>Our Mission</h3>
-        <p>To revolutionize attendance management through innovative AI technology, making it effortless for organizations to track, analyze, and optimize participation while providing actionable insights for better decision-making.</p>
+        <h3>{{ mission.title }}</h3>
+        <p>{{ mission.content }}</p>
     </div>
     <div class="vision-card card-custom">
-        <h3>Our Vision</h3>
-        <p>To become the global standard in attendance management systems, empowering every educational and corporate institution with smart, seamless, and scalable solutions that enhance productivity and engagement.</p>
+        <h3>{{ vision.title }}</h3>
+        <p>{{ vision.content }}</p>
     </div>
 </div>
 
 <!-- Team Section -->
 <h2 class="section-title">Meet Our Team</h2>
 <div class="team-grid">
+    {% for member in team_members %}
     <div class="team-card card-custom">
         <div class="team-image-placeholder">
-            CHONG YE HAN
+            {{ member.name }}
         </div>
         <div class="team-card-content">
-            <h3>CHONG YE HAN</h3>
-            <p class="team-role">AI & Documentation Lead</p>
+            <h3>{{ member.name }}</h3>
+            <p class="team-role">{{ member.role }}</p>
             <div class="team-contributions">
                 <ul>
-                    <li>Wireframe Development</li>
-                    <li>Project Requirement Document</li>
-                    <li>System Requirement Document</li>
-                    <li>Facial Recognition AI Training</li>
-                    <li>Technical Design Manual</li>
-                    <li>Technical Design Document</li>
-                    <li>System Requirement Specification</li>
+                    {% for contribution in member.contributions %}
+                    <li>{{ contribution }}</li>
+                    {% endfor %}
                 </ul>
             </div>
-            <button class="btn-custom show-team-details" data-member="chong-ye-han" style="padding: 0.5rem 1.5rem; font-size: 0.85rem;">View Details</button>
+            <button class="btn-custom show-team-details" data-member="{{ member.team_member_id }}" style="padding: 0.5rem 1.5rem; font-size: 0.85rem;">View Details</button>
         </div>
     </div>
-
-    <div class="team-card card-custom">
-        <div class="team-image-placeholder">
-            GOH CHING FONG
-        </div>
-        <div class="team-card-content">
-            <h3>GOH CHING FONG</h3>
-            <p class="team-role">Project Lead</p>
-            <div class="team-contributions">
-                <ul>
-                    <li>Wireframe Development</li>
-                    <li>Project Requirement Document</li>
-                    <li>Technical Design Document</li>
-                    <li>Frontend Prototype Code</li>
-                    <li>Preliminary User Manual</li>
-                    <li>Technical Design Manual</li>
-                    <li>Debugging</li>
-                    <li>System Requirement Specification</li>
-                    <li>User Manual</li>
-                    <li>Kanban Master</li>
-                    <li>Presentation Slides</li>
-                </ul>
-            </div>
-            <button class="btn-custom show-team-details" data-member="goh-ching-fong" style="padding: 0.5rem 1.5rem; font-size: 0.85rem;">View Details</button>
-        </div>
-    </div>
-
-    <div class="team-card card-custom">
-        <div class="team-image-placeholder">
-            AARON JED FUSANA BERNARDO
-        </div>
-        <div class="team-card-content">
-            <h3>AARON JED FUSANA BERNARDO</h3>
-            <p class="team-role">"Developer"</p>
-            <div class="team-contributions">
-                <ul>
-                    <li>Wireframe Development</li>
-                    <li>Project Requirement Document</li>
-                    <li>Backend Prototype Code</li>
-                    <li>Frontend Prototype Code</li>
-                    <li>Debugging</li>
-                    <li>System Requirement Specification</li>
-                    <li>Kanban Contributor</li>
-                </ul>
-            </div>
-            <button class="btn-custom show-team-details" data-member="aaron-jed-bernardo" style="padding: 0.5rem 1.5rem; font-size: 0.85rem;">View Details</button>
-        </div>
-    </div>
-
-    <div class="team-card card-custom">
-        <div class="team-image-placeholder">
-            WU JINGHAN
-        </div>
-        <div class="team-card-content">
-            <h3>WU JINGHAN</h3>
-            <p class="team-role">UI/UX & Documentation</p>
-            <div class="team-contributions">
-                <ul>
-                    <li>Wireframe Development</li>
-                    <li>Project Requirement Document</li>
-                    <li>Frontend optimization</li>
-                    <li>Preliminary User Manual</li>
-                    <li>Presentation Slides</li>
-                </ul>
-            </div>
-            <button class="btn-custom show-team-details" data-member="wu-jinghan" style="padding: 0.5rem 1.5rem; font-size: 0.85rem;">View Details</button>
-        </div>
-    </div>
-
-    <div class="team-card card-custom">
-        <div class="team-image-placeholder">
-            LI JING YOUNG
-        </div>
-        <div class="team-card-content">
-            <h3>LI JING YOUNG</h3>
-            <p class="team-role">Technical Documentation</p>
-            <div class="team-contributions">
-                <ul>
-                    <li>Wireframe Development</li>
-                    <li>Project Requirement Document</li>
-                    <li>Technical Design Manual</li>
-                    <li>Technical Design Document</li>
-                    <li>Presentation Slides</li>
-                    <li>System Requirement Specification</li>
-                </ul>
-            </div>
-            <button class="btn-custom show-team-details" data-member="li-jing-young" style="padding: 0.5rem 1.5rem; font-size: 0.85rem;">View Details</button>
-        </div>
-    </div>
+    {% endfor %}
 </div>
 
 <!-- Team Member Details Modal -->
@@ -536,29 +445,14 @@
 <!-- Values Section -->
 <h2 class="section-title">Our Values</h2>
 <div class="team-grid">
-    <div class="team-card card-custom value-card" style="justify-content: center;">
+    {% for value in values %}
+    <div class="team-card card-custom" style="justify-content: center;">
         <div class="team-card-content">
-            <div class="value-emoji">💡</div>
-            <h3>Innovation</h3>
-            <p>Constantly pushing boundaries with AI and machine learning to deliver cutting-edge solutions.</p>
+            <h3>{{ value.title }}</h3>
+            <p>{{ value.description }}</p>
         </div>
     </div>
-
-    <div class="team-card card-custom value-card" style="justify-content: center;">
-        <div class="team-card-content">
-            <div class="value-emoji">🛡️</div>
-            <h3>Reliability</h3>
-            <p>99.9% uptime guarantee with robust, secure systems you can trust.</p>
-        </div>
-    </div>
-
-    <div class="team-card card-custom value-card" style="justify-content: center;">
-        <div class="team-card-content">
-            <div class="value-emoji">👥</div>
-            <h3>User-Centric</h3>
-            <p>Designed with real users in mind for intuitive, frictionless experiences.</p>
-        </div>
-    </div>
+    {% endfor %}
 </div>
 
 <script>
@@ -569,93 +463,27 @@ document.addEventListener('DOMContentLoaded', function() {
     const teamModalBody = teamModal.querySelector('.team-modal-body');
     const closeButton = teamModal.querySelector('.team-modal-close');
     
-    // Team member details data
+    // Team member details data from backend
     const teamMemberDetails = {
-        'chong-ye-han': {
-            name: 'CHONG YE HAN',
-            role: 'AI & Documentation Lead',
-            description: 'Leads the AI development and comprehensive documentation efforts for AttendAI.',
-            contributions: [
-                'Wireframe Development',
-                'Project Requirement Document',
-                'System Requirement Document',
-                'Facial Recognition AI Training',
-                'Technical Design Manual',
-                'Technical Design Document',
-                'System Requirement Specification'
-            ],
-            skills: ['AI Development', 'Technical Documentation', 'System Architecture', 'Project Planning']
-        },
-        'goh-ching-fong': {
-            name: 'GOH CHING FONG',
-            role: 'Project Lead',
-            description: 'Manages frontend development and project workflow using Kanban methodology.',
-            contributions: [
-                'Wireframe Development',
-                'Project Requirement Document',
-                'Technical Design Document',
-                'Frontend Prototype Code',
-                'Preliminary User Manual',
-                'Technical Design Manual',
-                'Debugging',
-                'System Requirement Specification',
-                'User Manual',
-                'Kanban Master',
-                'Presentation Slides'
-            ],
-            skills: ['Frontend Development', 'Project Management', 'UI/UX Design', 'Documentation']
-        },
-        'aaron-jed-bernardo': {
-            name: 'AARON JED FUSANA BERNARDO',
-            role: 'Developer',
-            description: 'Develops both frontend and backend components with a focus on system integration.',
-            contributions: [
-                'Wireframe Development',
-                'Project Requirement Document',
-                'Backend Prototype Code',
-                'Frontend Prototype Code',
-                'Debugging',
-                'System Requirement Specification',
-                'Kanban Contributor'
-            ],
-            skills: ['Full Stack Development', 'Backend Architecture', 'Debugging', 'System Integration']
-        },
-        'wu-jinghan': {
-            name: 'WU JINGHAN',
-            role: 'UI/UX & Documentation',
-            description: 'Focuses on user interface design and creating comprehensive user documentation.',
-            contributions: [
-                'Wireframe Development',
-                'Project Requirement Document',
-                'Preliminary User Manual',
-                'Presentation Slides'
-            ],
-            skills: ['UI/UX Design', 'User Documentation', 'Presentation Design', 'Wireframing']
-        },
-        'li-jing-young': {
-            name: 'LI JING YOUNG',
-            role: 'Technical Documentation',
-            description: 'Creates detailed technical documentation and design specifications.',
-            contributions: [
-                'Wireframe Development',
-                'Project Requirement Document',
-                'Technical Design Manual',
-                'Technical Design Document',
-                'Presentation Slides',
-                'System Requirement Specification'
-            ],
-            skills: ['Technical Writing', 'System Design', 'Documentation', 'Presentation']
-        }
+        {% for member in team_members %}
+        '{{ member.team_member_id }}': {
+            name: '{{ member.name }}',
+            role: '{{ member.role }}',
+            description: '{{ member.description }}',
+            contributions: {{ member.contributions|tojson|safe }},
+            skills: {{ member.skills|tojson|safe }}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
     };
 
     // Open modal when View Details is clicked
     document.querySelectorAll('.show-team-details').forEach(button => {
         button.addEventListener('click', function(e) {
             e.preventDefault();
-            const memberKey = this.dataset.member;
+            const memberId = this.dataset.member;
             
-            if (teamMemberDetails[memberKey]) {
-                const member = teamMemberDetails[memberKey];
+            if (teamMemberDetails[memberId]) {
+                const member = teamMemberDetails[memberId];
                 
                 teamModalTitle.textContent = member.name;
                 teamModalSubtitle.textContent = member.role;

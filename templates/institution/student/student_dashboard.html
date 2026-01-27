@@ -730,7 +730,7 @@
                         {% endif %}
                         
                         <!-- Update Facial Data Button -->
-                        <a href="{{ url_for('student.update_facial_data') }}" class="btn-facial-data">
+                        <a href="{{ url_for('student.facial_recognition_retrain') }}" class="btn-facial-data">
                             <span class="btn-icon">📸</span>
                             <span>{{ 'Update Facial Data' if facial_data_registered else 'Register Facial Data' }}</span>
                         </a>
@@ -851,7 +851,7 @@
                             <span class="link-icon">📊</span>
                             <span class="link-text">My Attendance</span>
                         </a>
-                        <a href="{{ url_for('student.update_facial_data') }}" class="link-item">
+                        <a href="{{ url_for('student.facial_recognition_retrain') }}" class="link-item">
                             <span class="link-icon">📸</span>
                             <span class="link-text">Facial Data</span>
                         </a>

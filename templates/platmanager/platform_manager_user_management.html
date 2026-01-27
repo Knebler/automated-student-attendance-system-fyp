@@ -1271,26 +1271,26 @@ async function openViewUserModal(userId) {
     }
 }
 
-function renderUserDetails(modal, user) {
-    modal.querySelector('#viewUserName').textContent = user.name || 'N/A';
-    modal.querySelector('#viewUserEmail').textContent = user.email || 'N/A';
-    modal.querySelector('#viewUserPhone').textContent = user.phone || 'N/A';
-    modal.querySelector('#viewUserId').textContent = user.user_id || 'N/A';
+function renderUserDetails(modal, data) {
+    modal.querySelector('#viewUserName').textContent = data.user.name || 'N/A';
+    modal.querySelector('#viewUserEmail').textContent = data.user.email || 'N/A';
+    modal.querySelector('#viewUserPhone').textContent = data.user.phone || 'N/A';
+    modal.querySelector('#viewUserId').textContent = data.user.user_id || 'N/A';
     
     // Role badge
     const roleBadge = modal.querySelector('#viewUserRole');
-    roleBadge.textContent = user.role || 'N/A';
-    roleBadge.className = 'role-badge ' + (user.role || '');
+    roleBadge.textContent = data.user.role || 'N/A';
+    roleBadge.className = 'role-badge ' + (data.user.role || '');
     
     // Status badge
     const statusBadge = modal.querySelector('#viewUserStatus');
-    const isActive = user.is_active !== false;
+    const isActive = data.user.is_active !== false;
     statusBadge.textContent = isActive ? 'Active' : 'Suspended';
     statusBadge.className = 'status-badge ' + (isActive ? 'active' : 'suspended');
     
-    modal.querySelector('#viewUserInstitution').textContent = user.institution_name || 'No Institution';
+    modal.querySelector('#viewUserInstitution').textContent = data.user.institution_name || 'No Institution';
     modal.querySelector('#viewUserCreatedAt').textContent = 
-        user.created_at ? new Date(user.created_at).toLocaleString() : 'N/A';
+        data.user.created_at ? new Date(data.user.created_at).toLocaleString() : 'N/A';
 }
 
 // Edit User Modal
@@ -1316,14 +1316,14 @@ async function openEditUserModal(userId) {
     }
 }
 
-function populateEditForm(modal, user) {
-    modal.querySelector('#editUserId').value = user.user_id;
-    modal.querySelector('#editUserName').value = user.name || '';
-    modal.querySelector('#editUserEmail').value = user.email || '';
-    modal.querySelector('#editUserPhone').value = user.phone || '';
-    modal.querySelector('#editUserRole').value = user.role || 'student';
-    modal.querySelector('#editUserInstitution').value = user.institution_id || '';
-    modal.querySelector('#editUserStatus').value = user.is_active !== false ? 'true' : 'false';
+function populateEditForm(modal, data) {
+    modal.querySelector('#editUserId').value = data.user.user_id;
+    modal.querySelector('#editUserName').value = data.user.name || '';
+    modal.querySelector('#editUserEmail').value = data.user.email || '';
+    modal.querySelector('#editUserPhone').value = data.user.phone || '';
+    modal.querySelector('#editUserRole').value = data.user.role || 'student';
+    modal.querySelector('#editUserInstitution').value = data.user.institution_id || '';
+    modal.querySelector('#editUserStatus').value = data.user.is_active !== false ? 'true' : 'false';
     modal.querySelector('#editUserPassword').value = '';
 }
 

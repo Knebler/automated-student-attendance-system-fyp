@@ -13,6 +13,7 @@ from application.controls.auth_control import requires_roles
 from application.entities2 import ClassModel, UserModel, InstitutionModel, SubscriptionModel, CourseModel, AttendanceRecordModel, CourseUserModel, VenueModel, TestimonialModel
 from database.base import get_session
 from database.models import *
+from database.models import Feature, HeroFeature, Stat
 from datetime import date, datetime, timedelta
 from collections import defaultdict
 

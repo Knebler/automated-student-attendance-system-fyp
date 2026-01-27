@@ -91,3 +91,12 @@ class NotificationModel(BaseEntity[Notification]):
         
         self.session.commit()
         return notifications
+
+    def clear_all_notifications(self, user_id: int) -> int:
+        """Clear all notifications for a user"""
+        result = self.session.query(Notification)\
+            .filter(Notification.user_id == user_id)\
+            .delete()
+        
+        self.session.commit()
+        return result

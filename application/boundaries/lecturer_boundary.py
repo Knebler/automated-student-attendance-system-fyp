@@ -987,7 +987,7 @@ def mark_notification_read(notification_id):
 def mark_all_notifications_read():
     """API endpoint to mark all notifications as read"""
     try:
-        lecturer_id = get_lecturer_id()
+        lecturer_id = session.get('user_id')
         if not lecturer_id:
             return jsonify({'success': False, 'error': 'User not authenticated'}), 401
         
@@ -1025,3 +1025,26 @@ def get_relative_time(dt):
         return f'{diff.days} day{"s" if diff.days != 1 else ""} ago'
     else:
         return dt.strftime('%b %d, %Y')
+
+#clear all notifications
+@lecturer_bp.route('/api/notifications/clear-all', methods=['POST'])
+@requires_roles('lecturer')
+def clear_all_notifications():
+    try:
+        lecturer_id = session.get('user_id')
+        if not lecturer_id:
+            return jsonify({'success': False, 'error': 'User not authenticated'}), 401
+        
+        with get_session() as db_session:
+            notification_model = NotificationModel(db_session)
+            count = notification_model.clear_all_notifications(lecturer_id)
+            
+            return jsonify({
+                'success': True,
+                'message': f'All notifications cleared ({count} deleted)',
+                'count': count
+            })
+            
+    except Exception as e:
+        current_app.logger.error(f"Error clearing all notifications: {e}")
+        return jsonify({'success': False, 'error': 'Failed to clear notifications'}), 500

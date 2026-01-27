@@ -110,8 +110,20 @@ def user_management():
     """Platform manager - user management"""
     with get_session() as session:
         user_model = UserModel(session)
+        institution_model = InstitutionModel(session)
+        
+        # Get all institutions for the dropdown
+        institutions = institution_model.get_all()
+        
         context = {
             "overview_stats": user_model.pm_user_stats(),
+            "institutions": [
+                {
+                    'institution_id': inst.institution_id,
+                    'name': inst.name
+                }
+                for inst in institutions
+            ]
         }
     return render_template('platmanager/platform_manager_user_management.html', **context)
 
@@ -1350,7 +1362,131 @@ def delete_institution_api(institution_id):
         status_code = 404 if 'not found' in result.get('error', '').lower() else 400
         return jsonify(result), status_code
     
+@platform_bp.route('/api/users/create-admin', methods=['POST'])
+@requires_roles_api('platform_manager')
+def create_admin_user():
+    """Create a new admin account"""
+    data = request.json
+    
+    result = PlatformControl.create_admin_user(data)
+    
+    if result['success']:
+        return jsonify(result)
+    else:
+        return jsonify(result), 400
 
+@platform_bp.route('/api/users/<int:user_id>', methods=['GET'])
+@requires_roles_api('platform_manager')
+def get_user_details(user_id):
+    """Get user details by ID"""
+    result = PlatformControl.get_user_details(user_id)
+    
+    if result['success']:
+        return jsonify(result)
+    else:
+        return jsonify(result), 404
+
+@platform_bp.route('/api/users/<int:user_id>/activity', methods=['GET'])
+@requires_roles_api('platform_manager')
+def get_user_activity(user_id):
+    """Get user activity log"""
+    limit = request.args.get('limit', 10, type=int)
+    
+    result = PlatformControl.get_user_activity_log(user_id, limit)
+    
+    if result['success']:
+        return jsonify(result)
+    else:
+        return jsonify(result), 404
+
+@platform_bp.route('/api/users/<int:user_id>/update', methods=['POST'])
+@requires_roles_api('platform_manager')
+def update_user(user_id):
+    """Update user information"""
+    data = request.json
+    
+    result = PlatformControl.update_user_profile(user_id, data)
+    
+    if result['success']:
+        return jsonify(result)
+    else:
+        return jsonify(result), 400
+
+@platform_bp.route('/api/users/<int:user_id>/toggle-status', methods=['POST'])
+@requires_roles_api('platform_manager')
+def toggle_user_status(user_id):
+    """Activate or suspend a user account"""
+    data = request.json
+    action = data.get('action')  # 'activate' or 'suspend'
+    
+    result = PlatformControl.toggle_user_status(user_id, action)
+    
+    if result['success']:
+        return jsonify(result)
+    else:
+        return jsonify(result), 400
+
+@platform_bp.route('/api/users/search', methods=['GET'])
+@requires_roles_api('platform_manager')
+def search_users():
+    """Search users by name, email, or role"""
+    search_term = request.args.get('q', '').strip()
+    role = request.args.get('role', '')
+    status = request.args.get('status', '')
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    
+    result = PlatformControl.search_users(
+        search_term=search_term,
+        role=role,
+        status=status,
+        page=page,
+        per_page=per_page
+    )
+    
+    if result['success']:
+        return jsonify(result)
+    else:
+        return jsonify(result), 400
+
+@platform_bp.route('/api/users/recent-activity', methods=['GET'])
+@requires_roles_api('platform_manager')
+def get_recent_user_activity():
+    """Get recent user activity"""
+    institution_id = request.args.get('institution_id', type=int)
+    limit = request.args.get('limit', 10, type=int)
+    
+    result = PlatformControl.get_recent_user_activity(institution_id, limit)
+    
+    if result['success']:
+        return jsonify(result)
+    else:
+        return jsonify(result), 400
+
+@platform_bp.route('/api/users/count-by-role', methods=['GET'])
+@requires_roles_api('platform_manager')
+def get_user_count_by_role():
+    """Get user count by role"""
+    role = request.args.get('role')
+    institution_id = request.args.get('institution_id', type=int)
+    
+    result = PlatformControl.get_user_count_by_role(role, institution_id)
+    
+    if result['success']:
+        return jsonify(result)
+    else:
+        return jsonify(result), 400
+
+@platform_bp.route('/api/users/institutions', methods=['GET'])
+@requires_roles_api('platform_manager')
+def get_user_institutions():
+    """Get all institutions for dropdown"""
+    result = PlatformControl.get_user_institutions()
+    
+    if result['success']:
+        return jsonify(result)
+    else:
+        return jsonify(result), 400
 
 # ====================
 # SUBSCRIPTION PLANS API

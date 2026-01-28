@@ -1112,9 +1112,8 @@ class PlatformControl:
                         'error': 'Email address already in use'
                     }
                 
-                # Hash password
-                from werkzeug.security import generate_password_hash
-                password_hash = generate_password_hash(user_data.get('password', 'changeme123'))
+                # Hash password using bcrypt
+                password_hash = bcrypt.hashpw(user_data.get('password', 'changeme123').encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
                 
                 # Create the admin user
                 new_user = {
@@ -1234,9 +1233,8 @@ class PlatformControl:
                 
                 # Update password if provided
                 if 'password' in update_data and update_data['password']:
-                    # Hash the password before storing
-                    from werkzeug.security import generate_password_hash
-                    user_updates['password_hash'] = generate_password_hash(update_data['password'])
+                    # Hash the password before storing using bcrypt
+                    user_updates['password_hash'] = bcrypt.hashpw(update_data['password'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
                 
                 # Update user using the existing update method
                 updated_user = user_model.update(user_id, **user_updates)

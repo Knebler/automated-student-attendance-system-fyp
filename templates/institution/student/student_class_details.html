@@ -1,0 +1,461 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Class Details - {{ class.course_code }} - AttendAI{% endblock %}
+
+{% block content %}
+<style>
+    /* Student Class Details Styles */
+    .student-class-details {
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        font-style: italic;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .breadcrumb {
+        font-size: 0.9rem;
+        color: var(--text-light);
+    }
+
+    .breadcrumb a {
+        color: var(--primary-dark);
+        text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+
+    .breadcrumb span {
+        color: var(--text-dark);
+        font-weight: 500;
+    }
+
+
+    .class-status-badge {
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        display: inline-block;
+    }
+
+    .class-status-badge.upcoming {
+        color: #7c3aed;
+        background-color: #faf5ff;
+        border: 1px solid #7c3aed;
+    }
+
+    .class-status-badge.in_progress {
+        color: #2563eb;
+        background-color: #eff6ff;
+        border: 1px solid #2563eb;
+    }
+
+    .class-status-badge.completed {
+        color: #059669;
+        background-color: #f0fdf4;
+        border: 1px solid #059669;
+    }
+
+    /* Action Buttons in Header */
+    .class-actions-header {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-appeal {
+        background-color: #dc2626;
+        color: white;
+        border: 2px solid #dc2626;
+        padding: 0.5rem 1.25rem;
+        border-radius: 50px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+    }
+
+    .btn-appeal:hover {
+        background-color: #b91c1c;
+        border-color: #b91c1c;
+        color: white;
+        text-decoration: none;
+    }
+
+    /* Class Details Grid - Matching Lecturer Style */
+    .class-details-grid {
+        background-color: var(--primary-light);
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .detail-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .detail-label {
+        font-weight: bold;
+        color: var(--text-dark);
+        min-width: 140px;
+    }
+
+    .detail-value {
+        color: var(--text-dark);
+        font-weight: 500;
+    }
+
+    /* Attendance Section - Using Card Style */
+    .attendance-section {
+        margin-bottom: 2rem;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--text-dark);
+        margin-bottom: 0;
+    }
+
+    .attendance-status-badge {
+        padding: 0.75rem 1.5rem;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .attendance-status-badge.present {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+        border: 2px solid #2e7d32;
+    }
+
+    .attendance-status-badge.absent {
+        background-color: #ffebee;
+        color: #d32f2f;
+        border: 2px solid #d32f2f;
+    }
+
+    .attendance-status-badge.late {
+        background-color: #fff3e0;
+        color: #f57c00;
+        border: 2px solid #f57c00;
+    }
+
+    .attendance-status-badge.excused {
+        background-color: #e3f2fd;
+        color: #1976d2;
+        border: 2px solid #1976d2;
+    }
+
+    .attendance-status-badge.unmarked {
+        background-color: #f5f5f5;
+        color: #757575;
+        border: 2px solid #757575;
+    }
+
+    .attendance-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+
+    .attendance-info-item {
+        padding: 1rem;
+        background-color: var(--primary-light);
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+    }
+
+    .attendance-info-label {
+        font-size: 0.85rem;
+        color: var(--text-light);
+        margin-bottom: 0.25rem;
+    }
+
+    .attendance-info-value {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+
+    /* Appeal Info */
+    .appeal-info {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        background-color: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 8px;
+    }
+
+    .appeal-info.pending {
+        background-color: #fff3cd;
+        border-color: #ffc107;
+    }
+
+    .appeal-info.approved {
+        background-color: #d1e7dd;
+        border-color: #198754;
+    }
+
+    .appeal-info.rejected {
+        background-color: #f8d7da;
+        border-color: #dc3545;
+    }
+
+    .appeal-info-title {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--text-dark);
+    }
+
+    .appeal-info-text {
+        font-size: 0.9rem;
+        color: var(--text-dark);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 1.75rem;
+        }
+
+        .card-header-custom {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 1rem;
+        }
+
+        .class-actions-header {
+            width: 100%;
+            justify-content: flex-start;
+        }
+
+        .class-details-grid .row {
+            flex-direction: column;
+        }
+        
+        .detail-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        
+        .detail-label {
+            min-width: auto;
+        }
+
+        .attendance-info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="student-class-details">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">Class Details</h1>
+        <div class="breadcrumb">
+            <a href="{{ url_for('student.dashboard') }}">Dashboard</a> / 
+            <a href="{{ url_for('student.timetable') }}">Timetable</a> / 
+            <span>{{ class.course_code }}</span>
+        </div>
+    </div>
+
+    <!-- Class Details Card - Matching Lecturer Style -->
+    <div class="card-custom mb-4">
+        <div class="card-header-custom d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">{{ class.course_code }} - {{ class.course_name }}</h2>
+            <div class="class-actions-header">
+                {% if can_check_in %}
+                <a href="{{ url_for('facial_recognition.checkin', class_id=class.class_id) }}" class="btn-custom" style="padding: 0.5rem 1.25rem; font-size: 0.9rem; margin-left: 0.5rem;">
+                    📋 Check In
+                </a>
+                {% endif %}
+                {% if attendance.can_appeal %}
+                <a href="{{ url_for('student.appeal_form', attendance_record_id=attendance.attendance_id) }}" class="btn-appeal" style="padding: 0.5rem 1.25rem; font-size: 0.9rem; margin-left: 0.5rem;">
+                    📝 Appeal
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    
+        <div class="card-body-custom">
+            <!-- Class Details Grid -->
+            <div class="class-details-grid mb-4">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="detail-item">
+                            <label class="detail-label">Venue:</label>
+                            <span class="detail-value">{{ class.room }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="detail-item">
+                            <label class="detail-label">Start Date/Time:</label>
+                            <span class="detail-value">{{ class.start_datetime }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="detail-item">
+                            <label class="detail-label">End Date/Time:</label>
+                            <span class="detail-value">{{ class.end_datetime }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="detail-item">
+                            <label class="detail-label">Lecturer:</label>
+                            <span class="detail-value">{{ class.lecturer_name }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="detail-item">
+                            <label class="detail-label">Lecturer Email:</label>
+                            <span class="detail-value">
+                                <a href="mailto:{{ class.lecturer_email }}" style="color: var(--primary-dark); text-decoration: none;">
+                                    {{ class.lecturer_email }}
+                                </a>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="detail-item">
+                            <label class="detail-label">Capacity:</label>
+                            <span class="detail-value">{{ class.venue_capacity }} students</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="detail-item">
+                            <label class="detail-label">Class Type:</label>
+                            <span class="detail-value">{{ class.class_type }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="detail-item">
+                            <label class="detail-label">Status:</label>
+                            <span class="detail-value">
+                                <span class="class-status-badge {{ class.status }}">
+                                    {% if class.status == 'upcoming' %}
+                                        Upcoming
+                                    {% elif class.status == 'in_progress' %}
+                                        In Progress
+                                    {% elif class.status == 'completed' %}
+                                        Completed
+                                    {% else %}
+                                        {{ class.status|capitalize }}
+                                    {% endif %}
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Attendance Section -->
+    <div class="attendance-section">
+        <div class="card-custom">
+            <div class="card-header-custom d-flex justify-content-between align-items-center">
+                <h3 class="section-title mb-0">Your Attendance</h3>
+                {% if attendance.attendance_taken %}
+                <span class="attendance-status-badge {{ attendance.attendance_status }}">
+                    {{ attendance.attendance_status|title }}
+                </span>
+                {% else %}
+                <span class="attendance-status-badge unmarked">Not Marked</span>
+                {% endif %}
+            </div>
+            <div class="card-body-custom">
+
+        {% if attendance.attendance_taken %}
+        <div class="attendance-info-grid">
+            <div class="attendance-info-item">
+                <div class="attendance-info-label">Status</div>
+                <div class="attendance-info-value">{{ attendance.attendance_status|title }}</div>
+            </div>
+            {% if attendance.recorded_at %}
+            <div class="attendance-info-item">
+                <div class="attendance-info-label">Recorded At</div>
+                <div class="attendance-info-value">{{ attendance.recorded_at }}</div>
+            </div>
+            {% endif %}
+            {% if attendance.notes %}
+            <div class="attendance-info-item" style="grid-column: 1 / -1;">
+                <div class="attendance-info-label">Notes</div>
+                <div class="attendance-info-value">{{ attendance.notes }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if attendance.appeal_exists %}
+        <div class="appeal-info {{ attendance.appeal_status }}">
+            <div class="appeal-info-title">
+                {% if attendance.appeal_status == 'pending' %}
+                    ⏳ Appeal Pending Review
+                {% elif attendance.appeal_status == 'approved' %}
+                    ✅ Appeal Approved
+                {% elif attendance.appeal_status == 'rejected' %}
+                    ❌ Appeal Rejected
+                {% else %}
+                    📝 Appeal Submitted
+                {% endif %}
+            </div>
+            <div class="appeal-info-text">
+                {% if attendance.appeal_status == 'pending' %}
+                    Your appeal for this attendance record is currently under review by your lecturer.
+                {% elif attendance.appeal_status == 'approved' %}
+                    Your appeal has been approved. Your attendance status may have been updated.
+                {% elif attendance.appeal_status == 'rejected' %}
+                    Your appeal has been rejected. Please contact your lecturer if you have further questions.
+                {% else %}
+                    An appeal has been submitted for this attendance record.
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="attendance-info-item" style="grid-column: 1 / -1;">
+            <div class="attendance-info-value" style="text-align: center; padding: 2rem;">
+                {% if class.status == 'completed' %}
+                    Attendance has not been recorded for this class.
+                {% elif class.status == 'in_progress' %}
+                    Attendance is being taken. Please check in using the button above.
+                {% else %}
+                    Attendance will be available when the class starts.
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div style="text-align: center; margin-top: 2rem;">
+        <a href="{{ url_for('student.timetable') }}" class="btn-custom" style="background-color: #6b7280; border-color: #6b7280; max-width: 200px; margin: 0 auto;">
+            ← Back to Timetable
+        </a>
+    </div>
+</div>
+{% endblock %}

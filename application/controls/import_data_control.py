@@ -40,6 +40,7 @@ def submit_import_data_job(institution_id: int, file_data: bytes) -> str:
         "institution_id": institution_id,
         "import_users": {"ws_name": "Import Users", "total": 0, "success": 0, "failed": 0, "errors": []},
         "import_venues": {"ws_name": "Import Venues", "total": 0, "success": 0, "failed": 0, "errors": []},
+        "import_semesters": {"ws_name": "Import Semesters", "total": 0, "success": 0, "failed": 0, "errors": []},
         "import_courses": {"ws_name": "Import Courses", "total": 0, "success": 0, "failed": 0, "errors": []},
         "assign_courses": {"ws_name": "Assign Courses", "total": 0, "success": 0, "failed": 0, "errors": []},
         "import_classes": {"ws_name": "Import Classes", "total": 0, "success": 0, "failed": 0, "errors": []},
@@ -51,7 +52,7 @@ def process_excel_data(job_id: str, file_data: bytes):
     job_state = ALL_IMPORT_JOBS[job_id]
     try:
         wb = load_workbook(BytesIO(file_data))
-        import_tasks = ["import_users", "import_venues", "import_courses", "assign_courses", "import_classes"]
+        import_tasks = ["import_users", "import_venues", "import_semesters", "import_courses", "assign_courses", "import_classes"]
 
         # Update count first
         for task in import_tasks:
@@ -79,6 +80,9 @@ def process_excel_data(job_id: str, file_data: bytes):
 
         venues = parse_venue_sheet(job_id, wb["Import Venues"])
         commit_to_db("import_venues", venues)
+
+        semesters = parse_semester_sheet(job_id, wb["Import Semesters"])
+        commit_to_db("import_semesters", semesters)
 
         courses = parse_course_sheet(job_id, wb["Import Courses"])
         commit_to_db("import_courses", courses)
@@ -130,6 +134,34 @@ def parse_venue_sheet(job_id: str, ws: Worksheet) -> List[Venue]:
             ALL_IMPORT_JOBS[job_id][task_name]["failed"] += 1
             ALL_IMPORT_JOBS[job_id][task_name]["errors"].append({"row": idx, "error": str(e)})
     return venues
+
+def parse_semester_sheet(job_id: str, ws: Worksheet) -> List:
+    task_name = "import_semesters"
+    from datetime import datetime
+    # Columns are: Name, Start Date, End Date
+    base_info = {
+        "institution_id": ALL_IMPORT_JOBS[job_id]["institution_id"],
+    }
+    headers = ["name", "start_date", "end_date"]
+    semesters = []
+    for idx, row in enumerate(ws.iter_rows(), 1):
+        if idx == 1:
+            continue
+        try:
+            zipped_data = dict(zip(headers, [cell.value for cell in row]))
+            zipped_data.update(base_info)
+            
+            # Parse dates if they're strings
+            if isinstance(zipped_data["start_date"], str):
+                zipped_data["start_date"] = datetime.fromisoformat(zipped_data["start_date"])
+            if isinstance(zipped_data["end_date"], str):
+                zipped_data["end_date"] = datetime.fromisoformat(zipped_data["end_date"])
+            
+            semesters.append((idx, Semester(**zipped_data)))
+        except Exception as e:
+            ALL_IMPORT_JOBS[job_id][task_name]["failed"] += 1
+            ALL_IMPORT_JOBS[job_id][task_name]["errors"].append({"row": idx, "error": str(e)})
+    return semesters
 
 def parse_course_sheet(job_id: str, ws: Worksheet) -> List[Course]:
     task_name = "import_courses"
@@ -235,6 +267,7 @@ if __name__ == "__main__":
         "institution_id": 2,
         "import_users": {"ws_name": "Import Users", "total": 0, "success": 0, "failed": 0, "errors": []},
         "import_venues": {"ws_name": "Import Venues", "total": 0, "success": 0, "failed": 0, "errors": []},
+        "import_semesters": {"ws_name": "Import Semesters", "total": 0, "success": 0, "failed": 0, "errors": []},
         "import_courses": {"ws_name": "Import Courses", "total": 0, "success": 0, "failed": 0, "errors": []},
         "assign_courses": {"ws_name": "Assign Courses", "total": 0, "success": 0, "failed": 0, "errors": []},
         "import_classes": {"ws_name": "Import Classes", "total": 0, "success": 0, "failed": 0, "errors": []},

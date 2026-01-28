@@ -71,11 +71,25 @@ def authenticate_user(email, password):
                 return {'success': False, 'error': 'Invalid email or password'}
             if not user.is_active:
                 return {'success': False, 'error': 'Account suspended. Please contact your institution administrator.'}
-            if bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
-                return {
-                    'success': True,
-                    'user': user.as_sanitized_dict(),
-                }
+            
+            # Try bcrypt first (current standard)
+            try:
+                if bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
+                    return {
+                        'success': True,
+                        'user': user.as_sanitized_dict(),
+                    }
+            except ValueError:
+                # If bcrypt fails, try Werkzeug (for legacy scrypt hashes)
+                from werkzeug.security import check_password_hash
+                if check_password_hash(user.password_hash, password):
+                    # Migrate to bcrypt on successful login
+                    user.password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                    db_session.commit()
+                    return {
+                        'success': True,
+                        'user': user.as_sanitized_dict(),
+                    }
     except Exception as e:
         # log if necessary
         pass
@@ -96,12 +110,27 @@ class AuthControl:
                 return {'success': False, 'error': 'Invalid email or password'}
             if not user.is_active:
                 return {'success': False, 'error': 'Account suspended. Please contact your institution administrator.'}
-            if bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
-                return {
-                    'success': True,
-                    'user_id': user.user_id,
-                    'role': user.role,
-                }
+            
+            # Try bcrypt first (current standard)
+            try:
+                if bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
+                    return {
+                        'success': True,
+                        'user_id': user.user_id,
+                        'role': user.role,
+                    }
+            except ValueError:
+                # If bcrypt fails, try Werkzeug (for legacy scrypt hashes)
+                from werkzeug.security import check_password_hash
+                if check_password_hash(user.password_hash, password):
+                    # Migrate to bcrypt on successful login
+                    user.password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                    db_session.commit()
+                    return {
+                        'success': True,
+                        'user_id': user.user_id,
+                        'role': user.role,
+                    }
         return {'success': False, 'error': 'Invalid email or password'}
         
     def get_user_by_email(app, email):

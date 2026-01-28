@@ -25,7 +25,6 @@ MIN_SERIOUS_WORD_COUNT = 10
 class PlatformIssueControl:
     """Control class for platform issue/report business logic"""
     
-    @staticmethod
     def analyze_issue_content(description, category=None):
         """
         Analyze issue content for appropriateness.
@@ -91,7 +90,6 @@ class PlatformIssueControl:
             'is_too_short': word_count < MIN_SERIOUS_WORD_COUNT
         }
     
-    @staticmethod
     def create_issue(user_id, institution_id, description, category="bug"):
         """
         Create a new platform issue/report.
@@ -143,7 +141,6 @@ class PlatformIssueControl:
             logger.error(f"Error creating platform issue: {e}")
             return {'success': False, 'error': str(e)}
     
-    @staticmethod
     def get_issue_by_id(issue_id):
         """
         Get an issue by its ID.
@@ -163,16 +160,24 @@ class PlatformIssueControl:
                 if not issue_data:
                     return {'success': False, 'error': 'Issue not found'}
                 
+                # Merge the issue dictionary with additional details
+                full_issue_data = issue_data['issue'].copy()  # Start with the issue dict
+                full_issue_data.update({
+                    'reporter_name': issue_data.get('reporter_name'),
+                    'reporter_role': issue_data.get('reporter_role'),
+                    'institution_name': issue_data.get('institution_name'),
+                    'is_active': issue_data.get('is_active')
+                })
+                
                 return {
                     'success': True,
-                    'issue': issue_data
+                    'issue': full_issue_data
                 }
                 
         except Exception as e:
             logger.error(f"Error getting issue by ID: {e}")
             return {'success': False, 'error': str(e)}
     
-    @staticmethod
     def get_issues_by_user(user_id, include_deleted=False):
         """
         Get all issues reported by a specific user.
@@ -214,7 +219,6 @@ class PlatformIssueControl:
             logger.error(f"Error getting issues by user: {e}")
             return {'success': False, 'error': str(e)}
     
-    @staticmethod
     def get_issues_by_institution(institution_id, include_deleted=False):
         """
         Get all issues from a specific institution.
@@ -262,7 +266,6 @@ class PlatformIssueControl:
             logger.error(f"Error getting issues by institution: {e}")
             return {'success': False, 'error': str(e)}
     
-    @staticmethod
     def get_all_active_issues(category=None, page=1, per_page=10):
         """
         Get all active (not deleted) issues for platform managers.
@@ -317,7 +320,6 @@ class PlatformIssueControl:
             logger.error(f"Error getting all active issues: {e}")
             return {'success': False, 'error': str(e)}
     
-    @staticmethod
     def get_recent_issues(limit=10):
         """
         Get recent active issues for dashboard display.
@@ -344,7 +346,6 @@ class PlatformIssueControl:
             logger.error(f"Error getting recent issues: {e}")
             return {'success': False, 'error': str(e)}
     
-    @staticmethod
     def get_issue_statistics(app):
         """
         Get statistics about platform issues.
@@ -382,7 +383,6 @@ class PlatformIssueControl:
             logger.error(f"Error getting issue statistics: {e}")
             return {'success': False, 'error': str(e)}
     
-    @staticmethod
     def mark_issue_as_deleted(issue_id, manager_id=None):
         """
         Mark an issue as deleted (hand over to dev team).
@@ -427,8 +427,7 @@ class PlatformIssueControl:
         except Exception as e:
             logger.error(f"Error marking issue as deleted: {e}")
             return {'success': False, 'error': str(e)}
-    
-    @staticmethod
+
     def search_issues(search_term='', category=''):
         """
         Search issues by description text and/or category.
@@ -459,7 +458,6 @@ class PlatformIssueControl:
             logger.error(f"Error searching issues: {e}")
             return {'success': False, 'error': str(e)}
     
-    @staticmethod
     def get_categories():
         """
         Get list of valid issue categories.
@@ -479,7 +477,6 @@ class PlatformIssueControl:
             'other'
         ]
     
-    @staticmethod
     def validate_category(category):
         """
         Validate if a category is valid.
@@ -493,7 +490,6 @@ class PlatformIssueControl:
         valid_categories = PlatformIssueControl.get_categories()
         return category in valid_categories
     
-    @staticmethod
     def get_issues_for_platform_manager(status='open', priority='', category='', page=1, per_page=10):
         """
         Get issues specifically for platform manager view with filters.
@@ -562,7 +558,6 @@ class PlatformIssueControl:
             logger.error(f"Error getting issues for platform manager: {e}")
             return {'success': False, 'error': str(e)}
     
-    @staticmethod
     def get_issue_statistics_for_platform_manager():
         """
         Get issue statistics specifically for platform manager dashboard.
@@ -615,7 +610,6 @@ class PlatformIssueControl:
             logger.error(f"Error getting issue statistics for platform manager: {e}")
             return {'success': False, 'error': str(e)}
     
-    @staticmethod
     def get_issue_details_for_platform_manager(issue_id):
         """
         Get detailed issue information for platform manager view.
@@ -647,7 +641,6 @@ class PlatformIssueControl:
             logger.error(f"Error getting issue details for platform manager: {e}")
             return {'success': False, 'error': str(e)}
     
-    @staticmethod
     def resolve_issue_platform_manager(issue_id, resolver_id, resolution_notes):
         """
         Resolve an issue (platform manager action).
@@ -693,7 +686,6 @@ class PlatformIssueControl:
             logger.error(f"Error resolving issue: {e}")
             return {'success': False, 'error': str(e)}
     
-    @staticmethod
     def reject_issue_platform_manager(issue_id, resolver_id, rejection_reason):
         """
         Reject an issue (platform manager action).
@@ -734,7 +726,6 @@ class PlatformIssueControl:
             logger.error(f"Error rejecting issue: {e}")
             return {'success': False, 'error': str(e)}
     
-    @staticmethod
     def get_issue_category_distribution_platform_manager():
         """
         Get distribution of issues by category for charts.
@@ -755,7 +746,6 @@ class PlatformIssueControl:
             logger.error(f"Error getting issue category distribution: {e}")
             return {'success': False, 'error': str(e)}
     
-    @staticmethod
     def get_deleted_issues_platform_manager(page=1, per_page=10):
         """
         Get all deleted issues (handed to dev team) for platform manager review.
@@ -812,7 +802,6 @@ class PlatformIssueControl:
             logger.error(f"Error getting deleted issues: {e}")
             return {'success': False, 'error': str(e)}
     
-    @staticmethod
     def restore_issue_platform_manager(issue_id, manager_id):
         """
         Restore a deleted issue (platform manager action).
@@ -849,7 +838,6 @@ class PlatformIssueControl:
             logger.error(f"Error restoring issue: {e}")
             return {'success': False, 'error': str(e)}
     
-    @staticmethod
     def bulk_update_issues_platform_manager(issue_ids, action, manager_id, notes=None):
         """
         Perform bulk actions on multiple issues.

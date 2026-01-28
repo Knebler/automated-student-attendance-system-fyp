@@ -414,24 +414,17 @@ def view_issue(issue_id):
             return redirect(url_for('auth.login'))
         
         # Get issue details (user can only view their own issues)
-        result = PlatformIssueControl.get_issue_by_id_and_user(
-            issue_id=issue_id,
-            user_id=user_id
+        result = PlatformIssueControl.get_issue_by_id(
+            issue_id=issue_id
         )
         
         if not result['success']:
             flash(result.get('error', 'Issue not found or access denied'), 'danger')
             return redirect(url_for('main.my_reports'))
         
-        # Get comments and history if available
-        comments = result.get('comments', [])
-        history = result.get('history', [])
-        
         return render_template(
-            'components/issue_details.html',
-            issue=result['issue'],
-            comments=comments,
-            history=history
+            'components/report_issue_details.html',
+            issue=result['issue']
         )
         
     except Exception as e:

@@ -43,6 +43,13 @@ try:
     
     if result:
         column_type, max_length, data_type = result
+        
+        # Decode bytes to string if needed
+        if isinstance(column_type, bytes):
+            column_type = column_type.decode('utf-8')
+        if isinstance(data_type, bytes):
+            data_type = data_type.decode('utf-8')
+        
         print(f"\nCurrent column type: {column_type}")
         print(f"Data type: {data_type}")
         print(f"Max length: {max_length}")

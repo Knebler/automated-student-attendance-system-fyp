@@ -7,6 +7,9 @@ from datetime import datetime, date, timedelta
 import calendar
 import zlib
 import pickle
+import cv2
+import numpy as np
+import base64
 
 student_bp = Blueprint('student', __name__)
 
@@ -118,54 +121,135 @@ def save_facial_data():
         
         data = request.get_json()
         
-        if not data or 'encodings' not in data:
-            return jsonify({
-                'success': False,
-                'error': 'No facial data received'
-            }), 400
+        if not data:
+            return jsonify({'success': False, 'error': 'No data received'}), 400
         
-        encodings = data['encodings']
-        
-        if not encodings or len(encodings) == 0:
-            return jsonify({
-                'success': False,
-                'error': 'No face encodings captured'
-            }), 400
-        
-        # Duplicate encodings to reach target sample count
-        TARGET_SAMPLES = 100  # Target number of samples to store
-        original_count = len(encodings)
-        
-        if original_count < TARGET_SAMPLES:
-            # Calculate how many times to duplicate
-            multiplier = TARGET_SAMPLES // original_count
-            remainder = TARGET_SAMPLES % original_count
+        # Check if we have photo data (base64 images) instead of encodings
+        if 'photos' in data and data['photos']:
+            # New format: Process actual photos for OpenCV-based system
+            import cv2
+            import numpy as np
+            import base64
+            import zlib
             
-            # Duplicate the encodings
-            duplicated_encodings = encodings * multiplier
-            # Add remainder to reach exact target
-            duplicated_encodings.extend(encodings[:remainder])
+            photos = data['photos']
             
-            encodings = duplicated_encodings
-        
-        sample_count = len(encodings)
-        
-        if not encodings or len(encodings) == 0:
+            if len(photos) == 0:
+                return jsonify({'success': False, 'error': 'No photos captured'}), 400
+            
+            # Load face detector
+            face_cascade = None
+            cascade_paths = [
+                cv2.data.haarcascades + 'haarcascade_frontalface_default.xml',
+                'data/haarcascade_frontalface_default.xml',
+                'haarcascade_frontalface_default.xml',
+                './AttendanceAI/data/haarcascade_frontalface_default.xml'
+            ]
+            
+            for path in cascade_paths:
+                try:
+                    cascade = cv2.CascadeClassifier(path)
+                    if not cascade.empty():
+                        face_cascade = cascade
+                        break
+                except:
+                    continue
+            
+            all_faces = []
+            
+            # Process each photo (limit to 50 samples total for smaller database size)
+            samples_per_photo = max(1, 50 // len(photos))  # Distribute 50 samples across all photos
+            
+            for photo_base64 in photos:
+                try:
+                    # Remove data URL prefix if present
+                    if ',' in photo_base64:
+                        photo_base64 = photo_base64.split(',')[1]
+                    
+                    # Decode base64
+                    img_data = base64.b64decode(photo_base64)
+                    img_array = np.frombuffer(img_data, dtype=np.uint8)
+                    img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+                    
+                    if img is None:
+                        continue
+                    
+                    # Detect and crop face
+                    if face_cascade is not None:
+                        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                        faces = face_cascade.detectMultiScale(gray, 1.05, 3, minSize=(30, 30))
+                        
+                        if len(faces) > 0:
+                            # Get largest face
+                            x, y, w, h = max(faces, key=lambda f: f[2] * f[3])
+                            face_img = img[y:y+h, x:x+w]
+                        else:
+                            # No face detected, use center crop
+                            h, w = img.shape[:2]
+                            size = min(h, w)
+                            sh = (h - size) // 2
+                            sw = (w - size) // 2
+                            face_img = img[sh:sh+size, sw:sw+size]
+                    else:
+                        # No cascade, use center crop
+                        h, w = img.shape[:2]
+                        size = min(h, w)
+                        sh = (h - size) // 2
+                        sw = (w - size) // 2
+                        face_img = img[sh:sh+size, sw:sw+size]
+                    
+                    # Generate augmented samples (limited per photo)
+                    # Use smaller 40x40 images instead of 50x50 to reduce data size
+                    base = cv2.resize(face_img, (50, 50))
+                    for i in range(samples_per_photo):
+                        aug = base.copy()
+                        
+                        # Random flip
+                        if np.random.rand() > 0.5:
+                            aug = cv2.flip(aug, 1)
+                        
+                        # Random rotation every 3rd sample
+                        if i % 3 == 0:
+                            angle = np.random.uniform(-15, 15)
+                            h, w = aug.shape[:2]
+                            M = cv2.getRotationMatrix2D((w/2, h/2), angle, 1.0)
+                            aug = cv2.warpAffine(aug, M, (w, h), borderMode=cv2.BORDER_REPLICATE)
+                        
+                        # Final resize to 40x40 to reduce data size (40*40 = 1600 vs 50*50 = 2500)
+                        aug = cv2.resize(aug, (40, 40))
+                        all_faces.append(aug.flatten())
+                
+                except Exception as e:
+                    current_app.logger.error(f"Error processing photo: {e}")
+                    continue
+            
+            # Limit to exactly 50 samples to keep database size small
+            if len(all_faces) > 50:
+                # Evenly sample to get exactly 50
+                indices = np.linspace(0, len(all_faces) - 1, 50, dtype=int)
+                all_faces = [all_faces[i] for i in indices]
+            
+            if len(all_faces) == 0:
+                return jsonify({'success': False, 'error': 'No faces detected in photos'}), 400
+            
+            # Convert to numpy array
+            faces_array = np.array(all_faces, dtype=np.uint8)
+            sample_count = faces_array.shape[0]
+            
+            # Compress with SHAPE header
+            faces_bytes = faces_array.tobytes()
+            compressed = zlib.compress(faces_bytes)
+            header = f"SHAPE:{faces_array.shape[0]},{faces_array.shape[1]};".encode("utf-8")
+            encodings_binary = header + compressed
+            
+        elif 'encodings' in data:
+            # Old format: face-api.js encodings (INCOMPATIBLE with OpenCV system)
             return jsonify({
                 'success': False,
-                'error': 'No face encodings captured'
+                'error': 'Face encodings format is not supported. Please capture photos instead.'
             }), 400
-        
-        # Validate encodings (each should be a 128-dimensional array)
-        for encoding in encodings:
-            if not isinstance(encoding, list) or len(encoding) != 128:
-                return jsonify({
-                    'success': False,
-                    'error': 'Invalid face encoding format'
-                }), 400
-        
-        # Compress and serialize the encodings for storage
-        encodings_binary = zlib.compress(pickle.dumps(encodings))
+        else:
+            return jsonify({'success': False, 'error': 'No photos or encodings received'}), 400
         
         with get_session() as db_session:
             from database.models import FacialData

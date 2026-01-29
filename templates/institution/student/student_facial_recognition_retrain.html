@@ -1056,8 +1056,8 @@ const FacialCapture = (function() {
         elements.saveBtn.innerHTML = '<span class="spinner"></span> Saving...';
         
         try {
-            console.log('Sending encodings:', state.capturedEncodings.length);
-            console.log('Sample encoding length:', state.capturedEncodings[0]?.length);
+            console.log('Sending photos:', state.capturedImages.length);
+            console.log('Photo data type:', typeof state.capturedImages[0]);
             
             const response = await fetch(config.apiUrl, {
                 method: 'POST',
@@ -1067,8 +1067,8 @@ const FacialCapture = (function() {
                     'X-CSRFToken': config.csrfToken
                 },
                 body: JSON.stringify({
-                    encodings: state.capturedEncodings,
-                    sample_count: state.capturedEncodings.length
+                    photos: state.capturedImages,  // Send actual photos for OpenCV processing
+                    sample_count: state.capturedImages.length
                 })
             });
             

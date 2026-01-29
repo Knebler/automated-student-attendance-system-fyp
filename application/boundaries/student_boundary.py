@@ -819,6 +819,30 @@ def mark_all_notifications_read():
         current_app.logger.error(f"Error marking all notifications as read: {e}")
         return jsonify({'success': False, 'error': 'Failed to mark all notifications as read'}), 500
 
+#clear all notifications
+@student_bp.route('/api/notifications/clear-all', methods=['POST'])
+@requires_roles('student')
+def clear_all_notifications():
+    """API endpoint to clear all notifications"""
+    try:
+        student_id = session.get('user_id')
+        if not student_id:
+            return jsonify({'success': False, 'error': 'User not authenticated'}), 401
+        
+        with get_session() as db_session:
+            notification_model = NotificationModel(db_session)
+            count = notification_model.clear_all_notifications(student_id)
+            
+            return jsonify({
+                'success': True,
+                'message': f'All notifications cleared ({count} deleted)',
+                'count': count
+            })
+            
+    except Exception as e:
+        current_app.logger.error(f"Error clearing all notifications: {e}")
+        return jsonify({'success': False, 'error': 'Failed to clear notifications'}), 500
+
 def get_relative_time(dt):
     """Get relative time string (e.g., '2 hours ago', 'Just now')"""
     if not dt:

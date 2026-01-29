@@ -11,7 +11,7 @@ from application.entities2.subscription import SubscriptionModel
 from application.entities2.testimonial import TestimonialModel
 from application.entities2.user import UserModel
 from database.base import get_session
-from database.models import User
+from database.models import User, Feature, HeroFeature, Stat, AboutIntro, AboutStory, AboutMissionVision, TeamMember, AboutValue, SubscriptionPlan
 
 platform_bp = Blueprint('platform', __name__)
 
@@ -161,6 +161,11 @@ def subscription_management():
     requests_result = PlatformControl.get_subscription_requests(limit=5)
     stats_result = PlatformControl.get_subscription_statistics()
     
+    # Get subscription plans for dropdowns
+    with get_session() as db_session:
+        subscription_plans = db_session.query(SubscriptionPlan).filter_by(is_active=True).all()
+        plans_list = [{'plan_id': p.plan_id, 'name': p.name, 'max_users': p.max_users} for p in subscription_plans]
+    
     # Check for errors
     if not subscriptions_result['success']:
         flash(subscriptions_result.get('error', 'Error loading subscriptions'), 'danger')
@@ -205,6 +210,7 @@ def subscription_management():
         'institutions': institutions_for_template,
         'subscription_requests': subscription_requests,
         'stats': stats,
+        'subscription_plans': plans_list,
         
         # Pagination data
         'current_page': pagination.get('current_page', page),
@@ -478,6 +484,688 @@ def subscription_profile_creator():
     """Subscription profile creation page"""
     return render_template('platmanager/platform_manager_subscription_management_profile_creator.html')
 
+# =====================
+# FEATURE MANAGEMENT
+# =====================
+
+@platform_bp.route('/landing-page')
+@requires_roles('platform_manager')
+def landing_page_management():
+    """Platform manager - landing page and about us management"""
+    import json
+    with get_session() as db_session:
+        # Get hero features
+        hero_features = db_session.query(HeroFeature).order_by(HeroFeature.display_order, HeroFeature.hero_feature_id).all()
+        hero_features_list = [hf.as_dict() for hf in hero_features]
+        
+        # Get stats
+        stats = db_session.query(Stat).order_by(Stat.display_order, Stat.stat_id).all()
+        stats_list = [s.as_dict() for s in stats]
+        
+        # Get features
+        features = db_session.query(Feature).order_by(Feature.display_order, Feature.feature_id).all()
+        features_list = [f.as_dict() for f in features]
+        
+        # Get About Us content
+        about_intro = db_session.query(AboutIntro).first()
+        about_intro_dict = about_intro.as_dict() if about_intro else None
+        
+        about_story = db_session.query(AboutStory).first()
+        about_story_dict = about_story.as_dict() if about_story else None
+        
+        mission_vision = db_session.query(AboutMissionVision).all()
+        mission_vision_list = [mv.as_dict() for mv in mission_vision]
+        
+        team_members = db_session.query(TeamMember).order_by(TeamMember.display_order).all()
+        team_members_list = []
+        for tm in team_members:
+            tm_dict = tm.as_dict()
+            tm_dict['contributions'] = json.loads(tm.contributions) if tm.contributions else []
+            tm_dict['skills'] = json.loads(tm.skills) if tm.skills else []
+            team_members_list.append(tm_dict)
+        
+        values = db_session.query(AboutValue).order_by(AboutValue.display_order).all()
+        values_list = [v.as_dict() for v in values]
+        
+        # Calculate statistics
+        total_hero_features = len(hero_features)
+        active_hero_features = sum(1 for hf in hero_features if hf.is_active)
+        
+        total_stats = len(stats)
+        active_stats = sum(1 for s in stats if s.is_active)
+        
+        total_features = len(features)
+        active_features = sum(1 for f in features if f.is_active)
+        main_features_count = sum(1 for f in features if not f.is_advanced)
+        advanced_features_count = sum(1 for f in features if f.is_advanced)
+        
+        total_team_members = len(team_members)
+        active_team_members = sum(1 for tm in team_members if tm.is_active)
+        
+        total_values = len(values)
+        active_values = sum(1 for v in values if v.is_active)
+        
+        # Get subscription plans
+        subscription_plans = db_session.query(SubscriptionPlan).order_by(SubscriptionPlan.plan_id).all()
+        subscription_plans_list = []
+        for sp in subscription_plans:
+            sp_dict = sp.as_dict()
+            sp_dict['features'] = json.loads(sp.features) if sp.features else {}
+            subscription_plans_list.append(sp_dict)
+        
+        total_subscription_plans = len(subscription_plans)
+        active_subscription_plans = sum(1 for sp in subscription_plans if sp.is_active)
+        
+    context = {
+        'hero_features': hero_features_list,
+        'total_hero_features': total_hero_features,
+        'active_hero_features': active_hero_features,
+        
+        'stats': stats_list,
+        'total_stats': total_stats,
+        'active_stats': active_stats,
+        
+        'features': features_list,
+        'total_features': total_features,
+        'active_features': active_features,
+        'main_features_count': main_features_count,
+        'advanced_features_count': advanced_features_count,
+        
+        'about_intro': about_intro_dict,
+        'about_story': about_story_dict,
+        'mission_vision': mission_vision_list,
+        'team_members': team_members_list,
+        'total_team_members': total_team_members,
+        'active_team_members': active_team_members,
+        'values': values_list,
+        'total_values': total_values,
+        'active_values': active_values,
+        'subscription_plans': subscription_plans_list,
+        'total_subscription_plans': total_subscription_plans,
+        'active_subscription_plans': active_subscription_plans
+    }
+    
+    return render_template('platmanager/platform_manager_landing_page.html', **context)
+
+@platform_bp.route('/api/features/create', methods=['POST'])
+@requires_roles_api('platform_manager')
+def create_feature():
+    """Create a new feature"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            # Check if slug already exists
+            existing = db_session.query(Feature).filter_by(slug=data['slug']).first()
+            if existing:
+                return jsonify({'success': False, 'error': 'A feature with this slug already exists'}), 400
+            
+            # Create new feature
+            feature = Feature(
+                slug=data['slug'],
+                icon=data['icon'],
+                title=data['title'],
+                description=data['description'],
+                details=data.get('details', ''),
+                try_url=data.get('try_url', ''),
+                display_order=data.get('display_order', 0),
+                is_active=data.get('is_active', True),
+                is_advanced=data.get('is_advanced', False)
+            )
+            
+            db_session.add(feature)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Feature created successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/features/<int:feature_id>/update', methods=['POST'])
+@requires_roles_api('platform_manager')
+def update_feature(feature_id):
+    """Update an existing feature"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            feature = db_session.query(Feature).filter_by(feature_id=feature_id).first()
+            
+            if not feature:
+                return jsonify({'success': False, 'error': 'Feature not found'}), 404
+            
+            # Check if slug is being changed and if it conflicts
+            if data['slug'] != feature.slug:
+                existing = db_session.query(Feature).filter_by(slug=data['slug']).first()
+                if existing:
+                    return jsonify({'success': False, 'error': 'A feature with this slug already exists'}), 400
+            
+            # Update feature
+            feature.slug = data['slug']
+            feature.icon = data['icon']
+            feature.title = data['title']
+            feature.description = data['description']
+            feature.details = data.get('details', '')
+            feature.try_url = data.get('try_url', '')
+            feature.display_order = data.get('display_order', 0)
+            feature.is_active = data.get('is_active', True)
+            feature.is_advanced = data.get('is_advanced', False)
+            
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Feature updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/features/<int:feature_id>/toggle-status', methods=['POST'])
+@requires_roles_api('platform_manager')
+def toggle_feature_status(feature_id):
+    """Toggle feature active status"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            feature = db_session.query(Feature).filter_by(feature_id=feature_id).first()
+            
+            if not feature:
+                return jsonify({'success': False, 'error': 'Feature not found'}), 404
+            
+            feature.is_active = data.get('is_active', not feature.is_active)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Feature status updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/features/<int:feature_id>/delete', methods=['POST'])
+@requires_roles_api('platform_manager')
+def delete_feature(feature_id):
+    """Delete a feature"""
+    try:
+        with get_session() as db_session:
+            feature = db_session.query(Feature).filter_by(feature_id=feature_id).first()
+            
+            if not feature:
+                return jsonify({'success': False, 'error': 'Feature not found'}), 404
+            
+            db_session.delete(feature)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Feature deleted successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ====================
+# HERO FEATURES API
+# ====================
+
+@platform_bp.route('/api/hero-features/create', methods=['POST'])
+@requires_roles_api('platform_manager')
+def create_hero_feature():
+    """Create a new hero feature"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            hero_feature = HeroFeature(
+                title=data['title'],
+                description=data['description'],
+                summary=data['summary'],
+                icon=data['icon'],
+                bg_image=data['bg_image'],
+                display_order=data.get('display_order', 0),
+                is_active=data.get('is_active', True)
+            )
+            
+            db_session.add(hero_feature)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Hero feature created successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/hero-features/<int:hero_feature_id>/update', methods=['POST'])
+@requires_roles_api('platform_manager')
+def update_hero_feature(hero_feature_id):
+    """Update an existing hero feature"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            hero_feature = db_session.query(HeroFeature).filter_by(hero_feature_id=hero_feature_id).first()
+            
+            if not hero_feature:
+                return jsonify({'success': False, 'error': 'Hero feature not found'}), 404
+            
+            hero_feature.title = data['title']
+            hero_feature.description = data['description']
+            hero_feature.summary = data['summary']
+            hero_feature.icon = data['icon']
+            hero_feature.bg_image = data['bg_image']
+            hero_feature.display_order = data.get('display_order', 0)
+            hero_feature.is_active = data.get('is_active', True)
+            
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Hero feature updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/hero-features/<int:hero_feature_id>/toggle-status', methods=['POST'])
+@requires_roles_api('platform_manager')
+def toggle_hero_feature_status(hero_feature_id):
+    """Toggle hero feature active status"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            hero_feature = db_session.query(HeroFeature).filter_by(hero_feature_id=hero_feature_id).first()
+            
+            if not hero_feature:
+                return jsonify({'success': False, 'error': 'Hero feature not found'}), 404
+            
+            hero_feature.is_active = data.get('is_active', not hero_feature.is_active)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Hero feature status updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/hero-features/<int:hero_feature_id>/delete', methods=['POST'])
+@requires_roles_api('platform_manager')
+def delete_hero_feature(hero_feature_id):
+    """Delete a hero feature"""
+    try:
+        with get_session() as db_session:
+            hero_feature = db_session.query(HeroFeature).filter_by(hero_feature_id=hero_feature_id).first()
+            
+            if not hero_feature:
+                return jsonify({'success': False, 'error': 'Hero feature not found'}), 404
+            
+            db_session.delete(hero_feature)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Hero feature deleted successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ====================
+# STATS API
+# ====================
+
+@platform_bp.route('/api/stats/create', methods=['POST'])
+@requires_roles_api('platform_manager')
+def create_stat():
+    """Create a new stat"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            stat = Stat(
+                value=data['value'],
+                label=data['label'],
+                display_order=data.get('display_order', 0),
+                is_active=data.get('is_active', True)
+            )
+            
+            db_session.add(stat)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Stat created successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/stats/<int:stat_id>/update', methods=['POST'])
+@requires_roles_api('platform_manager')
+def update_stat(stat_id):
+    """Update an existing stat"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            stat = db_session.query(Stat).filter_by(stat_id=stat_id).first()
+            
+            if not stat:
+                return jsonify({'success': False, 'error': 'Stat not found'}), 404
+            
+            stat.value = data['value']
+            stat.label = data['label']
+            stat.display_order = data.get('display_order', 0)
+            stat.is_active = data.get('is_active', True)
+            
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Stat updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/stats/<int:stat_id>/toggle-status', methods=['POST'])
+@requires_roles_api('platform_manager')
+def toggle_stat_status(stat_id):
+    """Toggle stat active status"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            stat = db_session.query(Stat).filter_by(stat_id=stat_id).first()
+            
+            if not stat:
+                return jsonify({'success': False, 'error': 'Stat not found'}), 404
+            
+            stat.is_active = data.get('is_active', not stat.is_active)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Stat status updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/stats/<int:stat_id>/delete', methods=['POST'])
+@requires_roles_api('platform_manager')
+def delete_stat(stat_id):
+    """Delete a stat"""
+    try:
+        with get_session() as db_session:
+            stat = db_session.query(Stat).filter_by(stat_id=stat_id).first()
+            
+            if not stat:
+                return jsonify({'success': False, 'error': 'Stat not found'}), 404
+            
+            db_session.delete(stat)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Stat deleted successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ====================
+# ABOUT US API
+# ====================
+
+@platform_bp.route('/api/about-intro/update', methods=['POST'])
+@requires_roles_api('platform_manager')
+def update_about_intro():
+    """Update about intro"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            about_intro = db_session.query(AboutIntro).first()
+            
+            if not about_intro:
+                # Create new if doesn't exist
+                about_intro = AboutIntro(
+                    title=data['title'],
+                    description=data['description'],
+                    is_active=data.get('is_active', True)
+                )
+                db_session.add(about_intro)
+            else:
+                about_intro.title = data['title']
+                about_intro.description = data['description']
+                about_intro.is_active = data.get('is_active', True)
+            
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'About intro updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/about-story/update', methods=['POST'])
+@requires_roles_api('platform_manager')
+def update_about_story():
+    """Update about story"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            about_story = db_session.query(AboutStory).first()
+            
+            if not about_story:
+                # Create new if doesn't exist
+                about_story = AboutStory(
+                    title=data['title'],
+                    content=data['content'],
+                    is_active=data.get('is_active', True)
+                )
+                db_session.add(about_story)
+            else:
+                about_story.title = data['title']
+                about_story.content = data['content']
+                about_story.is_active = data.get('is_active', True)
+            
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'About story updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/mission-vision/<string:type>/update', methods=['POST'])
+@requires_roles_api('platform_manager')
+def update_mission_vision(type):
+    """Update mission or vision"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            item = db_session.query(AboutMissionVision).filter_by(type=type).first()
+            
+            if not item:
+                # Create new if doesn't exist
+                item = AboutMissionVision(
+                    type=type,
+                    title=data['title'],
+                    content=data['content'],
+                    is_active=data.get('is_active', True)
+                )
+                db_session.add(item)
+            else:
+                item.title = data['title']
+                item.content = data['content']
+                item.is_active = data.get('is_active', True)
+            
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': f'{type.capitalize()} updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/team-members/create', methods=['POST'])
+@requires_roles_api('platform_manager')
+def create_team_member():
+    """Create a new team member"""
+    import json
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            team_member = TeamMember(
+                name=data['name'],
+                role=data['role'],
+                description=data.get('description', ''),
+                contributions=json.dumps(data.get('contributions', [])),
+                skills=json.dumps(data.get('skills', [])),
+                display_order=data.get('display_order', 0),
+                is_active=data.get('is_active', True)
+            )
+            
+            db_session.add(team_member)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Team member created successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/team-members/<int:team_member_id>/update', methods=['POST'])
+@requires_roles_api('platform_manager')
+def update_team_member(team_member_id):
+    """Update an existing team member"""
+    import json
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            team_member = db_session.query(TeamMember).filter_by(team_member_id=team_member_id).first()
+            
+            if not team_member:
+                return jsonify({'success': False, 'error': 'Team member not found'}), 404
+            
+            team_member.name = data['name']
+            team_member.role = data['role']
+            team_member.description = data.get('description', '')
+            team_member.contributions = json.dumps(data.get('contributions', []))
+            team_member.skills = json.dumps(data.get('skills', []))
+            team_member.display_order = data.get('display_order', 0)
+            team_member.is_active = data.get('is_active', True)
+            
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Team member updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/team-members/<int:team_member_id>/toggle-status', methods=['POST'])
+@requires_roles_api('platform_manager')
+def toggle_team_member_status(team_member_id):
+    """Toggle team member active status"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            team_member = db_session.query(TeamMember).filter_by(team_member_id=team_member_id).first()
+            
+            if not team_member:
+                return jsonify({'success': False, 'error': 'Team member not found'}), 404
+            
+            team_member.is_active = data.get('is_active', not team_member.is_active)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Team member status updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/team-members/<int:team_member_id>/delete', methods=['POST'])
+@requires_roles_api('platform_manager')
+def delete_team_member(team_member_id):
+    """Delete a team member"""
+    try:
+        with get_session() as db_session:
+            team_member = db_session.query(TeamMember).filter_by(team_member_id=team_member_id).first()
+            
+            if not team_member:
+                return jsonify({'success': False, 'error': 'Team member not found'}), 404
+            
+            db_session.delete(team_member)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Team member deleted successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/values/create', methods=['POST'])
+@requires_roles_api('platform_manager')
+def create_value():
+    """Create a new value"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            value = AboutValue(
+                title=data['title'],
+                description=data['description'],
+                display_order=data.get('display_order', 0),
+                is_active=data.get('is_active', True)
+            )
+            
+            db_session.add(value)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Value created successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/values/<int:value_id>/update', methods=['POST'])
+@requires_roles_api('platform_manager')
+def update_value(value_id):
+    """Update an existing value"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            value = db_session.query(AboutValue).filter_by(value_id=value_id).first()
+            
+            if not value:
+                return jsonify({'success': False, 'error': 'Value not found'}), 404
+            
+            value.title = data['title']
+            value.description = data['description']
+            value.display_order = data.get('display_order', 0)
+            value.is_active = data.get('is_active', True)
+            
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Value updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/values/<int:value_id>/toggle-status', methods=['POST'])
+@requires_roles_api('platform_manager')
+def toggle_value_status(value_id):
+    """Toggle value active status"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            value = db_session.query(AboutValue).filter_by(value_id=value_id).first()
+            
+            if not value:
+                return jsonify({'success': False, 'error': 'Value not found'}), 404
+            
+            value.is_active = data.get('is_active', not value.is_active)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Value status updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@platform_bp.route('/api/values/<int:value_id>/delete', methods=['POST'])
+@requires_roles_api('platform_manager')
+def delete_value(value_id):
+    """Delete a value"""
+    try:
+        with get_session() as db_session:
+            value = db_session.query(AboutValue).filter_by(value_id=value_id).first()
+            
+            if not value:
+                return jsonify({'success': False, 'error': 'Value not found'}), 404
+            
+            db_session.delete(value)
+            db_session.commit()
+            
+        return jsonify({'success': True, 'message': 'Value deleted successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 @platform_bp.route('/issues')
 @requires_roles('platform_manager')
 def issue_management():
@@ -799,6 +1487,123 @@ def get_user_institutions():
         return jsonify(result)
     else:
         return jsonify(result), 400
+
+# ====================
+# SUBSCRIPTION PLANS API
+# ====================
+
+@platform_bp.route('/api/subscription-plans/create', methods=['POST'])
+@requires_roles_api('platform_manager')
+def create_subscription_plan():
+    """Create a new subscription plan"""
+    import json as json_lib
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            # Create new subscription plan
+            new_plan = SubscriptionPlan(
+                name=data['name'],
+                description=data.get('description', ''),
+                price_per_cycle=float(data['price_per_cycle']),
+                billing_cycle=data['billing_cycle'],
+                max_users=int(data['max_users']),
+                features=json_lib.dumps(data.get('features', {})),
+                is_active=data.get('is_active', True)
+            )
+            
+            db_session.add(new_plan)
+            db_session.commit()
+            
+            plan_dict = new_plan.as_dict()
+            plan_dict['features'] = json_lib.loads(new_plan.features) if new_plan.features else {}
+            
+            return jsonify({'success': True, 'plan': plan_dict}), 201
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@platform_bp.route('/api/subscription-plans/<int:plan_id>/update', methods=['POST'])
+@requires_roles_api('platform_manager')
+def update_subscription_plan(plan_id):
+    """Update a subscription plan"""
+    import json as json_lib
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            plan = db_session.query(SubscriptionPlan).filter_by(plan_id=plan_id).first()
+            
+            if not plan:
+                return jsonify({'success': False, 'error': 'Subscription plan not found'}), 404
+            
+            # Update fields
+            plan.name = data.get('name', plan.name)
+            plan.description = data.get('description', plan.description)
+            plan.price_per_cycle = float(data.get('price_per_cycle', plan.price_per_cycle))
+            plan.billing_cycle = data.get('billing_cycle', plan.billing_cycle)
+            plan.max_users = int(data.get('max_users', plan.max_users))
+            
+            if 'features' in data:
+                plan.features = json_lib.dumps(data['features'])
+            
+            if 'is_active' in data:
+                plan.is_active = data['is_active']
+            
+            db_session.commit()
+            
+            plan_dict = plan.as_dict()
+            plan_dict['features'] = json_lib.loads(plan.features) if plan.features else {}
+            
+            return jsonify({'success': True, 'plan': plan_dict}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@platform_bp.route('/api/subscription-plans/<int:plan_id>/toggle-status', methods=['POST'])
+@requires_roles_api('platform_manager')
+def toggle_subscription_plan_status(plan_id):
+    """Toggle the active status of a subscription plan"""
+    try:
+        with get_session() as db_session:
+            plan = db_session.query(SubscriptionPlan).filter_by(plan_id=plan_id).first()
+            
+            if not plan:
+                return jsonify({'success': False, 'error': 'Subscription plan not found'}), 404
+            
+            plan.is_active = not plan.is_active
+            db_session.commit()
+            
+            return jsonify({'success': True, 'is_active': plan.is_active}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@platform_bp.route('/api/subscription-plans/<int:plan_id>/delete', methods=['POST'])
+@requires_roles_api('platform_manager')
+def delete_subscription_plan(plan_id):
+    """Delete a subscription plan"""
+    try:
+        with get_session() as db_session:
+            plan = db_session.query(SubscriptionPlan).filter_by(plan_id=plan_id).first()
+            
+            if not plan:
+                return jsonify({'success': False, 'error': 'Subscription plan not found'}), 404
+            
+            # Check if any subscriptions are using this plan
+            from database.models import Subscription
+            active_subscriptions = db_session.query(Subscription).filter_by(plan_id=plan_id, is_active=True).count()
+            
+            if active_subscriptions > 0:
+                return jsonify({
+                    'success': False, 
+                    'error': f'Cannot delete plan with {active_subscriptions} active subscriptions'
+                }), 400
+            
+            db_session.delete(plan)
+            db_session.commit()
+            
+            return jsonify({'success': True}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
 
 @platform_bp.route('/api/debug-session', methods=['GET'])
 def debug_session():

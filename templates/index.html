@@ -474,22 +474,12 @@
 <div class="stats-section">
     <h2 style="font-size: 2rem; color: var(--text-dark); margin-bottom: 2rem;">Trusted by Organizations Worldwide</h2>
     <div class="stats-grid">
+        {% for stat in stats %}
         <div class="stat-item">
-            <h3>500+</h3>
-            <p>Educational Institutions</p>
+            <h3>{{ stat.value }}</h3>
+            <p>{{ stat.label }}</p>
         </div>
-        <div class="stat-item">
-            <h3>98%</h3>
-            <p>Customer Satisfaction</p>
-        </div>
-        <div class="stat-item">
-            <h3>250K+</h3>
-            <p>Students & Employees</p>
-        </div>
-        <div class="stat-item">
-            <h3>85%</h3>
-            <p>Time Savings</p>
-        </div>
+        {% endfor %}
     </div>
 </div>
 
@@ -672,51 +662,14 @@
 </script>
 
 <script>
-// Feature slideshow data based on features.html
-const features = [
-    {
-        title: "AI-Powered Face Recognition",
-        description: "99.8% accuracy for automatic attendance marking",
-        summary: "Automatically identify and mark attendance using advanced facial recognition technology.",
-        icon: "",
-        bgImage: "https://images.unsplash.com/photo-1677442136019-21780ecad995?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80"
-    },
-    {
-        title: "QR Code & Mobile Check-ins",
-        description: "Fast and convenient attendance marking",
-        summary: "Quick QR code scanning for fast check-ins using mobile app or web interface.",
-        icon: "",
-        bgImage: "https://images.unsplash.com/photo-1611224923853-80b023f02d71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80"
-    },
-    {
-        title: "Real-time Analytics Dashboard",
-        description: "Monitor patterns and generate instant reports",
-        summary: "Monitor attendance patterns, trends, and statistics with predictive analytics.",
-        icon: "",
-        bgImage: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80"
-    },
-    {
-        title: "Automated Notifications",
-        description: "Alerts via email or SMS",
-        summary: "Send automatic alerts about attendance status and upcoming classes.",
-        icon: "",
-        bgImage: "https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80"
-    },
-    {
-        title: "Advanced Security & Compliance",
-        description: "Enterprise-grade security with data encryption",
-        summary: "Bank-level security with GDPR compliance and role-based access control.",
-        icon: "",
-        bgImage: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80"
-    },
-    {
-        title: "Seamless Integrations",
-        description: "Connect with Google Classroom, Microsoft Teams, and LMS",
-        summary: "Powerful API for connecting with existing systems and platforms.",
-        icon: "",
-        bgImage: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80"
-    }
-];
+// Feature slideshow data from database
+const features = {{ hero_features|tojson|safe }}.map(feature => ({
+    title: feature.title,
+    description: feature.description,
+    summary: feature.summary,
+    icon: feature.icon,
+    bgImage: feature.bg_image
+}));
 
 let currentFeatureIndex = 0;
 let slideInterval;

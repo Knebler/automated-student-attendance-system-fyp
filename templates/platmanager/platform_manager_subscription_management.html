@@ -1307,6 +1307,9 @@
 </div>
 
 <script>
+    // Pass subscription plans data to JavaScript
+    const subscriptionPlans = {{ subscription_plans|tojson|safe }};
+    
     document.addEventListener('DOMContentLoaded', function() {
         // Search functionality
         const searchInput = document.getElementById('searchInput');
@@ -1394,9 +1397,9 @@
                                 <label for="institutionPlan">Subscription Plan</label>
                                 <select id="institutionPlan" required>
                                     <option value="">Select Plan</option>
-                                    <option value="starter">Starter (100 users)</option>
-                                    <option value="pro">Professional (500 users)</option>
-                                    <option value="enterprise">Enterprise (Unlimited)</option>
+                                    {% for plan in subscription_plans %}
+                                    <option value="{{ plan.plan_id }}">{{ plan.name }} ({{ plan.max_users }} users)</option>
+                                    {% endfor %}
                                 </select>
                             </div>
                             <div class="form-group">
@@ -1668,9 +1671,11 @@
                                     <label for="editPlan">Subscription Plan *</label>
                                     <select id="editPlan" name="plan" class="form-control" required>
                                         <option value="">Select a plan</option>
-                                        <option value="starter" ${plan && plan.name === 'starter' ? 'selected' : ''}>Starter</option>
-                                        <option value="pro" ${plan && plan.name === 'pro' ? 'selected' : ''}>Professional</option>
-                                        <option value="enterprise" ${plan && plan.name === 'enterprise' ? 'selected' : ''}>Enterprise</option>
+                                        ${subscriptionPlans.map(splan => `
+                                            <option value="${splan.plan_id}" ${plan && plan.plan_id === splan.plan_id ? 'selected' : ''}>
+                                                ${splan.name} (${splan.max_users} users)
+                                            </option>
+                                        `).join('')}
                                     </select>
                                 </div>
                                 

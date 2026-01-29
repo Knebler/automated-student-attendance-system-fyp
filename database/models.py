@@ -308,6 +308,106 @@ class FacialData(Base, BaseMixin):
     updated_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"), onupdate=text("CURRENT_TIMESTAMP"))
     is_active = Column(Boolean, server_default="1")
 
+# ====================
+# FEATURES
+# ====================
+class Feature(Base, BaseMixin):
+    __tablename__ = "features"
+
+    feature_id = Column(Integer, primary_key=True)
+    slug = Column(String(100), nullable=False, unique=True, index=True)
+    icon = Column(String(50), nullable=False)
+    title = Column(String(200), nullable=False)
+    description = Column(Text, nullable=False)
+    details = Column(Text)
+    try_url = Column(String(255))
+    is_active = Column(Boolean, server_default="1")
+    display_order = Column(Integer, server_default="0")
+    is_advanced = Column(Boolean, server_default="0")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+# ====================
+# HERO FEATURES (Homepage Slideshow)
+# ====================
+class HeroFeature(Base, BaseMixin):
+    __tablename__ = "hero_features"
+
+    hero_feature_id = Column(Integer, primary_key=True)
+    title = Column(String(200), nullable=False)
+    description = Column(String(500), nullable=False)
+    summary = Column(Text, nullable=False)
+    icon = Column(String(50), nullable=False)
+    bg_image = Column(String(500), nullable=False)
+    is_active = Column(Boolean, server_default="1")
+    display_order = Column(Integer, server_default="0")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+# ====================
+# STATS (Homepage Statistics)
+# ====================
+class Stat(Base, BaseMixin):
+    __tablename__ = "stats"
+
+    stat_id = Column(Integer, primary_key=True)
+    value = Column(String(50), nullable=False)
+    label = Column(String(200), nullable=False)
+    is_active = Column(Boolean, server_default="1")
+    display_order = Column(Integer, server_default="0")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+# ====================
+# ABOUT US PAGE CONTENT
+# ====================
+class AboutIntro(Base, BaseMixin):
+    __tablename__ = "about_intro"
+
+    about_intro_id = Column(Integer, primary_key=True)
+    title = Column(String(200), nullable=False)
+    description = Column(Text, nullable=False)
+    is_active = Column(Boolean, server_default="1")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+class AboutStory(Base, BaseMixin):
+    __tablename__ = "about_story"
+
+    about_story_id = Column(Integer, primary_key=True)
+    title = Column(String(200), nullable=False)
+    content = Column(Text, nullable=False)
+    is_active = Column(Boolean, server_default="1")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+class AboutMissionVision(Base, BaseMixin):
+    __tablename__ = "about_mission_vision"
+
+    mission_vision_id = Column(Integer, primary_key=True)
+    type = Column(String(20), nullable=False)  # 'mission' or 'vision'
+    title = Column(String(200), nullable=False)
+    content = Column(Text, nullable=False)
+    is_active = Column(Boolean, server_default="1")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+class TeamMember(Base, BaseMixin):
+    __tablename__ = "team_members"
+
+    team_member_id = Column(Integer, primary_key=True)
+    name = Column(String(200), nullable=False)
+    role = Column(String(200), nullable=False)
+    description = Column(Text)
+    contributions = Column(Text)  # JSON array of contribution strings
+    skills = Column(Text)  # JSON array of skill strings
+    display_order = Column(Integer, server_default="0")
+    is_active = Column(Boolean, server_default="1")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+class AboutValue(Base, BaseMixin):
+    __tablename__ = "about_values"
+
+    value_id = Column(Integer, primary_key=True)
+    title = Column(String(200), nullable=False)
+    description = Column(Text, nullable=False)
+    display_order = Column(Integer, server_default="0")
+    is_active = Column(Boolean, server_default="1")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
 # =====================
 # PLATFORM ISSUES (USER REPORTS)
 # =====================

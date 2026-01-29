@@ -1222,3 +1222,150 @@ class StudentControl:
                 'success': False,
                 'error': f'Error getting attendance statistics: {str(e)}'
             }
+    
+    def get_class_details(user_id, class_id):
+        """Get detailed class information for a student"""
+        try:
+            with get_session() as db_session:
+                class_model = ClassModel(db_session)
+                course_model = CourseModel(db_session)
+                user_model = UserModel(db_session)
+                venue_model = VenueModel(db_session)
+                attendance_model = AttendanceRecordModel(db_session)
+                appeal_model = AttendanceAppealModel(db_session)
+                semester_model = SemesterModel(db_session)
+                
+                # Get class details
+                class_obj = class_model.get_by_id(class_id)
+                if not class_obj:
+                    return {'success': False, 'error': 'Class not found'}
+                
+                # Get student info
+                student = user_model.get_by_id(user_id)
+                if not student:
+                    return {'success': False, 'error': 'Student not found'}
+                
+                # Verify student is enrolled in this class's course
+                current_semester = semester_model.get_current_semester(student.institution_id)
+                if not current_semester:
+                    return {'success': False, 'error': 'No active semester found'}
+                
+                # Check if student is enrolled in the course
+                is_enrolled = (
+                    db_session.query(CourseUser)
+                    .filter(CourseUser.user_id == user_id)
+                    .filter(CourseUser.course_id == class_obj.course_id)
+                    .filter(CourseUser.semester_id == current_semester.semester_id)
+                    .first()
+                )
+                
+                if not is_enrolled:
+                    return {'success': False, 'error': 'You are not enrolled in this course'}
+                
+                # Get related data
+                course = course_model.get_by_id(class_obj.course_id) if class_obj.course_id else None
+                venue = venue_model.get_by_id(class_obj.venue_id) if class_obj.venue_id else None
+                lecturer = user_model.get_by_id(class_obj.lecturer_id) if class_obj.lecturer_id else None
+                
+                # Get attendance record for this student
+                attendance_record = (
+                    db_session.query(AttendanceRecord)
+                    .filter(AttendanceRecord.class_id == class_id)
+                    .filter(AttendanceRecord.student_id == user_id)
+                    .first()
+                )
+                
+                # Check if appeal exists for this record
+                appeal_exists = False
+                appeal_status = None
+                if attendance_record:
+                    appeal = appeal_model.get_one(attendance_id=attendance_record.attendance_id)
+                    if appeal:
+                        appeal_exists = True
+                        appeal_status = appeal.status
+                
+                # Determine class status
+                now = datetime.now()
+                class_status = 'upcoming'
+                if class_obj.start_time and class_obj.end_time:
+                    if now > class_obj.end_time:
+                        class_status = 'completed'
+                    elif class_obj.start_time <= now <= class_obj.end_time:
+                        class_status = 'in_progress'
+                
+                # Determine if student can check in
+                can_check_in = False
+                if class_status in ['upcoming', 'in_progress']:
+                    # Can check in if class hasn't ended and attendance not taken
+                    if not attendance_record or attendance_record.status == 'unmarked':
+                        # Check if within check-in window (e.g., 15 minutes before start to end time)
+                        if class_obj.start_time:
+                            check_in_start = class_obj.start_time - timedelta(minutes=15)
+                            check_in_end = class_obj.end_time if class_obj.end_time else class_obj.start_time + timedelta(hours=2)
+                            if check_in_start <= now <= check_in_end:
+                                can_check_in = True
+                
+                # Determine if student can appeal
+                can_appeal = False
+                if attendance_record and attendance_record.status in ['absent', 'late']:
+                    if not appeal_exists:
+                        # Can appeal if within 7 days of class
+                        days_since_class = (now - class_obj.start_time).days if class_obj.start_time else 999
+                        if days_since_class <= 7:
+                            can_appeal = True
+                
+                # Format class details
+                formatted_class = {
+                    'class_id': class_obj.class_id,
+                    'course_id': class_obj.course_id,
+                    'course_code': course.code if course else 'N/A',
+                    'course_name': course.name if course else 'N/A',
+                    'section': getattr(class_obj, 'section', '') or 'N/A',
+                    'room': venue.name if venue else 'N/A',
+                    'venue_id': class_obj.venue_id,
+                    'venue_capacity': venue.capacity if venue else 0,
+                    'start_time': class_obj.start_time,
+                    'end_time': class_obj.end_time,
+                    'start_datetime': class_obj.start_time.strftime('%B %d, %Y %I:%M %p') if class_obj.start_time else 'N/A',
+                    'end_datetime': class_obj.end_time.strftime('%B %d, %Y %I:%M %p') if class_obj.end_time else 'N/A',
+                    'start_time_formatted': class_obj.start_time.strftime('%I:%M %p') if class_obj.start_time else 'N/A',
+                    'end_time_formatted': class_obj.end_time.strftime('%I:%M %p') if class_obj.end_time else 'N/A',
+                    'date_formatted': class_obj.start_time.strftime('%B %d, %Y') if class_obj.start_time else 'N/A',
+                    'lecturer_id': class_obj.lecturer_id,
+                    'lecturer_name': lecturer.name if lecturer else 'N/A',
+                    'lecturer_email': lecturer.email if lecturer else 'N/A',
+                    'status': class_status,
+                    'class_type': getattr(class_obj, 'class_type', 'Lecture'),
+                    'class_status': class_obj.status
+                }
+                
+                # Format attendance info
+                attendance_info = {
+                    'attendance_taken': attendance_record is not None,
+                    'attendance_status': attendance_record.status if attendance_record else 'unmarked',
+                    'attendance_id': attendance_record.attendance_id if attendance_record else None,
+                    'recorded_at': attendance_record.recorded_at.strftime('%B %d, %Y %I:%M %p') if attendance_record and attendance_record.recorded_at else None,
+                    'notes': attendance_record.notes if attendance_record else None,
+                    'can_appeal': can_appeal,
+                    'appeal_exists': appeal_exists,
+                    'appeal_status': appeal_status
+                }
+                
+                return {
+                    'success': True,
+                    'class': formatted_class,
+                    'attendance': attendance_info,
+                    'can_check_in': can_check_in,
+                    'student': {
+                        'name': student.name,
+                        'student_id': f"S{student.user_id:07d}"
+                    }
+                }
+                
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return {
+                'success': False,
+                'error': f'Error loading class details: {str(e)}'
+            }

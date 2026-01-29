@@ -509,6 +509,30 @@ def announcements():
         flash('An error occurred while loading announcements', 'danger')
         return render_template('institution/student/student_announcements.html')
 
+@student_bp.route('/classes/<int:class_id>')
+@requires_roles('student')
+def class_details(class_id):
+    """View class details for a student"""
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            flash('Please log in to view class details', 'warning')
+            return redirect(url_for('auth.login'))
+        
+        # Get class details
+        class_data = StudentControl.get_class_details(user_id, class_id)
+        
+        if not class_data.get('success'):
+            flash(class_data.get('error', 'Error loading class details'), 'danger')
+            return redirect(url_for('student.timetable'))
+        
+        return render_template('institution/student/student_class_details.html', **class_data)
+        
+    except Exception as e:
+        current_app.logger.error(f"Error loading class details: {e}")
+        flash('An error occurred while loading class details', 'danger')
+        return redirect(url_for('student.timetable'))
+
 @student_bp.route('/timetable')
 @requires_roles('student')
 def timetable():

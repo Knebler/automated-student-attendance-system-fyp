@@ -13,6 +13,7 @@ from application.controls.auth_control import requires_roles
 from application.entities2 import ClassModel, UserModel, InstitutionModel, SubscriptionModel, CourseModel, AttendanceRecordModel, CourseUserModel, VenueModel, TestimonialModel
 from database.base import get_session
 from database.models import *
+from database.models import Feature, HeroFeature, Stat
 from datetime import date, datetime, timedelta
 from collections import defaultdict
 
@@ -21,12 +22,97 @@ main_bp = Blueprint('main', __name__)
 @main_bp.route('/')
 def home():
     """Home page route"""
-    return render_template('index.html')
+    with get_session() as db_session:
+        # Get active hero features for homepage slideshow
+        hero_features_query = db_session.query(HeroFeature).filter_by(is_active=True).order_by(HeroFeature.display_order).all()
+        
+        # Convert to dictionaries for JSON serialization
+        hero_features = [
+            {
+                'title': hf.title,
+                'description': hf.description,
+                'summary': hf.summary,
+                'icon': hf.icon,
+                'bg_image': hf.bg_image
+            }
+            for hf in hero_features_query
+        ]
+        
+        # Get active stats
+        stats_query = db_session.query(Stat).filter_by(is_active=True).order_by(Stat.display_order).all()
+        stats = [
+            {
+                'value': s.value,
+                'label': s.label
+            }
+            for s in stats_query
+        ]
+    
+    return render_template('index.html', hero_features=hero_features, stats=stats)
 
 @main_bp.route('/about')
 def about():
     """About page route (public/unregistered)"""
-    return render_template('unregistered/aboutus.html')
+    import json
+    with get_session() as db_session:
+        # Get about intro
+        about_intro = db_session.query(AboutIntro).filter_by(is_active=True).first()
+        intro = {
+            'title': about_intro.title,
+            'description': about_intro.description
+        } if about_intro else {'title': 'About AttendAI', 'description': ''}
+        
+        # Get about story
+        about_story = db_session.query(AboutStory).filter_by(is_active=True).first()
+        story = {
+            'title': about_story.title,
+            'content': about_story.content
+        } if about_story else {'title': 'Our Story', 'content': ''}
+        
+        # Get mission and vision
+        mission = db_session.query(AboutMissionVision).filter_by(is_active=True, type='mission').first()
+        vision = db_session.query(AboutMissionVision).filter_by(is_active=True, type='vision').first()
+        
+        mission_data = {
+            'title': mission.title,
+            'content': mission.content
+        } if mission else {'title': 'Our Mission', 'content': ''}
+        
+        vision_data = {
+            'title': vision.title,
+            'content': vision.content
+        } if vision else {'title': 'Our Vision', 'content': ''}
+        
+        # Get team members
+        team_members_query = db_session.query(TeamMember).filter_by(is_active=True).order_by(TeamMember.display_order).all()
+        team_members = []
+        for tm in team_members_query:
+            team_members.append({
+                'team_member_id': tm.team_member_id,
+                'name': tm.name,
+                'role': tm.role,
+                'description': tm.description,
+                'contributions': json.loads(tm.contributions) if tm.contributions else [],
+                'skills': json.loads(tm.skills) if tm.skills else []
+            })
+        
+        # Get values
+        values_query = db_session.query(AboutValue).filter_by(is_active=True).order_by(AboutValue.display_order).all()
+        values = []
+        for v in values_query:
+            values.append({
+                'value_id': v.value_id,
+                'title': v.title,
+                'description': v.description
+            })
+    
+    return render_template('unregistered/aboutus.html', 
+                         intro=intro,
+                         story=story,
+                         mission=mission_data,
+                         vision=vision_data,
+                         team_members=team_members,
+                         values=values)
 
 @main_bp.route('/faq')
 def faq():
@@ -36,12 +122,43 @@ def faq():
 @main_bp.route('/features')
 def features():
     """Public Features page"""
-    return render_template('unregistered/features.html')
+    with get_session() as db_session:
+        # Get all active features ordered by display_order
+        main_features = db_session.query(Feature).filter(
+            Feature.is_active == True,
+            Feature.is_advanced == False
+        ).order_by(Feature.display_order).all()
+        
+        advanced_features = db_session.query(Feature).filter(
+            Feature.is_active == True,
+            Feature.is_advanced == True
+        ).order_by(Feature.display_order).all()
+        
+        # Convert to dictionaries
+        main_features_list = [f.as_dict() for f in main_features]
+        advanced_features_list = [f.as_dict() for f in advanced_features]
+    
+    return render_template(
+        'unregistered/features.html', 
+        main_features=main_features_list,
+        advanced_features=advanced_features_list
+    )
 
 @main_bp.route('/subscriptions')
 def subscriptions():
     """Public Subscription summary page"""
-    return render_template('unregistered/subscriptionsummary.html')
+    import json
+    with get_session() as db_session:
+        # Get active subscription plans
+        plans = db_session.query(SubscriptionPlan).filter_by(is_active=True).order_by(SubscriptionPlan.plan_id).all()
+        
+        plans_data = []
+        for plan in plans:
+            plan_dict = plan.as_dict()
+            plan_dict['features'] = json.loads(plan.features) if plan.features else {}
+            plans_data.append(plan_dict)
+    
+    return render_template('unregistered/subscriptionsummary.html', subscription_plans=plans_data)
 
 @main_bp.route('/testimonials')
 def testimonials():
@@ -297,24 +414,17 @@ def view_issue(issue_id):
             return redirect(url_for('auth.login'))
         
         # Get issue details (user can only view their own issues)
-        result = PlatformIssueControl.get_issue_by_id_and_user(
-            issue_id=issue_id,
-            user_id=user_id
+        result = PlatformIssueControl.get_issue_by_id(
+            issue_id=issue_id
         )
         
         if not result['success']:
             flash(result.get('error', 'Issue not found or access denied'), 'danger')
             return redirect(url_for('main.my_reports'))
         
-        # Get comments and history if available
-        comments = result.get('comments', [])
-        history = result.get('history', [])
-        
         return render_template(
-            'components/issue_details.html',
-            issue=result['issue'],
-            comments=comments,
-            history=history
+            'components/report_issue_details.html',
+            issue=result['issue']
         )
         
     except Exception as e:

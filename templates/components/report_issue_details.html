@@ -116,12 +116,6 @@
                     </span>
                 </div>
             </div>
-            {% if issue.is_active %}
-            <a href="{{ url_for('main.update_issue', issue_id=issue.issue_id) }}" 
-               class="btn btn-primary">
-                <i class="fas fa-edit me-2"></i>Update Issue
-            </a>
-            {% endif %}
         </div>
     </div>
     

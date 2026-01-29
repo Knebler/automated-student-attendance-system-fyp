@@ -782,17 +782,10 @@
         <div class="card-custom">
             <div class="card-header-custom d-flex justify-content-between align-items-center">
                 <h2 class="mb-0">{{ current_class.course_code }} - {{ current_class.course_name }}</h2>
-                <div class="dropdown">
-                    <button class="btn-outline-custom dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        Actions
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#" onclick="duplicateClass('{{ current_class.id }}')">Duplicate Class</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="exportRoster('{{ current_class.id }}')">Export Roster</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-danger" href="#" onclick="archiveClass('{{ current_class.id }}')">Archive Class</a></li>
-                    </ul>
-                </div>
+                <button class="btn-outline-custom" onclick="exportRoster('{{ current_class.id }}')">
+                    <span class="btn-icon">📥</span>
+                    Export Roster
+                </button>
             </div>
         
             <div class="card-body-custom">
@@ -891,35 +884,6 @@
                         </div>
                     </div>
 
-                    <!-- Add Student Section -->
-                    <div class="add-student-section mb-4">
-                        <div class="card-custom">
-                            <div class="card-body-custom">
-                                <h4 class="mb-3">Add Student to Roster</h4>
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <input type="text" 
-                                               id="studentIdInput" 
-                                               class="form-control" 
-                                               placeholder="Enter Student ID or Email">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <button class="btn-custom w-100" onclick="addStudent()">
-                                            <span class="btn-icon">➕</span>
-                                            Add Student
-                                        </button>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <button class="btn-outline-custom w-100" onclick="showBulkUpload()">
-                                            <span class="btn-icon">📄</span>
-                                            Bulk Upload
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Roster Table -->
                     <div class="roster-table-section">
                         <div class="table-responsive">
@@ -973,13 +937,7 @@
                                                 <button class="btn-action" 
                                                         onclick="openStudentModal('{{ student.id }}', '{{ student.name }}', '{{ student.id_number }}', '{{ student.email }}', '{{ student.program }}', '{{ student.status }}', '{{ student.year }}')" 
                                                         title="View Details">
-                                                    👁️
-                                                </button>
-                                                <button class="btn-action" onclick="editStudent('{{ student.id }}')" title="Edit">
-                                                    ✏️
-                                                </button>
-                                                <button class="btn-action btn-danger" onclick="removeStudent('{{ student.id }}', '{{ student.name }}')" title="Remove">
-                                                    🗑️
+                                                    👁️ View
                                                 </button>
                                             </div>
                                         </td>
@@ -994,11 +952,7 @@
                             <div class="card-body-custom text-center">
                                 <div class="empty-state-icon mb-3">👥</div>
                                 <h4>No Students in Roster</h4>
-                                <p class="text-muted mb-4">Add students to this class using the form above.</p>
-                                <button class="btn-custom" onclick="showBulkUpload()">
-                                    <span class="btn-icon">📄</span>
-                                    Upload Student List
-                                </button>
+                                <p class="text-muted">This class currently has no students enrolled. Contact your administrator to manage class roster.</p>
                             </div>
                         </div>
                         {% endif %}
@@ -1006,13 +960,6 @@
                 </div>
             </div>
 
-            <!-- Action Buttons (updated) -->
-            <div class="card-footer-custom">
-                <div class="d-flex justify-content-end gap-3">
-                    <button class="btn-outline-custom" onclick="cancelChanges()">Cancel</button>
-                    <button class="btn-custom" onclick="saveChanges()">Save Changes</button>
-                </div>
-            </div>
         </div>
     </div>
     {% else %}
@@ -1022,11 +969,7 @@
             <div class="card-body-custom text-center">
                 <div class="empty-state-icon mb-3">🏫</div>
                 <h4>No Class Selected</h4>
-                <p class="text-muted mb-4">Please select a class from the dropdown above to manage its roster.</p>
-                <button class="btn-custom" onclick="createNewClass()">
-                    <span class="btn-icon">➕</span>
-                    Create New Class
-                </button>
+                <p class="text-muted">Please select a class from the dropdown above to view its roster.</p>
             </div>
         </div>
     </div>
@@ -1146,7 +1089,6 @@
 <script>
     // Current class state
     let currentClassId = "{{ current_class.id if current_class else '' }}";
-    let rosterChanges = {};
     
     function loadClassDetails(classId) {
     if (!classId) {
@@ -1160,18 +1102,7 @@
     window.location.href = url.toString();
     }
     
-    function createNewClass() {
-        window.location.href = "{{ url_for('institution_lecturer.manage_classes') }}";
-    }
-    
-    
-    function duplicateClass() {
-        if (confirm('Duplicate this class with all its settings?')) {
-            // In a real app, this would make an API call
-            console.log('Duplicating class:', currentClassId);
-            showToast('Class duplication started', 'info');
-        }
-    }
+
     
     function exportRoster(classId) {
     if (!classId) {
@@ -1206,17 +1137,7 @@
     
     showToast('Roster exported successfully', 'success');
     }
-    
-    function archiveClass() {
-        if (confirm('Are you sure you want to archive this class? This action cannot be undone.')) {
-            // In a real app, this would make an API call
-            console.log('Archiving class:', currentClassId);
-            showToast('Class archived', 'info');
-            setTimeout(() => {
-                window.location.href = "{{ url_for('institution_lecturer.manage_classes') }}";
-            }, 1500);
-        }
-    }
+
     
     function searchRoster() {
         const searchTerm = document.getElementById('searchStudents').value.toLowerCase();
@@ -1289,43 +1210,7 @@
         showToast('Roster refreshed', 'info');
     }
     
-    function addStudent() {
-        const studentId = document.getElementById('studentIdInput').value.trim();
-        if (!studentId) {
-            showToast('Please enter a Student ID or Email', 'warning');
-            return;
-        }
-        
-        // In a real app, this would make an API call
-        console.log('Adding student:', studentId);
-        showToast('Student added to roster', 'success');
-        document.getElementById('studentIdInput').value = '';
-    }
-    
-    function showBulkUpload() {
-        document.getElementById('bulkUploadModal').style.display = 'flex';
-    }
-    
-    function hideBulkUpload() {
-        document.getElementById('bulkUploadModal').style.display = 'none';
-    }
-    
-    function processBulkUpload() {
-        const fileInput = document.getElementById('csvFile');
-        if (!fileInput.files.length) {
-            showToast('Please select a CSV file', 'warning');
-            return;
-        }
-        
-        // In a real app, this would upload and process the file
-        showToast('CSV file uploaded and processing...', 'info');
-        hideBulkUpload();
-        
-        // Simulate processing
-        setTimeout(() => {
-            showToast('Bulk upload completed successfully', 'success');
-        }, 2000);
-    }
+
     
     // Student Modal Functions (adapted from popup version)
     function openStudentModal(studentId, studentName, studentNumber, studentEmail, studentProgram, studentStatus, studentYear) {
@@ -1388,51 +1273,8 @@
             document.body.style.overflow = 'auto';
         }
     }
-    
-    function editStudent(studentId) {
-        // In a real app, this would open an edit modal
-        showToast('Edit student functionality coming soon', 'info');
-    }
-    
-    function removeStudent(studentId, studentName) {
-        if (!confirm(`Remove ${studentName} from the class roster?`)) {
-            return;
-        }
-    
-        // Build the URL directly
-        const url = `/api/class/${currentClassId}/remove_student`;
-    
-        fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                student_id: studentId
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Remove from UI
-                const row = document.querySelector(`tr[data-student-id="${studentId}"]`);
-                if (row) {
-                    row.style.animation = 'fadeOut 0.3s ease';
-                    setTimeout(() => {
-                        row.remove();
-                        updateRosterStats();
-                    }, 300);
-                }
-                showToast('Student removed from roster', 'success');
-            } else {
-                showToast('Error removing student: ' + data.error, 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('Error removing student', 'error');
-        });
-    }
+
+
     
     function updateRosterStats() {
     const studentCount = document.querySelectorAll('#rosterTableBody tr').length;
@@ -1459,28 +1301,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update datetime display with dynamic data (already set by template)
     // The template variables {{ current_time }} and {{ current_date }} are already set
 });
-    
-    function saveChanges() {
-        // In a real app, this would send all changes to the server
-        if (Object.keys(rosterChanges).length === 0) {
-            showToast('No changes to save', 'info');
-            return;
-        }
-        
-        console.log('Saving changes:', rosterChanges);
-        showToast('Changes saved successfully', 'success');
-        rosterChanges = {};
-    }
-    
-    function cancelChanges() {
-        if (Object.keys(rosterChanges).length > 0) {
-            if (confirm('You have unsaved changes. Are you sure you want to cancel?')) {
-                window.location.reload();
-            }
-        } else {
-            window.location.href = "{{ url_for('institution_lecturer.lecturer_dashboard') }}";
-        }
-    }
+
     
     function showToast(message, type = 'info') {
         // Create toast element

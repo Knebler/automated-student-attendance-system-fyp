@@ -76,9 +76,9 @@ class Institution(Base, BaseMixin):
     subscription_id = Column(Integer, ForeignKey("subscriptions.subscription_id"), index=True)
 
     subscription = relationship("Subscription", back_populates="institution")
-    users = relationship("User", back_populates="institution")
-    courses = relationship("Course", back_populates="institution")
-    venues = relationship("Venue", back_populates="institution")
+    users = relationship("User", back_populates="institution", cascade="all, delete-orphan")
+    courses = relationship("Course", back_populates="institution", cascade="all, delete-orphan")
+    venues = relationship("Venue", back_populates="institution", cascade="all, delete-orphan")
 
 # =====================
 # USERS
@@ -87,7 +87,7 @@ class User(Base, BaseMixin):
     __tablename__ = "users"
 
     user_id = Column(Integer, primary_key=True)
-    institution_id = Column(Integer, ForeignKey("institutions.institution_id"), nullable=False, index=True)
+    institution_id = Column(Integer, ForeignKey("institutions.institution_id", ondelete="CASCADE"), nullable=False, index=True)
 
     role = Column(UserRoleEnum, nullable=False)
     name = Column(String(100), nullable=False)
@@ -113,8 +113,8 @@ class Announcement(Base, BaseMixin):
     __tablename__ = "announcements"
 
     announcement_id = Column(Integer, primary_key=True)
-    institution_id = Column(Integer, ForeignKey("institutions.institution_id"), nullable=False, index=True)
-    requested_by_user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    institution_id = Column(Integer, ForeignKey("institutions.institution_id", ondelete="CASCADE"), nullable=False, index=True)
+    requested_by_user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
 
     title = Column(String(200), nullable=False)
     content = Column(Text, nullable=False)
@@ -127,7 +127,7 @@ class Notification(Base, BaseMixin):
     __tablename__ = "notifications"
 
     notification_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True)
     created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
 
     content = Column(Text, nullable=False)
@@ -143,7 +143,7 @@ class Semester(Base, BaseMixin):
     )
 
     semester_id = Column(Integer, primary_key=True)
-    institution_id = Column(Integer, ForeignKey("institutions.institution_id"), nullable=False, index=True)
+    institution_id = Column(Integer, ForeignKey("institutions.institution_id", ondelete="CASCADE"), nullable=False, index=True)
 
     name = Column(String(100), nullable=False) # Make unique per institution
     start_date = Column(DateTime, nullable=False)
@@ -159,7 +159,7 @@ class Course(Base, BaseMixin):
     )
 
     course_id = Column(Integer, primary_key=True)
-    institution_id = Column(Integer, ForeignKey("institutions.institution_id"), nullable=False, index=True)
+    institution_id = Column(Integer, ForeignKey("institutions.institution_id", ondelete="CASCADE"), nullable=False, index=True)
 
     code = Column(String(50), nullable=False, index=True)
     name = Column(String(150), nullable=False)
@@ -181,9 +181,9 @@ class CourseUser(Base, BaseMixin):
         UniqueConstraint("course_id", "user_id", "semester_id", name="uq_course_user_year"),
     )
 
-    course_id = Column(Integer, ForeignKey("courses.course_id"), primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), primary_key=True)
-    semester_id = Column(Integer, ForeignKey("semesters.semester_id"), primary_key=True)
+    course_id = Column(Integer, ForeignKey("courses.course_id", ondelete="CASCADE"), primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True)
+    semester_id = Column(Integer, ForeignKey("semesters.semester_id", ondelete="CASCADE"), primary_key=True)
 
 # =====================
 # VENUE
@@ -192,7 +192,7 @@ class Venue(Base, BaseMixin):
     __tablename__ = "venues"
 
     venue_id = Column(Integer, primary_key=True)
-    institution_id = Column(Integer, ForeignKey("institutions.institution_id"), nullable=False, index=True)
+    institution_id = Column(Integer, ForeignKey("institutions.institution_id", ondelete="CASCADE"), nullable=False, index=True)
 
     name = Column(String(100), nullable=False)
     capacity = Column(Integer)
@@ -206,10 +206,10 @@ class Class(Base, BaseMixin):
     __tablename__ = "classes"
 
     class_id = Column(Integer, primary_key=True)
-    course_id = Column(Integer, ForeignKey("courses.course_id"), nullable=False, index=True)
-    semester_id = Column(Integer, ForeignKey("semesters.semester_id"), nullable=False, index=True)
-    venue_id = Column(Integer, ForeignKey("venues.venue_id"), nullable=False, index=True)
-    lecturer_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, index=True)
+    course_id = Column(Integer, ForeignKey("courses.course_id", ondelete="CASCADE"), nullable=False, index=True)
+    semester_id = Column(Integer, ForeignKey("semesters.semester_id", ondelete="CASCADE"), nullable=False, index=True)
+    venue_id = Column(Integer, ForeignKey("venues.venue_id", ondelete="CASCADE"), nullable=False, index=True)
+    lecturer_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True)
 
     status = Column(ClassStatusEnum, server_default="scheduled")
     start_time = Column(DateTime, nullable=False)
@@ -234,11 +234,11 @@ class AttendanceRecord(Base, BaseMixin):
 
     attendance_id = Column(Integer, primary_key=True)
     class_id = Column(Integer, ForeignKey("classes.class_id", ondelete="CASCADE"), nullable=False, index=True)
-    student_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, index=True)
+    student_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True)
 
     status = Column(AttendanceStatusEnum, nullable=False, index=True)
     marked_by = Column(MarkedByEnum, nullable=False)
-    lecturer_id = Column(Integer, ForeignKey("users.user_id"), index=True)
+    lecturer_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), index=True)
     captured_image_id = Column(Integer)
     notes = Column(Text)
     recorded_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
@@ -251,7 +251,7 @@ class AttendanceAppeal(Base, BaseMixin):
 
     appeal_id = Column(Integer, primary_key=True)
     attendance_id = Column(Integer, ForeignKey("attendance_records.attendance_id", ondelete="CASCADE"), nullable=False)
-    student_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    student_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
 
     status = Column(AttendanceAppealStatusEnum, nullable=False, server_default="pending")
     reason = Column(Text)
@@ -265,8 +265,8 @@ class ReportSchedule(Base, BaseMixin):
     __tablename__ = "reports_schedule"
 
     schedule_id = Column(Integer, primary_key=True)
-    institution_id = Column(Integer, ForeignKey("institutions.institution_id"), nullable=False)
-    requested_by_user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    institution_id = Column(Integer, ForeignKey("institutions.institution_id", ondelete="CASCADE"), nullable=False)
+    requested_by_user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
 
     schedule_type = Column(ReportScheduleEnum, nullable=False)
 
@@ -276,8 +276,8 @@ class ReportSchedule(Base, BaseMixin):
 class Testimonial(Base, BaseMixin):
     __tablename__ = "testimonials"
     testimonial_id = Column(Integer, primary_key=True)
-    institution_id = Column(Integer, ForeignKey("institutions.institution_id"), nullable=False, index=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, index=True)
+    institution_id = Column(Integer, ForeignKey("institutions.institution_id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True)
 
     content = Column(Text, nullable=False)
     summary = Column(String(255))
@@ -300,7 +300,7 @@ class FacialData(Base, BaseMixin):
     __tablename__ = "facial_data"
 
     facial_data_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True)
 
     face_encoding = Column(LargeBinary, nullable=False)
     sample_count = Column(Integer, server_default="1")
@@ -415,8 +415,8 @@ class PlatformIssue(Base, BaseMixin):
     __tablename__ = "platform_issues"
     
     issue_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, index=True)
-    institution_id = Column(Integer, ForeignKey("institutions.institution_id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True)
+    institution_id = Column(Integer, ForeignKey("institutions.institution_id", ondelete="CASCADE"), nullable=False, index=True)
     
     description = Column(Text, nullable=False)
     category = Column(String(100))

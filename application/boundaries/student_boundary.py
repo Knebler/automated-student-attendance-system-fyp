@@ -5,6 +5,8 @@ from application.entities2.notification import NotificationModel
 from database.base import get_session
 from datetime import datetime, date, timedelta
 import calendar
+import zlib
+import pickle
 
 student_bp = Blueprint('student', __name__)
 
@@ -71,22 +73,219 @@ def facial_recognition_retrain():
             flash('Please log in to access this page', 'warning')
             return redirect(url_for('auth.login'))
         
-        # Get student info
+        # Get student info and facial data status
         with get_session() as db_session:
-            from database.models import User
+            from database.models import User, FacialData
+            
             student = db_session.query(User).filter(User.user_id == user_id).first()
-            student_data = {
+            
+            # Check for existing facial data
+            facial_data = db_session.query(FacialData).filter(
+                FacialData.user_id == user_id,
+                FacialData.is_active == True
+            ).order_by(FacialData.updated_at.desc()).first()
+            
+            context = {
                 'name': student.name if student else 'Student',
                 'email': student.email if student else '',
-                'user_id': user_id
+                'user_id': user_id,
+                'facial_data_exists': facial_data is not None,
+                'last_updated': facial_data.updated_at.strftime('%Y-%m-%d %H:%M') if facial_data and facial_data.updated_at else None,
+                'sample_count': facial_data.sample_count if facial_data else 0
             }
         
-        return render_template('institution/student/student_facial_recognition_retrain.html', **student_data)
+        return render_template('institution/student/student_facial_recognition_retrain.html', **context)
         
     except Exception as e:
         current_app.logger.error(f"Error loading facial recognition retrain page: {e}")
         flash('An error occurred while loading the page', 'danger')
         return redirect(url_for('student.profile'))
+
+
+@student_bp.route('/api/facial-data/save', methods=['POST'])
+def save_facial_data():
+    """API endpoint to save facial encoding data"""
+    try:
+        # Check authentication manually for API endpoint
+        user_id = session.get('user_id')
+        user_role = session.get('user_role') or session.get('role')
+        
+        if not user_id:
+            return jsonify({'success': False, 'error': 'User not authenticated'}), 401
+        
+        if user_role != 'student':
+            return jsonify({'success': False, 'error': 'Unauthorized access'}), 403
+        
+        data = request.get_json()
+        
+        if not data or 'encodings' not in data:
+            return jsonify({
+                'success': False,
+                'error': 'No facial data received'
+            }), 400
+        
+        encodings = data['encodings']
+        
+        if not encodings or len(encodings) == 0:
+            return jsonify({
+                'success': False,
+                'error': 'No face encodings captured'
+            }), 400
+        
+        # Duplicate encodings to reach target sample count
+        TARGET_SAMPLES = 100  # Target number of samples to store
+        original_count = len(encodings)
+        
+        if original_count < TARGET_SAMPLES:
+            # Calculate how many times to duplicate
+            multiplier = TARGET_SAMPLES // original_count
+            remainder = TARGET_SAMPLES % original_count
+            
+            # Duplicate the encodings
+            duplicated_encodings = encodings * multiplier
+            # Add remainder to reach exact target
+            duplicated_encodings.extend(encodings[:remainder])
+            
+            encodings = duplicated_encodings
+        
+        sample_count = len(encodings)
+        
+        if not encodings or len(encodings) == 0:
+            return jsonify({
+                'success': False,
+                'error': 'No face encodings captured'
+            }), 400
+        
+        # Validate encodings (each should be a 128-dimensional array)
+        for encoding in encodings:
+            if not isinstance(encoding, list) or len(encoding) != 128:
+                return jsonify({
+                    'success': False,
+                    'error': 'Invalid face encoding format'
+                }), 400
+        
+        # Compress and serialize the encodings for storage
+        encodings_binary = zlib.compress(pickle.dumps(encodings))
+        
+        with get_session() as db_session:
+            from database.models import FacialData
+            
+            # Check if user already has facial data
+            existing = db_session.query(FacialData).filter(
+                FacialData.user_id == user_id,
+                FacialData.is_active == True
+            ).first()
+            
+            current_time = datetime.now()
+            
+            if existing:
+                # Update existing record
+                existing.face_encoding = encodings_binary
+                existing.sample_count = sample_count
+                existing.updated_at = current_time
+            else:
+                # Insert new record
+                new_facial_data = FacialData(
+                    user_id=user_id,
+                    face_encoding=encodings_binary,
+                    sample_count=sample_count,
+                    created_at=current_time,
+                    updated_at=current_time,
+                    is_active=True
+                )
+                db_session.add(new_facial_data)
+            
+            db_session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Facial data saved successfully',
+                'sample_count': sample_count
+            })
+            
+    except Exception as e:
+        current_app.logger.error(f"Error saving facial data: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'An error occurred while saving facial data'
+        }), 500
+
+
+@student_bp.route('/api/facial-data/delete', methods=['POST'])
+@requires_roles('student')
+def delete_facial_data():
+    """API endpoint to delete (deactivate) facial data"""
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'User not authenticated'}), 401
+        
+        with get_session() as db_session:
+            from database.models import FacialData
+            
+            # Soft delete - set is_active to False
+            db_session.query(FacialData).filter(
+                FacialData.user_id == user_id,
+                FacialData.is_active == True
+            ).update({
+                'is_active': False,
+                'updated_at': datetime.now()
+            })
+            
+            db_session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Facial data deleted successfully'
+            })
+            
+    except Exception as e:
+        current_app.logger.error(f"Error deleting facial data: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'An error occurred while deleting facial data'
+        }), 500
+
+
+@student_bp.route('/api/facial-data/status', methods=['GET'])
+@requires_roles('student')
+def get_facial_data_status():
+    """API endpoint to get facial data status"""
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'User not authenticated'}), 401
+        
+        with get_session() as db_session:
+            from database.models import FacialData
+            
+            facial_data = db_session.query(FacialData).filter(
+                FacialData.user_id == user_id,
+                FacialData.is_active == True
+            ).first()
+            
+            if facial_data:
+                return jsonify({
+                    'success': True,
+                    'exists': True,
+                    'sample_count': facial_data.sample_count,
+                    'created_at': facial_data.created_at.strftime('%Y-%m-%d %H:%M') if facial_data.created_at else None,
+                    'updated_at': facial_data.updated_at.strftime('%Y-%m-%d %H:%M') if facial_data.updated_at else None
+                })
+            else:
+                return jsonify({
+                    'success': True,
+                    'exists': False,
+                    'sample_count': 0
+                })
+                
+    except Exception as e:
+        current_app.logger.error(f"Error getting facial data status: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'An error occurred while getting facial data status'
+        }), 500
+
 
 @student_bp.route('/attendance')
 @requires_roles('student')
@@ -620,6 +819,30 @@ def mark_all_notifications_read():
         current_app.logger.error(f"Error marking all notifications as read: {e}")
         return jsonify({'success': False, 'error': 'Failed to mark all notifications as read'}), 500
 
+#clear all notifications
+@student_bp.route('/api/notifications/clear-all', methods=['POST'])
+@requires_roles('student')
+def clear_all_notifications():
+    """API endpoint to clear all notifications"""
+    try:
+        student_id = session.get('user_id')
+        if not student_id:
+            return jsonify({'success': False, 'error': 'User not authenticated'}), 401
+        
+        with get_session() as db_session:
+            notification_model = NotificationModel(db_session)
+            count = notification_model.clear_all_notifications(student_id)
+            
+            return jsonify({
+                'success': True,
+                'message': f'All notifications cleared ({count} deleted)',
+                'count': count
+            })
+            
+    except Exception as e:
+        current_app.logger.error(f"Error clearing all notifications: {e}")
+        return jsonify({'success': False, 'error': 'Failed to clear notifications'}), 500
+
 def get_relative_time(dt):
     """Get relative time string (e.g., '2 hours ago', 'Just now')"""
     if not dt:
@@ -640,26 +863,3 @@ def get_relative_time(dt):
         return f'{diff.days} day{"s" if diff.days != 1 else ""} ago'
     else:
         return dt.strftime('%b %d, %Y')
-
-@student_bp.route('/api/notifications/delete', methods=['POST'])
-@requires_roles('student')
-def clear_all_notifications():
-    """API endpoint to clear all notifications for the student"""
-    try:
-        student_id = session.get('user_id')
-        if not student_id:
-            return jsonify({'success': False, 'error': 'User not authenticated'}), 401
-        
-        with get_session() as db_session:
-            notification_model = NotificationModel(db_session)
-            count = notification_model.clear_all_notifications(student_id)
-            
-            return jsonify({
-                'success': True,
-                'message': f'All notifications cleared ({count} deleted)',
-                'count': count
-            })
-            
-    except Exception as e:
-        current_app.logger.error(f"Error clearing all notifications: {e}")
-        return jsonify({'success': False, 'error': 'Failed to clear notifications'}), 500

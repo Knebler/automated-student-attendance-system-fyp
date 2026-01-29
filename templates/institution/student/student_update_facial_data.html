@@ -3,9 +3,6 @@
 {% block title %}Update Facial Data - AttendAI{% endblock %}
 
 {% block content %}
-<!-- CSRF Token Meta Tag -->
-<meta name="csrf-token" content="{{ csrf_token() }}">
-
 <style>
     .facial-data-page {
         max-width: 900px;
@@ -114,21 +111,11 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transform: scaleX(-1);
+        transform: scaleX(-1); /* Mirror effect */
     }
 
     #canvasElement {
         display: none;
-    }
-
-    #overlayCanvas {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        transform: scaleX(-1);
-        pointer-events: none;
     }
 
     .video-overlay {
@@ -149,18 +136,6 @@
         border: 3px dashed rgba(255, 255, 255, 0.5);
         border-radius: 50%;
         position: relative;
-        animation: pulse 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-        0%, 100% {
-            border-color: rgba(255, 255, 255, 0.5);
-            transform: scale(1);
-        }
-        50% {
-            border-color: rgba(16, 185, 129, 0.8);
-            transform: scale(1.02);
-        }
     }
 
     .face-guide::after {
@@ -475,62 +450,6 @@
         font-size: 0.9rem;
     }
 
-    /* Face Detection Status */
-    .detection-status {
-        position: absolute;
-        bottom: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0,0,0,0.7);
-        color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .detection-status.detected {
-        background: rgba(5, 150, 105, 0.9);
-    }
-
-    .detection-status.not-detected {
-        background: rgba(220, 38, 38, 0.9);
-    }
-
-    /* Loading Spinner */
-    .spinner {
-        display: inline-block;
-        width: 16px;
-        height: 16px;
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        border-radius: 50%;
-        border-top-color: white;
-        animation: spin 1s ease-in-out infinite;
-    }
-
-    @keyframes spin {
-        to { transform: rotate(360deg); }
-    }
-
-    /* Capture Flash Effect */
-    .capture-flash {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: white;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.1s ease;
-    }
-
-    .capture-flash.flash {
-        opacity: 0.8;
-    }
-
     /* Responsive */
     @media (max-width: 768px) {
         .page-title {
@@ -566,8 +485,8 @@
 
 <div class="facial-data-page">
     <!-- Back Link -->
-    <a href="{{ url_for('student.profile') }}" class="back-link">
-        ← Back to Profile
+    <a href="{{ url_for('student.dashboard') }}" class="back-link">
+        ← Back to Dashboard
     </a>
 
     <!-- Page Header -->
@@ -581,11 +500,11 @@
 
     <!-- Current Status -->
     <div class="current-status">
-        {% if facial_data_exists %}
+        {% if facial_data_registered %}
         <div class="status-icon">✅</div>
         <div class="status-info">
             <h4>Facial Data Registered</h4>
-            <p>Last updated: {{ last_updated | default('Unknown') }} • {{ sample_count }} samples stored. You can update your facial data below.</p>
+            <p>Last updated: {{ last_updated | default('Unknown') }}. You can update your facial data below.</p>
         </div>
         {% else %}
         <div class="status-icon">⚠️</div>
@@ -609,8 +528,7 @@
                 </div>
                 <ol class="instructions-list">
                     <li>Click <strong>"Start Camera"</strong> to enable your webcam</li>
-                    <li>Wait for face detection models to load</li>
-                    <li>Position your face within the oval guide until "Face Detected" appears</li>
+                    <li>Position your face within the oval guide</li>
                     <li>Click <strong>"Capture"</strong> to take photos (minimum 5 required)</li>
                     <li>Try different angles: front, slight left, slight right</li>
                     <li>Click <strong>"Save Facial Data"</strong> when you have enough photos</li>
@@ -627,26 +545,20 @@
                     </div>
                     <video id="videoElement" autoplay playsinline style="display: none;"></video>
                     <canvas id="canvasElement"></canvas>
-                    <canvas id="overlayCanvas"></canvas>
                     <div class="video-overlay" id="videoOverlay" style="display: none;">
                         <div class="face-guide"></div>
-                    </div>
-                    <div class="capture-flash" id="captureFlash"></div>
-                    <div class="detection-status not-detected" id="detectionStatus" style="display: none;">
-                        <span id="detectionIcon">❌</span>
-                        <span id="detectionText">No face detected</span>
                     </div>
                 </div>
 
                 <!-- Camera Controls -->
                 <div class="camera-controls">
-                    <button class="btn-camera btn-start" id="startBtn">
+                    <button class="btn-camera btn-start" id="startBtn" onclick="FacialCapture.startCamera()">
                         <span>📷</span> Start Camera
                     </button>
-                    <button class="btn-camera btn-capture" id="captureBtn" disabled>
+                    <button class="btn-camera btn-capture" id="captureBtn" onclick="FacialCapture.capture()" disabled>
                         <span>📸</span> Capture
                     </button>
-                    <button class="btn-camera btn-stop" id="stopBtn" disabled>
+                    <button class="btn-camera btn-stop" id="stopBtn" onclick="FacialCapture.stopCamera()" disabled>
                         <span>⏹️</span> Stop Camera
                     </button>
                 </div>
@@ -671,7 +583,7 @@
                 </div>
 
                 <!-- Save Button -->
-                <button class="btn-camera btn-save" id="saveBtn" disabled style="display: none;">
+                <button class="btn-camera btn-save" id="saveBtn" onclick="FacialCapture.save()" disabled style="display: none;">
                     <span>💾</span> Save Facial Data
                 </button>
             </div>
@@ -689,13 +601,9 @@
             <li>Keep a neutral expression</li>
             <li>Take photos from slightly different angles for better recognition</li>
             <li>Make sure your entire face is visible in the frame</li>
-            <li>Wait for the green "Face Detected" indicator before capturing</li>
         </ul>
     </div>
 </div>
-
-<!-- Load face-api.js from CDN -->
-<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
 <script>
 const FacialCapture = (function() {
@@ -705,34 +613,23 @@ const FacialCapture = (function() {
     const config = {
         minPhotos: 5,
         maxPhotos: 10,
-        apiUrl: "/student/api/facial-data/save",
-        csrfToken: document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
-                   document.querySelector('input[name="csrf_token"]')?.value || 
-                   '{{ csrf_token() }}'
+        apiUrl: "{{ url_for('student.save_facial_data') }}",
+        csrfToken: "{{ csrf_token() }}"
     };
     
     // State
     let state = {
         stream: null,
         capturedImages: [],
-        capturedEncodings: [],
-        isCapturing: false,
-        modelsLoaded: false,
-        faceDetected: false,
-        currentDetection: null
+        isCapturing: false
     };
     
     // DOM Elements
     const elements = {
         video: document.getElementById('videoElement'),
         canvas: document.getElementById('canvasElement'),
-        overlayCanvas: document.getElementById('overlayCanvas'),
         placeholder: document.getElementById('cameraPlaceholder'),
         overlay: document.getElementById('videoOverlay'),
-        captureFlash: document.getElementById('captureFlash'),
-        detectionStatus: document.getElementById('detectionStatus'),
-        detectionIcon: document.getElementById('detectionIcon'),
-        detectionText: document.getElementById('detectionText'),
         startBtn: document.getElementById('startBtn'),
         captureBtn: document.getElementById('captureBtn'),
         stopBtn: document.getElementById('stopBtn'),
@@ -763,53 +660,9 @@ const FacialCapture = (function() {
         const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
         return icons[type] || 'ℹ️';
     }
-
-    // Load face-api.js models
-    async function loadModels() {
-        showStatus('Loading face detection models... Please wait.', 'info');
-        
-        // Try multiple CDN sources
-        const MODEL_URLS = [
-            'https://justadudewhohacks.github.io/face-api.js/models',
-            'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights',
-            'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights'
-        ];
-        
-        for (const MODEL_URL of MODEL_URLS) {
-            try {
-                console.log('Trying to load models from:', MODEL_URL);
-                
-                await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-                console.log('TinyFaceDetector loaded');
-                
-                await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-                console.log('FaceLandmark68Net loaded');
-                
-                await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-                console.log('FaceRecognitionNet loaded');
-                
-                state.modelsLoaded = true;
-                showStatus('Face detection models loaded successfully!', 'success');
-                return true;
-            } catch (error) {
-                console.warn('Failed to load from:', MODEL_URL, error);
-                continue;
-            }
-        }
-        
-        console.error('All model sources failed');
-        showStatus('Failed to load face detection models. Please check your internet connection and refresh.', 'error');
-        return false;
-    }
     
     // Start camera
     async function startCamera() {
-        // Load models first if not loaded
-        if (!state.modelsLoaded) {
-            const loaded = await loadModels();
-            if (!loaded) return;
-        }
-
         // Check if getUserMedia is supported
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             console.error('getUserMedia is not supported in this browser');
@@ -830,33 +683,15 @@ const FacialCapture = (function() {
             elements.video.style.display = 'block';
             elements.placeholder.style.display = 'none';
             elements.overlay.style.display = 'flex';
-            elements.detectionStatus.style.display = 'flex';
-            
-            // Set canvas dimensions when video loads
-            elements.video.onloadedmetadata = () => {
-                elements.overlayCanvas.width = elements.video.videoWidth;
-                elements.overlayCanvas.height = elements.video.videoHeight;
-                elements.canvas.width = elements.video.videoWidth;
-                elements.canvas.height = elements.video.videoHeight;
-                console.log('Video dimensions:', elements.video.videoWidth, 'x', elements.video.videoHeight);
-            };
-            
-            // Wait for video to actually start playing before detecting
-            elements.video.onplaying = () => {
-                console.log('Video is playing, starting face detection...');
-                // Start face detection loop
-                state.isCapturing = true;
-                detectFace();
-            };
             
             elements.startBtn.disabled = true;
-            elements.captureBtn.disabled = true; // Will enable when face detected
+            elements.captureBtn.disabled = false;
             elements.stopBtn.disabled = false;
             
             elements.progressSection.style.display = 'block';
             elements.capturedSection.style.display = 'block';
             
-            showStatus('Camera started. Position your face in the guide.', 'info');
+            showStatus('Camera started. Position your face and click Capture.', 'info');
             
         } catch (error) {
             console.error('Camera error:', error);
@@ -864,73 +699,8 @@ const FacialCapture = (function() {
         }
     }
     
-    // Face detection loop
-    async function detectFace() {
-        if (!state.isCapturing) return;
-
-        const ctx = elements.overlayCanvas.getContext('2d');
-        
-        try {
-            // Use more sensitive detection options
-            const options = new faceapi.TinyFaceDetectorOptions({ 
-                inputSize: 416,      // Larger input for better detection
-                scoreThreshold: 0.3  // Lower threshold for easier detection
-            });
-            
-            const detection = await faceapi.detectSingleFace(elements.video, options)
-                .withFaceLandmarks()
-                .withFaceDescriptor();
-
-            ctx.clearRect(0, 0, elements.overlayCanvas.width, elements.overlayCanvas.height);
-
-            if (detection) {
-                state.faceDetected = true;
-                state.currentDetection = detection;
-                
-                // Draw face detection box
-                const box = detection.detection.box;
-                ctx.strokeStyle = '#10b981';
-                ctx.lineWidth = 3;
-                ctx.strokeRect(box.x, box.y, box.width, box.height);
-
-                // Draw landmarks
-                ctx.fillStyle = '#10b981';
-                detection.landmarks.positions.forEach(point => {
-                    ctx.beginPath();
-                    ctx.arc(point.x, point.y, 2, 0, 2 * Math.PI);
-                    ctx.fill();
-                });
-
-                // Update detection status
-                elements.detectionStatus.className = 'detection-status detected';
-                elements.detectionIcon.textContent = '✅';
-                elements.detectionText.textContent = 'Face Detected - Ready to capture';
-                elements.captureBtn.disabled = false;
-            } else {
-                state.faceDetected = false;
-                state.currentDetection = null;
-                
-                // Update detection status
-                elements.detectionStatus.className = 'detection-status not-detected';
-                elements.detectionIcon.textContent = '❌';
-                elements.detectionText.textContent = 'No face detected - Position your face';
-                elements.captureBtn.disabled = true;
-            }
-        } catch (error) {
-            console.error('Detection error:', error);
-            // Don't show error to user for every frame, just log it
-        }
-
-        // Continue detection loop
-        if (state.isCapturing) {
-            requestAnimationFrame(detectFace);
-        }
-    }
-    
     // Stop camera
     function stopCamera() {
-        state.isCapturing = false;
-        
         if (state.stream) {
             state.stream.getTracks().forEach(track => track.stop());
             state.stream = null;
@@ -939,11 +709,6 @@ const FacialCapture = (function() {
         elements.video.style.display = 'none';
         elements.placeholder.style.display = 'flex';
         elements.overlay.style.display = 'none';
-        elements.detectionStatus.style.display = 'none';
-        
-        // Clear overlay canvas
-        const ctx = elements.overlayCanvas.getContext('2d');
-        ctx.clearRect(0, 0, elements.overlayCanvas.width, elements.overlayCanvas.height);
         
         elements.startBtn.disabled = false;
         elements.captureBtn.disabled = true;
@@ -954,11 +719,6 @@ const FacialCapture = (function() {
     
     // Capture photo
     function capture() {
-        if (!state.faceDetected || !state.currentDetection) {
-            showStatus('Please position your face in the frame.', 'warning');
-            return;
-        }
-        
         if (state.capturedImages.length >= config.maxPhotos) {
             showStatus(`Maximum ${config.maxPhotos} photos allowed.`, 'warning');
             return;
@@ -968,29 +728,28 @@ const FacialCapture = (function() {
         const canvas = elements.canvas;
         const ctx = canvas.getContext('2d');
         
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
         // Draw mirrored image
         ctx.translate(canvas.width, 0);
         ctx.scale(-1, 1);
         ctx.drawImage(video, 0, 0);
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         
-        // Get base64 image for display
+        // Get base64 image
         const imageData = canvas.toDataURL('image/jpeg', 0.9);
         state.capturedImages.push(imageData);
-        
-        // Store the face encoding (128-dimensional vector)
-        const encoding = Array.from(state.currentDetection.descriptor);
-        state.capturedEncodings.push(encoding);
-        
-        // Flash effect
-        elements.captureFlash.classList.add('flash');
-        setTimeout(() => {
-            elements.captureFlash.classList.remove('flash');
-        }, 100);
         
         // Update UI
         updateCapturedGrid();
         updateProgress();
+        
+        // Flash effect
+        elements.video.style.opacity = '0.5';
+        setTimeout(() => {
+            elements.video.style.opacity = '1';
+        }, 100);
         
         showStatus(`Photo ${state.capturedImages.length} captured!`, 'success');
     }
@@ -1040,57 +799,40 @@ const FacialCapture = (function() {
     // Remove image
     function removeImage(index) {
         state.capturedImages.splice(index, 1);
-        state.capturedEncodings.splice(index, 1);
         updateCapturedGrid();
         updateProgress();
     }
     
     // Save facial data
     async function save() {
-        if (state.capturedEncodings.length < config.minPhotos) {
+        if (state.capturedImages.length < config.minPhotos) {
             showStatus(`Please capture at least ${config.minPhotos} photos.`, 'warning');
             return;
         }
         
         elements.saveBtn.disabled = true;
-        elements.saveBtn.innerHTML = '<span class="spinner"></span> Saving...';
+        elements.saveBtn.innerHTML = '<span>⏳</span> Saving...';
         
         try {
-            console.log('Sending encodings:', state.capturedEncodings.length);
-            console.log('Sample encoding length:', state.capturedEncodings[0]?.length);
-            
             const response = await fetch(config.apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json',
                     'X-CSRFToken': config.csrfToken
                 },
                 body: JSON.stringify({
-                    encodings: state.capturedEncodings,
-                    sample_count: state.capturedEncodings.length
+                    images: state.capturedImages
                 })
             });
             
-            console.log('Response status:', response.status);
-            
-            // Check if response is JSON
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                const text = await response.text();
-                console.error('Non-JSON response:', text.substring(0, 500));
-                throw new Error('Server returned an invalid response. Please try again.');
-            }
-            
             const data = await response.json();
-            console.log('Response data:', data);
             
             if (data.success) {
                 showStatus('Facial data saved successfully! Redirecting...', 'success');
                 stopCamera();
                 
                 setTimeout(() => {
-                    window.location.href = "{{ url_for('student.profile') }}";
+                    window.location.href = "{{ url_for('student.dashboard') }}";
                 }, 2000);
             } else {
                 showStatus(data.error || 'Failed to save facial data.', 'error');
@@ -1099,7 +841,7 @@ const FacialCapture = (function() {
             }
         } catch (error) {
             console.error('Save error:', error);
-            showStatus(error.message || 'An error occurred. Please try again.', 'error');
+            showStatus('An error occurred. Please try again.', 'error');
             elements.saveBtn.disabled = false;
             elements.saveBtn.innerHTML = '<span>💾</span> Save Facial Data';
         }
@@ -1109,19 +851,6 @@ const FacialCapture = (function() {
     function init() {
         updateCapturedGrid();
         updateProgress();
-        
-        // Bind event listeners
-        elements.startBtn.addEventListener('click', startCamera);
-        elements.captureBtn.addEventListener('click', capture);
-        elements.stopBtn.addEventListener('click', stopCamera);
-        elements.saveBtn.addEventListener('click', save);
-        
-        // Cleanup on page unload
-        window.addEventListener('beforeunload', () => {
-            if (state.stream) {
-                state.stream.getTracks().forEach(track => track.stop());
-            }
-        });
     }
     
     // Initialize on DOM ready

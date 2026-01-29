@@ -501,3 +501,35 @@ class InstitutionModel(BaseEntity[Institution]):
         except Exception as e:
             self.session.rollback()
             raise e
+    
+    def delete(self, institution_id: int) -> bool:
+        """Delete an institution and all related data (cascade delete).
+        
+        This will automatically delete:
+        - All users associated with the institution
+        - All courses associated with the institution
+        - All venues associated with the institution
+        - All semesters associated with the institution
+        - All announcements associated with the institution
+        - All testimonials associated with the institution
+        - All platform issues associated with the institution
+        - All report schedules associated with the institution
+        - And all nested relationships (classes, attendance records, etc.)
+        
+        Args:
+            institution_id: The ID of the institution to delete
+            
+        Returns:
+            True if deletion was successful, False if institution not found
+        """
+        institution = self.get_by_id(institution_id)
+        if not institution:
+            return False
+        
+        try:
+            self.session.delete(institution)
+            self.session.commit()
+            return True
+        except Exception as e:
+            self.session.rollback()
+            raise e

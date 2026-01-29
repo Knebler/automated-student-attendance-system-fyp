@@ -285,11 +285,6 @@
         <div class="card-header-custom d-flex justify-content-between align-items-center">
             <h2 class="mb-0">{{ class.course_code }} - {{ class.course_name }}</h2>
             <div class="class-actions-header">
-                {% if can_check_in %}
-                <a href="{{ url_for('facial_recognition.checkin', class_id=class.class_id) }}" class="btn-custom" style="padding: 0.5rem 1.25rem; font-size: 0.9rem; margin-left: 0.5rem;">
-                    📋 Check In
-                </a>
-                {% endif %}
                 {% if attendance.can_appeal %}
                 <a href="{{ url_for('student.appeal_form', attendance_record_id=attendance.attendance_id) }}" class="btn-appeal" style="padding: 0.5rem 1.25rem; font-size: 0.9rem; margin-left: 0.5rem;">
                     📝 Appeal

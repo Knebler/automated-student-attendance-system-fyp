@@ -582,7 +582,7 @@
         background: white;
         border-radius: 14px;
         width: 90%;
-        max-width: 800px;
+        max-width: 600px;
         max-height: 90vh;
         display: flex;
         flex-direction: column;
@@ -592,12 +592,12 @@
 
     @keyframes modalSlideIn {
         from {
-            transform: translateY(-20px);
             opacity: 0;
+            transform: translateY(-30px);
         }
         to {
-            transform: translateY(0);
             opacity: 1;
+            transform: translateY(0);
         }
     }
 
@@ -647,7 +647,6 @@
     .notifications-header-actions {
         display: flex;
         justify-content: flex-end;
-        gap: 0.5rem;
         margin-bottom: 1rem;
         padding-bottom: 1rem;
         border-bottom: 1px solid #e5e7eb;
@@ -677,6 +676,7 @@
         border-radius: 8px;
         cursor: pointer;
         font-size: 0.9rem;
+        margin-left: 0.5rem;
         transition: all 0.2s ease;
     }
 
@@ -961,11 +961,6 @@
                         </div>
 
                         <div class="class-actions">
-                            {% if class.status == 'upcoming' or class.status == 'in_progress' %}
-                            <button class="btn-custom btn-checkin" data-class-id="{{ class.class_id }}">
-                                {% if class.attendance_taken %}Update Check-in{% else %}Check In{% endif %}
-                            </button>
-                            {% endif %}
                             <button class="btn-custom btn-view" data-class-id="{{ class.class_id }}">
                                 View Details
                             </button>
@@ -1067,10 +1062,11 @@
         </div>
         <div class="modal-body">
             <div class="notifications-header-actions">
-                <button class="btn-mark-all-read" id="markAllReadBtn">Mark all as read</button>
-                <button class="btn-clear-all" id="clearAllBtn">Clear all</button>
+                <button id="markAllReadBtn" class="btn-mark-all-read">Mark All as Read</button>
+                <button id="clearAllBtn" class="btn-clear-all">Clear All</button>
             </div>
             <div id="notificationsList" class="notifications-list">
+                <!-- Notifications will be loaded here dynamically -->
                 <div class="loading-message">Loading notifications...</div>
             </div>
         </div>
@@ -1103,40 +1099,13 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
     
-    // Check-in button functionality
-    document.querySelectorAll('.btn-checkin').forEach(button => {
-        button.addEventListener('click', function() {
-            const classId = this.dataset.classId;
-            const classCode = this.closest('.class-item').querySelector('.class-code').textContent;
-            
-            const checkInMethod = confirm(`Check in for ${classCode}?\n\nPlease ensure you are in the correct classroom.`);
-            
-            if (checkInMethod) {
-                button.textContent = 'Checking In...';
-                button.disabled = true;
-                
-                setTimeout(() => {
-                    alert(`Successfully checked in for ${classCode}!`);
-                    button.textContent = 'Checked In';
-                    button.style.backgroundColor = '#10b981';
-                    button.disabled = true;
-                    
-                    const statusElement = this.closest('.class-item').querySelector('.status-badge');
-                    if (statusElement) {
-                        statusElement.textContent = 'Present';
-                        statusElement.className = 'detail-item status-badge present';
-                    }
-                }, 1500);
-            }
-        });
-    });
-    
     // View details button
     document.querySelectorAll('.btn-view').forEach(button => {
         button.addEventListener('click', function() {
             const classId = this.dataset.classId;
-            const classCode = this.closest('.class-item').querySelector('.class-code').textContent;
-            alert(`Viewing details for ${classCode}\n\nClass ID: ${classId}`);
+            if (classId) {
+                window.location.href = `{{ url_for('student.class_details', class_id=0) }}`.replace('0', classId);
+            }
         });
     });
 

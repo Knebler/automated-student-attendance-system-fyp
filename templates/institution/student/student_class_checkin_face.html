@@ -26,6 +26,13 @@ let sessionId = currentUserSession.user_id || null;
 let currentUserId = currentUserSession.user_id;  
 
 async function initCamera() {
+    // Check if getUserMedia is supported
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.error('getUserMedia is not supported in this browser');
+        alert('Camera access is not supported. Please use HTTPS or a modern browser.');
+        return;
+    }
+
     try {
         const video = document.getElementById('video');
         videoStream = await navigator.mediaDevices.getUserMedia({ 

@@ -810,6 +810,13 @@ const FacialCapture = (function() {
             if (!loaded) return;
         }
 
+        // Check if getUserMedia is supported
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            console.error('getUserMedia is not supported in this browser');
+            showStatus('Camera access is not supported. Please use HTTPS or a modern browser.', 'error');
+            return;
+        }
+
         try {
             state.stream = await navigator.mediaDevices.getUserMedia({
                 video: {

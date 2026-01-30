@@ -21,6 +21,7 @@ import os
 import signal
 import zlib
 import pickle
+import time
 
 # Create blueprint
 attendance_ai_bp = Blueprint('attendance_ai', __name__)
@@ -930,8 +931,13 @@ def start_recognition():
     global recognition_process
     
     try:
+        print("\n" + "="*70)
+        print("📸 FACE RECOGNITION START REQUEST RECEIVED")
+        print("="*70)
+        
         # Check if already running
         if recognition_process is not None and recognition_process.poll() is None:
+            print("⚠️ Recognition already running")
             return jsonify({
                 'success': False,
                 'error': 'Recognition is already running',
@@ -942,53 +948,80 @@ def start_recognition():
         # Get session_id from request body
         data = request.get_json() or {}
         session_id = data.get('session_id') or data.get('class_id')
+        print(f"📋 Session ID: {session_id}")
         
         script_path = find_attendance_client()
+        print(f"📂 Script path: {script_path}")
         
         if script_path is None:
+            print("❌ attendance_client.py not found!")
             return jsonify({
                 'success': False,
                 'error': 'attendance_client.py not found'
             }), 404
         
+        # Use the same Python executable that's running Flask
+        python_exe = sys.executable
+        print(f"🐍 Python executable: {python_exe}")
+        
         # Build command with session_id if provided
-        cmd = [sys.executable, script_path]
+        cmd = [python_exe, script_path]
         if session_id:
             cmd.extend(['--session', str(session_id)])
         
-        print(f"🚀 Starting recognition: {' '.join(cmd)}")
+        print(f"🚀 Command: {' '.join(cmd)}")
+        print(f"📁 Working directory: {os.path.dirname(script_path)}")
         
         # Start the process
         if sys.platform == 'win32':
+            print("💻 Starting process with NEW CONSOLE...")
             recognition_process = subprocess.Popen(
                 cmd,
                 creationflags=subprocess.CREATE_NEW_CONSOLE,
-                cwd=os.path.dirname(script_path)
+                cwd=os.path.dirname(script_path) if os.path.dirname(script_path) else None
             )
+            print(f"✅ Process started! PID: {recognition_process.pid}")
         else:
+            print("🐧 Starting process (Linux/Mac)...")
             recognition_process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                cwd=os.path.dirname(script_path),
+                cwd=os.path.dirname(script_path) if os.path.dirname(script_path) else None,
                 start_new_session=True
             )
+            print(f"✅ Process started! PID: {recognition_process.pid}")
+        
+        # Wait a moment and check if process is still running
+        time.sleep(0.5)
+        if recognition_process.poll() is not None:
+            print(f"⚠️ WARNING: Process exited immediately with code {recognition_process.poll()}")
+            print("   The camera window may have crashed or closed")
+        
+        print("="*70)
+        print("")
         
         return jsonify({
             'success': True,
-            'message': 'Recognition started successfully',
+            'message': 'Recognition started successfully - Check for new console window',
             'status': 'running',
             'pid': recognition_process.pid,
             'script_path': script_path,
-            'session_id': session_id
+            'session_id': session_id,
+            'python_exe': python_exe
         })
         
     except Exception as e:
         import traceback
+        error_msg = str(e)
+        trace = traceback.format_exc()
+        print(f"❌ ERROR starting recognition:")
+        print(f"   {error_msg}")
+        print(trace)
         return jsonify({
             'success': False,
-            'error': str(e),
-            'traceback': traceback.format_exc()
+            'error': error_msg,
+            'traceback': trace
         }), 500
 
 

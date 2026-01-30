@@ -2,15 +2,28 @@ import zlib
 import cv2
 import numpy as np
 import mysql.connector
+import os
+from dotenv import load_dotenv
 
+# Load environment variables
+load_dotenv()
+
+# Use Azure database from .env
 DB = {
-  "host": "localhost",
-  "user": "root",
-  "password": "030528",
-  "database": "attendance_system"
+    "host": os.getenv('DB_HOST'),
+    "user": os.getenv('DB_USER'),
+    "password": os.getenv('DB_PASSWORD'),
+    "database": os.getenv('DB_NAME'),
+    "port": int(os.getenv('DB_PORT', 3306))
 }
 
-USER_ID = 17
+# Add SSL configuration for Azure
+if os.getenv('DB_SSL_ENABLED', 'false').lower() == 'true':
+    ssl_ca = os.getenv('DB_SSL_CA', './combined-ca-certificates.pem')
+    if os.path.exists(ssl_ca):
+        DB['ssl_ca'] = ssl_ca
+        DB['ssl_verify_cert'] = True
+
 SAMPLE_COUNT = 100
 
 def load_face_detector():
@@ -60,38 +73,152 @@ def main():
     conn = mysql.connector.connect(**DB)
     cur = conn.cursor()
 
-    cur.execute("SELECT face_encoding FROM facial_data WHERE user_id=%s AND is_active=1", (USER_ID,))
-    row = cur.fetchone()
-    if not row or not row[0]:
-        print("No blob found for user_id", USER_ID)
-        return
-
-    blob = row[0]
-
-    # Decode JPEG bytes
-    img_np = np.frombuffer(blob, dtype=np.uint8)
-    img = cv2.imdecode(img_np, cv2.IMREAD_COLOR)
-    if img is None:
-        print("Blob is not a decodable image (maybe already compressed training data).")
-        return
-
-    face_cascade = load_face_detector()
-    face = detect_and_crop_face(img, face_cascade)
-
-    faces_array = generate_augmented_samples(face, SAMPLE_COUNT)
-    faces_bytes = faces_array.tobytes()
-    compressed = zlib.compress(faces_bytes)
-    header = f"SHAPE:{faces_array.shape[0]},{faces_array.shape[1]};".encode("utf-8")
-    full_data = header + compressed
-
+    # Get all active facial data records
     cur.execute("""
-        UPDATE facial_data
-        SET face_encoding=%s, sample_count=%s, updated_at=NOW(), created_at=COALESCE(created_at, NOW()), is_active=1
-        WHERE user_id=%s
-    """, (full_data, SAMPLE_COUNT, USER_ID))
+        SELECT fd.facial_data_id, fd.user_id, u.name, fd.face_encoding 
+        FROM facial_data fd
+        JOIN users u ON fd.user_id = u.user_id
+        WHERE fd.is_active = 1
+        ORDER BY u.name
+    """)
+    
+    all_records = cur.fetchall()
+    
+    if not all_records:
+        print("❌ No facial data records found")
+        return
+    
+    print(f"\n📊 Found {len(all_records)} facial data records\n")
+    
+    face_cascade = load_face_detector()
+    fixed_count = 0
+    skipped_count = 0
+    error_count = 0
+    corrupted_records = []
+    
+    for facial_data_id, user_id, name, blob in all_records:
+        print(f"\n{'='*60}")
+        print(f"Processing: {name} (User ID: {user_id})")
+        print(f"{'='*60}")
+        
+        if not blob:
+            print(f"⚠️  No blob data - SKIPPING")
+            skipped_count += 1
+            continue
+        
+        # Show blob info
+        print(f"📦 Blob size: {len(blob)} bytes")
+        print(f"📦 First 20 bytes: {blob[:20]}")
+        
+        # Check if already in correct format
+        if blob[:6] == b'SHAPE:':
+            print(f"✅ Already in correct format - SKIPPING")
+            skipped_count += 1
+            continue
 
-    conn.commit()
-    print("✅ Updated face_encoding into SHAPE+compressed samples for user_id", USER_ID)
+        try:
+            # Try to decompress if it's already compressed but missing header
+            try:
+                decompressed = zlib.decompress(blob)
+                print(f"⚠️  Data is compressed but missing SHAPE header!")
+                print(f"   Decompressed size: {len(decompressed)} bytes")
+                
+                # Check if it could be facial data
+                if len(decompressed) == 750000:  # 100 samples x 7500 features
+                    print(f"   Size matches 100 samples x 7500 features")
+                    print(f"   Adding SHAPE header...")
+                    
+                    header = b"SHAPE:100,7500;"
+                    full_data = header + blob  # blob is already compressed
+                    
+                    cur.execute("""
+                        UPDATE facial_data
+                        SET face_encoding=%s, sample_count=%s, updated_at=NOW()
+                        WHERE facial_data_id=%s
+                    """, (full_data, 100, facial_data_id))
+                    
+                    conn.commit()
+                    print(f"✅ FIXED by adding SHAPE header!")
+                    fixed_count += 1
+                    continue
+                else:
+                    print(f"   Size doesn't match expected format")
+            except zlib.error:
+                pass  # Not compressed, continue to try decoding as image
+            
+            # Decode JPEG bytes
+            img_np = np.frombuffer(blob, dtype=np.uint8)
+            img = cv2.imdecode(img_np, cv2.IMREAD_COLOR)
+            
+            if img is None:
+                print(f"❌ Cannot decode as image and not valid compressed data")
+                print(f"   This record is CORRUPTED")
+                corrupted_records.append((facial_data_id, user_id, name))
+                error_count += 1
+                continue
+
+            print(f"📸 Image decoded: {img.shape}")
+            
+            # Detect and crop face
+            face = detect_and_crop_face(img, face_cascade)
+            print(f"✂️  Face cropped: {face.shape}")
+            
+            # Generate samples
+            faces_array = generate_augmented_samples(face, SAMPLE_COUNT)
+            print(f"🔄 Generated {faces_array.shape[0]} samples")
+            
+            # Compress
+            faces_bytes = faces_array.tobytes()
+            compressed = zlib.compress(faces_bytes)
+            header = f"SHAPE:{faces_array.shape[0]},{faces_array.shape[1]};".encode("utf-8")
+            full_data = header + compressed
+            
+            print(f"📦 Compressed: {len(blob)} → {len(full_data)} bytes")
+            
+            # Update database
+            cur.execute("""
+                UPDATE facial_data
+                SET face_encoding=%s, sample_count=%s, updated_at=NOW()
+                WHERE facial_data_id=%s
+            """, (full_data, SAMPLE_COUNT, facial_data_id))
+            
+            conn.commit()
+            print(f"✅ FIXED!")
+            fixed_count += 1
+            
+        except Exception as e:
+            print(f"❌ ERROR: {e}")
+            error_count += 1
+            continue
+    
+    print(f"\n{'='*60}")
+    print(f"📊 SUMMARY")
+    print(f"{'='*60}")
+    print(f"✅ Fixed:   {fixed_count}")
+    print(f"⚠️  Skipped: {skipped_count}")
+    print(f"❌ Errors:  {error_count}")
+    print(f"{'='*60}\n")
+    
+    # Handle corrupted records
+    if corrupted_records:
+        print(f"⚠️  CORRUPTED RECORDS FOUND:")
+        for facial_data_id, user_id, name in corrupted_records:
+            print(f"   - {name} (User ID: {user_id})")
+        
+        print(f"\n⚠️  These records will cause the camera to CRASH!")
+        response = input(f"\n❓ Delete {len(corrupted_records)} corrupted record(s)? (yes/no): ").strip().lower()
+        
+        if response == 'yes':
+            for facial_data_id, user_id, name in corrupted_records:
+                cur.execute("DELETE FROM facial_data WHERE facial_data_id=%s", (facial_data_id,))
+                print(f"   🗑️  Deleted: {name}")
+            
+            conn.commit()
+            print(f"\n✅ Corrupted records deleted!")
+            print(f"   Students will need to re-upload their photos.")
+            print(f"   The camera should now work properly.")
+        else:
+            print(f"\n⚠️  Cancelled - Camera will continue to crash until these are fixed")
 
     cur.close()
     conn.close()

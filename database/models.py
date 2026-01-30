@@ -302,7 +302,7 @@ class FacialData(Base, BaseMixin):
     facial_data_id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True)
 
-    face_encoding = Column(LargeBinary, nullable=False)
+    face_encoding = Column(LargeBinary(length=(2**32)-1), nullable=False)  # LONGBLOB (4GB max)
     sample_count = Column(Integer, server_default="1")
     created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
     updated_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"), onupdate=text("CURRENT_TIMESTAMP"))

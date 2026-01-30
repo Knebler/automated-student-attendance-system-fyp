@@ -73,13 +73,13 @@ try:
             print(f"\n⚠️  Column is {column_type}")
             print("   This is too small for facial recognition data!")
             
-            response = input("\n❓ Upgrade to MEDIUMBLOB (16MB)? (yes/no): ").strip().lower()
+            response = input("\n❓ Upgrade to LONGBLOB (4GB)? (yes/no): ").strip().lower()
             
             if response == 'yes':
                 print("\nUpgrading column...")
-                cursor.execute("ALTER TABLE facial_data MODIFY COLUMN face_encoding MEDIUMBLOB")
+                cursor.execute("ALTER TABLE facial_data MODIFY COLUMN face_encoding LONGBLOB")
                 conn.commit()
-                print("✅ Column upgraded to MEDIUMBLOB (16MB max)!")
+                print("✅ Column upgraded to LONGBLOB (4GB max)!")
                 print("   You can now store larger facial recognition data.")
             else:
                 print("\n❌ Cancelled - column not modified")

@@ -108,6 +108,12 @@ AttendAI{% endblock %} {% block content %}
         <button class="btn-close" onclick="AttendanceManager.hideFaceRecognitionPanel()">×</button>
       </div>
       <div class="card-body-custom">
+        <!-- Camera Preview -->
+        <div class="camera-preview-section mb-3">
+          <video id="cameraPreview" autoplay playsinline style="width: 100%; max-width: 640px; border-radius: 8px; background: #000;"></video>
+          <canvas id="captureCanvas" style="display: none;"></canvas>
+        </div>
+        
         <div class="face-recognition-info">
           <div class="face-stats">
             <div class="face-stat-item">
@@ -115,8 +121,8 @@ AttendAI{% endblock %} {% block content %}
               <span class="face-stat-value" id="recognitionStatus">Stopped</span>
             </div>
             <div class="face-stat-item">
-              <span class="face-stat-label">Process ID:</span>
-              <span class="face-stat-value" id="recognitionPID">-</span>
+              <span class="face-stat-label">Mode:</span>
+              <span class="face-stat-value">Browser Camera</span>
             </div>
             <div class="face-stat-item">
               <span class="face-stat-label">Session:</span>
@@ -126,6 +132,10 @@ AttendAI{% endblock %} {% block content %}
               <span class="face-stat-label">Students Recognized:</span>
               <span class="face-stat-value" id="recognizedCount">0</span>
             </div>
+            <div class="face-stat-item">
+              <span class="face-stat-label">Frames Processed:</span>
+              <span class="face-stat-value" id="framesProcessed">0</span>
+            </div>
           </div>
           <div class="face-recognition-controls">
             <button class="btn-custom btn-success" id="startRecognitionBtn" onclick="AttendanceManager.startFaceRecognition()">
@@ -134,11 +144,11 @@ AttendAI{% endblock %} {% block content %}
             </button>
             <button class="btn-outline-custom btn-danger" id="stopRecognitionBtn" onclick="AttendanceManager.stopFaceRecognition()" disabled>
               <span class="btn-icon">⏹️</span>
-              Stop Recognition
+              Stop Camera
             </button>
             <button class="btn-outline-custom" onclick="AttendanceManager.checkRecognitionStatus()">
-              <span class="btn-icon">🔄</span>
-              Check Status
+              <span class="btn-icon">📊</span>
+              View Stats
             </button>
             <button class="btn-outline-custom" onclick="AttendanceManager.toggleDebug()">
               <span class="btn-icon">🔧</span>
@@ -434,6 +444,18 @@ AttendAI{% endblock %} {% block content %}
 
   .face-recognition-status {
     animation: slideDown 0.3s ease;
+  }
+
+  .camera-preview-section {
+    text-align: center;
+    background: #1e293b;
+    padding: 1rem;
+    border-radius: 8px;
+  }
+
+  .camera-preview-section video {
+    max-height: 400px;
+    border: 2px solid #059669;
   }
 
   .face-recognition-info {
@@ -886,10 +908,16 @@ AttendAI{% endblock %} {% block content %}
     faceRecognitionActive: false,
     statusCheckInterval: null,
     attendanceCheckInterval: null,
+    frameProcessingInterval: null,
     studentMap: {},
     pollCount: 0,
     lastNotified: {},
-    debugMode: false
+    debugMode: false,
+    cameraStream: null,
+    videoElement: null,
+    canvasElement: null,
+    framesProcessed: 0,
+    processingFrame: false
   };
 
   // ==================== DEBUG HELPERS ====================
@@ -1093,11 +1121,13 @@ AttendAI{% endblock %} {% block content %}
 
   // ==================== INITIALIZE ====================
   function init() {
-    console.log('🎓 Attendance Manager Initialized');
+    console.log('🎓 Attendance Manager Initialized (Browser Camera Mode)');
     console.log('📋 Class ID:', config.classId);
     
     state.studentMap = buildStudentMap();
-    checkRecognitionStatus();
+    state.videoElement = document.getElementById('cameraPreview');
+    state.canvasElement = document.getElementById('captureCanvas');
+    
     startAttendancePolling();
     
     debugLog('System ready, polling started', 'success');
@@ -1106,14 +1136,14 @@ AttendAI{% endblock %} {% block content %}
   // ==================== FACE RECOGNITION ====================
   async function checkRecognitionStatus() {
     try {
-      const response = await fetch(`${config.apiBaseUrl}/api/recognition/status`, {
+      const response = await fetch(`${config.apiBaseUrl}/api/recognition/browser/stats`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
       const data = await response.json();
-      if (data.success) {
-        updateRecognitionUI(data.running, data.pid);
-        return data.running;
+      if (data.success && data.stats) {
+        updateRecognizedCount(data.stats.total_marked || 0);
+        return true;
       }
       return false;
     } catch (error) {
@@ -1123,41 +1153,75 @@ AttendAI{% endblock %} {% block content %}
   }
 
   async function startFaceRecognition() {
-  const startBtn = document.getElementById('startRecognitionBtn');
-  startBtn.disabled = true;
-  startBtn.innerHTML = '<span class="btn-icon">⏳</span> Starting...';
-  
-  debugLog('Starting face recognition...', 'info');
-  
-  try {
-    const response = await fetch(`${config.apiBaseUrl}/api/recognition/start`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        session_id: config.classId,  // Send the current class ID
-        class_id: config.classId
-      })
-    });
-    const data = await response.json();
+    const startBtn = document.getElementById('startRecognitionBtn');
+    startBtn.disabled = true;
+    startBtn.innerHTML = '<span class="btn-icon">⏳</span> Initializing...';
     
-    if (data.success) {
+    debugLog('Starting browser-based face recognition...', 'info');
+    
+    try {
+      // Step 1: Initialize recognition session on server
+      debugLog('Step 1: Initializing server session...', 'info');
+      const initResponse = await fetch(`${config.apiBaseUrl}/api/recognition/browser/init`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: config.classId,
+          class_id: config.classId
+        })
+      });
+      const initData = await initResponse.json();
+      
+      if (!initData.success) {
+        debugLog(`Initialization failed: ${initData.error}`, 'error');
+        showToast(initData.error || 'Failed to initialize', 'warning');
+        startBtn.disabled = false;
+        startBtn.innerHTML = '<span class="btn-icon">▶️</span> Start Camera';
+        return;
+      }
+      
+      debugLog(`Server initialized: ${initData.students_count} students, ${initData.training_samples} samples`, 'success');
+      
+      // Step 2: Request camera access
+      debugLog('Step 2: Requesting camera access...', 'info');
+      startBtn.innerHTML = '<span class="btn-icon">📸</span> Requesting Camera...';
+      
+      try {
+        state.cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+            facingMode: 'user'
+          }
+        });
+        
+        state.videoElement.srcObject = state.cameraStream;
+        debugLog('Camera access granted', 'success');
+        
+      } catch (cameraError) {
+        debugLog(`Camera error: ${cameraError.message}`, 'error');
+        showToast('Camera access denied or not available', 'warning');
+        startBtn.disabled = false;
+        startBtn.innerHTML = '<span class="btn-icon">▶️</span> Start Camera';
+        return;
+      }
+      
+      // Step 3: Start frame processing
       state.faceRecognitionActive = true;
-      updateRecognitionUI(true, data.pid);
-      debugLog(`Recognition started! PID: ${data.pid}, Session: ${config.classId}`, 'success');
+      state.framesProcessed = 0;
+      updateRecognitionUI(true);
+      startFrameProcessing();
+      
+      debugLog('Recognition started successfully!', 'success');
       showToast('Face recognition started!', 'success');
-      startStatusPolling();
-    } else {
-      debugLog(`Failed: ${data.error}`, 'error');
-      showToast(data.error || 'Failed to start', 'warning');
+      
+    } catch (error) {
+      debugLog(`Error: ${error.message}`, 'error');
+      showToast('Failed to start recognition', 'warning');
       startBtn.disabled = false;
-      startBtn.innerHTML = '<span class="btn-icon">▶️</span> Start Recognition';
+      startBtn.innerHTML = '<span class="btn-icon">▶️</span> Start Camera';
     }
-  } catch (error) {
-    debugLog(`Error: ${error.message}`, 'error');
-    startBtn.disabled = false;
-    startBtn.innerHTML = '<span class="btn-icon">▶️</span> Start Recognition';
   }
-}
 
   async function stopFaceRecognition() {
     const stopBtn = document.getElementById('stopRecognitionBtn');
@@ -1165,30 +1229,124 @@ AttendAI{% endblock %} {% block content %}
     stopBtn.innerHTML = '<span class="btn-icon">⏳</span> Stopping...';
     
     try {
-      const response = await fetch(`${config.apiBaseUrl}/api/recognition/stop`, {
+      // Stop frame processing
+      stopFrameProcessing();
+      
+      // Stop camera stream
+      if (state.cameraStream) {
+        state.cameraStream.getTracks().forEach(track => track.stop());
+        state.cameraStream = null;
+        state.videoElement.srcObject = null;
+      }
+      
+      // Notify server
+      const response = await fetch(`${config.apiBaseUrl}/api/recognition/browser/stop`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
       const data = await response.json();
       
-      if (data.success) {
-        state.faceRecognitionActive = false;
-        updateRecognitionUI(false, null);
+      state.faceRecognitionActive = false;
+      updateRecognitionUI(false);
+      
+      if (data.success && data.final_stats) {
+        debugLog(`Session ended: ${data.final_stats.total_marked} students marked`, 'success');
+        showToast(`Recognition stopped - ${data.final_stats.total_marked} students marked`, 'info');
+      } else {
         debugLog('Recognition stopped', 'success');
         showToast('Recognition stopped', 'info');
-        stopStatusPolling();
       }
+      
     } catch (error) {
       debugLog(`Error: ${error.message}`, 'error');
     }
     
     stopBtn.disabled = false;
-    stopBtn.innerHTML = '<span class="btn-icon">⏹️</span> Stop Recognition';
+    stopBtn.innerHTML = '<span class="btn-icon">⏹️</span> Stop Camera';
   }
 
-  function updateRecognitionUI(isRunning, pid) {
+  function startFrameProcessing() {
+    if (state.frameProcessingInterval) {
+      clearInterval(state.frameProcessingInterval);
+    }
+    
+    // Process frames every 500ms (2 FPS) to avoid overloading
+    state.frameProcessingInterval = setInterval(processCurrentFrame, 500);
+    debugLog('Frame processing started (2 FPS)', 'info');
+  }
+
+  function stopFrameProcessing() {
+    if (state.frameProcessingInterval) {
+      clearInterval(state.frameProcessingInterval);
+      state.frameProcessingInterval = null;
+      debugLog('Frame processing stopped', 'info');
+    }
+  }
+
+  async function processCurrentFrame() {
+    if (state.processingFrame || !state.faceRecognitionActive) {
+      return;
+    }
+    
+    state.processingFrame = true;
+    
+    try {
+      // Capture frame from video
+      const canvas = state.canvasElement;
+      const video = state.videoElement;
+      
+      if (!video.videoWidth || !video.videoHeight) {
+        state.processingFrame = false;
+        return;
+      }
+      
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0);
+      
+      // Convert to base64
+      const frameData = canvas.toDataURL('image/jpeg', 0.8);
+      
+      // Send to server for processing
+      const response = await fetch(`${config.apiBaseUrl}/api/recognition/browser/process`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ frame: frameData })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        state.framesProcessed++;
+        document.getElementById('framesProcessed').textContent = state.framesProcessed;
+        
+        // Handle recognitions
+        if (data.recognitions && data.recognitions.length > 0) {
+          for (const rec of data.recognitions) {
+            if (rec.marked) {
+              debugLog(`✅ ${rec.name} recognized and marked as ${rec.status}`, 'success');
+              addLogEntry(`${rec.name} marked as ${rec.status} (confidence: ${(rec.confidence * 100).toFixed(1)}%)`, 'success');
+              
+              // Refresh attendance to show the update
+              fetchAttendanceUpdates();
+            } else if (rec.name === 'Unknown') {
+              debugLog(`⚠️ Unknown face detected (confidence: ${(rec.confidence * 100).toFixed(1)}%)`, 'warn');
+            }
+          }
+        }
+      }
+      
+    } catch (error) {
+      debugLog(`Frame processing error: ${error.message}`, 'error');
+    } finally {
+      state.processingFrame = false;
+    }
+  }
+
+  function updateRecognitionUI(isRunning) {
     const statusEl = document.getElementById('recognitionStatus');
-    const pidEl = document.getElementById('recognitionPID');
     const startBtn = document.getElementById('startRecognitionBtn');
     const stopBtn = document.getElementById('stopRecognitionBtn');
     const mainBtn = document.getElementById('faceRecognitionBtn');
@@ -1197,21 +1355,20 @@ AttendAI{% endblock %} {% block content %}
     if (isRunning) {
       statusEl.textContent = 'Running';
       statusEl.className = 'face-stat-value status-running';
-      pidEl.textContent = pid || '-';
       startBtn.disabled = true;
-      startBtn.innerHTML = '<span class="btn-icon">✅</span> Running';
+      startBtn.innerHTML = '<span class="btn-icon">✅</span> Camera Active';
       stopBtn.disabled = false;
       mainBtn.classList.add('btn-recognition-running');
-      mainBtnText.textContent = 'Recognition Active';
+      mainBtnText.textContent = 'Camera Active';
     } else {
       statusEl.textContent = 'Stopped';
       statusEl.className = 'face-stat-value status-stopped';
-      pidEl.textContent = '-';
       startBtn.disabled = false;
-      startBtn.innerHTML = '<span class="btn-icon">▶️</span> Start Recognition';
+      startBtn.innerHTML = '<span class="btn-icon">▶️</span> Start Camera';
       stopBtn.disabled = true;
       mainBtn.classList.remove('btn-recognition-running');
       mainBtnText.textContent = 'Face Recognition';
+      document.getElementById('framesProcessed').textContent = '0';
     }
   }
 
@@ -1233,24 +1390,6 @@ AttendAI{% endblock %} {% block content %}
   }
 
   // ==================== POLLING ====================
-  function startStatusPolling() {
-    if (state.statusCheckInterval) clearInterval(state.statusCheckInterval);
-    state.statusCheckInterval = setInterval(async () => {
-      const isRunning = await checkRecognitionStatus();
-      if (!isRunning && state.faceRecognitionActive) {
-        state.faceRecognitionActive = false;
-        updateRecognitionUI(false, null);
-        stopStatusPolling();
-      }
-    }, 5000);
-  }
-
-  function stopStatusPolling() {
-    if (state.statusCheckInterval) {
-      clearInterval(state.statusCheckInterval);
-      state.statusCheckInterval = null;
-    }
-  }
 
   function startAttendancePolling() {
     if (state.attendanceCheckInterval) clearInterval(state.attendanceCheckInterval);
@@ -1415,15 +1554,20 @@ AttendAI{% endblock %} {% block content %}
     document.getElementById('summaryLate').textContent = late;
   }
 
-  function updateRecognizedCount() {
+  function updateRecognizedCount(count) {
     const el = document.getElementById('recognizedCount');
     if (el) {
-      let count = 0;
-      document.querySelectorAll('.student-card').forEach(card => {
-        const status = getCardVisualStatus(card);
-        if (status === 'present' || status === 'late') count++;
-      });
-      el.textContent = count;
+      if (count !== undefined) {
+        el.textContent = count;
+      } else {
+        // Count from UI
+        let uiCount = 0;
+        document.querySelectorAll('.student-card').forEach(card => {
+          const status = getCardVisualStatus(card);
+          if (status === 'present' || status === 'late') uiCount++;
+        });
+        el.textContent = uiCount;
+      }
     }
   }
 
@@ -1552,8 +1696,13 @@ AttendAI{% endblock %} {% block content %}
 
   // Cleanup
   window.addEventListener('beforeunload', () => {
-    stopStatusPolling();
+    stopFrameProcessing();
     stopAttendancePolling();
+    
+    // Stop camera if active
+    if (state.cameraStream) {
+      state.cameraStream.getTracks().forEach(track => track.stop());
+    }
   });
 
   // Initialize

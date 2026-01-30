@@ -1164,3 +1164,264 @@ def debug_facial_data():
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ==================== BROWSER-BASED RECOGNITION ====================
+
+@attendance_ai_bp.route('/recognition/browser/init', methods=['POST'])
+def browser_recognition_init():
+    """Initialize browser-based face recognition session"""
+    try:
+        from browser_face_recognition import browser_recognizer
+        
+        data = request.get_json() or {}
+        session_id = data.get('session_id') or data.get('class_id')
+        
+        if not session_id:
+            return jsonify({
+                'success': False,
+                'error': 'session_id required'
+            }), 400
+        
+        print(f"\n🌐 Initializing browser recognition for session {session_id}")
+        
+        # Get enrolled students for this class
+        session_obj = get_db_session()
+        if not session_obj:
+            return jsonify({'success': False, 'error': 'No database session'}), 500
+        
+        # Get class info and enrolled students
+        query = text("""
+            SELECT DISTINCT u.user_id, u.name, fd.facial_data_id
+            FROM course_users cu
+            JOIN users u ON cu.user_id = u.user_id
+            LEFT JOIN facial_data fd ON u.user_id = fd.user_id AND fd.is_active = 1
+            JOIN classes c ON cu.course_id = c.course_id
+            WHERE c.class_id = :class_id
+              AND u.role = 'student'
+              AND (fd.face_encoding IS NOT NULL OR fd.facial_data_id IS NOT NULL)
+        """)
+        results = session_obj.execute(query, {'class_id': session_id}).fetchall()
+        
+        if not results:
+            return jsonify({
+                'success': False,
+                'error': 'No enrolled students with facial data found'
+            }), 404
+        
+        # Build student mapping
+        student_map = {}
+        for row in results:
+            user_id, name, facial_data_id = row
+            student_map[name] = {
+                'student_id': user_id,
+                'user_id': user_id,
+                'facial_data_id': facial_data_id or user_id
+            }
+        
+        print(f"📋 Found {len(student_map)} students with facial data")
+        
+        # Get training data
+        faces, labels = load_training_data_from_db(session_obj)
+        
+        if faces is None or labels is None or len(faces) == 0:
+            return jsonify({
+                'success': False,
+                'error': 'No training data available'
+            }), 404
+        
+        # Initialize recognizer
+        success = browser_recognizer.initialize_session(session_id, student_map, faces, labels)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': 'Browser recognition initialized',
+                'session_id': session_id,
+                'students_count': len(student_map),
+                'training_samples': len(faces)
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to initialize model'
+            }), 500
+        
+    except Exception as e:
+        import traceback
+        print(f"❌ Error initializing browser recognition: {e}")
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@attendance_ai_bp.route('/recognition/browser/process', methods=['POST'])
+def browser_recognition_process():
+    """Process a video frame from the browser"""
+    try:
+        from browser_face_recognition import browser_recognizer
+        
+        data = request.get_json() or {}
+        frame_data = data.get('frame')
+        
+        if not frame_data:
+            return jsonify({
+                'success': False,
+                'error': 'No frame data provided'
+            }), 400
+        
+        # Process the frame
+        result = browser_recognizer.process_frame(frame_data)
+        
+        # Mark attendance for any new recognitions
+        if result.get('success') and result.get('recognitions'):
+            session_obj = get_db_session()
+            for recognition in result['recognitions']:
+                if recognition.get('marked') and recognition.get('student_id'):
+                    # Mark in database
+                    try:
+                        mark_attendance_in_db(
+                            session_obj,
+                            recognition['student_id'],
+                            browser_recognizer.session_id,
+                            recognition.get('status', 'present'),
+                            {
+                                'confidence': recognition['confidence'],
+                                'distance': recognition['distance'],
+                                'name': recognition['name']
+                            }
+                        )
+                        print(f"✅ Marked: {recognition['name']} as {recognition.get('status')}")
+                    except Exception as e:
+                        print(f"⚠️ Error marking attendance: {e}")
+        
+        # Cleanup old tracks periodically
+        browser_recognizer.cleanup_old_tracks()
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        import traceback
+        print(f"❌ Error processing frame: {e}")
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@attendance_ai_bp.route('/recognition/browser/stats', methods=['GET'])
+def browser_recognition_stats():
+    """Get current session statistics"""
+    try:
+        from browser_face_recognition import browser_recognizer
+        
+        stats = browser_recognizer.get_session_stats()
+        return jsonify({
+            'success': True,
+            'stats': stats
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@attendance_ai_bp.route('/recognition/browser/stop', methods=['POST'])
+def browser_recognition_stop():
+    """Stop browser-based recognition"""
+    try:
+        from browser_face_recognition import browser_recognizer
+        
+        stats = browser_recognizer.get_session_stats()
+        browser_recognizer.reset()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Browser recognition stopped',
+            'final_stats': stats
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+def load_training_data_from_db(session):
+    """Load training data from database"""
+    try:
+        query = text("""
+            SELECT fd.face_encoding, u.name
+            FROM facial_data fd
+            JOIN users u ON fd.user_id = u.user_id
+            WHERE fd.is_active = 1 AND fd.face_encoding IS NOT NULL
+        """)
+        results = session.execute(query).fetchall()
+        
+        all_faces = []
+        all_labels = []
+        
+        for row in results:
+            try:
+                face_data = row[0]
+                name = row[1]
+                
+                if isinstance(face_data, bytes):
+                    decompressed = zlib.decompress(face_data)
+                    faces_array = pickle.loads(decompressed)
+                    
+                    for face in faces_array:
+                        all_faces.append(face)
+                        all_labels.append(name)
+            except Exception as e:
+                print(f"⚠️ Error loading data for {row[1]}: {e}")
+                continue
+        
+        if all_faces:
+            return np.array(all_faces, dtype=np.uint8), np.array(all_labels)
+        
+        return None, None
+        
+    except Exception as e:
+        print(f"❌ Error loading training data: {e}")
+        return None, None
+
+
+def mark_attendance_in_db(session, student_id, class_id, status, recognition_data):
+    """Mark attendance in database"""
+    try:
+        # Check if already marked
+        check_query = text("""
+            SELECT attendance_id FROM attendance_records
+            WHERE student_id = :student_id AND class_id = :class_id
+        """)
+        existing = session.execute(check_query, {
+            'student_id': student_id,
+            'class_id': class_id
+        }).fetchone()
+        
+        if existing:
+            return False  # Already marked
+        
+        # Insert attendance record
+        insert_query = text("""
+            INSERT INTO attendance_records 
+            (student_id, class_id, status, recorded_at, notes)
+            VALUES (:student_id, :class_id, :status, NOW(), :notes)
+        """)
+        
+        notes = json.dumps({
+            'recognition_method': 'browser',
+            'confidence': recognition_data.get('confidence'),
+            'distance': recognition_data.get('distance'),
+            'name': recognition_data.get('name')
+        })
+        
+        session.execute(insert_query, {
+            'student_id': student_id,
+            'class_id': class_id,
+            'status': status,
+            'notes': notes
+        })
+        session.commit()
+        
+        return True
+        
+    except Exception as e:
+        session.rollback()
+        print(f"❌ Error marking attendance: {e}")
+        raise

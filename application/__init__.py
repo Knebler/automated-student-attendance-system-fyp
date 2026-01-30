@@ -11,6 +11,7 @@ def create_app(app):
     from application.boundaries.institution_admin_boundary import institution_bp
     from application.boundaries.lecturer_boundary import lecturer_bp
     from application.boundaries.platform_boundary import platform_bp
+    from application.boundaries.face_recognition_api import face_recognition_api_bp
     # Dev tooling (only for development)
     try:
         from application.boundaries.dev_boundary import dev_bp
@@ -27,6 +28,7 @@ def create_app(app):
     app.register_blueprint(institution_bp, url_prefix='/institution')
     app.register_blueprint(lecturer_bp, url_prefix='/institution/lecturer')
     app.register_blueprint(platform_bp, url_prefix='/platform')
+    app.register_blueprint(face_recognition_api_bp, url_prefix='/api/attendance')
     if has_dev and dev_bp:
         # Register development endpoints under /dev
         app.register_blueprint(dev_bp, url_prefix='/dev')

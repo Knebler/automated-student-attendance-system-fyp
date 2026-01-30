@@ -94,7 +94,7 @@ AttendAI{% endblock %} {% block content %}
     <div id="debugOutput" style="max-height: 150px; overflow-y: auto;"></div>
   </div>
 
-  <!-- Face Recognition Status -->
+  <!-- Browser-Based Face Recognition -->
   <div
     id="faceRecognitionStatus"
     class="face-recognition-status mb-4"
@@ -104,54 +104,43 @@ AttendAI{% endblock %} {% block content %}
       <div
         class="card-header-custom d-flex justify-content-between align-items-center"
       >
-        <span>🎥 Face Recognition Status</span>
+        <span>🎥 Camera Face Recognition</span>
         <button class="btn-close" onclick="AttendanceManager.hideFaceRecognitionPanel()">×</button>
       </div>
       <div class="card-body-custom">
-        <div class="face-recognition-info">
-          <div class="face-stats">
-            <div class="face-stat-item">
-              <span class="face-stat-label">Status:</span>
-              <span class="face-stat-value" id="recognitionStatus">Stopped</span>
-            </div>
-            <div class="face-stat-item">
-              <span class="face-stat-label">Process ID:</span>
-              <span class="face-stat-value" id="recognitionPID">-</span>
-            </div>
-            <div class="face-stat-item">
-              <span class="face-stat-label">Session:</span>
-              <span class="face-stat-value" id="recognitionSession">{{ class.id }}</span>
-            </div>
-            <div class="face-stat-item">
-              <span class="face-stat-label">Students Recognized:</span>
-              <span class="face-stat-value" id="recognizedCount">0</span>
+        <!-- Video Feed -->
+        <div class="video-container mb-3" style="position: relative; width: 100%; max-width: 640px; margin: 0 auto;">
+          <video id="cameraVideo" autoplay playsinline style="width: 100%; border-radius: 8px; display: none;"></video>
+          <canvas id="cameraCanvas" style="display: none;"></canvas>
+          <div id="cameraPlaceholder" style="width: 100%; height: 300px; background: #f1f5f9; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #64748b;">
+            <div class="text-center">
+              <div style="font-size: 3rem;">📷</div>
+              <div style="margin-top: 1rem;">Camera feed will appear here</div>
             </div>
           </div>
-          <div class="face-recognition-controls">
-            <button class="btn-custom btn-success" id="startRecognitionBtn" onclick="AttendanceManager.startFaceRecognition()">
-              <span class="btn-icon">▶️</span>
-              Start Recognition
-            </button>
-            <button class="btn-outline-custom btn-danger" id="stopRecognitionBtn" onclick="AttendanceManager.stopFaceRecognition()" disabled>
-              <span class="btn-icon">⏹️</span>
-              Stop Recognition
-            </button>
-            <button class="btn-outline-custom" onclick="AttendanceManager.checkRecognitionStatus()">
-              <span class="btn-icon">🔄</span>
-              Check Status
-            </button>
-            <button class="btn-outline-custom" onclick="AttendanceManager.toggleDebug()">
-              <span class="btn-icon">🔧</span>
-              Debug
-            </button>
+          <div id="cameraOverlay" style="position: absolute; top: 10px; left: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 10px; border-radius: 8px; display: none;">
+            <div><strong>Status:</strong> <span id="cameraStatus">Ready</span></div>
+            <div><strong>Recognized:</strong> <span id="recognizedCount">0</span> students</div>
           </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="face-recognition-controls text-center mb-3">
+          <button class="btn-custom btn-success" id="startCameraBtn" onclick="AttendanceManager.startCamera()">
+            <span class="btn-icon">▶️</span>
+            Start Camera
+          </button>
+          <button class="btn-outline-custom btn-danger" id="stopCameraBtn" onclick="AttendanceManager.stopCamera()" disabled>
+            <span class="btn-icon">⏹️</span>
+            Stop Camera
+          </button>
         </div>
         
         <!-- Recognition Log -->
         <div class="recognition-log mt-3" id="recognitionLog">
           <h5>📋 Recognition Log</h5>
           <div class="log-container" id="logContainer" style="max-height: 200px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 0.85rem;">
-            <div class="log-entry info">Waiting for updates...</div>
+            <div class="log-entry info">Click "Start Camera" to begin facial recognition...</div>
           </div>
         </div>
       </div>
@@ -1427,15 +1416,240 @@ AttendAI{% endblock %} {% block content %}
     }
   }
 
+  // ==================== BROWSER CAMERA & FACE RECOGNITION ====================
+  let cameraStream = null;
+  let recognitionInterval = null;
+  let video = null;
+  let canvas = null;
+  let overlayCanvas = null;
+  let overlayCtx = null;
+
+  async function startCamera() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showToast('Camera access not supported. Use HTTPS or modern browser.', 'warning');
+      addLog('error', 'Camera API not supported');
+      return;
+    }
+
+    try {
+      video = document.getElementById('cameraVideo');
+      canvas = document.getElementById('cameraCanvas');
+      const placeholder = document.getElementById('cameraPlaceholder');
+      const overlay = document.getElementById('cameraOverlay');
+      
+      // Create overlay canvas for drawing boxes
+      if (!overlayCanvas) {
+        overlayCanvas = document.createElement('canvas');
+        overlayCanvas.style.position = 'absolute';
+        overlayCanvas.style.top = '0';
+        overlayCanvas.style.left = '0';
+        overlayCanvas.style.pointerEvents = 'none';
+        video.parentElement.appendChild(overlayCanvas);
+        overlayCtx = overlayCanvas.getContext('2d');
+      }
+      
+      cameraStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          facingMode: 'user'
+        }
+      });
+      
+      video.srcObject = cameraStream;
+      
+      // Wait for video to load to get dimensions
+      video.onloadedmetadata = () => {
+        overlayCanvas.width = video.videoWidth;
+        overlayCanvas.height = video.videoHeight;
+        overlayCanvas.style.width = video.offsetWidth + 'px';
+        overlayCanvas.style.height = video.offsetHeight + 'px';
+      };
+      
+      video.style.display = 'block';
+      overlayCanvas.style.display = 'block';
+      placeholder.style.display = 'none';
+      overlay.style.display = 'block';
+      
+      document.getElementById('startCameraBtn').disabled = true;
+      document.getElementById('stopCameraBtn').disabled = false;
+      document.getElementById('cameraStatus').textContent = 'Camera Active';
+      
+      addLog('success', 'Camera started successfully');
+      showToast('Camera started! Facial recognition active...', 'success');
+      
+      // Start recognition loop
+      recognitionInterval = setInterval(captureAndRecognize, 2000); // Every 2 seconds
+      
+    } catch (error) {
+      console.error('Camera error:', error);
+      addLog('error', `Camera error: ${error.message}`);
+      showToast('Could not access camera. Check permissions.', 'warning');
+    }
+  }
+
+  function stopCamera() {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      cameraStream = null;
+    }
+    
+    if (recognitionInterval) {
+      clearInterval(recognitionInterval);
+      recognitionInterval = null;
+    }
+    
+    if (video) {
+      video.srcObject = null;
+      video.style.display = 'none';
+    }
+    
+    if (overlayCanvas) {
+      overlayCanvas.style.display = 'none';
+      // Clear any drawn boxes
+      overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+    }
+    
+    document.getElementById('cameraPlaceholder').style.display = 'flex';
+    document.getElementById('cameraOverlay').style.display = 'none';
+    document.getElementById('startCameraBtn').disabled = false;
+    document.getElementById('stopCameraBtn').disabled = true;
+    document.getElementById('cameraStatus').textContent = 'Stopped';
+    
+    addLog('info', 'Camera stopped');
+    showToast('Camera stopped', 'info');
+  }
+
+  function drawFaceBoxes(faces) {
+    if (!overlayCanvas || !overlayCtx) return;
+    
+    // Clear previous boxes
+    overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+    
+    // Calculate scale factor (canvas coords to display coords)
+    const scaleX = video.videoWidth / video.offsetWidth;
+    const scaleY = video.videoHeight / video.offsetHeight;
+    
+    faces.forEach(face => {
+      const x = face.x;
+      const y = face.y;
+      const w = face.width;
+      const h = face.height;
+      
+      // Choose color based on recognition status
+      let color, label;
+      if (face.newly_marked) {
+        color = '#10b981'; // Green - newly recognized
+        label = `✓ ${face.name}`;
+      } else if (face.already_marked || face.recognized) {
+        color = '#3b82f6'; // Blue - already marked
+        label = `${face.name}`;
+      } else {
+        color = '#f59e0b'; // Orange - unknown
+        label = face.confidence > 0.5 ? `${face.name}?` : 'Unknown';
+      }
+      
+      // Draw rectangle
+      overlayCtx.strokeStyle = color;
+      overlayCtx.lineWidth = 3;
+      overlayCtx.strokeRect(x, y, w, h);
+      
+      // Draw label background
+      overlayCtx.fillStyle = color;
+      const labelHeight = 25;
+      overlayCtx.fillRect(x, y - labelHeight, w, labelHeight);
+      
+      // Draw label text
+      overlayCtx.fillStyle = '#ffffff';
+      overlayCtx.font = 'bold 14px Arial';
+      overlayCtx.textAlign = 'center';
+      overlayCtx.fillText(label, x + w/2, y - 7);
+      
+      // Draw confidence if available
+      if (face.confidence > 0) {
+        overlayCtx.font = '11px Arial';
+        overlayCtx.fillText(`${(face.confidence * 100).toFixed(0)}%`, x + w/2, y + h + 15);
+      }
+    });
+  }
+
+  async function captureAndRecognize() {
+    if (!video || !canvas) return;
+    
+    // Set canvas size to match video
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Draw current video frame to canvas
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
+    
+    // Convert canvas to blob
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      
+      // Send to server for recognition
+      const formData = new FormData();
+      formData.append('image', blob, 'frame.jpg');
+      formData.append('class_id', config.classId);
+      
+      try {
+        const response = await fetch('/api/attendance/recognize-face', {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': config.csrfToken
+          },
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          // Draw boxes around all detected faces
+          if (data.faces && data.faces.length > 0) {
+            drawFaceBoxes(data.faces);
+          }
+          
+          // Log recognized students
+          if (data.recognized && data.students) {
+            for (const student of data.students) {
+              addLog('success', `✅ Recognized: ${student.name} (${student.status})`);
+            }
+            fetchAttendanceUpdates(); // Refresh attendance list
+          }
+        }
+        
+      } catch (error) {
+        console.error('Recognition error:', error);
+      }
+    }, 'image/jpeg', 0.8);
+  }
+
+  function addLog(type, message) {
+    const logContainer = document.getElementById('logContainer');
+    if (!logContainer) return;
+    
+    const entry = document.createElement('div');
+    entry.className = `log-entry ${type}`;
+    entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+    
+    logContainer.insertBefore(entry, logContainer.firstChild);
+    
+    // Keep only last 50 entries
+    while (logContainer.children.length > 50) {
+      logContainer.removeChild(logContainer.lastChild);
+    }
+  }
+
   // ==================== UI FUNCTIONS ====================
   function toggleFaceRecognition() {
     const panel = document.getElementById('faceRecognitionStatus');
     const isHidden = panel.style.display === 'none';
     panel.style.display = isHidden ? 'block' : 'none';
-    if (isHidden) checkRecognitionStatus();
   }
 
   function hideFaceRecognitionPanel() {
+    stopCamera(); // Stop camera when closing panel
     document.getElementById('faceRecognitionStatus').style.display = 'none';
   }
 
@@ -1534,9 +1748,8 @@ AttendAI{% endblock %} {% block content %}
 
   // ==================== PUBLIC API ====================
   window.AttendanceManager = {
-    checkRecognitionStatus,
-    startFaceRecognition,
-    stopFaceRecognition,
+    startCamera,
+    stopCamera,
     toggleFaceRecognition,
     hideFaceRecognitionPanel,
     markAttendance,
@@ -1552,6 +1765,7 @@ AttendAI{% endblock %} {% block content %}
 
   // Cleanup
   window.addEventListener('beforeunload', () => {
+    stopCamera();
     stopStatusPolling();
     stopAttendancePolling();
   });

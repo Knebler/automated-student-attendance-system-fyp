@@ -28,7 +28,7 @@ import requests
 import json
 
 # ==================== CONFIGURATION ====================
-API_URL = "http://localhost:5000"
+API_URL = "https://automated-student-attendance-system-fyp-1.onrender.com/"
 CAMERA_INDEX = 0
 
 # Timing configuration

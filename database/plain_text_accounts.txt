@@ -21,3 +21,8 @@ Microsoft Azure Admin:  host=attendai-fyp-project.mysql.database.azure.com
                         ssl-ca=combined-ca-certificates.pem
 
 Live website link: https://automated-student-attendance-system-fyp-1.onrender.com/
+
+pip install opencv-python scikit-learn numpy requests
+
+# Run the client
+python attendance_client.py --session 123

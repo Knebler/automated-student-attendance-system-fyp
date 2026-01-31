@@ -42,26 +42,32 @@ class CourseControl:
             }
     
     @staticmethod
-    def get_students_by_course_id(course_id):
+    def get_students_by_course_id(course_id, semester_id=None):
         """
-        Get all students enrolled in a course
+        Get all students enrolled in a course, optionally filtered by semester
         
         Args:
             course_id: The ID of the course
+            semester_id: Optional semester ID to filter students (returns only students in that semester)
             
         Returns:
             Dictionary with success status and list of students or error message
         """
         try:
             with get_session() as session:
-                # Query to get all students enrolled in the course
-                students = (
+                # Query to get students enrolled in the course
+                query = (
                     session.query(User)
                     .join(CourseUser, CourseUser.user_id == User.user_id)
                     .filter(CourseUser.course_id == course_id)
                     .filter(User.role == 'student')
-                    .all()
                 )
+                
+                # Filter by semester if provided
+                if semester_id is not None:
+                    query = query.filter(CourseUser.semester_id == semester_id)
+                
+                students = query.all()
                 
                 # Convert students to list of dictionaries
                 students_data = []

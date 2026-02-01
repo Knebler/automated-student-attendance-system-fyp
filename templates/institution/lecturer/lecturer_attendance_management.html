@@ -71,9 +71,9 @@ AttendAI{% endblock %} {% block content %}
       </div>
 
       <div class="d-flex gap-3">
-        <button class="btn-custom" id="faceRecognitionBtn" onclick="AttendanceManager.toggleFaceRecognition()">
+        <button class="btn-custom btn-recognition" id="faceRecognitionBtn" onclick="AttendanceManager.toggleWebcam()">
           <span class="btn-icon">📸</span>
-          <span id="faceRecognitionBtnText">Face Recognition</span>
+          <span id="faceRecognitionBtnText">Start Face Recognition</span>
         </button>
       </div>
     </div>
@@ -82,76 +82,66 @@ AttendAI{% endblock %} {% block content %}
   <!-- Live Update Indicator -->
   <div id="liveUpdateIndicator" class="live-update-indicator mb-3">
     <span class="pulse-dot"></span>
-    <span id="liveUpdateText">Live updates active - Polling every 2 seconds</span>
+    <span id="liveUpdateText">Live updates active</span>
   </div>
 
-  <!-- Debug Panel (can be hidden in production) -->
-  <div id="debugPanel" class="debug-panel mb-3" style="display: none; background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 0.8rem;">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <strong>🔧 Debug Panel</strong>
-      <button onclick="document.getElementById('debugPanel').style.display='none'" style="background:none;border:none;color:#e2e8f0;cursor:pointer;">×</button>
-    </div>
-    <div id="debugOutput" style="max-height: 150px; overflow-y: auto;"></div>
-  </div>
-
-  <!-- Face Recognition Status -->
-  <div
-    id="faceRecognitionStatus"
-    class="face-recognition-status mb-4"
-    style="display: none"
-  >
+  <!-- Webcam Recognition Panel -->
+  <div id="webcamPanel" class="webcam-panel mb-4" style="display: none;">
     <div class="card-custom">
-      <div
-        class="card-header-custom d-flex justify-content-between align-items-center"
-      >
-        <span>🎥 Face Recognition Status</span>
-        <button class="btn-close" onclick="AttendanceManager.hideFaceRecognitionPanel()">×</button>
+      <div class="card-header-custom d-flex justify-content-between align-items-center">
+        <span>🎥 Live Face Recognition</span>
+        <button class="btn-close-panel" onclick="AttendanceManager.stopWebcam()">✕ Close</button>
       </div>
       <div class="card-body-custom">
-        <div class="face-recognition-info">
-          <div class="face-stats">
-            <div class="face-stat-item">
-              <span class="face-stat-label">Status:</span>
-              <span class="face-stat-value" id="recognitionStatus">Stopped</span>
+        <div class="webcam-container">
+          <!-- Video and Canvas -->
+          <div class="video-section">
+            <div class="video-wrapper">
+              <video id="webcamVideo" autoplay playsinline muted></video>
+              <canvas id="overlayCanvas"></canvas>
+              <div class="video-status" id="videoStatus">
+                <div class="status-loading">
+                  <div class="spinner"></div>
+                  <span>Starting camera...</span>
+                </div>
+              </div>
             </div>
-            <div class="face-stat-item">
-              <span class="face-stat-label">Process ID:</span>
-              <span class="face-stat-value" id="recognitionPID">-</span>
-            </div>
-            <div class="face-stat-item">
-              <span class="face-stat-label">Session:</span>
-              <span class="face-stat-value" id="recognitionSession">{{ class.id }}</span>
-            </div>
-            <div class="face-stat-item">
-              <span class="face-stat-label">Students Recognized:</span>
-              <span class="face-stat-value" id="recognizedCount">0</span>
+            
+            <!-- Controls -->
+            <div class="webcam-controls">
+              <button class="btn-control" id="pauseBtn" onclick="AttendanceManager.togglePause()">
+                <span id="pauseIcon">⏸️</span>
+                <span id="pauseText">Pause</span>
+              </button>
+              <button class="btn-control" onclick="AttendanceManager.switchCamera()">
+                <span>🔄</span>
+                <span>Switch Camera</span>
+              </button>
+              <div class="recognition-stats">
+                <span class="stat-item">
+                  <span class="stat-label">FPS:</span>
+                  <span class="stat-value" id="fpsCounter">0</span>
+                </span>
+                <span class="stat-item">
+                  <span class="stat-label">Recognized:</span>
+                  <span class="stat-value" id="recognizedCounter">0</span>
+                </span>
+              </div>
             </div>
           </div>
-          <div class="face-recognition-controls">
-            <button class="btn-custom btn-success" id="startRecognitionBtn" onclick="AttendanceManager.startFaceRecognition()">
-              <span class="btn-icon">▶️</span>
-              Start Recognition
-            </button>
-            <button class="btn-outline-custom btn-danger" id="stopRecognitionBtn" onclick="AttendanceManager.stopFaceRecognition()" disabled>
-              <span class="btn-icon">⏹️</span>
-              Stop Recognition
-            </button>
-            <button class="btn-outline-custom" onclick="AttendanceManager.checkRecognitionStatus()">
-              <span class="btn-icon">🔄</span>
-              Check Status
-            </button>
-            <button class="btn-outline-custom" onclick="AttendanceManager.toggleDebug()">
-              <span class="btn-icon">🔧</span>
-              Debug
-            </button>
-          </div>
-        </div>
-        
-        <!-- Recognition Log -->
-        <div class="recognition-log mt-3" id="recognitionLog">
-          <h5>📋 Recognition Log</h5>
-          <div class="log-container" id="logContainer" style="max-height: 200px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 0.85rem;">
-            <div class="log-entry info">Waiting for updates...</div>
+
+          <!-- Recognition Log -->
+          <div class="recognition-log-section">
+            <h4>📋 Recognition Log</h4>
+            <div class="log-container" id="recognitionLog">
+              <div class="log-entry info">Waiting for camera...</div>
+            </div>
+            
+            <!-- Recently Recognized -->
+            <h4 class="mt-3">✅ Recently Recognized</h4>
+            <div class="recognized-list" id="recognizedList">
+              <div class="empty-recognized">No students recognized yet</div>
+            </div>
           </div>
         </div>
       </div>
@@ -385,7 +375,7 @@ AttendAI{% endblock %} {% block content %}
   }
 
   .filter-select {
-    padding: 0.875rem 3rem;
+    padding: 0.875rem 3rem 0.875rem 1rem;
     border: 2px solid var(--border-color);
     border-radius: 50px;
     background-color: white;
@@ -398,96 +388,204 @@ AttendAI{% endblock %} {% block content %}
     margin-right: 0.5rem;
   }
 
-  .btn-success {
-    background-color: #059669 !important;
-    border-color: #059669 !important;
+  .btn-recognition {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    border: none !important;
     color: white !important;
+    padding: 0.875rem 1.5rem !important;
+    font-weight: 600 !important;
   }
 
-  .btn-success:hover {
-    background-color: #047857 !important;
-    border-color: #047857 !important;
+  .btn-recognition:hover {
+    background: linear-gradient(135deg, #047857 0%, #065f46 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
   }
 
-  .btn-danger {
-    color: #dc2626 !important;
-    border-color: #dc2626 !important;
+  .btn-recognition.active {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+    animation: pulse-btn 2s infinite;
   }
 
-  .btn-danger:hover {
-    background-color: #dc2626 !important;
-    color: white !important;
+  @keyframes pulse-btn {
+    0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
   }
 
-  .btn-recognition-running {
-    background-color: #059669 !important;
-    border-color: #059669 !important;
-    color: white !important;
-    animation: pulse 2s infinite;
-  }
-
-  @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.4); }
-    70% { box-shadow: 0 0 0 10px rgba(5, 150, 105, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0); }
-  }
-
-  .face-recognition-status {
+  /* Webcam Panel Styles */
+  .webcam-panel {
     animation: slideDown 0.3s ease;
   }
 
-  .face-recognition-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 2rem;
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
-  .face-stats {
-    display: flex;
-    gap: 2rem;
-    flex-wrap: wrap;
+  .btn-close-panel {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
   }
 
-  .face-stat-item {
+  .btn-close-panel:hover {
+    background: rgba(255,255,255,0.3);
+  }
+
+  .webcam-container {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 1.5rem;
+  }
+
+  .video-section {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 1rem;
   }
 
-  .face-stat-label {
-    font-size: 0.85rem;
-    color: var(--text-light);
+  .video-wrapper {
+    position: relative;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 4/3;
   }
 
-  .face-stat-value {
-    font-size: 1.25rem;
-    font-weight: bold;
-    color: var(--text-dark);
+  #webcamVideo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1); /* Mirror */
   }
 
-  .face-stat-value.status-running {
-    color: #059669;
+  #overlayCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    transform: scaleX(-1); /* Mirror to match video */
   }
 
-  .face-stat-value.status-stopped {
-    color: #dc2626;
-  }
-
-  .face-recognition-controls {
+  .video-status {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.7);
+    color: white;
+  }
+
+  .video-status.hidden {
+    display: none;
+  }
+
+  .status-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .webcam-controls {
+    display: flex;
+    align-items: center;
     gap: 1rem;
     flex-wrap: wrap;
   }
 
-  .recognition-log h5 {
-    margin-bottom: 0.5rem;
+  .btn-control {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    border: 2px solid var(--border-color);
+    border-radius: 25px;
+    background: white;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .btn-control:hover {
+    border-color: var(--primary-dark);
+    background: var(--primary-light);
+  }
+
+  .recognition-stats {
+    display: flex;
+    gap: 1.5rem;
+    margin-left: auto;
+    padding: 0.5rem 1rem;
+    background: #f1f5f9;
+    border-radius: 25px;
+  }
+
+  .stat-item {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .stat-label {
+    color: var(--text-light);
+  }
+
+  .stat-value {
+    font-weight: 700;
+    color: var(--primary-dark);
+  }
+
+  .recognition-log-section {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .recognition-log-section h4 {
+    font-size: 1rem;
+    font-weight: 600;
     color: var(--text-dark);
+    margin-bottom: 0.75rem;
+  }
+
+  .log-container {
+    flex: 1;
+    max-height: 200px;
+    overflow-y: auto;
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-family: monospace;
+    font-size: 0.8rem;
   }
 
   .log-entry {
-    padding: 4px 0;
+    padding: 0.25rem 0;
     border-bottom: 1px solid #e2e8f0;
   }
 
@@ -495,22 +593,93 @@ AttendAI{% endblock %} {% block content %}
     border-bottom: none;
   }
 
-  .log-entry.success {
-    color: #059669;
+  .log-entry.success { color: #059669; }
+  .log-entry.error { color: #dc2626; }
+  .log-entry.info { color: #0891b2; }
+  .log-entry.warn { color: #d97706; }
+
+  .recognized-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
   }
 
-  .log-entry.error {
-    color: #dc2626;
+  .recognized-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: #d1fae5;
+    border-radius: 8px;
+    border-left: 4px solid #059669;
+    animation: fadeIn 0.3s ease;
   }
 
-  .log-entry.info {
-    color: #0891b2;
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
   }
 
-  .log-entry.warn {
-    color: #d97706;
+  .recognized-item.late {
+    background: #fef3c7;
+    border-left-color: #d97706;
   }
 
+  .recognized-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #059669;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  .recognized-item.late .recognized-avatar {
+    background: #d97706;
+  }
+
+  .recognized-info {
+    flex: 1;
+  }
+
+  .recognized-name {
+    font-weight: 600;
+    color: var(--text-dark);
+    font-size: 0.9rem;
+  }
+
+  .recognized-time {
+    font-size: 0.75rem;
+    color: var(--text-light);
+  }
+
+  .recognized-status {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    background: #059669;
+    color: white;
+  }
+
+  .recognized-item.late .recognized-status {
+    background: #d97706;
+  }
+
+  .empty-recognized {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-light);
+    font-size: 0.9rem;
+  }
+
+  /* Student Cards */
   .students-header {
     display: flex;
     justify-content: space-between;
@@ -538,17 +707,9 @@ AttendAI{% endblock %} {% block content %}
     font-size: 0.9rem;
   }
 
-  .summary-item.present {
-    color: #059669;
-  }
-
-  .summary-item.absent {
-    color: #dc2626;
-  }
-
-  .summary-item.late {
-    color: #d97706;
-  }
+  .summary-item.present { color: #059669; }
+  .summary-item.absent { color: #dc2626; }
+  .summary-item.late { color: #d97706; }
 
   .summary-item strong {
     font-size: 1.1rem;
@@ -566,17 +727,9 @@ AttendAI{% endblock %} {% block content %}
     border-left: 4px solid #9ca3af;
   }
 
-  .student-card.present {
-    border-left: 4px solid #059669;
-  }
-
-  .student-card.absent {
-    border-left: 4px solid #dc2626;
-  }
-
-  .student-card.late {
-    border-left: 4px solid #d97706;
-  }
+  .student-card.present { border-left-color: #059669; }
+  .student-card.absent { border-left-color: #dc2626; }
+  .student-card.late { border-left-color: #d97706; }
 
   .student-card.just-updated {
     animation: highlight-update 2s ease;
@@ -745,10 +898,6 @@ AttendAI{% endblock %} {% block content %}
     color: white;
   }
 
-  .attendance-notes {
-    width: 100%;
-  }
-
   .notes-input {
     width: 100%;
     padding: 0.5rem 0.75rem;
@@ -790,14 +939,18 @@ AttendAI{% endblock %} {% block content %}
     margin-bottom: 1.5rem;
   }
 
+  /* Responsive */
   @media (max-width: 1200px) {
     .students-grid {
       grid-template-columns: repeat(2, 1fr);
     }
 
-    .face-recognition-info {
-      flex-direction: column;
-      align-items: stretch;
+    .webcam-container {
+      grid-template-columns: 1fr;
+    }
+
+    .recognition-log-section {
+      order: -1;
     }
   }
 
@@ -844,26 +997,16 @@ AttendAI{% endblock %} {% block content %}
     .attendance-buttons {
       flex-direction: column;
     }
-  }
 
-  @keyframes slideDown {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
+    .webcam-controls {
+      justify-content: center;
     }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
 
-  @keyframes slideIn { 
-    from { transform: translateX(100%); opacity: 0; } 
-    to { transform: translateX(0); opacity: 1; } 
-  }
-  @keyframes slideOut { 
-    from { transform: translateX(0); opacity: 1; } 
-    to { transform: translateX(100%); opacity: 0; } 
+    .recognition-stats {
+      margin-left: 0;
+      width: 100%;
+      justify-content: center;
+    }
   }
 </style>
 
@@ -878,76 +1021,47 @@ AttendAI{% endblock %} {% block content %}
     classId: "{{ class.id }}",
     csrfToken: "{{ csrf_token() }}",
     lecturerId: "{{ user.user_id }}",
-    markAttendanceUrl: "{{ url_for('attendance.mark_attendance') }}"
+    markAttendanceUrl: "{{ url_for('attendance.mark_attendance') }}",
+    sessionStartTime: "{{ class.time.split('-')[0].strip() if class.time and '-' in class.time else '00:00' }}",
+    lateThresholdMinutes: 30
   };
   
   // ==================== STATE ====================
   let state = {
-    faceRecognitionActive: false,
-    statusCheckInterval: null,
-    attendanceCheckInterval: null,
+    webcamActive: false,
+    isPaused: false,
+    video: null,
+    canvas: null,
+    ctx: null,
+    stream: null,
+    animationId: null,
+    recognitionInterval: null,
+    facingMode: 'user',
     studentMap: {},
-    pollCount: 0,
-    lastNotified: {},
-    debugMode: false
+    recognizedStudents: new Set(),
+    lastRecognitionTime: {},
+    frameCount: 0,
+    lastFpsUpdate: Date.now(),
+    fps: 0,
+    attendanceCheckInterval: null,
+    pollCount: 0
   };
 
-  // ==================== DEBUG HELPERS ====================
-  function debugLog(message, type = 'info') {
-    const timestamp = new Date().toLocaleTimeString();
-    console.log(`[${timestamp}] [AttendanceUI] ${message}`);
+  // ==================== INITIALIZATION ====================
+  function init() {
+    console.log('🎓 Attendance Manager with Browser Webcam Initialized');
+    console.log('📋 Class ID:', config.classId);
     
-    // Add to log panel
-    addLogEntry(message, type);
+    state.studentMap = buildStudentMap();
+    state.video = document.getElementById('webcamVideo');
+    state.canvas = document.getElementById('overlayCanvas');
+    state.ctx = state.canvas.getContext('2d');
     
-    // Add to debug panel if enabled
-    if (state.debugMode) {
-      const debugOutput = document.getElementById('debugOutput');
-      if (debugOutput) {
-        const entry = document.createElement('div');
-        entry.style.color = type === 'error' ? '#f87171' : type === 'success' ? '#4ade80' : '#94a3b8';
-        entry.textContent = `[${timestamp}] ${message}`;
-        debugOutput.appendChild(entry);
-        debugOutput.scrollTop = debugOutput.scrollHeight;
-      }
-    }
+    startAttendancePolling();
   }
 
-  function toggleDebug() {
-    state.debugMode = !state.debugMode;
-    const panel = document.getElementById('debugPanel');
-    if (panel) {
-      panel.style.display = state.debugMode ? 'block' : 'none';
-    }
-    debugLog(`Debug mode: ${state.debugMode ? 'ON' : 'OFF'}`, 'info');
-  }
-
-  // ==================== NORMALIZE & MATCH HELPERS ====================
-  
-  /**
-   * Normalize a name for comparison
-   */
-  function normalizeName(name) {
-    if (!name) return '';
-    return String(name)
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, ' ');
-  }
-
-  /**
-   * Build comprehensive student map with multiple lookup keys
-   */
   function buildStudentMap() {
-    const map = { 
-      byId: {}, 
-      byName: {}, 
-      byFirstName: {},
-      byUserId: {}, 
-      byStudentId: {},
-      byIdNumber: {},
-      allCards: []
-    };
+    const map = { byId: {}, byName: {}, byUserId: {}, allCards: [] };
     
     document.querySelectorAll('.student-card').forEach(card => {
       const id = card.dataset.id;
@@ -955,395 +1069,374 @@ AttendAI{% endblock %} {% block content %}
       const studentId = card.dataset.studentId;
       const name = card.dataset.name;
       
-      // Get the ID number from the card (e.g., "SW0001")
-      const idNumberEl = card.querySelector('.student-id');
-      const idNumber = idNumberEl ? idNumberEl.textContent.trim() : null;
-      
-      // Store card reference
-      map.allCards.push({
-        card: card,
-        id: id,
-        userId: userId,
-        studentId: studentId,
-        name: name,
-        idNumber: idNumber
-      });
-      
-      // Map by various IDs (all as strings for consistent comparison)
+      map.allCards.push({ card, id, userId, studentId, name });
       if (id) map.byId[String(id)] = card;
       if (userId) map.byUserId[String(userId)] = card;
-      if (studentId) map.byStudentId[String(studentId)] = card;
-      if (idNumber) map.byIdNumber[normalizeName(idNumber)] = card;
-      
-      // Map by full name (normalized)
-      if (name) {
-        const normalizedName = normalizeName(name);
-        map.byName[normalizedName] = card;
-        
-        // Also map by first name only
-        const firstName = normalizedName.split(' ')[0];
-        if (firstName && !map.byFirstName[firstName]) {
-          map.byFirstName[firstName] = card;
-        }
-        
-        // Also map by last name
-        const nameParts = normalizedName.split(' ');
-        if (nameParts.length > 1) {
-          const lastName = nameParts[nameParts.length - 1];
-          if (!map.byFirstName[lastName]) {
-            map.byFirstName[lastName] = card;
-          }
-        }
-      }
+      if (name) map.byName[name.toLowerCase().trim()] = card;
     });
-    
-    debugLog(`Student map built: ${map.allCards.length} cards`, 'info');
-    debugLog(`  Names: ${Object.keys(map.byName).join(', ')}`, 'info');
-    debugLog(`  IDs: ${Object.keys(map.byId).join(', ')}`, 'info');
     
     return map;
   }
 
-  /**
-   * Find student card using multiple matching strategies
-   */
-  function findStudentCard(record) {
-    const studentName = record.name;
-    const studentId = record.student_id;
-    const attendanceId = record.attendance_id;
-    
-    let card = null;
-    let matchMethod = '';
-    
-    debugLog(`🔍 Finding card for: name="${studentName}", student_id="${studentId}"`, 'info');
-    
-    // STRATEGY 1: Try by student_id (most reliable - this is what the API returns)
-    if (studentId !== undefined && studentId !== null) {
-      const idStr = String(studentId);
-      
-      // Try direct ID match
-      card = state.studentMap.byId[idStr];
-      if (card) {
-        matchMethod = `data-id="${idStr}"`;
-      }
-      
-      // Try user-id match
-      if (!card) {
-        card = state.studentMap.byUserId[idStr];
-        if (card) matchMethod = `data-user-id="${idStr}"`;
-      }
-      
-      // Try student-id match
-      if (!card) {
-        card = state.studentMap.byStudentId[idStr];
-        if (card) matchMethod = `data-student-id="${idStr}"`;
-      }
-    }
-    
-    // STRATEGY 2: Try exact full name match
-    if (!card && studentName) {
-      const normalizedName = normalizeName(studentName);
-      card = state.studentMap.byName[normalizedName];
-      if (card) matchMethod = `exact name "${normalizedName}"`;
-    }
-    
-    // STRATEGY 3: Try first name match (for "Henry" matching "Henry Tan")
-    if (!card && studentName) {
-      const firstName = normalizeName(studentName).split(' ')[0];
-      card = state.studentMap.byFirstName[firstName];
-      if (card) matchMethod = `first name "${firstName}"`;
-    }
-    
-    // STRATEGY 4: Fuzzy match - check if API name contains or is contained by card name
-    if (!card && studentName) {
-      const searchName = normalizeName(studentName);
-      for (const [cardName, cardEl] of Object.entries(state.studentMap.byName)) {
-        if (cardName.includes(searchName) || searchName.includes(cardName)) {
-          card = cardEl;
-          matchMethod = `fuzzy "${searchName}" ~ "${cardName}"`;
-          break;
-        }
-      }
-    }
-    
-    // STRATEGY 5: Loop through all cards and compare
-    if (!card && studentId !== undefined) {
-      const idStr = String(studentId);
-      for (const info of state.studentMap.allCards) {
-        if (String(info.id) === idStr || 
-            String(info.userId) === idStr || 
-            String(info.studentId) === idStr) {
-          card = info.card;
-          matchMethod = `loop match id="${idStr}"`;
-          break;
-        }
-      }
-    }
-    
-    if (card) {
-      debugLog(`✅ Found: ${matchMethod}`, 'success');
+  // ==================== WEBCAM FUNCTIONS ====================
+  async function toggleWebcam() {
+    if (state.webcamActive) {
+      stopWebcam();
     } else {
-      debugLog(`❌ NOT FOUND for name="${studentName}", student_id="${studentId}"`, 'error');
-      debugLog(`   Available IDs: ${Object.keys(state.studentMap.byId).join(', ')}`, 'error');
-      debugLog(`   Available names: ${Object.keys(state.studentMap.byName).join(', ')}`, 'error');
+      await startWebcam();
     }
-    
-    return card;
   }
 
-  // ==================== INITIALIZE ====================
-  function init() {
-    console.log('🎓 Attendance Manager Initialized');
-    console.log('📋 Class ID:', config.classId);
+  async function startWebcam() {
+    const panel = document.getElementById('webcamPanel');
+    const btn = document.getElementById('faceRecognitionBtn');
+    const btnText = document.getElementById('faceRecognitionBtnText');
+    const videoStatus = document.getElementById('videoStatus');
     
-    state.studentMap = buildStudentMap();
-    checkRecognitionStatus();
-    startAttendancePolling();
+    panel.style.display = 'block';
+    btn.classList.add('active');
+    btnText.textContent = 'Stop Recognition';
+    videoStatus.classList.remove('hidden');
     
-    debugLog('System ready, polling started', 'success');
-  }
-
-  // ==================== FACE RECOGNITION ====================
-  async function checkRecognitionStatus() {
     try {
-      const response = await fetch(`${config.apiBaseUrl}/api/recognition/status`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const data = await response.json();
-      if (data.success) {
-        updateRecognitionUI(data.running, data.pid);
-        return data.running;
-      }
-      return false;
+      const constraints = {
+        video: {
+          facingMode: state.facingMode,
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        },
+        audio: false
+      };
+      
+      state.stream = await navigator.mediaDevices.getUserMedia(constraints);
+      state.video.srcObject = state.stream;
+      
+      state.video.onloadedmetadata = () => {
+        state.canvas.width = state.video.videoWidth;
+        state.canvas.height = state.video.videoHeight;
+        videoStatus.classList.add('hidden');
+        state.webcamActive = true;
+        addLog('Camera started successfully', 'success');
+        startRecognitionLoop();
+      };
+      
     } catch (error) {
-      console.error('Recognition status error:', error);
-      return false;
+      console.error('Camera error:', error);
+      addLog(`Camera error: ${error.message}`, 'error');
+      videoStatus.innerHTML = `
+        <div class="status-loading">
+          <span style="font-size: 2rem;">❌</span>
+          <span>Camera access denied</span>
+          <span style="font-size: 0.8rem; opacity: 0.7;">Please allow camera access and try again</span>
+        </div>
+      `;
+      
+      btn.classList.remove('active');
+      btnText.textContent = 'Start Face Recognition';
     }
   }
 
-  async function startFaceRecognition() {
-  const startBtn = document.getElementById('startRecognitionBtn');
-  startBtn.disabled = true;
-  startBtn.innerHTML = '<span class="btn-icon">⏳</span> Starting...';
-  
-  debugLog('Starting face recognition...', 'info');
-  
-  try {
-    const response = await fetch(`${config.apiBaseUrl}/api/recognition/start`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        session_id: config.classId,  // Send the current class ID
-        class_id: config.classId
-      })
-    });
-    const data = await response.json();
+  function stopWebcam() {
+    const panel = document.getElementById('webcamPanel');
+    const btn = document.getElementById('faceRecognitionBtn');
+    const btnText = document.getElementById('faceRecognitionBtnText');
     
-    if (data.success) {
-      state.faceRecognitionActive = true;
-      updateRecognitionUI(true, data.pid);
-      debugLog(`Recognition started! PID: ${data.pid}, Session: ${config.classId}`, 'success');
-      showToast('Face recognition started!', 'success');
-      startStatusPolling();
-    } else {
-      debugLog(`Failed: ${data.error}`, 'error');
-      showToast(data.error || 'Failed to start', 'warning');
-      startBtn.disabled = false;
-      startBtn.innerHTML = '<span class="btn-icon">▶️</span> Start Recognition';
+    // Stop recognition loop
+    if (state.animationId) {
+      cancelAnimationFrame(state.animationId);
+      state.animationId = null;
     }
-  } catch (error) {
-    debugLog(`Error: ${error.message}`, 'error');
-    startBtn.disabled = false;
-    startBtn.innerHTML = '<span class="btn-icon">▶️</span> Start Recognition';
+    
+    if (state.recognitionInterval) {
+      clearInterval(state.recognitionInterval);
+      state.recognitionInterval = null;
+    }
+    
+    // Stop video stream
+    if (state.stream) {
+      state.stream.getTracks().forEach(track => track.stop());
+      state.stream = null;
+    }
+    
+    if (state.video) {
+      state.video.srcObject = null;
+    }
+    
+    state.webcamActive = false;
+    state.isPaused = false;
+    
+    panel.style.display = 'none';
+    btn.classList.remove('active');
+    btnText.textContent = 'Start Face Recognition';
+    
+    addLog('Camera stopped', 'info');
   }
-}
 
-  async function stopFaceRecognition() {
-    const stopBtn = document.getElementById('stopRecognitionBtn');
-    stopBtn.disabled = true;
-    stopBtn.innerHTML = '<span class="btn-icon">⏳</span> Stopping...';
+  function togglePause() {
+    state.isPaused = !state.isPaused;
+    const pauseIcon = document.getElementById('pauseIcon');
+    const pauseText = document.getElementById('pauseText');
+    
+    if (state.isPaused) {
+      pauseIcon.textContent = '▶️';
+      pauseText.textContent = 'Resume';
+      addLog('Recognition paused', 'warn');
+    } else {
+      pauseIcon.textContent = '⏸️';
+      pauseText.textContent = 'Pause';
+      addLog('Recognition resumed', 'info');
+    }
+  }
+
+  async function switchCamera() {
+    state.facingMode = state.facingMode === 'user' ? 'environment' : 'user';
+    addLog(`Switching to ${state.facingMode === 'user' ? 'front' : 'back'} camera`, 'info');
+    
+    if (state.webcamActive) {
+      stopWebcam();
+      setTimeout(() => startWebcam(), 500);
+    }
+  }
+
+  // ==================== RECOGNITION LOOP ====================
+  function startRecognitionLoop() {
+    let lastRecognitionSent = 0;
+    const recognitionInterval = 1000; // Send frame for recognition every 1 second
+    
+    function loop() {
+      if (!state.webcamActive) return;
+      
+      state.frameCount++;
+      const now = Date.now();
+      
+      // Update FPS every second
+      if (now - state.lastFpsUpdate >= 1000) {
+        state.fps = state.frameCount;
+        state.frameCount = 0;
+        state.lastFpsUpdate = now;
+        document.getElementById('fpsCounter').textContent = state.fps;
+      }
+      
+      // Draw video frame to canvas for processing
+      if (!state.isPaused && state.video.readyState === state.video.HAVE_ENOUGH_DATA) {
+        state.ctx.drawImage(state.video, 0, 0);
+        
+        // Send frame for recognition periodically
+        if (now - lastRecognitionSent >= recognitionInterval) {
+          lastRecognitionSent = now;
+          sendFrameForRecognition();
+        }
+      }
+      
+      state.animationId = requestAnimationFrame(loop);
+    }
+    
+    loop();
+  }
+
+  async function sendFrameForRecognition() {
+    if (state.isPaused || !state.webcamActive) return;
     
     try {
-      const response = await fetch(`${config.apiBaseUrl}/api/recognition/stop`, {
+      // Capture frame as base64
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = 320; // Smaller for faster upload
+      tempCanvas.height = 240;
+      const tempCtx = tempCanvas.getContext('2d');
+      tempCtx.drawImage(state.video, 0, 0, 320, 240);
+      
+      const frameData = tempCanvas.toDataURL('image/jpeg', 0.7);
+      
+      // Send to server for recognition
+      const response = await fetch(`${config.apiBaseUrl}/api/recognize-frame`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': config.csrfToken
+        },
+        body: JSON.stringify({
+          frame: frameData,
+          session_id: config.classId
+        })
       });
+      
       const data = await response.json();
       
-      if (data.success) {
-        state.faceRecognitionActive = false;
-        updateRecognitionUI(false, null);
-        debugLog('Recognition stopped', 'success');
-        showToast('Recognition stopped', 'info');
-        stopStatusPolling();
+      if (data.success && data.faces && data.faces.length > 0) {
+        processRecognitionResults(data.faces);
       }
+      
     } catch (error) {
-      debugLog(`Error: ${error.message}`, 'error');
-    }
-    
-    stopBtn.disabled = false;
-    stopBtn.innerHTML = '<span class="btn-icon">⏹️</span> Stop Recognition';
-  }
-
-  function updateRecognitionUI(isRunning, pid) {
-    const statusEl = document.getElementById('recognitionStatus');
-    const pidEl = document.getElementById('recognitionPID');
-    const startBtn = document.getElementById('startRecognitionBtn');
-    const stopBtn = document.getElementById('stopRecognitionBtn');
-    const mainBtn = document.getElementById('faceRecognitionBtn');
-    const mainBtnText = document.getElementById('faceRecognitionBtnText');
-    
-    if (isRunning) {
-      statusEl.textContent = 'Running';
-      statusEl.className = 'face-stat-value status-running';
-      pidEl.textContent = pid || '-';
-      startBtn.disabled = true;
-      startBtn.innerHTML = '<span class="btn-icon">✅</span> Running';
-      stopBtn.disabled = false;
-      mainBtn.classList.add('btn-recognition-running');
-      mainBtnText.textContent = 'Recognition Active';
-    } else {
-      statusEl.textContent = 'Stopped';
-      statusEl.className = 'face-stat-value status-stopped';
-      pidEl.textContent = '-';
-      startBtn.disabled = false;
-      startBtn.innerHTML = '<span class="btn-icon">▶️</span> Start Recognition';
-      stopBtn.disabled = true;
-      mainBtn.classList.remove('btn-recognition-running');
-      mainBtnText.textContent = 'Face Recognition';
+      // Silently handle errors to avoid spamming console
+      if (error.message.includes('NetworkError')) {
+        addLog('Network error - retrying...', 'warn');
+      }
     }
   }
 
-  function addLogEntry(message, type = 'info') {
-    const logContainer = document.getElementById('logContainer');
-    if (!logContainer) return;
+  function processRecognitionResults(faces) {
+    for (const face of faces) {
+      const { name, confidence, student_id, status } = face;
+      
+      if (!name || name === 'Unknown' || confidence < 0.7) continue;
+      
+      // Check if already recognized recently (within 30 seconds)
+      const lastTime = state.lastRecognitionTime[name] || 0;
+      if (Date.now() - lastTime < 30000) continue;
+      
+      state.lastRecognitionTime[name] = Date.now();
+      
+      // Mark attendance
+      if (student_id && !state.recognizedStudents.has(student_id)) {
+        markAttendanceFromRecognition(student_id, name, status || 'present', confidence);
+        state.recognizedStudents.add(student_id);
+      }
+    }
+  }
+
+  async function markAttendanceFromRecognition(studentId, name, status, confidence) {
+    try {
+      const response = await fetch(`${config.apiBaseUrl}/api/attendance/mark`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': config.csrfToken
+        },
+        body: JSON.stringify({
+          student_id: studentId,
+          session_id: config.classId,
+          class_id: config.classId,
+          status: status,
+          recognition_data: {
+            confidence: confidence,
+            source: 'browser_webcam',
+            timestamp: new Date().toISOString()
+          }
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success && !data.already_present) {
+        addLog(`✅ ${name} marked as ${status} (${Math.round(confidence * 100)}%)`, 'success');
+        addRecognizedStudent(name, status);
+        updateRecognizedCounter();
+        
+        // Update UI immediately
+        const card = findStudentCard({ name, student_id: studentId });
+        if (card) {
+          applyVisualUpdate(card, status, new Date().toLocaleTimeString(), name);
+        }
+        
+        showToast(`${name} marked as ${status}`, 'success');
+      } else if (data.already_present) {
+        addLog(`${name} already marked`, 'info');
+      }
+      
+    } catch (error) {
+      addLog(`Error marking ${name}: ${error.message}`, 'error');
+    }
+  }
+
+  function addRecognizedStudent(name, status) {
+    const list = document.getElementById('recognizedList');
+    const emptyMsg = list.querySelector('.empty-recognized');
+    if (emptyMsg) emptyMsg.remove();
     
-    const timestamp = new Date().toLocaleTimeString();
+    const item = document.createElement('div');
+    item.className = `recognized-item ${status === 'late' ? 'late' : ''}`;
+    item.innerHTML = `
+      <div class="recognized-avatar">${name.charAt(0).toUpperCase()}</div>
+      <div class="recognized-info">
+        <div class="recognized-name">${name}</div>
+        <div class="recognized-time">${new Date().toLocaleTimeString()}</div>
+      </div>
+      <span class="recognized-status">${status.toUpperCase()}</span>
+    `;
+    
+    list.insertBefore(item, list.firstChild);
+    
+    // Keep only last 10
+    while (list.children.length > 10) {
+      list.removeChild(list.lastChild);
+    }
+  }
+
+  function updateRecognizedCounter() {
+    document.getElementById('recognizedCounter').textContent = state.recognizedStudents.size;
+  }
+
+  function addLog(message, type = 'info') {
+    const log = document.getElementById('recognitionLog');
     const entry = document.createElement('div');
     entry.className = `log-entry ${type}`;
-    entry.textContent = `[${timestamp}] ${message}`;
+    entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
     
-    logContainer.appendChild(entry);
-    logContainer.scrollTop = logContainer.scrollHeight;
-    
-    while (logContainer.children.length > 100) {
-      logContainer.removeChild(logContainer.firstChild);
+    // Keep only last 50 entries
+    while (log.children.length > 50) {
+      log.removeChild(log.firstChild);
     }
   }
 
-  // ==================== POLLING ====================
-  function startStatusPolling() {
-    if (state.statusCheckInterval) clearInterval(state.statusCheckInterval);
-    state.statusCheckInterval = setInterval(async () => {
-      const isRunning = await checkRecognitionStatus();
-      if (!isRunning && state.faceRecognitionActive) {
-        state.faceRecognitionActive = false;
-        updateRecognitionUI(false, null);
-        stopStatusPolling();
-      }
-    }, 5000);
-  }
-
-  function stopStatusPolling() {
-    if (state.statusCheckInterval) {
-      clearInterval(state.statusCheckInterval);
-      state.statusCheckInterval = null;
-    }
-  }
-
+  // ==================== ATTENDANCE POLLING ====================
   function startAttendancePolling() {
     if (state.attendanceCheckInterval) clearInterval(state.attendanceCheckInterval);
-    state.attendanceCheckInterval = setInterval(fetchAttendanceUpdates, 2000);
-    fetchAttendanceUpdates(); // Immediate fetch
+    state.attendanceCheckInterval = setInterval(fetchAttendanceUpdates, 3000);
+    fetchAttendanceUpdates();
   }
 
-  function stopAttendancePolling() {
-    if (state.attendanceCheckInterval) {
-      clearInterval(state.attendanceCheckInterval);
-      state.attendanceCheckInterval = null;
-    }
-  }
-
-  // ==================== ATTENDANCE SYNC ====================
   async function fetchAttendanceUpdates() {
     state.pollCount++;
     
     try {
-      const url = `${config.apiBaseUrl}/api/attendance/class/${config.classId}`;
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
+      const response = await fetch(`${config.apiBaseUrl}/api/attendance/class/${config.classId}`);
       const data = await response.json();
       
-      // Update live indicator
-      const liveText = document.getElementById('liveUpdateText');
-      if (liveText) {
-        liveText.textContent = `Live updates active - Poll #${state.pollCount} - ${data.count || 0} records`;
-      }
+      document.getElementById('liveUpdateText').textContent = 
+        `Live updates active - ${data.count || 0} attendance records`;
       
-      if (data.success && data.records && data.records.length > 0) {
-        debugLog(`📥 Poll #${state.pollCount}: ${data.records.length} records from API`, 'info');
-        
-        // Log full API response for debugging
-        if (state.debugMode) {
-          debugLog(`API Response: ${JSON.stringify(data.records.map(r => ({
-            name: r.name,
-            student_id: r.student_id,
-            status: r.status
-          })))}`, 'info');
-        }
-        
+      if (data.success && data.records) {
         syncAttendanceWithAPI(data.records);
       }
       
-      // Always update summary counts
       updateSummaryCounts();
-      updateRecognizedCount();
       
     } catch (error) {
-      debugLog(`Poll error: ${error.message}`, 'error');
+      console.error('Poll error:', error);
     }
   }
 
-  /**
-   * Sync attendance records from API with UI cards
-   */
   function syncAttendanceWithAPI(records) {
     for (const record of records) {
-      const apiStatus = record.status;
-      const studentName = record.name || 'Unknown';
-      const recordedAt = record.recorded_at;
-      
-      if (!apiStatus) {
-        debugLog(`⚠️ Record missing status: ${JSON.stringify(record)}`, 'warn');
-        continue;
-      }
-      
-      // Find the card using improved matching
       const card = findStudentCard(record);
+      if (!card) continue;
       
-      if (!card) {
-        // Already logged in findStudentCard
-        continue;
-      }
-      
-      // Get current visual state
-      const currentVisualStatus = getCardVisualStatus(card);
-      
-      // If visual doesn't match API, update it
-      if (currentVisualStatus !== apiStatus) {
-        debugLog(`🔄 Updating ${studentName}: "${currentVisualStatus}" → "${apiStatus}"`, 'info');
-        applyVisualUpdate(card, apiStatus, recordedAt, studentName);
+      const currentStatus = getCardVisualStatus(card);
+      if (currentStatus !== record.status) {
+        applyVisualUpdate(card, record.status, record.recorded_at, record.name);
       }
     }
   }
 
-  /**
-   * Get the current visual status of a card by checking its classes
-   */
+  function findStudentCard(record) {
+    const { name, student_id } = record;
+    
+    if (student_id) {
+      const idStr = String(student_id);
+      const card = state.studentMap.byId[idStr] || state.studentMap.byUserId[idStr];
+      if (card) return card;
+    }
+    
+    if (name) {
+      const card = state.studentMap.byName[name.toLowerCase().trim()];
+      if (card) return card;
+    }
+    
+    return null;
+  }
+
   function getCardVisualStatus(card) {
     if (card.classList.contains('present')) return 'present';
     if (card.classList.contains('absent')) return 'absent';
@@ -1351,53 +1444,28 @@ AttendAI{% endblock %} {% block content %}
     return 'unmarked';
   }
 
-  /**
-   * Apply visual update to a card
-   */
   function applyVisualUpdate(card, status, recordedAt, studentName) {
-    // Update CSS classes
-    card.classList.remove('present', 'absent', 'late', 'pending', 'unmarked');
+    card.classList.remove('present', 'absent', 'late', 'unmarked');
     card.classList.add(status);
     card.dataset.status = status;
     
-    // Highlight animation
-    if (status === 'present' || status === 'late') {
-      card.classList.remove('just-updated');
-      void card.offsetWidth; // Force reflow
-      card.classList.add('just-updated');
-    }
+    card.classList.remove('just-updated');
+    void card.offsetWidth;
+    card.classList.add('just-updated');
     
-    // Update status badge
     const badge = card.querySelector('.status-badge');
     if (badge) {
       badge.className = `status-badge status-${status}`;
       badge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
     }
     
-    // Update buttons
     card.querySelectorAll('.attendance-btn').forEach(btn => {
       btn.classList.remove('active');
-      if (btn.classList.contains(status)) {
-        btn.classList.add('active');
-      }
+      if (btn.classList.contains(status)) btn.classList.add('active');
     });
     
-    // Update timestamp
     const lastUpdated = card.querySelector('.last-updated');
-    if (lastUpdated && recordedAt) {
-      lastUpdated.textContent = recordedAt;
-    }
-    
-    // Show toast (throttled)
-    const now = Date.now();
-    const lastNotifyTime = state.lastNotified[studentName] || 0;
-    if (now - lastNotifyTime > 10000) {
-      if (status === 'present' || status === 'late') {
-        showToast(`${studentName} marked as ${status}`, 'success');
-        debugLog(`✅ ${studentName} → ${status}`, 'success');
-      }
-      state.lastNotified[studentName] = now;
-    }
+    if (lastUpdated && recordedAt) lastUpdated.textContent = recordedAt;
   }
 
   function updateSummaryCounts() {
@@ -1415,30 +1483,7 @@ AttendAI{% endblock %} {% block content %}
     document.getElementById('summaryLate').textContent = late;
   }
 
-  function updateRecognizedCount() {
-    const el = document.getElementById('recognizedCount');
-    if (el) {
-      let count = 0;
-      document.querySelectorAll('.student-card').forEach(card => {
-        const status = getCardVisualStatus(card);
-        if (status === 'present' || status === 'late') count++;
-      });
-      el.textContent = count;
-    }
-  }
-
-  // ==================== UI FUNCTIONS ====================
-  function toggleFaceRecognition() {
-    const panel = document.getElementById('faceRecognitionStatus');
-    const isHidden = panel.style.display === 'none';
-    panel.style.display = isHidden ? 'block' : 'none';
-    if (isHidden) checkRecognitionStatus();
-  }
-
-  function hideFaceRecognitionPanel() {
-    document.getElementById('faceRecognitionStatus').style.display = 'none';
-  }
-
+  // ==================== MANUAL ATTENDANCE ====================
   function markAttendance(studentId, status) {
     fetch(config.markAttendanceUrl, {
       method: "POST",
@@ -1489,8 +1534,7 @@ AttendAI{% endblock %} {% block content %}
     document.querySelectorAll(".student-card").forEach(card => {
       const name = card.querySelector("h4").textContent.toLowerCase();
       const id = card.querySelector(".student-id").textContent.toLowerCase();
-      const email = card.querySelector(".student-email").textContent.toLowerCase();
-      card.style.display = (name.includes(term) || id.includes(term) || email.includes(term)) ? "block" : "none";
+      card.style.display = (name.includes(term) || id.includes(term)) ? "block" : "none";
     });
   }
 
@@ -1520,40 +1564,32 @@ AttendAI{% endblock %} {% block content %}
       border: 2px solid ${type === "success" ? "#059669" : type === "warning" ? "#d97706" : "#0891b2"};
       padding: 1rem 1.5rem;
       border-radius: 8px;
-      z-index: 1000;
-      animation: slideIn 0.3s ease;
+      z-index: 1001;
       font-weight: 600;
       max-width: 300px;
+      animation: slideIn 0.3s ease;
     `;
     document.body.appendChild(toast);
-    setTimeout(() => {
-      toast.style.animation = "slideOut 0.3s ease";
-      setTimeout(() => toast.remove(), 300);
-    }, 3000);
+    setTimeout(() => toast.remove(), 3000);
   }
 
   // ==================== PUBLIC API ====================
   window.AttendanceManager = {
-    checkRecognitionStatus,
-    startFaceRecognition,
-    stopFaceRecognition,
-    toggleFaceRecognition,
-    hideFaceRecognitionPanel,
+    toggleWebcam,
+    stopWebcam,
+    togglePause,
+    switchCamera,
     markAttendance,
     saveNote,
     searchStudents,
     filterStudents,
-    refreshAttendance,
-    toggleDebug,
-    // Debug helpers
-    getStudentMap: () => state.studentMap,
-    testFindCard: (record) => findStudentCard(record)
+    refreshAttendance
   };
 
-  // Cleanup
+  // Cleanup on page unload
   window.addEventListener('beforeunload', () => {
-    stopStatusPolling();
-    stopAttendancePolling();
+    stopWebcam();
+    if (state.attendanceCheckInterval) clearInterval(state.attendanceCheckInterval);
   });
 
   // Initialize

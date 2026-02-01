@@ -1,710 +1,702 @@
 """
-Attendance AI API Blueprint - FIXED VERSION
-============================================
-This blueprint contains all the API endpoints for the attendance system.
-
-Fixes:
-- Updated /recognition/start to accept session_id from request body
-- No duplicate endpoint functions
+Attendance AI API Blueprint - BROWSER WEBCAM VERSION (FIXED)
+============================================================
+Fixed to handle corrupted/incompatible facial data gracefully.
 """
 
 from flask import Blueprint, request, jsonify, current_app
-from datetime import datetime, date, timedelta
+from datetime import datetime, date
 from sqlalchemy import text
 import numpy as np
 import cv2
 import base64
 import json
-import subprocess
-import sys
-import os
-import signal
 import zlib
-import pickle
+import threading
 
-# Create blueprint
 attendance_ai_bp = Blueprint('attendance_ai', __name__)
 
-# Global variable to track recognition process
-recognition_process = None
-
-# Face cascade for face detection during import
 FACE_CASCADE = None
+_model_cache = {
+    'knn': None,
+    'labels': None,
+    'student_map': {},
+    'last_loaded': None,
+    'lock': threading.Lock(),
+    'skipped_students': []
+}
 
 
 def load_face_detector():
-    """Load the face detector cascade"""
     global FACE_CASCADE
     if FACE_CASCADE is None:
-        cascade_paths = [
+        paths = [
             cv2.data.haarcascades + 'haarcascade_frontalface_default.xml',
             'data/haarcascade_frontalface_default.xml',
-            'haarcascade_frontalface_default.xml',
-            './AttendanceAI/data/haarcascade_frontalface_default.xml'
         ]
-        
-        for path in cascade_paths:
+        for path in paths:
             try:
                 cascade = cv2.CascadeClassifier(path)
                 if not cascade.empty():
                     FACE_CASCADE = cascade
-                    print(f"✅ Face detector loaded from: {path}")
+                    print(f"✅ Face detector loaded: {path}")
                     return FACE_CASCADE
             except:
                 continue
-        
-        print("⚠️ Warning: Could not load face detector")
+        print("⚠️ Face detector not found")
     return FACE_CASCADE
 
 
 def get_db_session():
-    """Get database session from app config"""
     try:
         db = current_app.config.get('db')
         if db:
             return db.session
-    except Exception as e:
-        print(f"Error getting db session: {e}")
+    except:
+        pass
     return None
 
 
-def get_db():
-    """Get the SQLAlchemy db instance"""
-    return current_app.config.get('db')
-
-
-def detect_and_crop_face(img, face_cascade):
-    """Detect face in image and return cropped face region."""
+def detect_faces_in_frame(img, face_cascade):
+    """Detect faces in an image frame."""
     if face_cascade is None:
+        # No cascade - return center crop as fallback
         h, w = img.shape[:2]
-        size = min(h, w)
-        start_h = (h - size) // 2
-        start_w = (w - size) // 2
-        return img[start_h:start_h+size, start_w:start_w+size], False
+        size = min(h, w) // 2
+        cx, cy = w // 2, h // 2
+        return [{'face': img[cy-size:cy+size, cx-size:cx+size], 'bbox': (cx-size, cy-size, size*2, size*2)}], True
     
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.05, minNeighbors=3, minSize=(30, 30))
+    faces = face_cascade.detectMultiScale(gray, 1.1, 5, minSize=(60, 60))
     
     if len(faces) > 0:
-        largest_face = max(faces, key=lambda f: f[2] * f[3])
-        x, y, w, h = largest_face
-        padding_w = int(0.05 * w)
-        padding_h = int(0.05 * h)
-        x = max(0, x - padding_w)
-        y = max(0, y - padding_h)
-        w = min(img.shape[1] - x, w + 2 * padding_w)
-        h = min(img.shape[0] - y, h + 2 * padding_h)
-        face_img = img[y:y+h, x:x+w]
-        return face_img, True
-    else:
-        h, w = img.shape[:2]
-        margin_h = int(h * 0.2)
-        margin_w = int(w * 0.2)
-        return img[margin_h:h-margin_h, margin_w:w-margin_w], False
+        results = []
+        for (x, y, w, h) in faces:
+            pad = int(0.1 * w)
+            x1, y1 = max(0, x - pad), max(0, y - pad)
+            x2, y2 = min(img.shape[1], x + w + pad), min(img.shape[0], y + h + pad)
+            results.append({'face': img[y1:y2, x1:x2], 'bbox': (int(x), int(y), int(w), int(h))})
+        return results, True
+    return [], False
+
+
+def extract_features(face_img):
+    """Extract features from a face image for KNN matching."""
+    try:
+        h, w = face_img.shape[:2]
+        if min(h, w) < 10:
+            return None
+        
+        # Make square
+        if h != w:
+            size = min(h, w)
+            sh, sw = (h - size) // 2, (w - size) // 2
+            face_img = face_img[sh:sh+size, sw:sw+size]
+        
+        # Resize to 50x50
+        face_resized = cv2.resize(face_img, (50, 50))
+        
+        # Convert to grayscale
+        if len(face_resized.shape) == 3:
+            gray = cv2.cvtColor(face_resized, cv2.COLOR_BGR2GRAY)
+        else:
+            gray = face_resized
+        
+        # Enhance contrast
+        enhanced = cv2.equalizeHist(gray.astype(np.uint8))
+        return enhanced.flatten().reshape(1, -1)
+    except Exception as e:
+        print(f"Feature extraction error: {e}")
+        return None
 
 
 def generate_augmented_samples(face_img, sample_count=100):
-    """Generate augmented training samples from a single face image."""
+    """Generate augmented training samples from a face image."""
     all_faces = []
     base_face = cv2.resize(face_img, (60, 60))
     
     for i in range(sample_count):
-        augmented = base_face.copy()
+        aug = base_face.copy()
         
-        # Multi-scale augmentation
-        scale = np.random.uniform(0.7, 1.3)
+        # Random scale
+        scale = np.random.uniform(0.8, 1.2)
         new_size = int(60 * scale)
-        
         if new_size > 20:
-            scaled = cv2.resize(augmented, (new_size, new_size))
+            scaled = cv2.resize(aug, (new_size, new_size))
             if new_size >= 60:
-                start = (new_size - 60) // 2
-                augmented = scaled[start:start+60, start:start+60]
+                s = (new_size - 60) // 2
+                aug = scaled[s:s+60, s:s+60]
             else:
-                pad = (60 - new_size) // 2
-                augmented = cv2.copyMakeBorder(scaled, pad, pad, pad, pad, cv2.BORDER_REPLICATE)
-                augmented = cv2.resize(augmented, (60, 60))
+                p = (60 - new_size) // 2
+                aug = cv2.copyMakeBorder(scaled, p, p, p, p, cv2.BORDER_REPLICATE)
+                aug = cv2.resize(aug, (60, 60))
         
         # Random brightness
-        brightness = np.random.randint(-40, 40)
-        augmented = np.clip(augmented.astype(np.int16) + brightness, 0, 255).astype(np.uint8)
-        
-        # Random contrast
-        if i % 4 == 0:
-            alpha = np.random.uniform(0.7, 1.3)
-            augmented = np.clip(alpha * augmented, 0, 255).astype(np.uint8)
+        brightness = np.random.randint(-30, 30)
+        aug = np.clip(aug.astype(np.int16) + brightness, 0, 255).astype(np.uint8)
         
         # Random rotation
         if i % 3 == 0:
-            angle = np.random.uniform(-20, 20)
-            h, w = augmented.shape[:2]
-            M = cv2.getRotationMatrix2D((w/2, h/2), angle, 1.0)
-            augmented = cv2.warpAffine(augmented, M, (w, h), borderMode=cv2.BORDER_REPLICATE)
+            angle = np.random.uniform(-15, 15)
+            M = cv2.getRotationMatrix2D((30, 30), angle, 1.0)
+            aug = cv2.warpAffine(aug, M, (60, 60), borderMode=cv2.BORDER_REPLICATE)
         
         # Random flip
         if np.random.random() > 0.5:
-            augmented = cv2.flip(augmented, 1)
+            aug = cv2.flip(aug, 1)
         
-        # Random translation
-        if i % 5 == 0:
-            tx = np.random.randint(-5, 5)
-            ty = np.random.randint(-5, 5)
-            M = np.float32([[1, 0, tx], [0, 1, ty]])
-            augmented = cv2.warpAffine(augmented, M, (augmented.shape[1], augmented.shape[0]), borderMode=cv2.BORDER_REPLICATE)
-        
-        # Random blur
-        if i % 6 == 0:
-            ksize = np.random.choice([3, 5])
-            augmented = cv2.GaussianBlur(augmented, (ksize, ksize), 0)
-        
-        final = cv2.resize(augmented, (50, 50))
-        flattened = final.flatten()
-        all_faces.append(flattened)
+        final = cv2.resize(aug, (50, 50))
+        all_faces.append(final.flatten())
     
     return np.array(all_faces, dtype=np.uint8)
 
 
-# ==================== HEALTH CHECK ====================
+def load_or_get_model():
+    """
+    Load KNN model from database.
+    FIXED: Properly handles corrupted/incompatible facial data.
+    """
+    from sklearn.neighbors import KNeighborsClassifier
+    
+    with _model_cache['lock']:
+        # Check cache
+        if _model_cache['knn'] is not None and _model_cache['last_loaded']:
+            age = (datetime.now() - _model_cache['last_loaded']).total_seconds()
+            if age < 300:
+                return _model_cache['knn'], _model_cache['student_map']
+        
+        session = get_db_session()
+        if not session:
+            print("❌ No database session")
+            return None, {}
+        
+        try:
+            query = text("""
+                SELECT fd.user_id, u.name, fd.face_encoding, fd.sample_count
+                FROM facial_data fd
+                JOIN users u ON fd.user_id = u.user_id
+                WHERE fd.is_active = TRUE AND u.is_active = TRUE
+            """)
+            results = session.execute(query).fetchall()
+            
+            if not results:
+                print("❌ No facial data in database")
+                return None, {}
+            
+            all_faces = []
+            all_labels = []
+            student_map = {}
+            skipped = []
+            
+            print(f"📊 Processing {len(results)} facial data records...")
+            
+            for row in results:
+                user_id, name, face_encoding, sample_count = row
+                
+                if face_encoding is None:
+                    skipped.append(f"{name}: No data")
+                    continue
+                
+                try:
+                    raw_data = face_encoding
+                    rows = sample_count if sample_count else 100
+                    cols = 7500  # Default: 50x50x3
+                    
+                    # Check for SHAPE header
+                    if raw_data[:6] == b'SHAPE:':
+                        try:
+                            header_end = raw_data.index(b';')
+                            shape_str = raw_data[6:header_end].decode('utf-8')
+                            rows, cols = map(int, shape_str.split(','))
+                            compressed = raw_data[header_end + 1:]
+                        except:
+                            compressed = raw_data
+                    else:
+                        compressed = raw_data
+                    
+                    # Decompress
+                    try:
+                        data = zlib.decompress(compressed)
+                    except zlib.error:
+                        data = compressed
+                    
+                    actual_size = len(data)
+                    
+                    # Validate data size
+                    if cols not in [7500, 2500]:
+                        # Try to auto-detect format
+                        if actual_size % 7500 == 0:
+                            cols = 7500
+                            rows = actual_size // 7500
+                        elif actual_size % 2500 == 0:
+                            cols = 2500
+                            rows = actual_size // 2500
+                        else:
+                            skipped.append(f"{name}: Invalid format ({actual_size} bytes)")
+                            print(f"⚠️ Skipping {name}: {actual_size} bytes - incompatible format")
+                            print(f"   → Re-import this student using the fixed import page")
+                            continue
+                    
+                    expected_size = rows * cols
+                    
+                    if actual_size != expected_size:
+                        # Try to find correct dimensions
+                        if actual_size % 7500 == 0:
+                            rows = actual_size // 7500
+                            cols = 7500
+                        elif actual_size % 2500 == 0:
+                            rows = actual_size // 2500
+                            cols = 2500
+                        else:
+                            skipped.append(f"{name}: Size mismatch ({actual_size} bytes)")
+                            print(f"⚠️ Skipping {name}: Cannot reshape {actual_size} bytes")
+                            continue
+                    
+                    # Now reshape
+                    faces_array = np.frombuffer(data, dtype=np.uint8).reshape(rows, cols)
+                    
+                    # Process each sample
+                    loaded_count = 0
+                    for face in faces_array:
+                        try:
+                            if cols == 7500:
+                                face_2d = face.reshape(50, 50, 3)
+                                gray = cv2.cvtColor(face_2d, cv2.COLOR_BGR2GRAY)
+                            else:
+                                gray = face.reshape(50, 50)
+                            
+                            enhanced = cv2.equalizeHist(gray.astype(np.uint8)).flatten()
+                            all_faces.append(enhanced)
+                            all_labels.append(name)
+                            loaded_count += 1
+                        except:
+                            continue
+                    
+                    if loaded_count > 0:
+                        student_map[name] = {'user_id': user_id, 'student_id': user_id}
+                        print(f"✅ {name}: Loaded {loaded_count} samples")
+                    
+                except Exception as e:
+                    skipped.append(f"{name}: {str(e)}")
+                    print(f"❌ Error loading {name}: {e}")
+                    continue
+            
+            _model_cache['skipped_students'] = skipped
+            
+            if not all_faces:
+                print("❌ No valid facial data found!")
+                print("   Skipped students:", skipped)
+                return None, {}
+            
+            # Train KNN
+            X = np.array(all_faces)
+            y = np.array(all_labels)
+            n_neighbors = min(5, len(X))
+            
+            knn = KNeighborsClassifier(n_neighbors=n_neighbors)
+            knn.fit(X, y)
+            
+            # Cache
+            _model_cache['knn'] = knn
+            _model_cache['student_map'] = student_map
+            _model_cache['last_loaded'] = datetime.now()
+            
+            print(f"✅ Model trained: {len(X)} samples, {len(student_map)} students")
+            if skipped:
+                print(f"⚠️ Skipped {len(skipped)} records - re-import these students")
+            
+            return knn, student_map
+            
+        except Exception as e:
+            print(f"❌ Model loading error: {e}")
+            import traceback
+            traceback.print_exc()
+            return None, {}
+
+
+# ==================== BROWSER WEBCAM RECOGNITION ====================
+
+@attendance_ai_bp.route('/recognize-frame', methods=['POST'])
+def recognize_frame():
+    """Receive frame from browser, return recognition results."""
+    try:
+        if not request.is_json:
+            return jsonify({'success': False, 'error': 'JSON required'}), 400
+        
+        data = request.get_json(silent=True)
+        if not data:
+            return jsonify({'success': False, 'error': 'Invalid JSON'}), 400
+        
+        frame_data = data.get('frame')
+        if not frame_data:
+            return jsonify({'success': False, 'error': 'No frame'}), 400
+        
+        # Decode image
+        try:
+            if ',' in frame_data:
+                frame_data = frame_data.split(',')[1]
+            img_bytes = base64.b64decode(frame_data)
+            frame = cv2.imdecode(np.frombuffer(img_bytes, np.uint8), cv2.IMREAD_COLOR)
+            if frame is None:
+                return jsonify({'success': False, 'error': 'Invalid image'}), 400
+        except Exception as e:
+            return jsonify({'success': False, 'error': f'Decode error: {e}'}), 400
+        
+        # Load model
+        knn, student_map = load_or_get_model()
+        
+        if knn is None:
+            skipped = _model_cache.get('skipped_students', [])
+            return jsonify({
+                'success': False, 
+                'error': 'No valid facial data. Please re-import students using the fixed import page.',
+                'skipped_students': skipped,
+                'hint': 'Visit /api/debug/facial-data to see data status'
+            }), 400
+        
+        # Detect faces
+        face_cascade = load_face_detector()
+        face_results, found = detect_faces_in_frame(frame, face_cascade)
+        
+        if not found:
+            return jsonify({'success': True, 'faces': []})
+        
+        # Recognize
+        recognized = []
+        for face_data in face_results:
+            features = extract_features(face_data['face'])
+            if features is None:
+                continue
+            
+            try:
+                prediction = knn.predict(features)[0]
+                proba = knn.predict_proba(features)
+                confidence = float(np.max(proba))
+                
+                if confidence < 0.5:
+                    recognized.append({
+                        'name': 'Unknown',
+                        'confidence': confidence,
+                        'student_id': None,
+                        'bbox': list(face_data['bbox'])
+                    })
+                    continue
+                
+                name = str(prediction)
+                info = student_map.get(name, {})
+                
+                now = datetime.now()
+                status = 'late' if now.hour > 9 or (now.hour == 9 and now.minute > 30) else 'present'
+                
+                recognized.append({
+                    'name': name,
+                    'confidence': confidence,
+                    'student_id': info.get('student_id'),
+                    'status': status,
+                    'bbox': list(face_data['bbox'])
+                })
+            except:
+                continue
+        
+        return jsonify({'success': True, 'faces': recognized})
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@attendance_ai_bp.route('/model/reload', methods=['POST'])
+def reload_model():
+    """Force reload the model."""
+    with _model_cache['lock']:
+        _model_cache['knn'] = None
+        _model_cache['last_loaded'] = None
+    
+    knn, student_map = load_or_get_model()
+    skipped = _model_cache.get('skipped_students', [])
+    
+    return jsonify({
+        'success': knn is not None,
+        'student_count': len(student_map),
+        'skipped': skipped
+    })
+
+
+# ==================== HEALTH ====================
 
 @attendance_ai_bp.route('/ping', methods=['GET'])
 def ping():
-    """Simple ping endpoint - no database required"""
-    return jsonify({
-        'success': True,
-        'message': 'pong',
-        'timestamp': datetime.now().isoformat()
-    })
+    return jsonify({'success': True, 'message': 'pong', 'mode': 'browser_webcam'})
 
 
 @attendance_ai_bp.route('/health', methods=['GET'])
 def health_check():
-    """Health check endpoint"""
+    db_ok = False
     try:
-        db_status = 'Unknown'
-        
-        try:
-            db = current_app.config.get('db')
-            if db:
-                db.session.execute(text("SELECT 1"))
-                db_status = 'Connected'
-            else:
-                db_status = 'No db instance'
-        except Exception as db_err:
-            db_status = f'Error: {str(db_err)}'
-        
-        return jsonify({
-            'status': 'healthy',
-            'success': True,
-            'database': db_status,
-            'timestamp': datetime.now().isoformat()
-        })
-    except Exception as e:
-        return jsonify({
-            'status': 'unhealthy',
-            'success': False,
-            'database': 'Error',
-            'error': str(e),
-            'timestamp': datetime.now().isoformat()
-        }), 500
+        session = get_db_session()
+        if session:
+            session.execute(text("SELECT 1"))
+            db_ok = True
+    except:
+        pass
+    
+    return jsonify({
+        'status': 'healthy' if db_ok else 'degraded',
+        'database': 'connected' if db_ok else 'error',
+        'model_loaded': _model_cache.get('knn') is not None,
+        'mode': 'browser_webcam'
+    })
 
 
 # ==================== SESSIONS ====================
 
-@attendance_ai_bp.route('/sessions/debug', methods=['GET'])
-def debug_sessions():
-    """Debug endpoint to see all sessions in database"""
-    try:
-        session = get_db_session()
-        if not session:
-            return jsonify({'success': False, 'error': 'No database session'}), 500
-        
-        now = datetime.now()
-        today = date.today()
-        
-        query = text("""
-            SELECT c.class_id, c.course_id, c.venue_id, c.lecturer_id,
-                   c.start_time, c.end_time, c.status,
-                   co.code as course_code, co.name as course_name
-            FROM classes c
-            LEFT JOIN courses co ON c.course_id = co.course_id
-            ORDER BY c.start_time DESC
-            LIMIT 20
-        """)
-        results = session.execute(query).fetchall()
-        
-        sessions_list = []
-        for row in results:
-            start_time = row[4]
-            end_time = row[5]
-            
-            sessions_list.append({
-                'class_id': row[0],
-                'course_id': row[1],
-                'start_time_raw': str(start_time),
-                'start_time_type': str(type(start_time)),
-                'end_time_raw': str(end_time),
-                'status': row[6],
-                'course_code': row[7]
-            })
-        
-        return jsonify({
-            'success': True,
-            'current_datetime': now.isoformat(),
-            'current_date': str(today),
-            'total_sessions_found': len(sessions_list),
-            'sessions': sessions_list
-        })
-    
-    except Exception as e:
-        import traceback
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'traceback': traceback.format_exc()
-        }), 500
-
-
 @attendance_ai_bp.route('/sessions', methods=['GET'])
 @attendance_ai_bp.route('/classes', methods=['GET'])
 def get_sessions():
-    """Get today's classes (sessions)"""
     try:
         session = get_db_session()
         if not session:
-            return jsonify({'success': False, 'error': 'No database session'}), 500
+            return jsonify({'success': False, 'error': 'No database'}), 500
         
-        date_str = request.args.get('date')
-        show_all = request.args.get('all', 'false').lower() == 'true'
+        results = session.execute(text("""
+            SELECT c.class_id, c.course_id, c.start_time, c.status,
+                   co.code, co.name, v.name, u.name
+            FROM classes c
+            LEFT JOIN courses co ON c.course_id = co.course_id
+            LEFT JOIN venues v ON c.venue_id = v.venue_id
+            LEFT JOIN users u ON c.lecturer_id = u.user_id
+            ORDER BY c.start_time DESC LIMIT 50
+        """)).fetchall()
         
-        if date_str:
-            target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        else:
-            target_date = date.today()
+        sessions = [{
+            'session_id': r[0], 'class_id': r[0], 'course_id': r[1],
+            'start_time': str(r[2]) if r[2] else None, 'status': r[3],
+            'course_code': r[4] or 'N/A', 'course_name': r[5] or 'N/A',
+            'venue_name': r[6] or 'N/A', 'lecturer_name': r[7] or 'N/A'
+        } for r in results]
         
-        print(f"[DEBUG] Querying sessions for date: {target_date}, show_all: {show_all}")
-        
-        if show_all:
-            query = text("""
-                SELECT c.class_id, c.course_id, c.venue_id, c.lecturer_id,
-                       c.start_time, c.end_time, c.status,
-                       co.code as course_code, co.name as course_name,
-                       v.name as venue_name, u.name as lecturer_name
-                FROM classes c
-                LEFT JOIN courses co ON c.course_id = co.course_id
-                LEFT JOIN venues v ON c.venue_id = v.venue_id
-                LEFT JOIN users u ON c.lecturer_id = u.user_id
-                ORDER BY c.start_time
-            """)
-            results = session.execute(query).fetchall()
-        else:
-            start_of_day = datetime.combine(target_date, datetime.min.time())
-            end_of_day = datetime.combine(target_date, datetime.max.time())
-            
-            query = text("""
-                SELECT c.class_id, c.course_id, c.venue_id, c.lecturer_id,
-                       c.start_time, c.end_time, c.status,
-                       co.code as course_code, co.name as course_name,
-                       v.name as venue_name, u.name as lecturer_name
-                FROM classes c
-                LEFT JOIN courses co ON c.course_id = co.course_id
-                LEFT JOIN venues v ON c.venue_id = v.venue_id
-                LEFT JOIN users u ON c.lecturer_id = u.user_id
-                WHERE c.start_time >= :start_day
-                  AND c.start_time <= :end_day
-                ORDER BY c.start_time
-            """)
-            results = session.execute(query, {'start_day': start_of_day, 'end_day': end_of_day}).fetchall()
-        
-        sessions_list = []
-        for row in results:
-            start_time = row[4]
-            end_time = row[5]
-            
-            if isinstance(start_time, datetime):
-                start_time_str = start_time.strftime('%H:%M:%S')
-                date_str = start_time.strftime('%Y-%m-%d')
-            else:
-                start_time_str = str(start_time) if start_time else '00:00:00'
-                date_str = str(target_date)
-            
-            if isinstance(end_time, datetime):
-                end_time_str = end_time.strftime('%H:%M:%S')
-            else:
-                end_time_str = str(end_time) if end_time else '23:59:59'
-            
-            sessions_list.append({
-                'session_id': row[0],
-                'class_id': row[0],
-                'course_id': row[1],
-                'venue_id': row[2],
-                'lecturer_id': row[3],
-                'start_time': start_time_str,
-                'end_time': end_time_str,
-                'date': date_str,
-                'status': row[6],
-                'course_code': row[7] or 'N/A',
-                'course_name': row[8] or 'N/A',
-                'venue_name': row[9] or 'N/A',
-                'lecturer_name': row[10] or 'N/A'
-            })
-        
-        return jsonify({
-            'success': True,
-            'sessions': sessions_list,
-            'classes': sessions_list,
-            'count': len(sessions_list),
-            'query_date': str(target_date)
-        })
-    
+        return jsonify({'success': True, 'sessions': sessions})
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'sessions': [],
-            'classes': []
-        }), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 # ==================== STUDENTS ====================
 
 @attendance_ai_bp.route('/students', methods=['GET'])
 def get_students():
-    """Get all students with facial data"""
     try:
         session = get_db_session()
         if not session:
-            return jsonify({'success': False, 'error': 'No database session'}), 500
+            return jsonify({'success': False, 'error': 'No database'}), 500
         
-        query = text("""
-            SELECT u.user_id, u.name, u.email, u.is_active
-            FROM users u
-            WHERE u.role = 'student' AND u.is_active = TRUE
-        """)
-        results = session.execute(query).fetchall()
-        
-        students_list = []
-        for row in results:
-            students_list.append({
-                'student_id': row[0],
-                'user_id': row[0],
-                'name': row[1],
-                'email': row[2],
-                'facial_data_id': row[0],
-                'is_active': row[3]
-            })
+        results = session.execute(text(
+            "SELECT user_id, name, email FROM users WHERE role = 'student' AND is_active = TRUE"
+        )).fetchall()
         
         return jsonify({
             'success': True,
-            'students': students_list,
-            'count': len(students_list)
+            'students': [{'student_id': r[0], 'user_id': r[0], 'name': r[1], 'email': r[2]} for r in results]
         })
-    
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @attendance_ai_bp.route('/students/training-data', methods=['GET'])
 def get_training_data():
-    """Get all facial training data for KNN model from database"""
+    """Get training data for desktop client (if needed)."""
     try:
         session = get_db_session()
         if not session:
-            return jsonify({'success': False, 'error': 'No database session'}), 500
+            return jsonify({'success': False, 'error': 'No database'}), 500
         
-        query = text("""
+        results = session.execute(text("""
             SELECT fd.user_id, u.name, fd.face_encoding, fd.sample_count
-            FROM facial_data fd
-            JOIN users u ON fd.user_id = u.user_id
+            FROM facial_data fd JOIN users u ON fd.user_id = u.user_id
             WHERE fd.is_active = TRUE AND u.is_active = TRUE
-        """)
-        results = session.execute(query).fetchall()
+        """)).fetchall()
         
-        all_faces = []
-        all_labels = []
-        student_count = 0
+        all_faces, all_labels = [], []
+        skipped = []
         
         for row in results:
+            user_id, name, face_encoding, sample_count = row
+            if not face_encoding:
+                continue
+            
             try:
-                user_id, name, face_encoding, sample_count = row
-                
-                if face_encoding[:6] == b'SHAPE:':
-                    header_end = face_encoding.index(b';')
-                    shape_str = face_encoding[6:header_end].decode('utf-8')
+                raw = face_encoding
+                if raw[:6] == b'SHAPE:':
+                    header_end = raw.index(b';')
+                    shape_str = raw[6:header_end].decode()
                     rows, cols = map(int, shape_str.split(','))
-                    compressed_data = face_encoding[header_end + 1:]
+                    compressed = raw[header_end + 1:]
                 else:
-                    rows = sample_count if sample_count else 100
-                    cols = 7500
-                    compressed_data = face_encoding
+                    rows, cols = sample_count or 100, 7500
+                    compressed = raw
                 
                 try:
-                    decompressed = zlib.decompress(compressed_data)
-                except zlib.error:
-                    decompressed = compressed_data
+                    data = zlib.decompress(compressed)
+                except:
+                    data = compressed
                 
-                faces_array = np.frombuffer(decompressed, dtype=np.uint8).reshape(rows, cols)
+                if len(data) % 7500 == 0:
+                    rows, cols = len(data) // 7500, 7500
+                elif len(data) % 2500 == 0:
+                    rows, cols = len(data) // 2500, 2500
+                else:
+                    skipped.append(name)
+                    continue
                 
-                for face in faces_array:
+                faces = np.frombuffer(data, dtype=np.uint8).reshape(rows, cols)
+                for face in faces:
                     all_faces.append(face.tolist())
                     all_labels.append(name)
-                student_count += 1
-                
-            except Exception as row_error:
-                print(f"Error processing row for {name}: {row_error}")
-                continue
-        
-        if not all_faces:
-            return jsonify({
-                'success': True,
-                'faces': [],
-                'labels': [],
-                'student_count': 0,
-                'total_samples': 0,
-                'message': 'No training data found'
-            })
+            except:
+                skipped.append(name)
         
         return jsonify({
             'success': True,
             'faces': all_faces,
             'labels': all_labels,
-            'student_count': student_count,
-            'total_samples': len(all_labels)
+            'total_samples': len(all_labels),
+            'skipped': skipped if skipped else None
         })
-    
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @attendance_ai_bp.route('/students/import', methods=['POST'])
 def import_students():
-    """Import students with their facial training data"""
+    """Import students with facial data."""
     try:
         data = request.json
         students_data = data.get('students', [])
         institution_id = data.get('institution_id', 1)
         
         if not students_data:
-            return jsonify({'success': False, 'error': 'No students provided'}), 400
+            return jsonify({'success': False, 'error': 'No students'}), 400
         
         session = get_db_session()
         if not session:
-            return jsonify({'success': False, 'error': 'No database session'}), 500
+            return jsonify({'success': False, 'error': 'No database'}), 500
         
         face_cascade = load_face_detector()
-        imported_count = 0
-        student_names = []
-        faces_detected = 0
+        imported, faces_detected = 0, 0
+        names = []
         
-        for student_info in students_data:
-            name = student_info.get('name')
-            email = student_info.get('email', f"{name.lower().replace(' ', '.')}@student.edu")
-            photo_base64 = student_info.get('photo')
-            sample_count = student_info.get('sample_count', 100)
+        for info in students_data:
+            name = info.get('name')
+            user_id = info.get('user_id')
+            photo = info.get('photo')
+            sample_count = info.get('sample_count', 100)
             
-            if not name:
-                continue
-            
-            import bcrypt
-            result = session.execute(
-                text("SELECT user_id FROM users WHERE email = :email AND institution_id = :inst"),
-                {'email': email, 'inst': institution_id}
-            ).fetchone()
-            
-            if result:
-                user_id = result[0]
+            # Get or create user
+            if user_id:
+                result = session.execute(
+                    text("SELECT user_id, name FROM users WHERE user_id = :uid"),
+                    {'uid': user_id}
+                ).fetchone()
+                if result:
+                    user_id, name = result[0], result[1] or name
+                else:
+                    continue
             else:
-                password_hash = bcrypt.hashpw('password'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-                session.execute(
-                    text("""
-                        INSERT INTO users (institution_id, role, name, email, password_hash, is_active)
-                        VALUES (:inst, 'student', :name, :email, :pwd, TRUE)
-                    """),
-                    {'inst': institution_id, 'name': name, 'email': email, 'pwd': password_hash}
-                )
-                session.commit()
-                
+                email = info.get('email') or f"{name.lower().replace(' ', '.')}@student.edu"
                 result = session.execute(
                     text("SELECT user_id FROM users WHERE email = :email"),
                     {'email': email}
                 ).fetchone()
-                user_id = result[0]
+                
+                if result:
+                    user_id = result[0]
+                else:
+                    import bcrypt
+                    pwd = bcrypt.hashpw('password'.encode(), bcrypt.gensalt()).decode()
+                    session.execute(text(
+                        "INSERT INTO users (institution_id, role, name, email, password_hash, is_active) VALUES (:i, 'student', :n, :e, :p, TRUE)"
+                    ), {'i': institution_id, 'n': name, 'e': email, 'p': pwd})
+                    session.commit()
+                    user_id = session.execute(text("SELECT user_id FROM users WHERE email = :e"), {'e': email}).fetchone()[0]
             
-            if photo_base64 and user_id:
+            # Process photo
+            if photo and user_id:
                 try:
-                    if ',' in photo_base64:
-                        photo_base64 = photo_base64.split(',')[1]
-                    
-                    img_data = base64.b64decode(photo_base64)
-                    img_array = np.frombuffer(img_data, dtype=np.uint8)
-                    img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+                    if ',' in photo:
+                        photo = photo.split(',')[1]
+                    img = cv2.imdecode(np.frombuffer(base64.b64decode(photo), np.uint8), cv2.IMREAD_COLOR)
                     
                     if img is not None:
-                        face_img, face_found = detect_and_crop_face(img, face_cascade)
-                        if face_found:
+                        faces, found = detect_faces_in_frame(img, face_cascade)
+                        if found and faces:
+                            face_img = faces[0]['face']
                             faces_detected += 1
-                        
-                        faces_array = generate_augmented_samples(face_img, sample_count)
-                        
-                        faces_bytes = faces_array.tobytes()
-                        compressed_data = zlib.compress(faces_bytes)
-                        shape_str = f"SHAPE:{faces_array.shape[0]},{faces_array.shape[1]};".encode('utf-8')
-                        full_data = shape_str + compressed_data
-                        
-                        existing = session.execute(
-                            text("SELECT facial_data_id FROM facial_data WHERE user_id = :uid"),
-                            {'uid': user_id}
-                        ).fetchone()
-                        
-                        if existing:
-                            session.execute(
-                                text("UPDATE facial_data SET face_encoding = :data, sample_count = :count WHERE user_id = :uid"),
-                                {'data': full_data, 'count': sample_count, 'uid': user_id}
-                            )
                         else:
-                            session.execute(
-                                text("INSERT INTO facial_data (user_id, face_encoding, sample_count) VALUES (:uid, :data, :count)"),
-                                {'uid': user_id, 'data': full_data, 'count': sample_count}
-                            )
+                            h, w = img.shape[:2]
+                            s = min(h, w)
+                            face_img = img[(h-s)//2:(h+s)//2, (w-s)//2:(w+s)//2]
                         
+                        samples = generate_augmented_samples(face_img, sample_count)
+                        compressed = zlib.compress(samples.tobytes())
+                        full_data = f"SHAPE:{samples.shape[0]},{samples.shape[1]};".encode() + compressed
+                        
+                        existing = session.execute(text("SELECT 1 FROM facial_data WHERE user_id = :u"), {'u': user_id}).fetchone()
+                        if existing:
+                            session.execute(text("UPDATE facial_data SET face_encoding = :d, sample_count = :c, is_active = TRUE WHERE user_id = :u"),
+                                          {'d': full_data, 'c': sample_count, 'u': user_id})
+                        else:
+                            session.execute(text("INSERT INTO facial_data (user_id, face_encoding, sample_count, is_active) VALUES (:u, :d, :c, TRUE)"),
+                                          {'u': user_id, 'd': full_data, 'c': sample_count})
                         session.commit()
-                except Exception as photo_error:
-                    print(f"Photo error for {name}: {photo_error}")
+                        
+                        # Clear model cache to force reload
+                        with _model_cache['lock']:
+                            _model_cache['knn'] = None
+                        
+                        print(f"✅ Imported {name}: {sample_count} samples")
+                except Exception as e:
+                    print(f"❌ Photo error for {name}: {e}")
             
-            imported_count += 1
-            student_names.append(name)
+            imported += 1
+            names.append(name)
         
         return jsonify({
-            'success': True,
-            'message': f'Successfully imported {imported_count} students',
-            'students': student_names,
+            'success': True, 
+            'message': f'Imported {imported}', 
+            'students': names, 
             'faces_detected': faces_detected
         })
-    
     except Exception as e:
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-# ==================== CLASS STUDENTS ====================
-
 @attendance_ai_bp.route('/class/<int:class_id>/students', methods=['GET'])
 def get_class_students(class_id):
-    """Get students enrolled in a specific class"""
     try:
         session = get_db_session()
         if not session:
-            return jsonify({'success': False, 'error': 'No database session'}), 500
+            return jsonify({'success': False, 'error': 'No database'}), 500
         
-        class_info = session.execute(
-            text("SELECT course_id, semester_id FROM classes WHERE class_id = :cid"),
-            {'cid': class_id}
-        ).fetchone()
+        info = session.execute(text("SELECT course_id, semester_id FROM classes WHERE class_id = :c"), {'c': class_id}).fetchone()
+        if not info:
+            return get_students()
         
-        if not class_info:
-            return jsonify({'success': False, 'error': 'Class not found'}), 404
-        
-        course_id, semester_id = class_info
-        
-        query = text("""
-            SELECT u.user_id, u.name, u.email
-            FROM course_users cu
+        results = session.execute(text("""
+            SELECT u.user_id, u.name, u.email FROM course_users cu
             JOIN users u ON cu.user_id = u.user_id
-            WHERE cu.course_id = :course_id
-              AND cu.semester_id = :semester_id
-              AND u.role = 'student'
-              AND u.is_active = TRUE
-        """)
-        results = session.execute(query, {'course_id': course_id, 'semester_id': semester_id}).fetchall()
+            WHERE cu.course_id = :cid AND cu.semester_id = :sid AND u.role = 'student'
+        """), {'cid': info[0], 'sid': info[1]}).fetchall()
         
-        students_list = []
-        for row in results:
-            students_list.append({
-                'student_id': row[0],
-                'user_id': row[0],
-                'name': row[1],
-                'email': row[2],
-                'facial_data_id': row[0]
-            })
-        
-        if len(students_list) == 0:
-            print(f"⚠️ No students enrolled in class #{class_id}, returning all students")
+        if not results:
             return get_students()
         
         return jsonify({
             'success': True,
-            'students': students_list,
-            'count': len(students_list),
-            'class_id': class_id
+            'students': [{'student_id': r[0], 'name': r[1], 'email': r[2]} for r in results]
         })
-    
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@attendance_ai_bp.route('/class/<int:class_id>/students/assign', methods=['POST'])
-def assign_students_to_class(class_id):
-    """Assign students to a class"""
-    try:
-        data = request.json
-        student_ids = data.get('student_ids', [])
-        
-        if not student_ids:
-            return jsonify({'success': False, 'error': 'No student IDs provided'}), 400
-        
-        session = get_db_session()
-        if not session:
-            return jsonify({'success': False, 'error': 'No database session'}), 500
-        
-        class_info = session.execute(
-            text("SELECT course_id, semester_id FROM classes WHERE class_id = :cid"),
-            {'cid': class_id}
-        ).fetchone()
-        
-        if not class_info:
-            return jsonify({'success': False, 'error': 'Class not found'}), 404
-        
-        course_id, semester_id = class_info
-        assigned_count = 0
-        
-        for student_id in student_ids:
-            existing = session.execute(
-                text("""
-                    SELECT 1 FROM course_users 
-                    WHERE course_id = :cid AND user_id = :uid AND semester_id = :sid
-                """),
-                {'cid': course_id, 'uid': student_id, 'sid': semester_id}
-            ).fetchone()
-            
-            if not existing:
-                session.execute(
-                    text("""
-                        INSERT INTO course_users (course_id, user_id, semester_id)
-                        VALUES (:cid, :uid, :sid)
-                    """),
-                    {'cid': course_id, 'uid': student_id, 'sid': semester_id}
-                )
-                assigned_count += 1
-        
-        session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': f'Assigned {assigned_count} students to class',
-            'assigned_count': assigned_count
-        })
-    
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -712,422 +704,152 @@ def assign_students_to_class(class_id):
 
 @attendance_ai_bp.route('/attendance/mark', methods=['POST'])
 def mark_attendance():
-    """Mark student attendance"""
     try:
         data = request.json
         student_id = data.get('student_id')
-        session_id = data.get('session_id', data.get('class_id'))
+        session_id = data.get('session_id') or data.get('class_id')
         status = data.get('status', 'present')
         recognition_data = data.get('recognition_data', {})
         
-        if status not in ['present', 'late', 'absent', 'excused', 'unmarked']:
-            status = 'present'
-        
         if not student_id or not session_id:
-            return jsonify({'success': False, 'error': 'student_id and session_id required'}), 400
+            return jsonify({'success': False, 'error': 'Missing student_id or session_id'}), 400
         
         session = get_db_session()
         if not session:
-            return jsonify({'success': False, 'error': 'No database session'}), 500
+            return jsonify({'success': False, 'error': 'No database'}), 500
         
-        # Check if already marked
         existing = session.execute(
-            text("SELECT attendance_id, status FROM attendance_records WHERE student_id = :sid AND class_id = :cid"),
-            {'sid': student_id, 'cid': session_id}
+            text("SELECT attendance_id, status FROM attendance_records WHERE student_id = :s AND class_id = :c"),
+            {'s': student_id, 'c': session_id}
         ).fetchone()
         
         if existing:
-            existing_id, existing_status = existing[0], existing[1]
+            if existing[1] == status or (existing[1] in ['present', 'late'] and status == 'absent'):
+                return jsonify({'success': True, 'already_present': True, 'attendance_id': existing[0]})
             
-            if existing_status == status:
-                return jsonify({
-                    'success': True,
-                    'message': f'Already marked as {existing_status}',
-                    'already_present': True,
-                    'attendance_id': existing_id
-                })
-            
-            if existing_status in ['present', 'late'] and status == 'absent':
-                return jsonify({
-                    'success': True,
-                    'message': f'Already marked as {existing_status} (not changing to absent)',
-                    'already_present': True,
-                    'attendance_id': existing_id
-                })
-            
-            # Update existing record
-            session.execute(
-                text("""
-                    UPDATE attendance_records 
-                    SET status = :status, 
-                        recorded_at = CURRENT_TIMESTAMP,
-                        notes = :notes
-                    WHERE attendance_id = :aid
-                """),
-                {
-                    'status': status,
-                    'notes': json.dumps(recognition_data) if recognition_data else None,
-                    'aid': existing_id
-                }
-            )
+            session.execute(text("UPDATE attendance_records SET status = :st WHERE attendance_id = :a"),
+                          {'st': status, 'a': existing[0]})
             session.commit()
-            
-            print(f"✅ Updated attendance: student {student_id} changed from {existing_status} → {status}")
-            
-            return jsonify({
-                'success': True,
-                'message': f'Attendance updated from {existing_status} to {status}',
-                'already_present': False,
-                'updated': True,
-                'attendance_id': existing_id,
-                'timestamp': datetime.now().strftime('%H:%M:%S')
-            })
+            return jsonify({'success': True, 'already_present': False, 'attendance_id': existing[0]})
         
-        # Get lecturer_id from class
-        class_info = session.execute(
-            text("SELECT lecturer_id FROM classes WHERE class_id = :cid"),
-            {'cid': session_id}
-        ).fetchone()
-        lecturer_id = class_info[0] if class_info else None
+        lecturer = session.execute(text("SELECT lecturer_id FROM classes WHERE class_id = :c"), {'c': session_id}).fetchone()
         
-        # Create new attendance record
-        session.execute(
-            text("""
-                INSERT INTO attendance_records (class_id, student_id, status, marked_by, lecturer_id, notes)
-                VALUES (:cid, :sid, :status, 'system', :lid, :notes)
-            """),
-            {
-                'cid': session_id,
-                'sid': student_id,
-                'status': status,
-                'lid': lecturer_id,
-                'notes': json.dumps(recognition_data) if recognition_data else None
-            }
-        )
+        session.execute(text("""
+            INSERT INTO attendance_records (class_id, student_id, status, marked_by, lecturer_id, notes)
+            VALUES (:c, :s, :st, 'system', :l, :n)
+        """), {
+            'c': session_id, 's': student_id, 'st': status, 
+            'l': lecturer[0] if lecturer else None,
+            'n': json.dumps(recognition_data) if recognition_data else None
+        })
         session.commit()
         
-        result = session.execute(
-            text("SELECT attendance_id FROM attendance_records WHERE student_id = :sid AND class_id = :cid"),
-            {'sid': student_id, 'cid': session_id}
-        ).fetchone()
+        result = session.execute(text("SELECT attendance_id FROM attendance_records WHERE student_id = :s AND class_id = :c"),
+                                {'s': student_id, 'c': session_id}).fetchone()
         
-        print(f"✅ New attendance: student {student_id} marked as {status}")
-        
-        return jsonify({
-            'success': True,
-            'message': f'Attendance marked as {status}',
-            'already_present': False,
-            'attendance_id': result[0] if result else None,
-            'timestamp': datetime.now().strftime('%H:%M:%S')
-        })
-    
+        return jsonify({'success': True, 'already_present': False, 'attendance_id': result[0] if result else None})
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-@attendance_ai_bp.route('/attendance/unmark', methods=['POST'])
-def unmark_attendance():
-    """Update attendance to absent"""
-    try:
-        data = request.json
-        student_id = data.get('student_id')
-        session_id = data.get('session_id', data.get('class_id'))
-        
-        if not student_id or not session_id:
-            return jsonify({'success': False, 'error': 'student_id and session_id required'}), 400
-        
-        session = get_db_session()
-        if not session:
-            return jsonify({'success': False, 'error': 'No database session'}), 500
-        
-        session.execute(
-            text("UPDATE attendance_records SET status = 'absent' WHERE student_id = :sid AND class_id = :cid"),
-            {'sid': student_id, 'cid': session_id}
-        )
-        session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Student marked absent'
-        })
-    
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@attendance_ai_bp.route('/attendance/session/<int:session_id>', methods=['GET'])
-@attendance_ai_bp.route('/attendance/class/<int:session_id>', methods=['GET'])
-def get_class_attendance(session_id):
-    """Get attendance records for a specific class"""
+@attendance_ai_bp.route('/attendance/session/<int:sid>', methods=['GET'])
+@attendance_ai_bp.route('/attendance/class/<int:sid>', methods=['GET'])
+def get_class_attendance(sid):
     try:
         session = get_db_session()
         if not session:
-            return jsonify({'success': False, 'error': 'No database session'}), 500
+            return jsonify({'success': False, 'error': 'No database'}), 500
         
-        query = text("""
-            SELECT ar.attendance_id, ar.student_id, u.name, ar.status, ar.recorded_at, ar.marked_by
-            FROM attendance_records ar
-            JOIN users u ON ar.student_id = u.user_id
-            WHERE ar.class_id = :cid
-        """)
-        results = session.execute(query, {'cid': session_id}).fetchall()
+        results = session.execute(text("""
+            SELECT ar.attendance_id, ar.student_id, u.name, ar.status, ar.recorded_at
+            FROM attendance_records ar JOIN users u ON ar.student_id = u.user_id
+            WHERE ar.class_id = :c
+        """), {'c': sid}).fetchall()
         
-        records = []
-        for row in results:
-            records.append({
-                'attendance_id': row[0],
-                'student_id': row[1],
-                'name': row[2],
-                'status': row[3],
-                'recorded_at': row[4].strftime('%H:%M:%S') if row[4] else None,
-                'marked_by': row[5]
-            })
+        records = [{
+            'attendance_id': r[0], 'student_id': r[1], 'name': r[2], 'status': r[3],
+            'recorded_at': r[4].strftime('%H:%M:%S') if r[4] else None
+        } for r in results]
         
-        return jsonify({
-            'success': True,
-            'session_id': session_id,
-            'class_id': session_id,
-            'records': records,
-            'count': len(records)
-        })
-    
+        return jsonify({'success': True, 'records': records, 'count': len(records)})
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
 # ==================== RECOGNITION CONTROL ====================
 
-def find_attendance_client():
-    """Find the attendance_client.py file"""
-    server_dir = os.path.dirname(os.path.abspath(__file__))
-    
-    possible_names = ['attendance_client.py', 'attendance_client_cnn.py']
-    possible_locations = [
-        server_dir,
-        os.getcwd(),
-        os.path.join(server_dir, '..'),
-        os.path.join(server_dir, 'AttendanceAI'),
-    ]
-    
-    for location in possible_locations:
-        for name in possible_names:
-            path = os.path.join(location, name)
-            if os.path.exists(path):
-                return os.path.abspath(path)
-    
-    return None
-
-
 @attendance_ai_bp.route('/recognition/start', methods=['POST'])
 def start_recognition():
-    """Start the attendance recognition client with session_id"""
-    global recognition_process
-    
-    try:
-        # Check if already running
-        if recognition_process is not None and recognition_process.poll() is None:
-            return jsonify({
-                'success': False,
-                'error': 'Recognition is already running',
-                'status': 'running',
-                'pid': recognition_process.pid
-            })
-        
-        # Get session_id from request body
-        data = request.get_json() or {}
-        session_id = data.get('session_id') or data.get('class_id')
-        
-        script_path = find_attendance_client()
-        
-        if script_path is None:
-            return jsonify({
-                'success': False,
-                'error': 'attendance_client.py not found'
-            }), 404
-        
-        # Build command with session_id if provided
-        cmd = [sys.executable, script_path]
-        if session_id:
-            cmd.extend(['--session', str(session_id)])
-        
-        print(f"🚀 Starting recognition: {' '.join(cmd)}")
-        
-        # Start the process
-        if sys.platform == 'win32':
-            recognition_process = subprocess.Popen(
-                cmd,
-                creationflags=subprocess.CREATE_NEW_CONSOLE,
-                cwd=os.path.dirname(script_path)
-            )
-        else:
-            recognition_process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                cwd=os.path.dirname(script_path),
-                start_new_session=True
-            )
-        
-        return jsonify({
-            'success': True,
-            'message': 'Recognition started successfully',
-            'status': 'running',
-            'pid': recognition_process.pid,
-            'script_path': script_path,
-            'session_id': session_id
-        })
-        
-    except Exception as e:
-        import traceback
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'traceback': traceback.format_exc()
-        }), 500
+    return jsonify({'success': True, 'mode': 'browser_webcam'})
 
 
 @attendance_ai_bp.route('/recognition/stop', methods=['POST'])
 def stop_recognition():
-    """Stop the attendance recognition client"""
-    global recognition_process
-    
-    try:
-        if recognition_process is None or recognition_process.poll() is not None:
-            recognition_process = None
-            return jsonify({
-                'success': True,
-                'message': 'Recognition is not running',
-                'status': 'stopped'
-            })
-        
-        pid = recognition_process.pid
-        
-        if sys.platform == 'win32':
-            try:
-                recognition_process.terminate()
-            except:
-                os.system(f'taskkill /F /PID {pid}')
-        else:
-            try:
-                os.kill(pid, signal.SIGTERM)
-            except:
-                os.kill(pid, signal.SIGKILL)
-        
-        try:
-            recognition_process.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            if sys.platform == 'win32':
-                os.system(f'taskkill /F /PID {pid}')
-            else:
-                os.kill(pid, signal.SIGKILL)
-        
-        recognition_process = None
-        
-        return jsonify({
-            'success': True,
-            'message': 'Recognition stopped successfully',
-            'status': 'stopped'
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+    return jsonify({'success': True, 'status': 'stopped'})
 
 
 @attendance_ai_bp.route('/recognition/status', methods=['GET'])
 def get_recognition_status():
-    """Check the status of the recognition client"""
-    global recognition_process
-    
-    if recognition_process is None:
-        return jsonify({
-            'success': True,
-            'status': 'stopped',
-            'running': False
-        })
-    
-    poll_result = recognition_process.poll()
-    
-    if poll_result is None:
-        return jsonify({
-            'success': True,
-            'status': 'running',
-            'running': True,
-            'pid': recognition_process.pid
-        })
-    else:
-        recognition_process = None
-        return jsonify({
-            'success': True,
-            'status': 'stopped',
-            'running': False,
-            'exit_code': poll_result
-        })
-
-
-@attendance_ai_bp.route('/recognition/check-script', methods=['GET'])
-def check_script():
-    """Debug endpoint to check if attendance_client.py exists"""
-    script_path = find_attendance_client()
-    server_dir = os.path.dirname(os.path.abspath(__file__))
-    cwd = os.getcwd()
-    
-    return jsonify({
-        'success': True,
-        'script_found': script_path is not None,
-        'script_path': script_path,
-        'server_directory': server_dir,
-        'current_directory': cwd,
-        'python_executable': sys.executable,
-        'platform': sys.platform
-    })
+    return jsonify({'success': True, 'mode': 'browser_webcam'})
 
 
 # ==================== DEBUG ====================
 
 @attendance_ai_bp.route('/debug/facial-data', methods=['GET'])
 def debug_facial_data():
-    """Check what's in the facial_data table"""
+    """Check facial data status - helps diagnose import issues."""
     try:
         session = get_db_session()
         if not session:
-            return jsonify({'success': False, 'error': 'No database session'}), 500
+            return jsonify({'success': False, 'error': 'No database'}), 500
         
-        query = text("""
-            SELECT fd.facial_data_id, fd.user_id, u.name, fd.sample_count,
-                   LENGTH(fd.face_encoding) as data_size, fd.is_active, fd.created_at
-            FROM facial_data fd
+        results = session.execute(text("""
+            SELECT fd.facial_data_id, fd.user_id, u.name, fd.sample_count, 
+                   LENGTH(fd.face_encoding) as size, fd.is_active
+            FROM facial_data fd 
             LEFT JOIN users u ON fd.user_id = u.user_id
-        """)
-        results = session.execute(query).fetchall()
+        """)).fetchall()
         
         records = []
         for r in results:
+            size = r[4] or 0
+            
+            # Determine status based on size
+            if size < 1000:
+                status = "❌ INVALID - Too small (likely face-api.js embeddings)"
+                fix = "Re-import using fixed import page"
+            elif size < 50000:
+                status = "⚠️ SUSPICIOUS - May be corrupted"
+                fix = "Consider re-importing"
+            else:
+                status = "✅ VALID"
+                fix = None
+            
             records.append({
-                'facial_data_id': r[0],
+                'id': r[0],
                 'user_id': r[1],
                 'name': r[2],
                 'sample_count': r[3],
-                'data_size_bytes': r[4],
-                'is_active': r[5],
-                'created_at': str(r[6]) if r[6] else None
+                'data_size_bytes': size,
+                'status': status,
+                'fix': fix,
+                'is_active': r[5]
             })
+        
+        # Summary
+        valid = sum(1 for r in records if '✅' in r['status'])
+        invalid = sum(1 for r in records if '❌' in r['status'])
         
         return jsonify({
             'success': True,
-            'total_records': len(records),
-            'records': records
+            'summary': {
+                'total': len(records),
+                'valid': valid,
+                'invalid': invalid,
+                'model_loaded': _model_cache.get('knn') is not None
+            },
+            'records': records,
+            'help': 'Invalid records need to be re-imported using the fixed import page that sends raw images to server'
         })
-        
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500

@@ -17,7 +17,10 @@
     <div class="card-custom mb-4">
         <div class="card-header-custom">Facial Recognition Data Upload</div>
         <div class="card-body-custom">
-            <p class="section-description mb-4">Upload facial recognition training data for students. Select a student and upload their face images. The system will automatically extract facial encodings.</p>
+            <p class="section-description mb-4">
+                Upload facial recognition training data for students. Select a student and upload their face images. 
+                The system will detect faces and generate training samples for the KNN recognition model.
+            </p>
             
             <!-- Student Selection -->
             <div class="student-selector mb-4">
@@ -25,9 +28,17 @@
                 <select id="studentSelect" class="form-control">
                     <option value="">-- Select a Student --</option>
                     {% for student in students %}
-                    <option value="{{ student.user_id }}">{{ student.name }} ({{ student.email }})</option>
+                    <option value="{{ student.user_id }}" data-name="{{ student.name }}">{{ student.name }} ({{ student.email }})</option>
                     {% endfor %}
                 </select>
+            </div>
+            
+            <!-- Sample Count -->
+            <div class="sample-count-selector mb-4" style="max-width: 500px; margin: 0 auto;">
+                <label for="sampleCount" class="form-label">Augmented Samples per Image</label>
+                <input type="number" id="sampleCount" class="form-control" value="100" min="10" max="500" 
+                       style="border-radius: 30px; text-align: center;">
+                <small class="text-muted">More samples = better recognition but larger storage. Recommended: 50-100</small>
             </div>
             
             <!-- Facial Recognition Upload Area -->
@@ -84,19 +95,22 @@
                 <div class="results-section mt-4" id="resultsSection" style="display: none;">
                     <div class="result-card success" id="successResult">
                         <span class="result-icon">✅</span>
-                        <span class="result-text" id="successText">0 faces detected and encoded</span>
+                        <span class="result-text" id="successText">0 faces detected and processed</span>
                     </div>
                     <div class="result-card error" id="errorResult" style="display: none;">
                         <span class="result-icon">⚠️</span>
                         <span class="result-text" id="errorText">0 images had no detectable face</span>
+                    </div>
+                    <div class="result-card info mt-2" id="sampleInfo" style="display: none; background: #e0f2fe; border-color: #0ea5e9; color: #0369a1;">
+                        <span class="result-icon">📊</span>
+                        <span class="result-text" id="sampleInfoText">Total training samples: 0</span>
                     </div>
                 </div>
             </div>
 
             <!-- Facial Recognition Import Actions -->
             <div class="import-actions mt-4">
-                <button class="btn-custom btn-process" id="processButton" disabled>Process Images</button>
-                <button class="btn-custom btn-import" id="facialImportButton" disabled style="display: none;">Save Facial Data</button>
+                <button class="btn-custom btn-process" id="processButton" disabled>Process & Save Facial Data</button>
             </div>
         </div>
     </div>
@@ -157,7 +171,6 @@
 </div>
 
 <style>
-    /* Import Data Page Specific Styles */
     .import-data-page {
         max-width: 1400px;
         margin: 0 auto;
@@ -195,7 +208,6 @@
         font-weight: 500;
     }
 
-    /* Section Description */
     .section-description {
         color: var(--text-light);
         font-size: 0.95rem;
@@ -203,7 +215,6 @@
         text-align: center;
     }
 
-    /* Student Selector */
     .student-selector {
         max-width: 500px;
         margin: 0 auto;
@@ -240,7 +251,12 @@
         box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1);
     }
 
-    /* Upload Area */
+    input.form-control {
+        appearance: auto;
+        background-image: none;
+        padding-right: 1rem;
+    }
+
     .upload-section {
         max-width: 800px;
         margin: 0 auto;
@@ -288,7 +304,6 @@
         display: none;
     }
 
-    /* File Info */
     .file-info {
         display: none;
     }
@@ -343,7 +358,6 @@
         background-color: #b91c1c;
     }
 
-    /* Image Preview */
     .image-preview-section {
         background: #f8fafc;
         border-radius: 10px;
@@ -405,7 +419,6 @@
         color: white;
     }
 
-    /* Processing Status */
     .processing-status {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         border-radius: 10px;
@@ -454,7 +467,6 @@
         opacity: 0.9;
     }
 
-    /* Results */
     .results-section {
         display: flex;
         flex-direction: column;
@@ -489,7 +501,6 @@
         font-weight: 500;
     }
 
-    /* Import Actions */
     .import-actions {
         display: flex;
         justify-content: center;
@@ -557,7 +568,6 @@
         border-color: #1e293b;
     }
 
-    /* Responsive Design */
     @media (max-width: 768px) {
         .page-title {
             font-size: 1.75rem;
@@ -600,26 +610,7 @@
             grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
         }
     }
-
-    @media (max-width: 480px) {
-        .upload-area {
-            padding: 2rem 1rem;
-        }
-
-        .upload-icon svg {
-            width: 36px;
-            height: 36px;
-        }
-
-        .form-control {
-            font-size: 0.85rem;
-            padding: 0.65rem 1rem;
-        }
-    }
 </style>
-
-<!-- Load face-api.js -->
-<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -631,8 +622,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const facialFileSize = facialFileInfo.querySelector('.file-size');
     const clearFacialFileBtn = document.getElementById('clearFacialFile');
     const processButton = document.getElementById('processButton');
-    const facialImportButton = document.getElementById('facialImportButton');
     const studentSelect = document.getElementById('studentSelect');
+    const sampleCountInput = document.getElementById('sampleCount');
     const imagePreviewSection = document.getElementById('imagePreviewSection');
     const imagePreviewGrid = document.getElementById('imagePreviewGrid');
     const processingStatus = document.getElementById('processingStatus');
@@ -644,13 +635,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const errorResult = document.getElementById('errorResult');
     const successText = document.getElementById('successText');
     const errorText = document.getElementById('errorText');
+    const sampleInfo = document.getElementById('sampleInfo');
+    const sampleInfoText = document.getElementById('sampleInfoText');
 
     // State
     let selectedFiles = [];
-    let processedEncodings = [];
-    let modelsLoaded = false;
-    let successCount = 0;
-    let errorCount = 0;
+    let processedImages = [];  // Will store base64 images with detected faces
 
     // ===== REGULAR DATA IMPORT SECTION =====
     const uploadArea = document.getElementById('uploadArea');
@@ -672,34 +662,70 @@ document.addEventListener('DOMContentLoaded', function() {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
-    // Load face-api.js models
-    async function loadModels() {
-        if (modelsLoaded) return true;
+    // ===== SIMPLE FACE DETECTION USING CANVAS =====
+    // We'll use a simple skin-color based detection or just crop center
+    // The server will do proper face detection with OpenCV
+    
+    function detectFaceRegion(img) {
+        // Create canvas to analyze image
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
         
-        const MODEL_URLS = [
-            'https://justadudewhohacks.github.io/face-api.js/models',
-            'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights'
-        ];
+        // Scale down for faster processing
+        const maxSize = 300;
+        let width = img.width;
+        let height = img.height;
         
-        for (const MODEL_URL of MODEL_URLS) {
-            try {
-                await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-                await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-                await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-                modelsLoaded = true;
-                console.log('Face-api models loaded from:', MODEL_URL);
-                return true;
-            } catch (error) {
-                console.warn('Failed to load from:', MODEL_URL);
-                continue;
+        if (width > height) {
+            if (width > maxSize) {
+                height = (height / width) * maxSize;
+                width = maxSize;
+            }
+        } else {
+            if (height > maxSize) {
+                width = (width / height) * maxSize;
+                height = maxSize;
             }
         }
-        return false;
+        
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // For simplicity, we'll just return the center region
+        // The server will do proper face detection
+        const size = Math.min(width, height);
+        const x = (width - size) / 2;
+        const y = (height - size) / 2;
+        
+        return {
+            detected: true,  // Assume face is present, server will verify
+            region: { x, y, width: size, height: size }
+        };
+    }
+    
+    function cropAndResizeImage(img, region) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Create a square crop
+        canvas.width = 200;  // Larger size for better quality
+        canvas.height = 200;
+        
+        ctx.drawImage(
+            img,
+            region.x * (img.width / 300),  // Scale back to original coords
+            region.y * (img.height / 300),
+            region.width * (img.width / 300),
+            region.height * (img.height / 300),
+            0, 0, 200, 200
+        );
+        
+        return canvas.toDataURL('image/jpeg', 0.9);
     }
 
     // ===== FACIAL RECOGNITION HANDLERS =====
     
-    // Update facial file info display
     function updateFacialFileInfo(files) {
         selectedFiles = Array.from(files);
         
@@ -710,15 +736,11 @@ document.addEventListener('DOMContentLoaded', function() {
             facialFileSize.textContent = formatFileSize(totalSize);
             facialFileInfo.classList.add('visible');
             
-            // Show image previews
             showImagePreviews();
-            
-            // Enable process button if student selected
             updateProcessButton();
         }
     }
 
-    // Show image previews
     function showImagePreviews() {
         imagePreviewGrid.innerHTML = '';
         imagePreviewSection.style.display = 'block';
@@ -739,27 +761,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Update process button state
     function updateProcessButton() {
         processButton.disabled = !(selectedFiles.length > 0 && studentSelect.value);
     }
 
-    // Student selection change
     studentSelect.addEventListener('change', updateProcessButton);
 
-    // Click to upload facial data
     facialUploadArea.addEventListener('click', () => {
         facialFileInput.click();
     });
 
-    // Facial file input change
     facialFileInput.addEventListener('change', (e) => {
         if (e.target.files.length > 0) {
             updateFacialFileInfo(e.target.files);
         }
     });
 
-    // Facial drag and drop
     facialUploadArea.addEventListener('dragover', (e) => {
         e.preventDefault();
         facialUploadArea.classList.add('dragover');
@@ -774,7 +791,6 @@ document.addEventListener('DOMContentLoaded', function() {
         facialUploadArea.classList.remove('dragover');
         
         if (e.dataTransfer.files.length > 0) {
-            // Filter only image files
             const imageFiles = Array.from(e.dataTransfer.files).filter(file => 
                 file.type.startsWith('image/')
             );
@@ -785,25 +801,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Clear facial file
     clearFacialFileBtn.addEventListener('click', () => {
         facialFileInput.value = '';
         facialFileInfo.classList.remove('visible');
         facialFileName.textContent = 'No file selected';
         facialFileSize.textContent = '–';
         selectedFiles = [];
-        processedEncodings = [];
+        processedImages = [];
         imagePreviewSection.style.display = 'none';
         imagePreviewGrid.innerHTML = '';
         processingStatus.style.display = 'none';
         resultsSection.style.display = 'none';
         processButton.disabled = true;
-        facialImportButton.disabled = true;
-        facialImportButton.style.display = 'none';
-        processButton.style.display = 'inline-block';
     });
 
-    // Process images button click
+    // Process and save in one step - send to server for proper processing
     processButton.addEventListener('click', async () => {
         if (selectedFiles.length === 0) {
             alert('Please select image files to process.');
@@ -815,61 +827,38 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Load models first
-        processingStatus.style.display = 'block';
-        processingText.textContent = 'Loading face detection models...';
-        processingProgress.style.width = '0%';
-        progressText.textContent = 'Initializing...';
-        
-        const loaded = await loadModels();
-        if (!loaded) {
-            alert('Failed to load face detection models. Please check your internet connection.');
-            processingStatus.style.display = 'none';
-            return;
-        }
+        const userId = studentSelect.value;
+        const studentName = studentSelect.options[studentSelect.selectedIndex].dataset.name;
+        const sampleCount = parseInt(sampleCountInput.value) || 100;
 
-        // Process images
         processButton.disabled = true;
+        processingStatus.style.display = 'block';
         processingText.textContent = 'Processing images...';
-        processedEncodings = [];
-        successCount = 0;
-        errorCount = 0;
+        processingProgress.style.width = '0%';
+        progressText.textContent = 'Preparing images...';
+        resultsSection.style.display = 'none';
 
+        let successCount = 0;
+        let errorCount = 0;
+        const imageDataArray = [];
+
+        // Read all files as base64
         for (let i = 0; i < selectedFiles.length; i++) {
             const file = selectedFiles[i];
             const previewItem = document.getElementById(`preview-${i}`);
             const statusBadge = previewItem?.querySelector('.status-badge');
             
             try {
-                // Create image element
-                const img = await createImageFromFile(file);
+                const base64 = await readFileAsBase64(file);
+                imageDataArray.push(base64);
+                successCount++;
                 
-                // Detect face and get encoding
-                const options = new faceapi.TinyFaceDetectorOptions({ 
-                    inputSize: 416, 
-                    scoreThreshold: 0.3 
-                });
-                
-                const detection = await faceapi.detectSingleFace(img, options)
-                    .withFaceLandmarks()
-                    .withFaceDescriptor();
-
-                if (detection) {
-                    processedEncodings.push(Array.from(detection.descriptor));
-                    successCount++;
-                    if (statusBadge) {
-                        statusBadge.className = 'status-badge success';
-                        statusBadge.textContent = '✓';
-                    }
-                } else {
-                    errorCount++;
-                    if (statusBadge) {
-                        statusBadge.className = 'status-badge error';
-                        statusBadge.textContent = '✗';
-                    }
+                if (statusBadge) {
+                    statusBadge.className = 'status-badge success';
+                    statusBadge.textContent = '✓';
                 }
             } catch (error) {
-                console.error('Error processing image:', error);
+                console.error('Error reading file:', error);
                 errorCount++;
                 if (statusBadge) {
                     statusBadge.className = 'status-badge error';
@@ -877,98 +866,101 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // Update progress
-            const progress = ((i + 1) / selectedFiles.length) * 100;
+            const progress = ((i + 1) / selectedFiles.length) * 50;
             processingProgress.style.width = `${progress}%`;
-            progressText.textContent = `${i + 1} / ${selectedFiles.length} images processed`;
+            progressText.textContent = `Reading ${i + 1} / ${selectedFiles.length} images...`;
         }
 
-        // Show results
-        processingStatus.style.display = 'none';
-        resultsSection.style.display = 'flex';
-        
-        successText.textContent = `${successCount} faces detected and encoded`;
-        
-        if (errorCount > 0) {
-            errorResult.style.display = 'flex';
-            errorText.textContent = `${errorCount} images had no detectable face`;
-        } else {
-            errorResult.style.display = 'none';
-        }
-
-        // Enable save button if we have encodings
-        if (processedEncodings.length > 0) {
-            processButton.style.display = 'none';
-            facialImportButton.style.display = 'inline-block';
-            facialImportButton.disabled = false;
-        } else {
+        if (imageDataArray.length === 0) {
+            alert('No valid images to process.');
             processButton.disabled = false;
-        }
-    });
-
-    // Create image element from file
-    function createImageFromFile(file) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => resolve(img);
-            img.onerror = reject;
-            img.src = URL.createObjectURL(file);
-        });
-    }
-
-    // Save facial data button click
-    facialImportButton.addEventListener('click', async () => {
-        if (processedEncodings.length === 0) {
-            alert('No facial encodings to save. Please process images first.');
+            processingStatus.style.display = 'none';
             return;
         }
 
-        const userId = studentSelect.value;
-        if (!userId) {
-            alert('Please select a student.');
-            return;
-        }
-
-        facialImportButton.disabled = true;
-        facialImportButton.textContent = 'Saving...';
+        // Send to server for processing
+        processingText.textContent = 'Uploading and processing on server...';
+        processingProgress.style.width = '60%';
+        progressText.textContent = 'Server is detecting faces and generating training samples...';
 
         try {
-            const response = await fetch('/institution/api/facial-data/import', {
+            const response = await fetch('/api/students/import', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': csrfToken
                 },
                 body: JSON.stringify({
-                    user_id: parseInt(userId),
-                    encodings: processedEncodings,
-                    sample_count: processedEncodings.length
+                    students: [{
+                        name: studentName,
+                        user_id: parseInt(userId),
+                        photo: imageDataArray[0],  // Primary photo
+                        additional_photos: imageDataArray.slice(1),  // Additional photos if any
+                        sample_count: sampleCount
+                    }],
+                    update_existing: true
                 })
             });
 
+            processingProgress.style.width = '90%';
+
             const data = await response.json();
 
+            processingProgress.style.width = '100%';
+            processingStatus.style.display = 'none';
+            resultsSection.style.display = 'flex';
+
             if (data.success) {
-                alert(`Facial data saved successfully!\n${data.sample_count} samples stored for the selected student.`);
+                successText.textContent = `${data.faces_detected || imageDataArray.length} face(s) processed for ${studentName}`;
+                successResult.style.display = 'flex';
+                
+                sampleInfo.style.display = 'flex';
+                sampleInfoText.textContent = `Generated ~${sampleCount * imageDataArray.length} augmented training samples`;
+
+                if (errorCount > 0) {
+                    errorResult.style.display = 'flex';
+                    errorText.textContent = `${errorCount} image(s) could not be read`;
+                } else {
+                    errorResult.style.display = 'none';
+                }
+
+                alert(`Success! Facial data saved for ${studentName}.\n\nThe student can now be recognized by the attendance system.`);
+                
                 // Reset form
-                clearFacialFileBtn.click();
-                studentSelect.value = '';
+                setTimeout(() => {
+                    clearFacialFileBtn.click();
+                    studentSelect.value = '';
+                }, 2000);
             } else {
+                errorResult.style.display = 'flex';
+                errorText.textContent = data.error || 'Failed to save facial data';
+                successResult.style.display = 'none';
                 alert('Error: ' + (data.error || 'Failed to save facial data'));
-                facialImportButton.disabled = false;
-                facialImportButton.textContent = 'Save Facial Data';
+                processButton.disabled = false;
             }
         } catch (error) {
-            console.error('Save error:', error);
-            alert('An error occurred while saving. Please try again.');
-            facialImportButton.disabled = false;
-            facialImportButton.textContent = 'Save Facial Data';
+            console.error('Server error:', error);
+            processingStatus.style.display = 'none';
+            resultsSection.style.display = 'flex';
+            errorResult.style.display = 'flex';
+            errorText.textContent = 'Server connection error';
+            successResult.style.display = 'none';
+            alert('Server error: ' + error.message);
+            processButton.disabled = false;
         }
     });
 
+    function readFileAsBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
     // ===== REGULAR DATA IMPORT HANDLERS =====
     
-    // Update file info display
     function updateFileInfo(files) {
         if (files.length > 0) {
             const totalSize = Array.from(files).reduce((sum, file) => sum + file.size, 0);
@@ -980,19 +972,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Click to upload
     uploadArea.addEventListener('click', () => {
         fileInput.click();
     });
 
-    // File input change
     fileInput.addEventListener('change', (e) => {
         if (e.target.files.length > 0) {
             updateFileInfo(e.target.files);
         }
     });
 
-    // Drag and drop
     uploadArea.addEventListener('dragover', (e) => {
         e.preventDefault();
         uploadArea.classList.add('dragover');
@@ -1012,7 +1001,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Clear file
     clearFileBtn.addEventListener('click', () => {
         fileInput.value = '';
         fileInfo.classList.remove('visible');
@@ -1021,7 +1009,6 @@ document.addEventListener('DOMContentLoaded', function() {
         importButton.disabled = true;
     });
 
-    // Import button click
     importButton.addEventListener('click', async () => {
         if (fileInput.files.length === 0) {
             alert('Please select a file to import.');

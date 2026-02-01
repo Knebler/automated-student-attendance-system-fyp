@@ -30,9 +30,9 @@
                             <line x1="15" y1="9" x2="15.01" y2="9"></line>
                         </svg>
                     </div>
-                    <p class="upload-text">Click here or drag facial recognition files to upload</p>
-                    <p class="upload-subtext">Supports .jpg, .jpeg, .png, .zip files</p>
-                    <input type="file" id="facialFileInput" class="file-input" accept=".jpg,.jpeg,.png,.zip" multiple>
+                    <p class="upload-text">Click here or drag JSON file to upload</p>
+                    <p class="upload-subtext">Supports .json files (from bulk collector)</p>
+                    <input type="file" id="facialFileInput" class="file-input" accept=".json">
                 </div>
 
                 <div class="file-info mt-4" id="facialFileInfo">
@@ -501,28 +501,64 @@
         });
 
         // Facial import button click
-        facialImportButton.addEventListener('click', () => {
+        facialImportButton.addEventListener('click', async () => {
             if (facialFileInput.files.length === 0) {
-                alert('Please select facial recognition files to upload.');
+                alert('Please select a facial recognition JSON file to upload.');
                 return;
             }
 
-            // Here you would typically submit the form via AJAX
-            alert(`Starting upload of ${facialFileInput.files.length} facial recognition file(s)...`);
+            const file = facialFileInput.files[0];
             
-            // Simulate upload process
+            // Validate file type
+            if (!file.name.endsWith('.json')) {
+                alert('Please select a JSON file (e.g., facial_data_bulk.json)');
+                return;
+            }
+            
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            // Update button state
             facialImportButton.textContent = 'Uploading...';
             facialImportButton.disabled = true;
             
-            setTimeout(() => {
-                alert('Facial recognition data uploaded successfully!');
+            try {
+                const response = await fetch('{{ url_for("institution.upload_facial_data") }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: formData,
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    // Show success message with details
+                    let message = result.message;
+                    if (result.stats && result.stats.errors && result.stats.errors.length > 0) {
+                        message += '\\n\\nErrors/Warnings:\\n' + result.stats.errors.slice(0, 5).join('\\n');
+                        if (result.stats.errors.length > 5) {
+                            message += `\\n... and ${result.stats.errors.length - 5} more`;
+                        }
+                    }
+                    alert('✓ ' + message);
+                    
+                    // Clear the form
+                    facialFileInput.value = '';
+                    facialFileInfo.classList.remove('visible');
+                    facialFileName.textContent = 'No file selected';
+                    facialFileSize.textContent = '–';
+                } else {
+                    alert('✗ Import failed: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('✗ An error occurred while uploading the file: ' + error.message);
+            } finally {
                 facialImportButton.textContent = 'Upload Facial Data';
-                facialImportButton.disabled = true;
-                facialFileInput.value = '';
-                facialFileInfo.classList.remove('visible');
-                facialFileName.textContent = 'No file selected';
-                facialFileSize.textContent = '–';
-            }, 2000);
+                facialImportButton.disabled = false;
+            }
         });
 
         // ===== REGULAR DATA IMPORT HANDLERS =====

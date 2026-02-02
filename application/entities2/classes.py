@@ -410,25 +410,36 @@ class ClassModel(BaseEntity[Class]):
         )
 
     def get_enrolled_students(self, class_id):
-        """Get students enrolled in a specific class"""
+        """Get students enrolled in a specific class (filtered by semester)"""
+        # Get the class to access its semester_id
+        class_obj = self.session.query(Class).filter(Class.class_id == class_id).first()
+        if not class_obj:
+            return []
+        
+        # Get students enrolled in the course AND the same semester as the class
         return (
             self.session.query(User)
             .join(CourseUser, CourseUser.user_id == User.user_id)
             .join(Course, Course.course_id == CourseUser.course_id)
-            .join(Class, Class.course_id == Course.course_id)
-            .filter(Class.class_id == class_id)
+            .filter(Course.course_id == class_obj.course_id)
+            .filter(CourseUser.semester_id == class_obj.semester_id)
             .filter(User.role == 'student')
             .all()
         )
 
     def get_enrolled_count(self, class_id):
-        """Get count of students enrolled in a class"""
+        """Get count of students enrolled in a class (filtered by semester)"""
+        # Get the class to access its semester_id
+        class_obj = self.session.query(Class).filter(Class.class_id == class_id).first()
+        if not class_obj:
+            return 0
+        
         return (
             self.session.query(func.count(User.user_id))
             .join(CourseUser, CourseUser.user_id == User.user_id)
             .join(Course, Course.course_id == CourseUser.course_id)
-            .join(Class, Class.course_id == Course.course_id)
-            .filter(Class.class_id == class_id)
+            .filter(Course.course_id == class_obj.course_id)
+            .filter(CourseUser.semester_id == class_obj.semester_id)
             .filter(User.role == 'student')
             .scalar() or 0
         )

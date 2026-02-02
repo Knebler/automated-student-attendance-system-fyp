@@ -91,8 +91,11 @@ def manage_attendance():
         return redirect(url_for('institution_lecturer.manage_classes'))
     course = course_result['course']
     
-    # Step 3: Get all course_users who are students
-    students_result = CourseControl.get_students_by_course_id(course_id)
+    # Get semester ID from class
+    semester_id = class_data.get('semester_id')
+    
+    # Step 3: Get students enrolled in this course AND semester
+    students_result = CourseControl.get_students_by_course_id(course_id, semester_id=semester_id)
     if not students_result['success']:
         flash(students_result.get('error', 'Error retrieving students'), 'warning')
         students_list = []

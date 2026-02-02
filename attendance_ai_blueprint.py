@@ -5,7 +5,7 @@ Fixed to handle corrupted/incompatible facial data gracefully.
 """
 
 from flask import Blueprint, request, jsonify, current_app
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from sqlalchemy import text
 import numpy as np
 import cv2
@@ -314,6 +314,57 @@ def load_or_get_model():
             return None, {}
 
 
+# ==================== LATE DETECTION ====================
+
+def determine_attendance_status(class_start_time, late_threshold_minutes=30):
+    """
+    Determine if student is present or late based on class start time.
+    
+    Args:
+        class_start_time: The class start time (datetime or time object)
+        late_threshold_minutes: Minutes after start time to be considered late
+    
+    Returns:
+        'present' or 'late'
+    """
+    now = datetime.now()
+    
+    if class_start_time is None:
+        return 'present'
+    
+    try:
+        if isinstance(class_start_time, datetime):
+            start_dt = class_start_time
+        elif hasattr(class_start_time, 'hour'):
+            # time object - combine with today
+            start_dt = datetime.combine(now.date(), class_start_time)
+        else:
+            # Try parsing string formats
+            time_str = str(class_start_time)
+            for fmt in ['%H:%M:%S', '%H:%M', '%Y-%m-%d %H:%M:%S']:
+                try:
+                    parsed = datetime.strptime(time_str, fmt)
+                    if fmt in ['%H:%M:%S', '%H:%M']:
+                        start_dt = parsed.replace(year=now.year, month=now.month, day=now.day)
+                    else:
+                        start_dt = parsed
+                    break
+                except:
+                    continue
+            else:
+                return 'present'
+        
+        late_cutoff = start_dt + timedelta(minutes=late_threshold_minutes)
+        
+        status = 'present' if now <= late_cutoff else 'late'
+        print(f"⏰ Late check: now={now.strftime('%H:%M')}, start={start_dt.strftime('%H:%M')}, cutoff={late_cutoff.strftime('%H:%M')} → {status}")
+        return status
+        
+    except Exception as e:
+        print(f"⚠️ Late detection error: {e}")
+        return 'present'
+
+
 # ==================== BROWSER WEBCAM RECOGNITION ====================
 
 @attendance_ai_bp.route('/recognize-frame', methods=['POST'])
@@ -328,6 +379,8 @@ def recognize_frame():
             return jsonify({'success': False, 'error': 'Invalid JSON'}), 400
         
         frame_data = data.get('frame')
+        session_id = data.get('session_id')
+        
         if not frame_data:
             return jsonify({'success': False, 'error': 'No frame'}), 400
         
@@ -353,6 +406,24 @@ def recognize_frame():
                 'skipped_students': skipped,
                 'hint': 'Visit /api/debug/facial-data to see data status'
             }), 400
+        
+        # Get class start time for late detection
+        class_start_time = None
+        if session_id:
+            try:
+                db_session = get_db_session()
+                if db_session:
+                    result = db_session.execute(
+                        text("SELECT start_time FROM classes WHERE class_id = :cid"),
+                        {'cid': session_id}
+                    ).fetchone()
+                    if result and result[0]:
+                        class_start_time = result[0]
+            except Exception as e:
+                print(f"⚠️ Could not fetch class time: {e}")
+        
+        # Determine attendance status based on actual class time
+        attendance_status = determine_attendance_status(class_start_time)
         
         # Detect faces
         face_cascade = load_face_detector()
@@ -385,14 +456,11 @@ def recognize_frame():
                 name = str(prediction)
                 info = student_map.get(name, {})
                 
-                now = datetime.now()
-                status = 'late' if now.hour > 9 or (now.hour == 9 and now.minute > 30) else 'present'
-                
                 recognized.append({
                     'name': name,
                     'confidence': confidence,
                     'student_id': info.get('student_id'),
-                    'status': status,
+                    'status': attendance_status,  # Uses actual class time!
                     'bbox': list(face_data['bbox'])
                 })
             except:

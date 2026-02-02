@@ -17,7 +17,29 @@
     <div class="card-custom mb-4">
         <div class="card-header-custom">Facial Recognition Data Upload</div>
         <div class="card-body-custom">
-            <p class="section-description mb-4">Upload facial recognition training data for students. Supports image files and compressed archives containing face images.</p>
+            <p class="section-description mb-4">
+                Upload facial recognition training data for students. Select a student and upload their face images. 
+                The system will detect faces and generate training samples for the KNN recognition model.
+            </p>
+            
+            <!-- Student Selection -->
+            <div class="student-selector mb-4">
+                <label for="studentSelect" class="form-label">Select Student</label>
+                <select id="studentSelect" class="form-control">
+                    <option value="">-- Select a Student --</option>
+                    {% for student in students %}
+                    <option value="{{ student.user_id }}" data-name="{{ student.name }}">{{ student.name }} ({{ student.email }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Sample Count -->
+            <div class="sample-count-selector mb-4" style="max-width: 500px; margin: 0 auto;">
+                <label for="sampleCount" class="form-label">Augmented Samples per Image</label>
+                <input type="number" id="sampleCount" class="form-control" value="100" min="10" max="500" 
+                       style="border-radius: 30px; text-align: center;">
+                <small class="text-muted">More samples = better recognition but larger storage. Recommended: 50-100</small>
+            </div>
             
             <!-- Facial Recognition Upload Area -->
             <div class="upload-section">
@@ -31,8 +53,8 @@
                         </svg>
                     </div>
                     <p class="upload-text">Click here or drag facial recognition files to upload</p>
-                    <p class="upload-subtext">Supports .jpg, .jpeg, .png, .zip files</p>
-                    <input type="file" id="facialFileInput" class="file-input" accept=".jpg,.jpeg,.png,.zip" multiple>
+                    <p class="upload-subtext">Supports .jpg, .jpeg, .png files (multiple allowed)</p>
+                    <input type="file" id="facialFileInput" class="file-input" accept=".jpg,.jpeg,.png" multiple>
                 </div>
 
                 <div class="file-info mt-4" id="facialFileInfo">
@@ -50,11 +72,45 @@
                         <button class="btn-custom btn-clear" id="clearFacialFile">Clear</button>
                     </div>
                 </div>
+
+                <!-- Image Preview Grid -->
+                <div class="image-preview-section mt-4" id="imagePreviewSection" style="display: none;">
+                    <h4 class="preview-title">Selected Images</h4>
+                    <div class="image-preview-grid" id="imagePreviewGrid"></div>
+                </div>
+
+                <!-- Processing Status -->
+                <div class="processing-status mt-4" id="processingStatus" style="display: none;">
+                    <div class="status-content">
+                        <div class="spinner"></div>
+                        <span id="processingText">Processing images...</span>
+                    </div>
+                    <div class="progress-bar-container mt-2">
+                        <div class="progress-bar" id="processingProgress" style="width: 0%"></div>
+                    </div>
+                    <p class="progress-text" id="progressText">0 / 0 images processed</p>
+                </div>
+
+                <!-- Results -->
+                <div class="results-section mt-4" id="resultsSection" style="display: none;">
+                    <div class="result-card success" id="successResult">
+                        <span class="result-icon">✅</span>
+                        <span class="result-text" id="successText">0 faces detected and processed</span>
+                    </div>
+                    <div class="result-card error" id="errorResult" style="display: none;">
+                        <span class="result-icon">⚠️</span>
+                        <span class="result-text" id="errorText">0 images had no detectable face</span>
+                    </div>
+                    <div class="result-card info mt-2" id="sampleInfo" style="display: none; background: #e0f2fe; border-color: #0ea5e9; color: #0369a1;">
+                        <span class="result-icon">📊</span>
+                        <span class="result-text" id="sampleInfoText">Total training samples: 0</span>
+                    </div>
+                </div>
             </div>
 
             <!-- Facial Recognition Import Actions -->
             <div class="import-actions mt-4">
-                <button class="btn-custom btn-import" id="facialImportButton" disabled>Upload Facial Data</button>
+                <button class="btn-custom btn-process" id="processButton" disabled>Process & Save Facial Data</button>
             </div>
         </div>
     </div>
@@ -115,7 +171,6 @@
 </div>
 
 <style>
-    /* Import Data Page Specific Styles */
     .import-data-page {
         max-width: 1400px;
         margin: 0 auto;
@@ -153,7 +208,6 @@
         font-weight: 500;
     }
 
-    /* Section Description */
     .section-description {
         color: var(--text-light);
         font-size: 0.95rem;
@@ -161,14 +215,9 @@
         text-align: center;
     }
 
-    /* Import Selector */
-    .import-selector {
+    .student-selector {
         max-width: 500px;
         margin: 0 auto;
-    }
-
-    .form-group {
-        margin-bottom: 0.5rem;
     }
 
     .form-label {
@@ -202,13 +251,12 @@
         box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1);
     }
 
-    .helper-text {
-        color: var(--text-light);
-        font-size: 0.85rem;
-        text-align: center;
+    input.form-control {
+        appearance: auto;
+        background-image: none;
+        padding-right: 1rem;
     }
 
-    /* Upload Area */
     .upload-section {
         max-width: 800px;
         margin: 0 auto;
@@ -256,7 +304,6 @@
         display: none;
     }
 
-    /* File Info */
     .file-info {
         display: none;
     }
@@ -311,13 +358,175 @@
         background-color: #b91c1c;
     }
 
-    /* Import Actions */
+    .image-preview-section {
+        background: #f8fafc;
+        border-radius: 10px;
+        padding: 1rem;
+    }
+
+    .preview-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-bottom: 1rem;
+    }
+
+    .image-preview-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .preview-item {
+        position: relative;
+        aspect-ratio: 1;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 2px solid #e2e8f0;
+    }
+
+    .preview-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .preview-item .status-badge {
+        position: absolute;
+        bottom: 4px;
+        right: 4px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+    }
+
+    .preview-item .status-badge.success {
+        background: #10b981;
+        color: white;
+    }
+
+    .preview-item .status-badge.error {
+        background: #ef4444;
+        color: white;
+    }
+
+    .preview-item .status-badge.pending {
+        background: #f59e0b;
+        color: white;
+    }
+
+    .processing-status {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+        padding: 1.5rem;
+        color: white;
+    }
+
+    .status-content {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    .spinner {
+        width: 24px;
+        height: 24px;
+        border: 3px solid rgba(255,255,255,0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .progress-bar-container {
+        background: rgba(255,255,255,0.3);
+        border-radius: 10px;
+        height: 10px;
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background: #10b981;
+        border-radius: 10px;
+        transition: width 0.3s ease;
+    }
+
+    .progress-text {
+        text-align: center;
+        margin-top: 0.5rem;
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+
+    .results-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .result-card {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem;
+        border-radius: 8px;
+    }
+
+    .result-card.success {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #6ee7b7;
+    }
+
+    .result-card.error {
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fcd34d;
+    }
+
+    .result-icon {
+        font-size: 1.25rem;
+    }
+
+    .result-text {
+        font-weight: 500;
+    }
+
     .import-actions {
         display: flex;
         justify-content: center;
         gap: 1rem;
         padding-top: 2rem;
         border-top: 1px solid var(--border-color);
+    }
+
+    .btn-process {
+        padding: 0.75rem 3rem;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        background-color: #6366f1;
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-process:hover:not(:disabled) {
+        background-color: #4f46e5;
+    }
+
+    .btn-process:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
 
     .btn-import {
@@ -359,7 +568,6 @@
         border-color: #1e293b;
     }
 
-    /* Responsive Design */
     @media (max-width: 768px) {
         .page-title {
             font-size: 1.75rem;
@@ -388,6 +596,7 @@
         }
 
         .btn-import,
+        .btn-process,
         .btn-outline-custom {
             width: 100%;
             text-align: center;
@@ -396,216 +605,435 @@
         .breadcrumb {
             font-size: 0.8rem;
         }
-    }
 
-    @media (max-width: 480px) {
-        .upload-area {
-            padding: 2rem 1rem;
-        }
-
-        .upload-icon svg {
-            width: 36px;
-            height: 36px;
-        }
-
-        .form-control {
-            font-size: 0.85rem;
-            padding: 0.65rem 1rem;
+        .image-preview-grid {
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
         }
     }
 </style>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // ===== FACIAL RECOGNITION UPLOAD SECTION =====
-        const facialUploadArea = document.getElementById('facialUploadArea');
-        const facialFileInput = document.getElementById('facialFileInput');
-        const facialFileInfo = document.getElementById('facialFileInfo');
-        const facialFileName = facialFileInfo.querySelector('.file-name');
-        const facialFileSize = facialFileInfo.querySelector('.file-size');
-        const clearFacialFileBtn = document.getElementById('clearFacialFile');
-        const facialImportButton = document.getElementById('facialImportButton');
+document.addEventListener('DOMContentLoaded', function() {
+    // ===== FACIAL RECOGNITION UPLOAD SECTION =====
+    const facialUploadArea = document.getElementById('facialUploadArea');
+    const facialFileInput = document.getElementById('facialFileInput');
+    const facialFileInfo = document.getElementById('facialFileInfo');
+    const facialFileName = facialFileInfo.querySelector('.file-name');
+    const facialFileSize = facialFileInfo.querySelector('.file-size');
+    const clearFacialFileBtn = document.getElementById('clearFacialFile');
+    const processButton = document.getElementById('processButton');
+    const studentSelect = document.getElementById('studentSelect');
+    const sampleCountInput = document.getElementById('sampleCount');
+    const imagePreviewSection = document.getElementById('imagePreviewSection');
+    const imagePreviewGrid = document.getElementById('imagePreviewGrid');
+    const processingStatus = document.getElementById('processingStatus');
+    const processingProgress = document.getElementById('processingProgress');
+    const progressText = document.getElementById('progressText');
+    const processingText = document.getElementById('processingText');
+    const resultsSection = document.getElementById('resultsSection');
+    const successResult = document.getElementById('successResult');
+    const errorResult = document.getElementById('errorResult');
+    const successText = document.getElementById('successText');
+    const errorText = document.getElementById('errorText');
+    const sampleInfo = document.getElementById('sampleInfo');
+    const sampleInfoText = document.getElementById('sampleInfoText');
 
-        // ===== REGULAR DATA IMPORT SECTION =====
-        const uploadArea = document.getElementById('uploadArea');
-        const fileInput = document.getElementById('fileInput');
-        const fileInfo = document.getElementById('fileInfo');
-        const fileName = fileInfo.querySelector('.file-name');
-        const fileSize = fileInfo.querySelector('.file-size');
-        const clearFileBtn = document.getElementById('clearFile');
-        const importButton = document.getElementById('importButton');
-        const importType = document.getElementById('importType');
+    // State
+    let selectedFiles = [];
+    let processedImages = [];  // Will store base64 images with detected faces
 
-        // Format file size
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
+    // ===== REGULAR DATA IMPORT SECTION =====
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = fileInfo.querySelector('.file-name');
+    const fileSize = fileInfo.querySelector('.file-size');
+    const clearFileBtn = document.getElementById('clearFile');
+    const importButton = document.getElementById('importButton');
 
-        // ===== FACIAL RECOGNITION HANDLERS =====
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    // Format file size
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // ===== SIMPLE FACE DETECTION USING CANVAS =====
+    // We'll use a simple skin-color based detection or just crop center
+    // The server will do proper face detection with OpenCV
+    
+    function detectFaceRegion(img) {
+        // Create canvas to analyze image
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
         
-        // Update facial file info display
-        function updateFacialFileInfo(files) {
-            if (files.length > 0) {
-                const totalSize = Array.from(files).reduce((sum, file) => sum + file.size, 0);
-                
-                facialFileName.textContent = files.length === 1 ? files[0].name : `${files.length} files selected`;
-                facialFileSize.textContent = formatFileSize(totalSize);
-                facialFileInfo.classList.add('visible');
-                facialImportButton.disabled = false;
+        // Scale down for faster processing
+        const maxSize = 300;
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > height) {
+            if (width > maxSize) {
+                height = (height / width) * maxSize;
+                width = maxSize;
+            }
+        } else {
+            if (height > maxSize) {
+                width = (width / height) * maxSize;
+                height = maxSize;
             }
         }
+        
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // For simplicity, we'll just return the center region
+        // The server will do proper face detection
+        const size = Math.min(width, height);
+        const x = (width - size) / 2;
+        const y = (height - size) / 2;
+        
+        return {
+            detected: true,  // Assume face is present, server will verify
+            region: { x, y, width: size, height: size }
+        };
+    }
+    
+    function cropAndResizeImage(img, region) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Create a square crop
+        canvas.width = 200;  // Larger size for better quality
+        canvas.height = 200;
+        
+        ctx.drawImage(
+            img,
+            region.x * (img.width / 300),  // Scale back to original coords
+            region.y * (img.height / 300),
+            region.width * (img.width / 300),
+            region.height * (img.height / 300),
+            0, 0, 200, 200
+        );
+        
+        return canvas.toDataURL('image/jpeg', 0.9);
+    }
 
-        // Click to upload facial data
-        facialUploadArea.addEventListener('click', () => {
-            facialFileInput.click();
-        });
-
-        // Facial file input change
-        facialFileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                updateFacialFileInfo(e.target.files);
-            }
-        });
-
-        // Facial drag and drop
-        facialUploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            facialUploadArea.classList.add('dragover');
-        });
-
-        facialUploadArea.addEventListener('dragleave', () => {
-            facialUploadArea.classList.remove('dragover');
-        });
-
-        facialUploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            facialUploadArea.classList.remove('dragover');
+    // ===== FACIAL RECOGNITION HANDLERS =====
+    
+    function updateFacialFileInfo(files) {
+        selectedFiles = Array.from(files);
+        
+        if (selectedFiles.length > 0) {
+            const totalSize = selectedFiles.reduce((sum, file) => sum + file.size, 0);
             
-            if (e.dataTransfer.files.length > 0) {
+            facialFileName.textContent = selectedFiles.length === 1 ? selectedFiles[0].name : `${selectedFiles.length} files selected`;
+            facialFileSize.textContent = formatFileSize(totalSize);
+            facialFileInfo.classList.add('visible');
+            
+            showImagePreviews();
+            updateProcessButton();
+        }
+    }
+
+    function showImagePreviews() {
+        imagePreviewGrid.innerHTML = '';
+        imagePreviewSection.style.display = 'block';
+        
+        selectedFiles.forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const div = document.createElement('div');
+                div.className = 'preview-item';
+                div.id = `preview-${index}`;
+                div.innerHTML = `
+                    <img src="${e.target.result}" alt="Face ${index + 1}">
+                    <span class="status-badge pending">⏳</span>
+                `;
+                imagePreviewGrid.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function updateProcessButton() {
+        processButton.disabled = !(selectedFiles.length > 0 && studentSelect.value);
+    }
+
+    studentSelect.addEventListener('change', updateProcessButton);
+
+    facialUploadArea.addEventListener('click', () => {
+        facialFileInput.click();
+    });
+
+    facialFileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            updateFacialFileInfo(e.target.files);
+        }
+    });
+
+    facialUploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        facialUploadArea.classList.add('dragover');
+    });
+
+    facialUploadArea.addEventListener('dragleave', () => {
+        facialUploadArea.classList.remove('dragover');
+    });
+
+    facialUploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        facialUploadArea.classList.remove('dragover');
+        
+        if (e.dataTransfer.files.length > 0) {
+            const imageFiles = Array.from(e.dataTransfer.files).filter(file => 
+                file.type.startsWith('image/')
+            );
+            if (imageFiles.length > 0) {
                 facialFileInput.files = e.dataTransfer.files;
-                updateFacialFileInfo(e.dataTransfer.files);
-            }
-        });
-
-        // Clear facial file
-        clearFacialFileBtn.addEventListener('click', () => {
-            facialFileInput.value = '';
-            facialFileInfo.classList.remove('visible');
-            facialFileName.textContent = 'No file selected';
-            facialFileSize.textContent = '–';
-            facialImportButton.disabled = true;
-        });
-
-        // Facial import button click
-        facialImportButton.addEventListener('click', () => {
-            if (facialFileInput.files.length === 0) {
-                alert('Please select facial recognition files to upload.');
-                return;
-            }
-
-            // Here you would typically submit the form via AJAX
-            alert(`Starting upload of ${facialFileInput.files.length} facial recognition file(s)...`);
-            
-            // Simulate upload process
-            facialImportButton.textContent = 'Uploading...';
-            facialImportButton.disabled = true;
-            
-            setTimeout(() => {
-                alert('Facial recognition data uploaded successfully!');
-                facialImportButton.textContent = 'Upload Facial Data';
-                facialImportButton.disabled = true;
-                facialFileInput.value = '';
-                facialFileInfo.classList.remove('visible');
-                facialFileName.textContent = 'No file selected';
-                facialFileSize.textContent = '–';
-            }, 2000);
-        });
-
-        // ===== REGULAR DATA IMPORT HANDLERS =====
-        
-        // Update file info display
-        function updateFileInfo(files) {
-            if (files.length > 0) {
-                const totalSize = Array.from(files).reduce((sum, file) => sum + file.size, 0);
-                
-                fileName.textContent = files.length === 1 ? files[0].name : `${files.length} files selected`;
-                fileSize.textContent = formatFileSize(totalSize);
-                fileInfo.classList.add('visible');
-                importButton.disabled = false;
+                updateFacialFileInfo(imageFiles);
             }
         }
+    });
 
-        // Click to upload
-        uploadArea.addEventListener('click', () => {
-            fileInput.click();
-        });
+    clearFacialFileBtn.addEventListener('click', () => {
+        facialFileInput.value = '';
+        facialFileInfo.classList.remove('visible');
+        facialFileName.textContent = 'No file selected';
+        facialFileSize.textContent = '–';
+        selectedFiles = [];
+        processedImages = [];
+        imagePreviewSection.style.display = 'none';
+        imagePreviewGrid.innerHTML = '';
+        processingStatus.style.display = 'none';
+        resultsSection.style.display = 'none';
+        processButton.disabled = true;
+    });
 
-        // File input change
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                updateFileInfo(e.target.files);
-            }
-        });
+    // Process and save in one step - send to server for proper processing
+    processButton.addEventListener('click', async () => {
+        if (selectedFiles.length === 0) {
+            alert('Please select image files to process.');
+            return;
+        }
 
-        // Drag and drop
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
-        });
+        if (!studentSelect.value) {
+            alert('Please select a student.');
+            return;
+        }
 
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragover');
-        });
+        const userId = studentSelect.value;
+        const studentName = studentSelect.options[studentSelect.selectedIndex].dataset.name;
+        const sampleCount = parseInt(sampleCountInput.value) || 100;
 
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
+        processButton.disabled = true;
+        processingStatus.style.display = 'block';
+        processingText.textContent = 'Processing images...';
+        processingProgress.style.width = '0%';
+        progressText.textContent = 'Preparing images...';
+        resultsSection.style.display = 'none';
+
+        let successCount = 0;
+        let errorCount = 0;
+        const imageDataArray = [];
+
+        // Read all files as base64
+        for (let i = 0; i < selectedFiles.length; i++) {
+            const file = selectedFiles[i];
+            const previewItem = document.getElementById(`preview-${i}`);
+            const statusBadge = previewItem?.querySelector('.status-badge');
             
-            if (e.dataTransfer.files.length > 0) {
-                fileInput.files = e.dataTransfer.files;
-                updateFileInfo(e.dataTransfer.files);
-            }
-        });
-
-        // Clear file
-        clearFileBtn.addEventListener('click', () => {
-            fileInput.value = '';
-            fileInfo.classList.remove('visible');
-            fileName.textContent = 'No file selected';
-            fileSize.textContent = '–';
-            importButton.disabled = true;
-        });
-
-        // Import button click
-        importButton.addEventListener('click', async () => {
-            if (fileInput.files.length === 0) {
-                alert('Please select a file to import.');
-                return;
+            try {
+                const base64 = await readFileAsBase64(file);
+                imageDataArray.push(base64);
+                successCount++;
+                
+                if (statusBadge) {
+                    statusBadge.className = 'status-badge success';
+                    statusBadge.textContent = '✓';
+                }
+            } catch (error) {
+                console.error('Error reading file:', error);
+                errorCount++;
+                if (statusBadge) {
+                    statusBadge.className = 'status-badge error';
+                    statusBadge.textContent = '✗';
+                }
             }
 
-            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
-            response = await fetch('{{ url_for("institution.upload_data") }}', {
+            const progress = ((i + 1) / selectedFiles.length) * 50;
+            processingProgress.style.width = `${progress}%`;
+            progressText.textContent = `Reading ${i + 1} / ${selectedFiles.length} images...`;
+        }
+
+        if (imageDataArray.length === 0) {
+            alert('No valid images to process.');
+            processButton.disabled = false;
+            processingStatus.style.display = 'none';
+            return;
+        }
+
+        // Send to server for processing
+        processingText.textContent = 'Uploading and processing on server...';
+        processingProgress.style.width = '60%';
+        progressText.textContent = 'Server is detecting faces and generating training samples...';
+
+        try {
+            const response = await fetch('/api/students/import', {
                 method: 'POST',
                 headers: {
+                    'Content-Type': 'application/json',
                     'X-CSRFToken': csrfToken
                 },
-                body: formData,
-            })
-            
-            if (response.ok) {
-                const data = await response.json();
-                const jobId = data.job_id;
-                window.location.href = `/institution/import_data/${jobId}`;
+                body: JSON.stringify({
+                    students: [{
+                        name: studentName,
+                        user_id: parseInt(userId),
+                        photo: imageDataArray[0],  // Primary photo
+                        additional_photos: imageDataArray.slice(1),  // Additional photos if any
+                        sample_count: sampleCount
+                    }],
+                    update_existing: true
+                })
+            });
+
+            processingProgress.style.width = '90%';
+
+            const data = await response.json();
+
+            processingProgress.style.width = '100%';
+            processingStatus.style.display = 'none';
+            resultsSection.style.display = 'flex';
+
+            if (data.success) {
+                successText.textContent = `${data.faces_detected || imageDataArray.length} face(s) processed for ${studentName}`;
+                successResult.style.display = 'flex';
+                
+                sampleInfo.style.display = 'flex';
+                sampleInfoText.textContent = `Generated ~${sampleCount * imageDataArray.length} augmented training samples`;
+
+                if (errorCount > 0) {
+                    errorResult.style.display = 'flex';
+                    errorText.textContent = `${errorCount} image(s) could not be read`;
+                } else {
+                    errorResult.style.display = 'none';
+                }
+
+                alert(`Success! Facial data saved for ${studentName}.\n\nThe student can now be recognized by the attendance system.`);
+                
+                // Reset form
+                setTimeout(() => {
+                    clearFacialFileBtn.click();
+                    studentSelect.value = '';
+                }, 2000);
             } else {
-                alert('An error occurred while uploading the file. Please try again.');
+                errorResult.style.display = 'flex';
+                errorText.textContent = data.error || 'Failed to save facial data';
+                successResult.style.display = 'none';
+                alert('Error: ' + (data.error || 'Failed to save facial data'));
+                processButton.disabled = false;
             }
-        });
+        } catch (error) {
+            console.error('Server error:', error);
+            processingStatus.style.display = 'none';
+            resultsSection.style.display = 'flex';
+            errorResult.style.display = 'flex';
+            errorText.textContent = 'Server connection error';
+            successResult.style.display = 'none';
+            alert('Server error: ' + error.message);
+            processButton.disabled = false;
+        }
     });
+
+    function readFileAsBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // ===== REGULAR DATA IMPORT HANDLERS =====
+    
+    function updateFileInfo(files) {
+        if (files.length > 0) {
+            const totalSize = Array.from(files).reduce((sum, file) => sum + file.size, 0);
+            
+            fileName.textContent = files.length === 1 ? files[0].name : `${files.length} files selected`;
+            fileSize.textContent = formatFileSize(totalSize);
+            fileInfo.classList.add('visible');
+            importButton.disabled = false;
+        }
+    }
+
+    uploadArea.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            updateFileInfo(e.target.files);
+        }
+    });
+
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        
+        if (e.dataTransfer.files.length > 0) {
+            fileInput.files = e.dataTransfer.files;
+            updateFileInfo(e.dataTransfer.files);
+        }
+    });
+
+    clearFileBtn.addEventListener('click', () => {
+        fileInput.value = '';
+        fileInfo.classList.remove('visible');
+        fileName.textContent = 'No file selected';
+        fileSize.textContent = '–';
+        importButton.disabled = true;
+    });
+
+    importButton.addEventListener('click', async () => {
+        if (fileInput.files.length === 0) {
+            alert('Please select a file to import.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        
+        const response = await fetch('{{ url_for("institution.upload_data") }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            body: formData,
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const jobId = data.job_id;
+            window.location.href = `/institution/import_data/${jobId}`;
+        } else {
+            alert('An error occurred while uploading the file. Please try again.');
+        }
+    });
+});
 </script>
 {% endblock %}

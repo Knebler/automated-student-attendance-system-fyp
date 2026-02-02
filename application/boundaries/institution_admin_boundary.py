@@ -6,10 +6,12 @@ from application.controls.import_data_control import ALL_IMPORT_JOBS, submit_imp
 from application.entities2 import *
 from database.base import get_session
 from database.models import *
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from collections import defaultdict
 import json
 import time
+import zlib
+import pickle
 
 institution_bp = Blueprint('institution', __name__)
 
@@ -785,7 +787,22 @@ def edit_institution_profile():
 @requires_roles('admin')
 def import_data():
     """Render import institution data page for admins"""
-    return render_template('institution/admin/import_institution_data.html')
+    institution_id = session.get('institution_id')
+    
+    with get_session() as db_session:
+        # Get all students in the institution for the facial data dropdown
+        students = db_session.query(User).filter(
+            User.institution_id == institution_id,
+            User.role == 'student',
+            User.is_active == True
+        ).order_by(User.name).all()
+        
+        students_list = [
+            {'user_id': s.user_id, 'name': s.name, 'email': s.email}
+            for s in students
+        ]
+    
+    return render_template('institution/admin/import_institution_data.html', students=students_list)
 
 @institution_bp.route('/import_data/upload', methods=['POST'])
 @requires_roles('admin')
@@ -814,6 +831,112 @@ def progress_stream(job_id: str):
             yield f"data: {json.dumps(ALL_IMPORT_JOBS[job_id])}\n\n"
             time.sleep(2) # Streams updates every 2 seconds
     return Response(get_progress(), mimetype='text/event-stream')
+
+
+# =====================
+# FACIAL DATA IMPORT API
+# =====================
+
+@institution_bp.route('/api/facial-data/import', methods=['POST'])
+def import_facial_data():
+    """API endpoint to import facial data for a student (admin use)"""
+    try:
+        # Check authentication
+        user_id = session.get('user_id')
+        user_role = session.get('user_role') or session.get('role')
+        institution_id = session.get('institution_id')
+        
+        if not user_id:
+            return jsonify({'success': False, 'error': 'User not authenticated'}), 401
+        
+        if user_role != 'admin':
+            return jsonify({'success': False, 'error': 'Unauthorized access'}), 403
+        
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'success': False, 'error': 'No data received'}), 400
+        
+        target_user_id = data.get('user_id')
+        encodings = data.get('encodings', [])
+        
+        if not target_user_id:
+            return jsonify({'success': False, 'error': 'No student selected'}), 400
+        
+        if not encodings or len(encodings) == 0:
+            return jsonify({'success': False, 'error': 'No face encodings provided'}), 400
+        
+        # Validate encodings (each should be a 128-dimensional array)
+        for encoding in encodings:
+            if not isinstance(encoding, list) or len(encoding) != 128:
+                return jsonify({'success': False, 'error': 'Invalid face encoding format'}), 400
+        
+        # Duplicate encodings to reach target sample count
+        TARGET_SAMPLES = 100
+        original_count = len(encodings)
+        
+        if original_count < TARGET_SAMPLES:
+            multiplier = TARGET_SAMPLES // original_count
+            remainder = TARGET_SAMPLES % original_count
+            duplicated_encodings = encodings * multiplier
+            duplicated_encodings.extend(encodings[:remainder])
+            encodings = duplicated_encodings
+        
+        sample_count = len(encodings)
+        
+        # Compress and serialize the encodings
+        encodings_binary = zlib.compress(pickle.dumps(encodings))
+        
+        with get_session() as db_session:
+            # Verify the target user belongs to the same institution
+            target_user = db_session.query(User).filter(
+                User.user_id == target_user_id,
+                User.institution_id == institution_id,
+                User.role == 'student'
+            ).first()
+            
+            if not target_user:
+                return jsonify({'success': False, 'error': 'Student not found in your institution'}), 404
+            
+            # Check if user already has facial data
+            existing = db_session.query(FacialData).filter(
+                FacialData.user_id == target_user_id,
+                FacialData.is_active == True
+            ).first()
+            
+            current_time = datetime.now()
+            
+            if existing:
+                # Update existing record
+                existing.face_encoding = encodings_binary
+                existing.sample_count = sample_count
+                existing.updated_at = current_time
+            else:
+                # Insert new record
+                new_facial_data = FacialData(
+                    user_id=target_user_id,
+                    face_encoding=encodings_binary,
+                    sample_count=sample_count,
+                    created_at=current_time,
+                    updated_at=current_time,
+                    is_active=True
+                )
+                db_session.add(new_facial_data)
+            
+            db_session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Facial data imported successfully',
+                'sample_count': sample_count,
+                'original_images': original_count,
+                'student_name': target_user.name
+            })
+            
+    except Exception as e:
+        current_app.logger.error(f"Error importing facial data: {e}")
+        return jsonify({'success': False, 'error': 'An error occurred while importing facial data'}), 500
+
 
 @institution_bp.route('/attendance/student/')
 @requires_roles('admin')
@@ -1440,4 +1563,3 @@ def delete_announcement(announcement_id):
     
     flash('Announcement deleted successfully', 'success')
     return redirect(url_for('institution.manage_announcements'))
-            

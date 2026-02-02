@@ -52,9 +52,9 @@
                             <line x1="15" y1="9" x2="15.01" y2="9"></line>
                         </svg>
                     </div>
-                    <p class="upload-text">Click here or drag facial recognition files to upload</p>
-                    <p class="upload-subtext">Supports .jpg, .jpeg, .png files (multiple allowed)</p>
-                    <input type="file" id="facialFileInput" class="file-input" accept=".jpg,.jpeg,.png" multiple>
+                    <p class="upload-text">Click here or drag JSON file to upload</p>
+                    <p class="upload-subtext">Supports .json files (from bulk collector)</p>
+                    <input type="file" id="facialFileInput" class="file-input" accept=".json">
                 </div>
 
                 <div class="file-info mt-4" id="facialFileInfo">
@@ -801,163 +801,75 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    clearFacialFileBtn.addEventListener('click', () => {
-        facialFileInput.value = '';
-        facialFileInfo.classList.remove('visible');
-        facialFileName.textContent = 'No file selected';
-        facialFileSize.textContent = '–';
-        selectedFiles = [];
-        processedImages = [];
-        imagePreviewSection.style.display = 'none';
-        imagePreviewGrid.innerHTML = '';
-        processingStatus.style.display = 'none';
-        resultsSection.style.display = 'none';
-        processButton.disabled = true;
-    });
+        // Clear facial file
+        clearFacialFileBtn.addEventListener('click', () => {
+            facialFileInput.value = '';
+            facialFileInfo.classList.remove('visible');
+            facialFileName.textContent = 'No file selected';
+            facialFileSize.textContent = '–';
+            facialImportButton.disabled = true;
+        });
 
-    // Process and save in one step - send to server for proper processing
-    processButton.addEventListener('click', async () => {
-        if (selectedFiles.length === 0) {
-            alert('Please select image files to process.');
-            return;
-        }
+        // Facial import button click
+        facialImportButton.addEventListener('click', async () => {
+            if (facialFileInput.files.length === 0) {
+                alert('Please select a facial recognition JSON file to upload.');
+                return;
+            }
 
-        if (!studentSelect.value) {
-            alert('Please select a student.');
-            return;
-        }
-
-        const userId = studentSelect.value;
-        const studentName = studentSelect.options[studentSelect.selectedIndex].dataset.name;
-        const sampleCount = parseInt(sampleCountInput.value) || 100;
-
-        processButton.disabled = true;
-        processingStatus.style.display = 'block';
-        processingText.textContent = 'Processing images...';
-        processingProgress.style.width = '0%';
-        progressText.textContent = 'Preparing images...';
-        resultsSection.style.display = 'none';
-
-        let successCount = 0;
-        let errorCount = 0;
-        const imageDataArray = [];
-
-        // Read all files as base64
-        for (let i = 0; i < selectedFiles.length; i++) {
-            const file = selectedFiles[i];
-            const previewItem = document.getElementById(`preview-${i}`);
-            const statusBadge = previewItem?.querySelector('.status-badge');
+            const file = facialFileInput.files[0];
+            
+            // Validate file type
+            if (!file.name.endsWith('.json')) {
+                alert('Please select a JSON file (e.g., facial_data_bulk.json)');
+                return;
+            }
+            
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            // Update button state
+            facialImportButton.textContent = 'Uploading...';
+            facialImportButton.disabled = true;
             
             try {
-                const base64 = await readFileAsBase64(file);
-                imageDataArray.push(base64);
-                successCount++;
+                const response = await fetch('{{ url_for("institution.upload_facial_data") }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: formData,
+                });
                 
-                if (statusBadge) {
-                    statusBadge.className = 'status-badge success';
-                    statusBadge.textContent = '✓';
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    // Show success message with details
+                    let message = result.message;
+                    if (result.stats && result.stats.errors && result.stats.errors.length > 0) {
+                        message += '\\n\\nErrors/Warnings:\\n' + result.stats.errors.slice(0, 5).join('\\n');
+                        if (result.stats.errors.length > 5) {
+                            message += `\\n... and ${result.stats.errors.length - 5} more`;
+                        }
+                    }
+                    alert('✓ ' + message);
+                    
+                    // Clear the form
+                    facialFileInput.value = '';
+                    facialFileInfo.classList.remove('visible');
+                    facialFileName.textContent = 'No file selected';
+                    facialFileSize.textContent = '–';
+                } else {
+                    alert('✗ Import failed: ' + (result.error || 'Unknown error'));
                 }
             } catch (error) {
-                console.error('Error reading file:', error);
-                errorCount++;
-                if (statusBadge) {
-                    statusBadge.className = 'status-badge error';
-                    statusBadge.textContent = '✗';
-                }
+                alert('✗ An error occurred while uploading the file: ' + error.message);
+            } finally {
+                facialImportButton.textContent = 'Upload Facial Data';
+                facialImportButton.disabled = false;
             }
-
-            const progress = ((i + 1) / selectedFiles.length) * 50;
-            processingProgress.style.width = `${progress}%`;
-            progressText.textContent = `Reading ${i + 1} / ${selectedFiles.length} images...`;
-        }
-
-        if (imageDataArray.length === 0) {
-            alert('No valid images to process.');
-            processButton.disabled = false;
-            processingStatus.style.display = 'none';
-            return;
-        }
-
-        // Send to server for processing
-        processingText.textContent = 'Uploading and processing on server...';
-        processingProgress.style.width = '60%';
-        progressText.textContent = 'Server is detecting faces and generating training samples...';
-
-        try {
-            const response = await fetch('/api/students/import', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken
-                },
-                body: JSON.stringify({
-                    students: [{
-                        name: studentName,
-                        user_id: parseInt(userId),
-                        photo: imageDataArray[0],  // Primary photo
-                        additional_photos: imageDataArray.slice(1),  // Additional photos if any
-                        sample_count: sampleCount
-                    }],
-                    update_existing: true
-                })
-            });
-
-            processingProgress.style.width = '90%';
-
-            const data = await response.json();
-
-            processingProgress.style.width = '100%';
-            processingStatus.style.display = 'none';
-            resultsSection.style.display = 'flex';
-
-            if (data.success) {
-                successText.textContent = `${data.faces_detected || imageDataArray.length} face(s) processed for ${studentName}`;
-                successResult.style.display = 'flex';
-                
-                sampleInfo.style.display = 'flex';
-                sampleInfoText.textContent = `Generated ~${sampleCount * imageDataArray.length} augmented training samples`;
-
-                if (errorCount > 0) {
-                    errorResult.style.display = 'flex';
-                    errorText.textContent = `${errorCount} image(s) could not be read`;
-                } else {
-                    errorResult.style.display = 'none';
-                }
-
-                alert(`Success! Facial data saved for ${studentName}.\n\nThe student can now be recognized by the attendance system.`);
-                
-                // Reset form
-                setTimeout(() => {
-                    clearFacialFileBtn.click();
-                    studentSelect.value = '';
-                }, 2000);
-            } else {
-                errorResult.style.display = 'flex';
-                errorText.textContent = data.error || 'Failed to save facial data';
-                successResult.style.display = 'none';
-                alert('Error: ' + (data.error || 'Failed to save facial data'));
-                processButton.disabled = false;
-            }
-        } catch (error) {
-            console.error('Server error:', error);
-            processingStatus.style.display = 'none';
-            resultsSection.style.display = 'flex';
-            errorResult.style.display = 'flex';
-            errorText.textContent = 'Server connection error';
-            successResult.style.display = 'none';
-            alert('Server error: ' + error.message);
-            processButton.disabled = false;
-        }
-    });
-
-    function readFileAsBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
         });
-    }
 
     // ===== REGULAR DATA IMPORT HANDLERS =====
     

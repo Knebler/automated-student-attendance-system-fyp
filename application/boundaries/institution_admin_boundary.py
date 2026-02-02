@@ -804,6 +804,137 @@ def import_data():
     
     return render_template('institution/admin/import_institution_data.html', students=students_list)
 
+@institution_bp.route('/import_data/upload_facial', methods=['POST'])
+@requires_roles('admin')
+def upload_facial_data():
+    """Upload and import facial recognition data from JSON file"""
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'error': 'No file selected'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'success': False, 'error': 'No file selected'}), 400
+    
+    if not file.filename.endswith('.json'):
+        return jsonify({'success': False, 'error': 'Only JSON files are supported'}), 400
+    
+    try:
+        import json
+        import base64
+        from datetime import datetime
+        from database.models import FacialData, User
+        
+        # Read and parse JSON file
+        file_content = file.read()
+        data = json.loads(file_content)
+        
+        students = data.get('students', [])
+        if not students:
+            return jsonify({'success': False, 'error': 'No student data found in file'}), 400
+        
+        institution_id = session.get('institution_id')
+        stats = {
+            'total': len(students),
+            'imported': 0,
+            'updated': 0,
+            'failed': 0,
+            'user_not_found': 0,
+            'errors': []
+        }
+        
+        with get_session() as db_session:
+            for student_data in students:
+                user_id = student_data.get('user_id')
+                name = student_data.get('name')
+                face_encoding_b64 = student_data.get('face_encoding')
+                sample_count = student_data.get('sample_count', 0)
+                
+                # Validate data
+                if not user_id or not face_encoding_b64:
+                    stats['failed'] += 1
+                    stats['errors'].append(f'{name or "Unknown"}: Missing required data')
+                    continue
+                
+                # Check if user exists and belongs to this institution
+                user = db_session.query(User).filter(
+                    User.user_id == user_id,
+                    User.institution_id == institution_id
+                ).first()
+                
+                if not user:
+                    stats['user_not_found'] += 1
+                    stats['errors'].append(f'{name} (ID: {user_id}): User not found in this institution')
+                    continue
+                
+                try:
+                    # Decode base64 to binary
+                    face_encoding_binary = base64.b64decode(face_encoding_b64)
+                    
+                    # Check if facial data already exists
+                    existing = db_session.query(FacialData).filter(
+                        FacialData.user_id == user_id,
+                        FacialData.is_active == True
+                    ).first()
+                    
+                    if existing:
+                        # Update existing record
+                        existing.face_encoding = face_encoding_binary
+                        existing.sample_count = sample_count
+                        existing.updated_at = datetime.now()
+                        stats['updated'] += 1
+                    else:
+                        # Insert new record
+                        new_facial_data = FacialData(
+                            user_id=user_id,
+                            face_encoding=face_encoding_binary,
+                            sample_count=sample_count,
+                            created_at=datetime.now(),
+                            updated_at=datetime.now(),
+                            is_active=True
+                        )
+                        db_session.add(new_facial_data)
+                        stats['imported'] += 1
+                        
+                except Exception as e:
+                    stats['failed'] += 1
+                    stats['errors'].append(f'{name} (ID: {user_id}): {str(e)}')
+                    continue
+            
+            # Commit all changes
+            try:
+                db_session.commit()
+            except Exception as e:
+                db_session.rollback()
+                return jsonify({
+                    'success': False,
+                    'error': f'Failed to commit changes: {str(e)}'
+                }), 500
+        
+        # Prepare response
+        success_count = stats['imported'] + stats['updated']
+        message = f"Import completed: {success_count}/{stats['total']} successful"
+        
+        if stats['imported'] > 0:
+            message += f" ({stats['imported']} new)"
+        if stats['updated'] > 0:
+            message += f" ({stats['updated']} updated)"
+        if stats['user_not_found'] > 0:
+            message += f", {stats['user_not_found']} user(s) not found"
+        if stats['failed'] > 0:
+            message += f", {stats['failed']} failed"
+        
+        return jsonify({
+            'success': True,
+            'message': message,
+            'stats': stats
+        }), 200
+        
+    except json.JSONDecodeError as e:
+        return jsonify({'success': False, 'error': f'Invalid JSON file: {str(e)}'}), 400
+    except Exception as e:
+        current_app.logger.error(f"Error importing facial data: {e}")
+        return jsonify({'success': False, 'error': f'Import failed: {str(e)}'}), 500
+
 @institution_bp.route('/import_data/upload', methods=['POST'])
 @requires_roles('admin')
 def upload_data():

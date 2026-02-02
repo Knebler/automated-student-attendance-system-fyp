@@ -173,7 +173,7 @@ class BulkFacialDataCollector:
     def _process_photos(self, user_id, name, photos, samples_per_photo):
         """Process photos using same mechanism as student_boundary.py"""
         all_faces = []
-        target_samples = 50  # Same as original system
+        target_samples = 100  # Increased for better recognition accuracy
         samples_per_photo = max(1, target_samples // len(photos))
         
         for idx, photo in enumerate(photos):
@@ -228,9 +228,9 @@ class BulkFacialDataCollector:
                 print(f"  ⚠ Error processing photo {idx+1}: {e}")
                 continue
         
-        # Limit to exactly 50 samples (same as original)
-        if len(all_faces) > 50:
-            indices = np.linspace(0, len(all_faces) - 1, 50, dtype=int)
+        # Limit to exactly 100 samples for optimal recognition
+        if len(all_faces) > 100:
+            indices = np.linspace(0, len(all_faces) - 1, 100, dtype=int)
             all_faces = [all_faces[i] for i in indices]
         
         if len(all_faces) == 0:

@@ -15,30 +15,30 @@
 
     <!-- Facial Recognition Data Upload Section -->
     <div class="card-custom mb-4">
-        <div class="card-header-custom">Facial Recognition Data Upload</div>
+        <div class="card-header-custom">Facial Recognition Data Upload (JSON Format)</div>
         <div class="card-body-custom">
             <p class="section-description mb-4">
-                Upload facial recognition training data for students. Select a student and upload their face images. 
-                The system will detect faces and generate training samples for the KNN recognition model.
+                Upload facial recognition data in JSON format. Use the <strong>Bulk Facial Data Collector</strong> tool to create facial data files,
+                then upload them here to import into the system. The JSON file should contain pre-processed facial encodings for students.
             </p>
             
-            <!-- Student Selection -->
-            <div class="student-selector mb-4">
-                <label for="studentSelect" class="form-label">Select Student</label>
-                <select id="studentSelect" class="form-control">
-                    <option value="">-- Select a Student --</option>
-                    {% for student in students %}
-                    <option value="{{ student.user_id }}" data-name="{{ student.name }}">{{ student.name }} ({{ student.email }})</option>
-                    {% endfor %}
-                </select>
-            </div>
-            
-            <!-- Sample Count -->
-            <div class="sample-count-selector mb-4" style="max-width: 500px; margin: 0 auto;">
-                <label for="sampleCount" class="form-label">Augmented Samples per Image</label>
-                <input type="number" id="sampleCount" class="form-control" value="100" min="10" max="500" 
-                       style="border-radius: 30px; text-align: center;">
-                <small class="text-muted">More samples = better recognition but larger storage. Recommended: 50-100</small>
+            <div class="alert alert-info mb-4" style="background: #dbeafe; border: 1px solid #3b82f6; border-radius: 8px; padding: 1rem;">
+                <div style="display: flex; gap: 0.75rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <div>
+                        <strong style="color: #1e40af;">How to use:</strong>
+                        <ol style="margin: 0.5rem 0 0 0; padding-left: 1.25rem; color: #1e40af;">
+                            <li>Run <code>bulk_facial_data_gui.py</code> or <code>launch_bulk_facial_gui.bat</code></li>
+                            <li>Collect facial data for students (captures photos and processes faces)</li>
+                            <li>Save the collection to a JSON file (e.g., <code>facial_data_bulk.json</code>)</li>
+                            <li>Upload the JSON file here to import all facial data at once</li>
+                        </ol>
+                    </div>
+                </div>
             </div>
             
             <!-- Facial Recognition Upload Area -->
@@ -46,14 +46,13 @@
                 <div class="upload-area" id="facialUploadArea">
                     <div class="upload-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
-                            <line x1="9" y1="9" x2="9.01" y2="9"></line>
-                            <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
                         </svg>
                     </div>
                     <p class="upload-text">Click here or drag JSON file to upload</p>
-                    <p class="upload-subtext">Supports .json files (from bulk collector)</p>
+                    <p class="upload-subtext">Supports .json files from bulk facial data collector</p>
                     <input type="file" id="facialFileInput" class="file-input" accept=".json">
                 </div>
 
@@ -73,44 +72,18 @@
                     </div>
                 </div>
 
-                <!-- Image Preview Grid -->
-                <div class="image-preview-section mt-4" id="imagePreviewSection" style="display: none;">
-                    <h4 class="preview-title">Selected Images</h4>
-                    <div class="image-preview-grid" id="imagePreviewGrid"></div>
-                </div>
-
-                <!-- Processing Status -->
-                <div class="processing-status mt-4" id="processingStatus" style="display: none;">
+                <!-- Upload Status -->
+                <div class="processing-status mt-4" id="facialUploadStatus" style="display: none;">
                     <div class="status-content">
                         <div class="spinner"></div>
-                        <span id="processingText">Processing images...</span>
-                    </div>
-                    <div class="progress-bar-container mt-2">
-                        <div class="progress-bar" id="processingProgress" style="width: 0%"></div>
-                    </div>
-                    <p class="progress-text" id="progressText">0 / 0 images processed</p>
-                </div>
-
-                <!-- Results -->
-                <div class="results-section mt-4" id="resultsSection" style="display: none;">
-                    <div class="result-card success" id="successResult">
-                        <span class="result-icon">✅</span>
-                        <span class="result-text" id="successText">0 faces detected and processed</span>
-                    </div>
-                    <div class="result-card error" id="errorResult" style="display: none;">
-                        <span class="result-icon">⚠️</span>
-                        <span class="result-text" id="errorText">0 images had no detectable face</span>
-                    </div>
-                    <div class="result-card info mt-2" id="sampleInfo" style="display: none; background: #e0f2fe; border-color: #0ea5e9; color: #0369a1;">
-                        <span class="result-icon">📊</span>
-                        <span class="result-text" id="sampleInfoText">Total training samples: 0</span>
+                        <span id="facialUploadText">Uploading facial data...</span>
                     </div>
                 </div>
             </div>
 
             <!-- Facial Recognition Import Actions -->
             <div class="import-actions mt-4">
-                <button class="btn-custom btn-process" id="processButton" disabled>Process & Save Facial Data</button>
+                <button class="btn-custom btn-import" id="facialImportButton" disabled>Upload Facial Data</button>
             </div>
         </div>
     </div>
@@ -621,35 +594,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const facialFileName = facialFileInfo.querySelector('.file-name');
     const facialFileSize = facialFileInfo.querySelector('.file-size');
     const clearFacialFileBtn = document.getElementById('clearFacialFile');
-    const processButton = document.getElementById('processButton');
-    const studentSelect = document.getElementById('studentSelect');
-    const sampleCountInput = document.getElementById('sampleCount');
-    const imagePreviewSection = document.getElementById('imagePreviewSection');
-    const imagePreviewGrid = document.getElementById('imagePreviewGrid');
-    const processingStatus = document.getElementById('processingStatus');
-    const processingProgress = document.getElementById('processingProgress');
-    const progressText = document.getElementById('progressText');
-    const processingText = document.getElementById('processingText');
-    const resultsSection = document.getElementById('resultsSection');
-    const successResult = document.getElementById('successResult');
-    const errorResult = document.getElementById('errorResult');
-    const successText = document.getElementById('successText');
-    const errorText = document.getElementById('errorText');
-    const sampleInfo = document.getElementById('sampleInfo');
-    const sampleInfoText = document.getElementById('sampleInfoText');
-
-    // State
-    let selectedFiles = [];
-    let processedImages = [];  // Will store base64 images with detected faces
-
-    // ===== REGULAR DATA IMPORT SECTION =====
-    const uploadArea = document.getElementById('uploadArea');
-    const fileInput = document.getElementById('fileInput');
-    const fileInfo = document.getElementById('fileInfo');
-    const fileName = fileInfo.querySelector('.file-name');
-    const fileSize = fileInfo.querySelector('.file-size');
-    const clearFileBtn = document.getElementById('clearFile');
-    const importButton = document.getElementById('importButton');
+    const facialImportButton = document.getElementById('facialImportButton');
+    const facialUploadStatus = document.getElementById('facialUploadStatus');
+    const facialUploadText = document.getElementById('facialUploadText');
 
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
@@ -662,110 +609,16 @@ document.addEventListener('DOMContentLoaded', function() {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
-    // ===== SIMPLE FACE DETECTION USING CANVAS =====
-    // We'll use a simple skin-color based detection or just crop center
-    // The server will do proper face detection with OpenCV
-    
-    function detectFaceRegion(img) {
-        // Create canvas to analyze image
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        // Scale down for faster processing
-        const maxSize = 300;
-        let width = img.width;
-        let height = img.height;
-        
-        if (width > height) {
-            if (width > maxSize) {
-                height = (height / width) * maxSize;
-                width = maxSize;
-            }
-        } else {
-            if (height > maxSize) {
-                width = (width / height) * maxSize;
-                height = maxSize;
-            }
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        ctx.drawImage(img, 0, 0, width, height);
-        
-        // For simplicity, we'll just return the center region
-        // The server will do proper face detection
-        const size = Math.min(width, height);
-        const x = (width - size) / 2;
-        const y = (height - size) / 2;
-        
-        return {
-            detected: true,  // Assume face is present, server will verify
-            region: { x, y, width: size, height: size }
-        };
-    }
-    
-    function cropAndResizeImage(img, region) {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        // Create a square crop
-        canvas.width = 200;  // Larger size for better quality
-        canvas.height = 200;
-        
-        ctx.drawImage(
-            img,
-            region.x * (img.width / 300),  // Scale back to original coords
-            region.y * (img.height / 300),
-            region.width * (img.width / 300),
-            region.height * (img.height / 300),
-            0, 0, 200, 200
-        );
-        
-        return canvas.toDataURL('image/jpeg', 0.9);
-    }
-
     // ===== FACIAL RECOGNITION HANDLERS =====
     
-    function updateFacialFileInfo(files) {
-        selectedFiles = Array.from(files);
-        
-        if (selectedFiles.length > 0) {
-            const totalSize = selectedFiles.reduce((sum, file) => sum + file.size, 0);
-            
-            facialFileName.textContent = selectedFiles.length === 1 ? selectedFiles[0].name : `${selectedFiles.length} files selected`;
-            facialFileSize.textContent = formatFileSize(totalSize);
+    function updateFacialFileInfo(file) {
+        if (file && file.name.endsWith('.json')) {
+            facialFileName.textContent = file.name;
+            facialFileSize.textContent = formatFileSize(file.size);
             facialFileInfo.classList.add('visible');
-            
-            showImagePreviews();
-            updateProcessButton();
+            facialImportButton.disabled = false;
         }
     }
-
-    function showImagePreviews() {
-        imagePreviewGrid.innerHTML = '';
-        imagePreviewSection.style.display = 'block';
-        
-        selectedFiles.forEach((file, index) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const div = document.createElement('div');
-                div.className = 'preview-item';
-                div.id = `preview-${index}`;
-                div.innerHTML = `
-                    <img src="${e.target.result}" alt="Face ${index + 1}">
-                    <span class="status-badge pending">⏳</span>
-                `;
-                imagePreviewGrid.appendChild(div);
-            };
-            reader.readAsDataURL(file);
-        });
-    }
-
-    function updateProcessButton() {
-        processButton.disabled = !(selectedFiles.length > 0 && studentSelect.value);
-    }
-
-    studentSelect.addEventListener('change', updateProcessButton);
 
     facialUploadArea.addEventListener('click', () => {
         facialFileInput.click();
@@ -773,7 +626,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     facialFileInput.addEventListener('change', (e) => {
         if (e.target.files.length > 0) {
-            updateFacialFileInfo(e.target.files);
+            updateFacialFileInfo(e.target.files[0]);
         }
     });
 
@@ -791,86 +644,96 @@ document.addEventListener('DOMContentLoaded', function() {
         facialUploadArea.classList.remove('dragover');
         
         if (e.dataTransfer.files.length > 0) {
-            const imageFiles = Array.from(e.dataTransfer.files).filter(file => 
-                file.type.startsWith('image/')
+            const jsonFiles = Array.from(e.dataTransfer.files).filter(file => 
+                file.name.endsWith('.json')
             );
-            if (imageFiles.length > 0) {
+            if (jsonFiles.length > 0) {
                 facialFileInput.files = e.dataTransfer.files;
-                updateFacialFileInfo(imageFiles);
+                updateFacialFileInfo(jsonFiles[0]);
             }
         }
     });
 
-        // Clear facial file
-        clearFacialFileBtn.addEventListener('click', () => {
-            facialFileInput.value = '';
-            facialFileInfo.classList.remove('visible');
-            facialFileName.textContent = 'No file selected';
-            facialFileSize.textContent = '–';
-            facialImportButton.disabled = true;
-        });
+    clearFacialFileBtn.addEventListener('click', () => {
+        facialFileInput.value = '';
+        facialFileInfo.classList.remove('visible');
+        facialFileName.textContent = 'No file selected';
+        facialFileSize.textContent = '–';
+        facialImportButton.disabled = true;
+    });
 
-        // Facial import button click
-        facialImportButton.addEventListener('click', async () => {
-            if (facialFileInput.files.length === 0) {
-                alert('Please select a facial recognition JSON file to upload.');
-                return;
-            }
+    facialImportButton.addEventListener('click', async () => {
+        if (facialFileInput.files.length === 0) {
+            alert('Please select a facial recognition JSON file to upload.');
+            return;
+        }
 
-            const file = facialFileInput.files[0];
+        const file = facialFileInput.files[0];
+        
+        // Validate file type
+        if (!file.name.endsWith('.json')) {
+            alert('Please select a JSON file (e.g., facial_data_bulk.json)');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        // Update button state
+        facialImportButton.textContent = 'Uploading...';
+        facialImportButton.disabled = true;
+        facialUploadStatus.style.display = 'block';
+        
+        try {
+            const response = await fetch('{{ url_for("institution.upload_facial_data") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData,
+            });
             
-            // Validate file type
-            if (!file.name.endsWith('.json')) {
-                alert('Please select a JSON file (e.g., facial_data_bulk.json)');
-                return;
-            }
+            const result = await response.json();
             
-            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            const formData = new FormData();
-            formData.append('file', file);
+            facialUploadStatus.style.display = 'none';
             
-            // Update button state
-            facialImportButton.textContent = 'Uploading...';
-            facialImportButton.disabled = true;
-            
-            try {
-                const response = await fetch('{{ url_for("institution.upload_facial_data") }}', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': csrfToken
-                    },
-                    body: formData,
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok && result.success) {
-                    // Show success message with details
-                    let message = result.message;
-                    if (result.stats && result.stats.errors && result.stats.errors.length > 0) {
-                        message += '\\n\\nErrors/Warnings:\\n' + result.stats.errors.slice(0, 5).join('\\n');
-                        if (result.stats.errors.length > 5) {
-                            message += `\\n... and ${result.stats.errors.length - 5} more`;
-                        }
+            if (response.ok && result.success) {
+                // Show success message with details
+                let message = result.message;
+                if (result.stats && result.stats.errors && result.stats.errors.length > 0) {
+                    message += '\n\nErrors/Warnings:\n' + result.stats.errors.slice(0, 5).join('\n');
+                    if (result.stats.errors.length > 5) {
+                        message += `\n... and ${result.stats.errors.length - 5} more`;
                     }
-                    alert('✓ ' + message);
-                    
-                    // Clear the form
-                    facialFileInput.value = '';
-                    facialFileInfo.classList.remove('visible');
-                    facialFileName.textContent = 'No file selected';
-                    facialFileSize.textContent = '–';
-                } else {
-                    alert('✗ Import failed: ' + (result.error || 'Unknown error'));
                 }
-            } catch (error) {
-                alert('✗ An error occurred while uploading the file: ' + error.message);
-            } finally {
-                facialImportButton.textContent = 'Upload Facial Data';
-                facialImportButton.disabled = false;
+                alert('✓ ' + message);
+                
+                // Clear the form
+                facialFileInput.value = '';
+                facialFileInfo.classList.remove('visible');
+                facialFileName.textContent = 'No file selected';
+                facialFileSize.textContent = '–';
+            } else {
+                alert('✗ Import failed: ' + (result.error || 'Unknown error'));
             }
-        });
+        } catch (error) {
+            facialUploadStatus.style.display = 'none';
+            alert('✗ An error occurred while uploading the file: ' + error.message);
+        } finally {
+            facialImportButton.textContent = 'Upload Facial Data';
+            facialImportButton.disabled = false;
+        }
+    });
 
+    // ===== REGULAR DATA IMPORT SECTION =====
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = fileInfo.querySelector('.file-name');
+    const fileSize = fileInfo.querySelector('.file-size');
+    const clearFileBtn = document.getElementById('clearFile');
+    const importButton = document.getElementById('importButton');
+    
     // ===== REGULAR DATA IMPORT HANDLERS =====
     
     function updateFileInfo(files) {

@@ -1,262 +1,358 @@
 """
-Bulk Facial Data Collection & Import - GUI Application
-Simple user interface for collecting and importing facial data
+Bulk Facial Data GUI
+====================
+GUI application for collecting and importing facial data.
+
+Updated to use 7500 pixels (50x50x3 color) format.
+
+Usage:
+    python bulk_facial_data_gui.py
 """
 
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, scrolledtext
+from tkinter import ttk, filedialog, messagebox
 import cv2
+import numpy as np
 from PIL import Image, ImageTk
 import threading
-import queue
+import json
+import base64
+import zlib
 import os
 from datetime import datetime
-from bulk_facial_data_collector import BulkFacialDataCollector
-from bulk_facial_data_importer import BulkFacialDataImporter
 
 
 class BulkFacialDataGUI:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Bulk Facial Data Manager")
-        self.root.geometry("900x700")
+    """GUI for collecting and importing facial data."""
+    
+    # Configuration - 7500 pixels (50x50x3 color)
+    FACE_SIZE = 50
+    SAMPLES_PER_STUDENT = 100
+    PIXELS_PER_SAMPLE = 7500  # 50 * 50 * 3
+    
+    def __init__(self):
+        self.root = tk.Tk()
+        self.root.title("Bulk Facial Data Collection & Import")
+        self.root.geometry("1000x700")
+        self.root.minsize(900, 600)
         
-        # Initialize variables
-        self.collector = BulkFacialDataCollector()
-        self.cap = None
-        self.is_capturing = False
-        self.captured_frames = []
-        self.current_user_id = None
-        self.current_name = None
-        self.log_queue = queue.Queue()
+        # State
+        self.camera = None
+        self.camera_running = False
+        self.captured_photos = []
+        self.collected_students = []
+        self.face_cascade = self._load_face_detector()
+        self.current_frame = None
         
+        # Build UI
+        self._create_ui()
+        
+        # Handle window close
+        self.root.protocol("WM_DELETE_WINDOW", self._on_close)
+    
+    def _load_face_detector(self):
+        """Load Haar Cascade face detector."""
+        paths = [
+            cv2.data.haarcascades + 'haarcascade_frontalface_default.xml',
+            'haarcascade_frontalface_default.xml',
+            'data/haarcascade_frontalface_default.xml',
+        ]
+        for path in paths:
+            try:
+                cascade = cv2.CascadeClassifier(path)
+                if not cascade.empty():
+                    print(f"✅ Face detector loaded: {path}")
+                    return cascade
+            except:
+                continue
+        print("⚠️ Face detector not found - using center crop")
+        return None
+    
+    def _create_ui(self):
+        """Create the main UI."""
         # Create notebook (tabs)
-        self.notebook = ttk.Notebook(root)
-        self.notebook.pack(fill='both', expand=True, padx=10, pady=10)
+        self.notebook = ttk.Notebook(self.root)
+        self.notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        # Create tabs
+        # Tab 1: Collection
         self.collection_tab = ttk.Frame(self.notebook)
-        self.import_tab = ttk.Frame(self.notebook)
-        
         self.notebook.add(self.collection_tab, text="📸 Collect Data")
-        self.notebook.add(self.import_tab, text="📥 Import Data")
+        self._create_collection_tab()
         
-        # Build interfaces
-        self.build_collection_interface()
-        self.build_import_interface()
+        # Tab 2: Import
+        self.import_tab = ttk.Frame(self.notebook)
+        self.notebook.add(self.import_tab, text="📥 Import to Database")
+        self._create_import_tab()
         
-        # Start log processor
-        self.process_logs()
+        # Status bar
+        self.status_var = tk.StringVar(value="Ready")
+        status_bar = ttk.Label(self.root, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W)
+        status_bar.pack(fill=tk.X, side=tk.BOTTOM, padx=5, pady=5)
     
-    def build_collection_interface(self):
-        """Build the data collection interface"""
+    def _create_collection_tab(self):
+        """Create the data collection tab."""
+        # Main container
         main_frame = ttk.Frame(self.collection_tab)
-        main_frame.pack(fill='both', expand=True, padx=10, pady=10)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        # Left panel - Camera
-        left_panel = ttk.LabelFrame(main_frame, text="Camera Preview", padding=10)
-        left_panel.pack(side='left', fill='both', expand=True, padx=(0, 5))
+        # Left side: Camera
+        left_frame = ttk.LabelFrame(main_frame, text="Camera Preview")
+        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
         
-        # Camera controls (moved to top)
-        camera_controls = ttk.Frame(left_panel)
-        camera_controls.pack(fill='x', pady=(0, 5))
+        # Camera canvas
+        self.camera_canvas = tk.Canvas(left_frame, width=480, height=360, bg='black')
+        self.camera_canvas.pack(padx=10, pady=10)
         
-        self.start_camera_btn = ttk.Button(camera_controls, text="▶ Start Camera", 
-                                           command=self.start_camera)
-        self.start_camera_btn.pack(side='left', padx=2, expand=True, fill='x')
+        # Camera controls
+        cam_controls = ttk.Frame(left_frame)
+        cam_controls.pack(fill=tk.X, padx=10, pady=5)
         
-        self.stop_camera_btn = ttk.Button(camera_controls, text="⏸ Stop Camera", 
-                                          command=self.stop_camera, state='disabled')
-        self.stop_camera_btn.pack(side='left', padx=2, expand=True, fill='x')
+        self.start_cam_btn = ttk.Button(cam_controls, text="▶ Start Camera", command=self._start_camera)
+        self.start_cam_btn.pack(side=tk.LEFT, padx=5)
         
-        self.capture_btn = ttk.Button(camera_controls, text="📸 Capture Photo", 
-                                      command=self.capture_photo, state='disabled')
-        self.capture_btn.pack(side='left', padx=2, expand=True, fill='x')
+        self.stop_cam_btn = ttk.Button(cam_controls, text="⏹ Stop Camera", command=self._stop_camera, state=tk.DISABLED)
+        self.stop_cam_btn.pack(side=tk.LEFT, padx=5)
         
-        # Camera display
-        self.camera_label = tk.Label(left_panel, bg='black', text="Camera Off\n\nClick 'Start Camera' to begin", 
-                                     fg='white', font=('Arial', 14))
-        self.camera_label.pack(pady=5, fill='both', expand=True)
+        self.capture_btn = ttk.Button(cam_controls, text="📷 Capture Photo", command=self._capture_photo, state=tk.DISABLED)
+        self.capture_btn.pack(side=tk.LEFT, padx=5)
         
-        # Photo counter
-        self.photo_count_label = tk.Label(left_panel, text="Photos captured: 0", 
-                                         font=('Arial', 12, 'bold'))
-        self.photo_count_label.pack(pady=5)
+        # Photo count
+        self.photo_count_var = tk.StringVar(value="Photos: 0")
+        ttk.Label(cam_controls, textvariable=self.photo_count_var).pack(side=tk.RIGHT, padx=10)
         
-        # Right panel - Student info and controls
-        right_panel = ttk.Frame(main_frame)
-        right_panel.pack(side='right', fill='both', padx=(5, 0))
+        # Right side: Student info
+        right_frame = ttk.LabelFrame(main_frame, text="Student Information")
+        right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(5, 0))
         
-        # Student info
-        info_frame = ttk.LabelFrame(right_panel, text="Student Information", padding=10)
-        info_frame.pack(fill='x', pady=(0, 10))
+        # User ID
+        ttk.Label(right_frame, text="User ID:").pack(anchor=tk.W, padx=10, pady=(10, 0))
+        self.user_id_var = tk.StringVar()
+        self.user_id_entry = ttk.Entry(right_frame, textvariable=self.user_id_var, width=30)
+        self.user_id_entry.pack(fill=tk.X, padx=10, pady=5)
         
-        ttk.Label(info_frame, text="User ID:").grid(row=0, column=0, sticky='w', pady=5)
-        self.user_id_entry = ttk.Entry(info_frame, width=25)
-        self.user_id_entry.grid(row=0, column=1, pady=5, padx=5)
+        # Name
+        ttk.Label(right_frame, text="Name:").pack(anchor=tk.W, padx=10, pady=(10, 0))
+        self.name_var = tk.StringVar()
+        self.name_entry = ttk.Entry(right_frame, textvariable=self.name_var, width=30)
+        self.name_entry.pack(fill=tk.X, padx=10, pady=5)
         
-        ttk.Label(info_frame, text="Name:").grid(row=1, column=0, sticky='w', pady=5)
-        self.name_entry = ttk.Entry(info_frame, width=25)
-        self.name_entry.grid(row=1, column=1, pady=5, padx=5)
+        # Sample count
+        ttk.Label(right_frame, text="Samples per image:").pack(anchor=tk.W, padx=10, pady=(10, 0))
+        self.sample_count_var = tk.StringVar(value="100")
+        self.sample_count_entry = ttk.Entry(right_frame, textvariable=self.sample_count_var, width=30)
+        self.sample_count_entry.pack(fill=tk.X, padx=10, pady=5)
         
-        # Action buttons
-        action_frame = ttk.LabelFrame(right_panel, text="Actions", padding=10)
-        action_frame.pack(fill='x', pady=(0, 10))
+        # Info label
+        info_text = "Format: 50×50×3 color (7500 pixels per sample)"
+        ttk.Label(right_frame, text=info_text, foreground='gray').pack(anchor=tk.W, padx=10, pady=5)
         
-        self.process_btn = ttk.Button(action_frame, text="✓ Process & Save Student", 
-                                      command=self.process_student, state='disabled')
-        self.process_btn.pack(fill='x', pady=2)
+        # Thumbnails frame
+        ttk.Label(right_frame, text="Captured Photos:").pack(anchor=tk.W, padx=10, pady=(20, 5))
+        self.thumbnails_frame = ttk.Frame(right_frame)
+        self.thumbnails_frame.pack(fill=tk.X, padx=10, pady=5)
         
-        self.clear_btn = ttk.Button(action_frame, text="🗑 Clear Photos", 
-                                    command=self.clear_photos, state='disabled')
-        self.clear_btn.pack(fill='x', pady=2)
+        # Process button
+        self.process_btn = ttk.Button(right_frame, text="✅ Process & Save Student", 
+                                       command=self._process_student, state=tk.DISABLED)
+        self.process_btn.pack(fill=tk.X, padx=10, pady=20)
         
-        ttk.Separator(action_frame, orient='horizontal').pack(fill='x', pady=10)
+        # Collected students list
+        ttk.Label(right_frame, text="Collected Students:").pack(anchor=tk.W, padx=10, pady=(10, 5))
         
-        self.save_file_btn = ttk.Button(action_frame, text="💾 Save Collection to File", 
-                                        command=self.save_collection_file)
-        self.save_file_btn.pack(fill='x', pady=2)
+        list_frame = ttk.Frame(right_frame)
+        list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
         
-        # Statistics
-        stats_frame = ttk.LabelFrame(right_panel, text="Statistics", padding=10)
-        stats_frame.pack(fill='x', pady=(0, 10))
+        self.students_listbox = tk.Listbox(list_frame, height=6)
+        self.students_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
-        self.stats_label = tk.Label(stats_frame, text="Students collected: 0", 
-                                    justify='left', anchor='w')
-        self.stats_label.pack(fill='x')
+        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.students_listbox.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.students_listbox.config(yscrollcommand=scrollbar.set)
         
-        # Collection log
-        log_frame = ttk.LabelFrame(right_panel, text="Log", padding=5)
-        log_frame.pack(fill='both', expand=True)
-        
-        self.collection_log = scrolledtext.ScrolledText(log_frame, height=10, width=40)
-        self.collection_log.pack(fill='both', expand=True)
+        # Save collection button
+        self.save_btn = ttk.Button(right_frame, text="💾 Save Collection to File", 
+                                   command=self._save_collection, state=tk.DISABLED)
+        self.save_btn.pack(fill=tk.X, padx=10, pady=10)
     
-    def build_import_interface(self):
-        """Build the import interface"""
+    def _create_import_tab(self):
+        """Create the import tab."""
         main_frame = ttk.Frame(self.import_tab)
-        main_frame.pack(fill='both', expand=True, padx=10, pady=10)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
         
         # File selection
-        file_frame = ttk.LabelFrame(main_frame, text="Select File", padding=10)
-        file_frame.pack(fill='x', pady=(0, 10))
+        file_frame = ttk.LabelFrame(main_frame, text="Select Data File")
+        file_frame.pack(fill=tk.X, pady=10)
         
-        self.import_file_path = tk.StringVar(value="facial_data_bulk.json")
+        self.file_path_var = tk.StringVar(value="facial_data_bulk.json")
+        ttk.Entry(file_frame, textvariable=self.file_path_var, width=60).pack(side=tk.LEFT, padx=10, pady=10)
+        ttk.Button(file_frame, text="Browse...", command=self._browse_file).pack(side=tk.LEFT, padx=5, pady=10)
         
-        ttk.Label(file_frame, text="JSON File:").pack(side='left', padx=5)
-        ttk.Entry(file_frame, textvariable=self.import_file_path, width=50).pack(side='left', padx=5, fill='x', expand=True)
-        ttk.Button(file_frame, text="Browse...", command=self.browse_import_file).pack(side='left', padx=5)
-        
-        # Import options
-        options_frame = ttk.LabelFrame(main_frame, text="Import Options", padding=10)
-        options_frame.pack(fill='x', pady=(0, 10))
+        # Options
+        options_frame = ttk.LabelFrame(main_frame, text="Import Options")
+        options_frame.pack(fill=tk.X, pady=10)
         
         self.skip_existing_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(options_frame, text="Skip existing records (don't update)", 
+                        variable=self.skip_existing_var).pack(anchor=tk.W, padx=10, pady=5)
+        
         self.dry_run_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(options_frame, text="Dry run (test mode - don't save to database)", 
+                        variable=self.dry_run_var).pack(anchor=tk.W, padx=10, pady=5)
         
-        ttk.Checkbutton(options_frame, text="Skip existing records", 
-                       variable=self.skip_existing_var).pack(anchor='w', pady=2)
-        ttk.Checkbutton(options_frame, text="Dry run (test mode - don't save)", 
-                       variable=self.dry_run_var).pack(anchor='w', pady=2)
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill=tk.X, pady=20)
         
-        # Action buttons
-        button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill='x', pady=(0, 10))
+        ttk.Button(btn_frame, text="📥 Import Data", command=self._import_data).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="🔍 Verify Import", command=self._verify_import).pack(side=tk.LEFT, padx=5)
         
-        ttk.Button(button_frame, text="📥 Import Data", 
-                  command=self.import_data).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="✓ Verify Import", 
-                  command=self.verify_import).pack(side='left', padx=5)
+        # Log
+        ttk.Label(main_frame, text="Import Log:").pack(anchor=tk.W, pady=(10, 5))
         
-        # Import log
-        log_frame = ttk.LabelFrame(main_frame, text="Import Log", padding=5)
-        log_frame.pack(fill='both', expand=True)
+        log_frame = ttk.Frame(main_frame)
+        log_frame.pack(fill=tk.BOTH, expand=True)
         
-        self.import_log = scrolledtext.ScrolledText(log_frame, height=20)
-        self.import_log.pack(fill='both', expand=True)
+        self.import_log = tk.Text(log_frame, height=15, width=80, state=tk.DISABLED)
+        self.import_log.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        log_scroll = ttk.Scrollbar(log_frame, orient=tk.VERTICAL, command=self.import_log.yview)
+        log_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        self.import_log.config(yscrollcommand=log_scroll.set)
     
-    def start_camera(self):
-        """Start camera capture"""
-        self.cap = cv2.VideoCapture(0)
-        if not self.cap.isOpened():
-            messagebox.showerror("Error", "Cannot open camera")
+    # ==================== Camera Functions ====================
+    
+    def _start_camera(self):
+        """Start the camera."""
+        self.camera = cv2.VideoCapture(0)
+        if not self.camera.isOpened():
+            messagebox.showerror("Error", "Could not open camera")
             return
         
-        self.is_capturing = True
-        self.start_camera_btn.config(state='disabled')
-        self.stop_camera_btn.config(state='normal')
-        self.capture_btn.config(state='normal')
+        self.camera_running = True
+        self.start_cam_btn.config(state=tk.DISABLED)
+        self.stop_cam_btn.config(state=tk.NORMAL)
+        self.capture_btn.config(state=tk.NORMAL)
         
-        self.update_camera()
-        self.log("Camera started")
+        self._update_camera()
     
-    def stop_camera(self):
-        """Stop camera capture"""
-        self.is_capturing = False
-        if self.cap:
-            self.cap.release()
+    def _stop_camera(self):
+        """Stop the camera."""
+        self.camera_running = False
+        if self.camera:
+            self.camera.release()
+            self.camera = None
         
-        self.camera_label.config(image='', text="Camera Off\n\nClick 'Start Camera' to begin")
-        self.start_camera_btn.config(state='normal')
-        self.stop_camera_btn.config(state='disabled')
-        self.capture_btn.config(state='disabled')
+        self.start_cam_btn.config(state=tk.NORMAL)
+        self.stop_cam_btn.config(state=tk.DISABLED)
+        self.capture_btn.config(state=tk.DISABLED)
         
-        self.log("Camera stopped")
+        # Clear canvas
+        self.camera_canvas.delete("all")
     
-    def update_camera(self):
-        """Update camera feed"""
-        if self.is_capturing and self.cap and self.cap.isOpened():
-            ret, frame = self.cap.read()
-            if ret:
-                # Detect faces for preview
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                if self.collector.face_cascade is not None:
-                    faces = self.collector.face_cascade.detectMultiScale(gray, 1.05, 3, minSize=(30, 30))
-                    for (x, y, w, h) in faces:
-                        cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
-                
-                # Convert to PhotoImage
-                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                img = Image.fromarray(frame_rgb)
-                
-                # Resize to fit window while maintaining aspect ratio
-                img.thumbnail((640, 480), Image.Resampling.LANCZOS)
-                photo = ImageTk.PhotoImage(image=img)
-                
-                self.camera_label.config(image=photo, text='')
-                self.camera_label.image = photo
+    def _update_camera(self):
+        """Update camera frame."""
+        if not self.camera_running or not self.camera:
+            return
+        
+        ret, frame = self.camera.read()
+        if ret:
+            self.current_frame = frame.copy()
             
-            self.root.after(10, self.update_camera)
-    
-    def capture_photo(self):
-        """Capture current frame"""
-        if self.cap and self.cap.isOpened():
-            ret, frame = self.cap.read()
-            if ret:
-                self.captured_frames.append(frame)
-                count = len(self.captured_frames)
-                self.photo_count_label.config(text=f"Photos captured: {count}")
-                self.log(f"Photo {count} captured")
-                
-                if count >= 3:
-                    self.process_btn.config(state='normal')
-                    self.clear_btn.config(state='normal')
-    
-    def clear_photos(self):
-        """Clear captured photos"""
-        self.captured_frames = []
-        self.photo_count_label.config(text="Photos captured: 0")
-        self.process_btn.config(state='disabled')
-        self.clear_btn.config(state='disabled')
-        self.log("Photos cleared")
-    
-    def process_student(self):
-        """Process student facial data"""
-        user_id = self.user_id_entry.get().strip()
-        name = self.name_entry.get().strip()
+            # Mirror
+            display = cv2.flip(frame, 1)
+            
+            # Detect faces and draw rectangles
+            if self.face_cascade is not None:
+                gray = cv2.cvtColor(display, cv2.COLOR_BGR2GRAY)
+                faces = self.face_cascade.detectMultiScale(gray, 1.1, 5, minSize=(60, 60))
+                for (x, y, w, h) in faces:
+                    cv2.rectangle(display, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            
+            # Convert for Tkinter
+            display = cv2.cvtColor(display, cv2.COLOR_BGR2RGB)
+            display = cv2.resize(display, (480, 360))
+            img = Image.fromarray(display)
+            imgtk = ImageTk.PhotoImage(image=img)
+            
+            self.camera_canvas.create_image(0, 0, anchor=tk.NW, image=imgtk)
+            self.camera_canvas.imgtk = imgtk
         
-        if not user_id or not name:
-            messagebox.showerror("Error", "Please enter User ID and Name")
+        if self.camera_running:
+            self.root.after(30, self._update_camera)
+    
+    def _capture_photo(self):
+        """Capture a photo."""
+        if self.current_frame is None:
+            return
+        
+        # Detect and crop face
+        face_img, detected = self._detect_and_crop_face(self.current_frame)
+        
+        if face_img is not None and face_img.size > 0:
+            self.captured_photos.append(face_img)
+            self._update_thumbnails()
+            self.photo_count_var.set(f"Photos: {len(self.captured_photos)}")
+            
+            status = "Face detected" if detected else "Center crop"
+            self.status_var.set(f"Photo {len(self.captured_photos)} captured ({status})")
+            
+            if len(self.captured_photos) >= 3:
+                self.process_btn.config(state=tk.NORMAL)
+    
+    def _detect_and_crop_face(self, img):
+        """Detect and crop face from image."""
+        if self.face_cascade is None:
+            h, w = img.shape[:2]
+            size = min(h, w)
+            sh, sw = (h - size) // 2, (w - size) // 2
+            return img[sh:sh+size, sw:sw+size], False
+        
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        faces = self.face_cascade.detectMultiScale(gray, 1.1, 5, minSize=(60, 60))
+        
+        if len(faces) > 0:
+            largest = max(faces, key=lambda f: f[2] * f[3])
+            x, y, w, h = largest
+            pad = int(0.1 * w)
+            x1, y1 = max(0, x - pad), max(0, y - pad)
+            x2, y2 = min(img.shape[1], x + w + pad), min(img.shape[0], y + h + pad)
+            return img[y1:y2, x1:x2], True
+        
+        # Center crop fallback
+        h, w = img.shape[:2]
+        margin = min(h, w) // 4
+        return img[margin:h-margin, margin:w-margin], False
+    
+    def _update_thumbnails(self):
+        """Update thumbnail display."""
+        # Clear existing thumbnails
+        for widget in self.thumbnails_frame.winfo_children():
+            widget.destroy()
+        
+        # Show last 5 photos
+        for i, photo in enumerate(self.captured_photos[-5:]):
+            thumb = cv2.resize(photo, (60, 60))
+            thumb = cv2.cvtColor(thumb, cv2.COLOR_BGR2RGB)
+            img = Image.fromarray(thumb)
+            imgtk = ImageTk.PhotoImage(image=img)
+            
+            label = ttk.Label(self.thumbnails_frame, image=imgtk)
+            label.image = imgtk
+            label.pack(side=tk.LEFT, padx=2)
+    
+    # ==================== Processing Functions ====================
+    
+    def _process_student(self):
+        """Process captured photos for a student."""
+        user_id = self.user_id_var.get().strip()
+        name = self.name_var.get().strip()
+        
+        if not user_id:
+            messagebox.showerror("Error", "Please enter User ID")
+            return
+        
+        if not name:
+            messagebox.showerror("Error", "Please enter Name")
             return
         
         try:
@@ -265,189 +361,285 @@ class BulkFacialDataGUI:
             messagebox.showerror("Error", "User ID must be a number")
             return
         
-        if len(self.captured_frames) < 3:
-            messagebox.showerror("Error", "Need at least 3 photos")
+        if len(self.captured_photos) < 3:
+            messagebox.showerror("Error", "Please capture at least 3 photos")
             return
         
-        # Process in thread to avoid blocking UI
-        self.log(f"Processing {name} (ID: {user_id})...")
-        self.process_btn.config(state='disabled')
+        try:
+            sample_count = int(self.sample_count_var.get())
+        except ValueError:
+            sample_count = 100
         
+        # Disable button during processing
+        self.process_btn.config(state=tk.DISABLED)
+        self.status_var.set("Processing facial data...")
+        
+        # Process in background thread
         def process_thread():
             try:
-                result = self.collector._process_photos(user_id, name, self.captured_frames, 
-                                                       samples_per_photo=50//len(self.captured_frames))
+                # Generate samples from all photos
+                all_samples = []
+                samples_per_photo = max(10, sample_count // len(self.captured_photos))
                 
-                if result:
-                    self.collector.data_collection.append(result)
-                    self.root.after(0, lambda: self.on_process_complete(name, result['sample_count']))
-                else:
-                    self.root.after(0, lambda: self.on_process_error("Failed to process photos"))
-            except Exception as e:
-                self.root.after(0, lambda: self.on_process_error(str(e)))
+                for photo in self.captured_photos:
+                    samples = self._generate_augmented_samples(photo, samples_per_photo)
+                    all_samples.append(samples)
+                
+                combined = np.vstack(all_samples)
+                encoded = self._encode_facial_data(combined)
+                
+                student_data = {
+                    'user_id': user_id,
+                    'name': name,
+                    'face_encoding': encoded,
+                    'sample_count': combined.shape[0],
+                    'pixels_per_sample': combined.shape[1],
+                    'collected_at': datetime.now().isoformat(),
+                    'num_photos': len(self.captured_photos)
+                }
+                
+                # Update UI in main thread
+                self.root.after(0, lambda: self._on_process_success(student_data))
+                
+            except Exception as ex:
+                error_msg = str(ex)
+                self.root.after(0, lambda msg=error_msg: self._on_process_error(msg))
         
         threading.Thread(target=process_thread, daemon=True).start()
     
-    def on_process_complete(self, name, sample_count):
-        """Callback when processing completes"""
-        self.log(f"✓ {name} processed successfully ({sample_count} samples)")
-        self.stats_label.config(text=f"Students collected: {len(self.collector.data_collection)}")
+    def _on_process_success(self, student_data):
+        """Handle successful processing."""
+        self.collected_students.append(student_data)
+        self.students_listbox.insert(tk.END, f"{student_data['name']} (ID: {student_data['user_id']}) - {student_data['sample_count']} samples")
         
-        # Clear for next student
-        self.clear_photos()
-        self.user_id_entry.delete(0, tk.END)
-        self.name_entry.delete(0, tk.END)
+        # Reset for next student
+        self.captured_photos = []
+        self.user_id_var.set("")
+        self.name_var.set("")
+        self.photo_count_var.set("Photos: 0")
+        self._update_thumbnails()
         
-        messagebox.showinfo("Success", f"{name} added successfully!\n{sample_count} samples generated")
+        self.process_btn.config(state=tk.DISABLED)
+        self.save_btn.config(state=tk.NORMAL)
+        
+        self.status_var.set(f"Student '{student_data['name']}' processed successfully!")
+        messagebox.showinfo("Success", f"Processed {student_data['sample_count']} samples for {student_data['name']}")
     
-    def on_process_error(self, error_msg):
-        """Callback when processing fails"""
-        self.log(f"✗ Error: {error_msg}")
-        self.process_btn.config(state='normal')
-        messagebox.showerror("Error", f"Failed to process student:\n{error_msg}")
+    def _on_process_error(self, error_msg):
+        """Handle processing error."""
+        self.process_btn.config(state=tk.NORMAL)
+        self.status_var.set("Processing failed")
+        messagebox.showerror("Error", f"Processing failed: {error_msg}")
     
-    def save_collection_file(self):
-        """Save collection to file"""
-        if len(self.collector.data_collection) == 0:
-            messagebox.showwarning("Warning", "No data to save")
+    def _generate_augmented_samples(self, face_img, num_samples=100):
+        """Generate augmented samples (7500 pixels each)."""
+        all_samples = []
+        base_face = cv2.resize(face_img, (60, 60))
+        
+        if len(base_face.shape) == 2:
+            base_face = cv2.cvtColor(base_face, cv2.COLOR_GRAY2BGR)
+        
+        for i in range(num_samples):
+            aug = base_face.copy()
+            
+            # Scale
+            scale = np.random.uniform(0.8, 1.2)
+            new_size = int(60 * scale)
+            if new_size > 20:
+                scaled = cv2.resize(aug, (new_size, new_size))
+                if new_size >= 60:
+                    s = (new_size - 60) // 2
+                    aug = scaled[s:s+60, s:s+60]
+                else:
+                    p = (60 - new_size) // 2
+                    aug = cv2.copyMakeBorder(scaled, p, p, p, p, cv2.BORDER_REPLICATE)
+                    aug = cv2.resize(aug, (60, 60))
+            
+            # Brightness
+            brightness = np.random.randint(-40, 40)
+            aug = np.clip(aug.astype(np.int16) + brightness, 0, 255).astype(np.uint8)
+            
+            # Contrast
+            if i % 4 == 0:
+                alpha = np.random.uniform(0.7, 1.3)
+                aug = np.clip(alpha * aug, 0, 255).astype(np.uint8)
+            
+            # Rotation
+            if i % 3 == 0:
+                angle = np.random.uniform(-20, 20)
+                M = cv2.getRotationMatrix2D((30, 30), angle, 1.0)
+                aug = cv2.warpAffine(aug, M, (60, 60), borderMode=cv2.BORDER_REPLICATE)
+            
+            # Flip
+            if np.random.random() > 0.5:
+                aug = cv2.flip(aug, 1)
+            
+            # Final resize and flatten
+            final = cv2.resize(aug, (self.FACE_SIZE, self.FACE_SIZE))
+            all_samples.append(final.flatten())
+        
+        return np.array(all_samples, dtype=np.uint8)
+    
+    def _encode_facial_data(self, samples_array):
+        """Encode facial data with SHAPE header."""
+        rows, cols = samples_array.shape
+        shape_header = f"SHAPE:{rows},{cols};".encode('utf-8')
+        compressed = zlib.compress(samples_array.tobytes())
+        full_data = shape_header + compressed
+        return base64.b64encode(full_data).decode('utf-8')
+    
+    def _save_collection(self):
+        """Save collected data to JSON file."""
+        if not self.collected_students:
+            messagebox.showwarning("Warning", "No students collected yet")
             return
         
-        filename = filedialog.asksaveasfilename(
+        filepath = filedialog.asksaveasfilename(
             defaultextension=".json",
-            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
-            initialfile=f"facial_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            filetypes=[("JSON files", "*.json")],
+            initialfile="facial_data_bulk.json"
         )
         
-        if filename:
-            self.collector.output_file = filename
-            if self.collector.save_to_file():
-                self.log(f"✓ Saved to {os.path.basename(filename)}")
-                messagebox.showinfo("Success", 
-                                   f"Saved {len(self.collector.data_collection)} student(s) to:\n{filename}")
-            else:
-                messagebox.showerror("Error", "Failed to save file")
+        if not filepath:
+            return
+        
+        output = {
+            'version': '2.0',
+            'format': 'color_50x50x3',
+            'pixels_per_sample': self.PIXELS_PER_SAMPLE,
+            'created_at': datetime.now().isoformat(),
+            'total_students': len(self.collected_students),
+            'students': self.collected_students
+        }
+        
+        with open(filepath, 'w') as f:
+            json.dump(output, f, indent=2)
+        
+        self.status_var.set(f"Saved {len(self.collected_students)} students to {filepath}")
+        messagebox.showinfo("Success", f"Saved {len(self.collected_students)} students to {filepath}")
     
-    def browse_import_file(self):
-        """Browse for import file"""
-        filename = filedialog.askopenfilename(
+    # ==================== Import Functions ====================
+    
+    def _browse_file(self):
+        """Browse for JSON file."""
+        filepath = filedialog.askopenfilename(
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
         )
-        if filename:
-            self.import_file_path.set(filename)
+        if filepath:
+            self.file_path_var.set(filepath)
     
-    def import_data(self):
-        """Import data from file"""
-        file_path = self.import_file_path.get()
+    def _log(self, message):
+        """Add message to import log."""
+        self.import_log.config(state=tk.NORMAL)
+        self.import_log.insert(tk.END, message + "\n")
+        self.import_log.see(tk.END)
+        self.import_log.config(state=tk.DISABLED)
+    
+    def _import_data(self):
+        """Import data to database."""
+        filepath = self.file_path_var.get()
         
-        if not os.path.exists(file_path):
-            messagebox.showerror("Error", f"File not found: {file_path}")
+        if not os.path.exists(filepath):
+            messagebox.showerror("Error", f"File not found: {filepath}")
             return
         
-        self.import_log.delete(1.0, tk.END)
+        self._log(f"\n{'='*50}")
+        self._log(f"Importing from: {filepath}")
+        self._log(f"Skip existing: {self.skip_existing_var.get()}")
+        self._log(f"Dry run: {self.dry_run_var.get()}")
+        self._log(f"{'='*50}\n")
         
-        # Import in thread
-        def import_thread():
-            importer = BulkFacialDataImporter(file_path)
+        try:
+            with open(filepath, 'r') as f:
+                data = json.load(f)
             
-            # Redirect output to log
-            import sys
-            from io import StringIO
+            students = data.get('students', [])
+            self._log(f"Found {len(students)} students in file")
+            self._log(f"Format: {data.get('format', 'unknown')}")
+            self._log(f"Pixels per sample: {data.get('pixels_per_sample', 'unknown')}\n")
             
-            old_stdout = sys.stdout
-            sys.stdout = StringIO()
-            
+            # Try to import
             try:
-                success = importer.import_data(
+                from bulk_facial_data_importer import BulkFacialDataImporter
+                importer = BulkFacialDataImporter(filepath)
+                imported, skipped, errors = importer.import_data(
                     skip_existing=self.skip_existing_var.get(),
                     dry_run=self.dry_run_var.get()
                 )
                 
-                output = sys.stdout.getvalue()
-                sys.stdout = old_stdout
+                self._log(f"\n{'='*50}")
+                self._log(f"RESULTS:")
+                self._log(f"  Imported: {imported}")
+                self._log(f"  Skipped: {skipped}")
+                self._log(f"  Errors: {errors}")
+                self._log(f"{'='*50}\n")
                 
-                self.root.after(0, lambda: self.on_import_complete(output, success))
-            except Exception as e:
-                sys.stdout = old_stdout
-                self.root.after(0, lambda: self.on_import_error(str(e)))
-        
-        threading.Thread(target=import_thread, daemon=True).start()
+                if not self.dry_run_var.get():
+                    messagebox.showinfo("Import Complete", 
+                                       f"Imported: {imported}\nSkipped: {skipped}\nErrors: {errors}")
+                else:
+                    messagebox.showinfo("Dry Run Complete", 
+                                       f"Would import: {imported}\nWould skip: {skipped}\nErrors: {errors}")
+                
+            except ImportError:
+                self._log("⚠️ bulk_facial_data_importer not found")
+                self._log("Falling back to direct database import...\n")
+                self._direct_import(students)
+            
+        except Exception as e:
+            self._log(f"❌ Error: {e}")
+            messagebox.showerror("Error", str(e))
     
-    def on_import_complete(self, output, success):
-        """Callback when import completes"""
-        self.import_log.insert(tk.END, output)
-        self.import_log.see(tk.END)
-        
-        if success:
-            messagebox.showinfo("Success", "Import completed successfully!")
-        else:
-            messagebox.showwarning("Warning", "Import completed with errors. Check log for details.")
+    def _direct_import(self, students):
+        """Direct import without using the importer module."""
+        self._log("Direct import requires database connection.")
+        self._log("Please use the importer script or configure database connection.")
     
-    def on_import_error(self, error_msg):
-        """Callback when import fails"""
-        self.import_log.insert(tk.END, f"ERROR: {error_msg}\n")
-        messagebox.showerror("Error", f"Import failed:\n{error_msg}")
-    
-    def verify_import(self):
-        """Verify imported data"""
-        file_path = self.import_file_path.get()
+    def _verify_import(self):
+        """Verify imported data."""
+        filepath = self.file_path_var.get()
         
-        if not os.path.exists(file_path):
-            messagebox.showerror("Error", f"File not found: {file_path}")
+        if not os.path.exists(filepath):
+            messagebox.showerror("Error", f"File not found: {filepath}")
             return
         
-        self.import_log.delete(1.0, tk.END)
+        self._log(f"\n{'='*50}")
+        self._log(f"Verifying import from: {filepath}")
+        self._log(f"{'='*50}\n")
         
-        # Verify in thread
-        def verify_thread():
-            importer = BulkFacialDataImporter(file_path)
-            
-            import sys
-            from io import StringIO
-            
-            old_stdout = sys.stdout
-            sys.stdout = StringIO()
-            
-            try:
-                importer.verify_import()
-                output = sys.stdout.getvalue()
-                sys.stdout = old_stdout
-                
-                self.root.after(0, lambda: self.import_log.insert(tk.END, output))
-                self.root.after(0, lambda: self.import_log.see(tk.END))
-            except Exception as e:
-                sys.stdout = old_stdout
-                self.root.after(0, lambda: messagebox.showerror("Error", f"Verification failed:\n{str(e)}"))
-        
-        threading.Thread(target=verify_thread, daemon=True).start()
-    
-    def log(self, message):
-        """Add message to collection log"""
-        timestamp = datetime.now().strftime("%H:%M:%S")
-        self.collection_log.insert(tk.END, f"[{timestamp}] {message}\n")
-        self.collection_log.see(tk.END)
-    
-    def process_logs(self):
-        """Process queued log messages"""
         try:
-            while True:
-                message = self.log_queue.get_nowait()
-                self.log(message)
-        except queue.Empty:
-            pass
-        
-        self.root.after(100, self.process_logs)
+            from bulk_facial_data_importer import BulkFacialDataImporter
+            importer = BulkFacialDataImporter(filepath)
+            importer.verify_import()
+            self._log("\nVerification complete - check above for results")
+            
+        except ImportError:
+            self._log("⚠️ bulk_facial_data_importer not found")
+            messagebox.showwarning("Warning", "Importer module not found")
+        except Exception as e:
+            self._log(f"❌ Error: {e}")
+            messagebox.showerror("Error", str(e))
     
-    def on_closing(self):
-        """Handle window close"""
-        self.stop_camera()
+    # ==================== Cleanup ====================
+    
+    def _on_close(self):
+        """Handle window close."""
+        self._stop_camera()
         self.root.destroy()
+    
+    def run(self):
+        """Run the application."""
+        self.root.mainloop()
 
 
 def main():
-    root = tk.Tk()
-    app = BulkFacialDataGUI(root)
-    root.protocol("WM_DELETE_WINDOW", app.on_closing)
-    root.mainloop()
+    print("\n" + "="*60)
+    print("   BULK FACIAL DATA COLLECTION GUI")
+    print("   Format: 50×50×3 color (7500 pixels per sample)")
+    print("="*60 + "\n")
+    
+    app = BulkFacialDataGUI()
+    app.run()
 
 
 if __name__ == '__main__':

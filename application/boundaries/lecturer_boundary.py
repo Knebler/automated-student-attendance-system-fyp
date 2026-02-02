@@ -8,6 +8,7 @@ from application.entities2.course import CourseModel
 from application.entities2.user import UserModel
 from application.entities2.attendance_record import AttendanceRecordModel
 from application.entities2.venue import VenueModel
+from application.entities2.announcement import AnnouncementModel
 from application.controls.announcement_control import AnnouncementControl
 from application.controls.lecturer_control import LecturerControl
 from application.entities2.notification import NotificationModel
@@ -210,10 +211,15 @@ def attendance_statistics():
     tutorial_group = request.args.get('group', 'T01')
     
     try:
+        lecturer_id = get_lecturer_id()
+        institution_id = get_institution_id()
+        
         with get_session() as db_session:
             class_model = ClassModel(db_session)
-            course_model = CourseModel(db_session)            
-            lecturer_id = get_lecturer_id()
+            course_model = CourseModel(db_session)
+            announcement_model = AnnouncementModel(db_session)
+            notification_model = NotificationModel(db_session)
+            user_model = UserModel(db_session)
             
             # Get lecturer's courses
             courses = course_model.get_by_user_id(lecturer_id)
@@ -273,6 +279,34 @@ def attendance_statistics():
             attendance_trend = attendance_trend[-5:]
             trend_labels = trend_labels[-5:]
             
+            # Get announcements data (similar to dashboard)
+            preview_announcements = announcement_model.get_recent_announcements(institution_id, limit=2)
+            all_announcements_list = announcement_model.get_recent_announcements(institution_id, limit=50)
+            
+            # Format preview announcements
+            formatted_announcements = []
+            for announcement in preview_announcements:
+                requested_by = user_model.get_by_id(announcement.requested_by_user_id) if announcement.requested_by_user_id else None
+                formatted_announcements.append({
+                    'title': announcement.title,
+                    'date': announcement.date_posted.strftime('%b %d, %Y') if announcement.date_posted else 'N/A',
+                    'content': announcement.content,
+                    'requested_by_name': requested_by.name if requested_by else 'Unknown'
+                })
+            
+            # Format all announcements for modal
+            formatted_all_announcements = []
+            for announcement in all_announcements_list:
+                formatted_all_announcements.append({
+                    'title': announcement.title,
+                    'date': announcement.date_posted.strftime('%b %d, %Y') if announcement.date_posted else 'N/A',
+                    'content': announcement.content,
+                    'date_raw': announcement.date_posted.isoformat() if announcement.date_posted else None
+                })
+            
+            # Get unread notifications count
+            unread_notifications_count = notification_model.get_unread_count(lecturer_id)
+            
             context = {
                 'courses': [
                     {
@@ -295,8 +329,11 @@ def attendance_statistics():
                     'distribution': distribution,
                     'total_classes': statistics_data.get('total_classes', 0),
                     'total_attendance': statistics_data.get('total_attendance', 0),
-                    'total_students': statistics_data.get('total_students', 0)
+                    'total_students': statistics_data.get('total_students', 0),
+                    'unread_notifications_count': unread_notifications_count
                 },
+                'announcements': formatted_announcements,  # Preview announcements (2 items)
+                'all_announcements': formatted_all_announcements,  # All announcements for modal (up to 50)
                 'current_time': datetime.now().strftime('%I:%M %p'),
                 'current_date': date.today().strftime('%d %B %Y')
             }
@@ -407,6 +444,36 @@ def manage_classes():
                     'phone_number': getattr(student, 'phone_number', 'N/A')
                 })
             
+            # Get announcements data (similar to dashboard)
+            announcement_model = AnnouncementModel(db_session)
+            preview_announcements = announcement_model.get_recent_announcements(institution_id, limit=2)
+            all_announcements_list = announcement_model.get_recent_announcements(institution_id, limit=50)
+            
+            # Format preview announcements
+            formatted_announcements = []
+            for announcement in preview_announcements:
+                requested_by = user_model.get_by_id(announcement.requested_by_user_id) if announcement.requested_by_user_id else None
+                formatted_announcements.append({
+                    'title': announcement.title,
+                    'date': announcement.date_posted.strftime('%b %d, %Y') if announcement.date_posted else 'N/A',
+                    'content': announcement.content,
+                    'requested_by_name': requested_by.name if requested_by else 'Unknown'
+                })
+            
+            # Format all announcements for modal
+            formatted_all_announcements = []
+            for announcement in all_announcements_list:
+                formatted_all_announcements.append({
+                    'title': announcement.title,
+                    'date': announcement.date_posted.strftime('%b %d, %Y') if announcement.date_posted else 'N/A',
+                    'content': announcement.content,
+                    'date_raw': announcement.date_posted.isoformat() if announcement.date_posted else None
+                })
+            
+            # Get unread notifications count
+            notification_model = NotificationModel(db_session)
+            unread_notifications_count = notification_model.get_unread_count(lecturer_id)
+            
             context = {
                 'courses': [
                     {
@@ -424,7 +491,12 @@ def manage_classes():
                 'total_students': len(formatted_students),
                 'current_time': datetime.now().strftime('%I:%M %p'),
                 'current_date': date.today().strftime('%d %B %Y'),
-                'lecturer_name': user_model.get_by_id(lecturer_id).name if user_model.get_by_id(lecturer_id) else 'Lecturer'
+                'lecturer_name': user_model.get_by_id(lecturer_id).name if user_model.get_by_id(lecturer_id) else 'Lecturer',
+                'announcements': formatted_announcements,  # Preview announcements (2 items)
+                'all_announcements': formatted_all_announcements,  # All announcements for modal (up to 50)
+                'statistics': {
+                    'unread_notifications_count': unread_notifications_count
+                }
             }
         
         return render_template('institution/lecturer/lecturer_class_management.html', **context)

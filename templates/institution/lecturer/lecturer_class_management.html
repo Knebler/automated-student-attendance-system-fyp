@@ -54,28 +54,11 @@
         font-weight: 500;
     }
 
-    /* Notification Bell */
-    .notification-bell {
-        position: relative;
-        cursor: pointer;
-        font-size: 1.5rem;
-        padding: 0.5rem;
-    }
-
-    .notification-badge {
-        position: absolute;
-        top: -5px;
-        right: -5px;
-        background-color: #dc2626;
-        color: white;
-        font-size: 0.75rem;
-        font-weight: bold;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
+    /* Header Actions */
+    .header-actions {
         display: flex;
+        gap: 1rem;
         align-items: center;
-        justify-content: center;
     }
 
     .section-title {
@@ -745,9 +728,26 @@
                 <span class="date">{{ current_date }}</span>
             </div>
         </div>
-        <div class="notification-bell">
-            <span class="notification-icon">🔔</span>
-            <span class="notification-badge">3</span>
+        
+        <div class="header-actions">
+            <div class="notification-bell" title="Notifications" id="notificationBell" 
+                 data-notification-count="{{ statistics.unread_notifications_count|default(0) }}"
+                 data-get-notifications-url="{{ url_for('institution_lecturer.get_notifications') }}"
+                 data-mark-read-url-template="{{ url_for('institution_lecturer.mark_notification_read', notification_id=0) }}"
+                 data-mark-all-read-url="{{ url_for('institution_lecturer.mark_all_notifications_read') }}"
+                 data-clear-all-url="{{ url_for('institution_lecturer.clear_all_notifications') }}">
+                🔔
+                {% if statistics.unread_notifications_count and statistics.unread_notifications_count > 0 %}
+                <span class="notification-badge">{{ statistics.unread_notifications_count }}</span>
+                {% endif %}
+            </div>
+            
+            <div class="notification-bell" title="Announcements" id="announcementBell" data-announcements-count="{{ announcements|length|default(0) }}">
+                📢
+                {% if announcements and announcements|length > 0 %}
+                <span class="notification-badge"></span>
+                {% endif %}
+            </div>
         </div>
     </div>
 
@@ -1353,11 +1353,6 @@ document.addEventListener('DOMContentLoaded', function() {
         updateDateTime();
         setInterval(updateDateTime, 60000);
         
-        // Notification bell click
-        document.querySelector('.notification-bell').addEventListener('click', function() {
-            alert('You have 3 new notifications');
-        });
-        
         // Set up CSV file upload preview
         const fileInput = document.getElementById('csvFile');
         fileInput.addEventListener('change', function(e) {
@@ -1463,4 +1458,102 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     document.head.appendChild(style);
 </script>
+
+<!-- Notification Toast -->
+<div id="notifToast" class="notification-toast" style="display: none;">
+    <div class="toast-content">
+        <button id="notifToastClose" class="toast-close" aria-label="Close">&times;</button>
+        <p class="toast-message"><span id="notifToastMsg"></span></p>
+        <button class="btn-toast" id="notifToastOpen">View announcements</button>
+    </div>
+</div>
+
+<!-- Notifications Modal -->
+<div id="notificationsModal" class="modal-overlay" aria-hidden="true" style="display: none;">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>Notifications</h2>
+            <button id="closeNotificationsModal" class="modal-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="notifications-header-actions">
+                <button id="markAllReadBtn" class="btn-mark-all-read">Mark All as Read</button>
+                <button id="clearAllBtn" class="btn-clear-all">Clear All</button>
+            </div>
+            <div id="notificationsList" class="notifications-list">
+                <!-- Notifications will be loaded here dynamically -->
+                <div class="loading-message">Loading notifications...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Announcement Detail Modal -->
+<div id="announcementDetailModal" class="modal-overlay" aria-hidden="true" style="display: none;">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>Announcement Details</h2>
+            <button id="closeAnnouncementDetail" class="modal-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="annc-detail-content">
+                <h2 id="announcementDetailTitle"></h2>
+                <p id="announcementDetailDate" class="annc-detail-date"></p>
+                <div id="announcementDetailContent" class="annc-detail-text"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Announcements Modal -->
+<div id="announcementsModal" class="modal-overlay" aria-hidden="true" style="display: none;">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>All Announcements</h2>
+            <button id="closeAnnouncementsModal" class="modal-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <!-- List View -->
+            <div id="anncListView">
+                {% if all_announcements %}
+                    {% for announcement in all_announcements %}
+                    <div class="annc-item" 
+                         data-title="{{ announcement.title|e }}"
+                         data-date="{{ announcement.date|e }}"
+                         data-content="{{ announcement.content|e }}">
+                        <div class="annc-item-header">
+                            <h3 class="annc-item-title">{{ announcement.title }}</h3>
+                            <span class="annc-item-date">{{ announcement.date }}</span>
+                        </div>
+                        <p class="annc-item-preview">{{ announcement.content[:100] }}{% if announcement.content|length > 100 %}...{% endif %}</p>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="no-announcements-message">
+                        <p>📢 No announcements available</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Detail View -->
+            <div id="anncDetailView" style="display: none;">
+                <button id="anncBackToList" class="btn-back">← Back to List</button>
+                <div class="annc-detail-content">
+                    <h2 id="anncDetailTitle"></h2>
+                    <p id="anncDetailDate" class="annc-detail-date"></p>
+                    <div id="anncDetailContent" class="annc-detail-text"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Announcements and Notifications CSS -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/announcements-notifications.css') }}">
+
+<!-- Announcements Script -->
+<script src="{{ url_for('static', filename='js/announcements.js') }}"></script>
+
+<!-- Notifications Script -->
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
 {% endblock %}

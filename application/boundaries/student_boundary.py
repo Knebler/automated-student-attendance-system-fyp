@@ -157,8 +157,8 @@ def save_facial_data():
             
             all_faces = []
             
-            # Process each photo (limit to 50 samples total for smaller database size)
-            samples_per_photo = max(1, 50 // len(photos))  # Distribute 50 samples across all photos
+            # Process each photo (limit to 100 samples total)
+            samples_per_photo = max(1, 100 // len(photos))  # Distribute 100 samples across all photos
             
             for photo_base64 in photos:
                 try:
@@ -223,10 +223,10 @@ def save_facial_data():
                     current_app.logger.error(f"Error processing photo: {e}")
                     continue
             
-            # Limit to exactly 50 samples to keep database size small
-            if len(all_faces) > 50:
-                # Evenly sample to get exactly 50
-                indices = np.linspace(0, len(all_faces) - 1, 50, dtype=int)
+            # Limit to exactly 100 samples
+            if len(all_faces) > 100:
+                # Evenly sample to get exactly 100
+                indices = np.linspace(0, len(all_faces) - 1, 100, dtype=int)
                 all_faces = [all_faces[i] for i in indices]
             
             if len(all_faces) == 0:

@@ -276,7 +276,7 @@ class BulkFacialDataGUI:
         def process_thread():
             try:
                 result = self.collector._process_photos(user_id, name, self.captured_frames, 
-                                                       samples_per_photo=50//len(self.captured_frames))
+                                                       samples_per_photo=100//len(self.captured_frames))
                 
                 if result:
                     self.collector.data_collection.append(result)

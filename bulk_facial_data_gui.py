@@ -222,18 +222,63 @@ class BulkFacialDataGUI:
     # ==================== Camera Functions ====================
     
     def _start_camera(self):
-        """Start the camera."""
-        self.camera = cv2.VideoCapture(0)
-        if not self.camera.isOpened():
-            messagebox.showerror("Error", "Could not open camera")
-            return
+        """Start the camera with multiple fallback methods."""
+        attempts = []
         
-        self.camera_running = True
-        self.start_cam_btn.config(state=tk.DISABLED)
-        self.stop_cam_btn.config(state=tk.NORMAL)
-        self.capture_btn.config(state=tk.NORMAL)
+        # Try different combinations of camera indices and backends
+        strategies = [
+            ("Camera 0 (Default)", lambda: cv2.VideoCapture(0)),
+            ("Camera 0 (MSMF)", lambda: cv2.VideoCapture(0, cv2.CAP_MSMF)),
+            ("Camera 1 (Default)", lambda: cv2.VideoCapture(1)),
+            ("Camera 1 (MSMF)", lambda: cv2.VideoCapture(1, cv2.CAP_MSMF)),
+            ("Camera 2 (Default)", lambda: cv2.VideoCapture(2)),
+        ]
         
-        self._update_camera()
+        for name, camera_func in strategies:
+            try:
+                print(f"Trying {name}...")
+                cam = camera_func()
+                
+                if cam.isOpened():
+                    # Try to read a test frame
+                    ret, frame = cam.read()
+                    if ret and frame is not None:
+                        print(f"✅ Success with {name}")
+                        self.camera = cam
+                        
+                        # Set camera properties for better performance
+                        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+                        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+                        self.camera.set(cv2.CAP_PROP_FPS, 30)
+                        
+                        self.camera_running = True
+                        self.start_cam_btn.config(state=tk.DISABLED)
+                        self.stop_cam_btn.config(state=tk.NORMAL)
+                        self.capture_btn.config(state=tk.NORMAL)
+                        self.status_var.set(f"Camera started: {name}")
+                        
+                        self._update_camera()
+                        return
+                    else:
+                        attempts.append(f"{name}: opened but can't read frames")
+                        cam.release()
+                else:
+                    attempts.append(f"{name}: can't open")
+                    cam.release()
+            except Exception as e:
+                attempts.append(f"{name}: {str(e)}")
+        
+        # All attempts failed
+        error_msg = "Could not open camera after trying:\n\n"
+        error_msg += "\n".join(f"• {attempt}" for attempt in attempts)
+        error_msg += "\n\nPlease check:\n"
+        error_msg += "• Camera is connected\n"
+        error_msg += "• Close other apps using camera (Zoom, Teams, etc.)\n"
+        error_msg += "• Check camera permissions in Windows Settings\n"
+        error_msg += "• Try restarting your computer"
+        
+        messagebox.showerror("Camera Error", error_msg)
+        print("\n❌ All camera initialization attempts failed")
     
     def _stop_camera(self):
         """Stop the camera."""

@@ -11,7 +11,7 @@ from application.entities2.subscription import SubscriptionModel
 from application.entities2.testimonial import TestimonialModel
 from application.entities2.user import UserModel
 from database.base import get_session
-from database.models import User, Feature, HeroFeature, Stat, AboutIntro, AboutStory, AboutMissionVision, TeamMember, AboutValue, SubscriptionPlan
+from database.models import User, Feature, HeroFeature, Stat, AboutIntro, AboutStory, AboutMissionVision, TeamMember, AboutValue, SubscriptionPlan, HomepageFeatureCard, FeaturesPageContent, FeaturesComparison
 
 platform_bp = Blueprint('platform', __name__)
 
@@ -556,6 +556,27 @@ def landing_page_management():
         total_subscription_plans = len(subscription_plans)
         active_subscription_plans = sum(1 for sp in subscription_plans if sp.is_active)
         
+        # Get homepage feature cards
+        feature_cards = db_session.query(HomepageFeatureCard).order_by(HomepageFeatureCard.display_order).all()
+        feature_cards_list = [fc.as_dict() for fc in feature_cards]
+        
+        total_feature_cards = len(feature_cards)
+        active_feature_cards = sum(1 for fc in feature_cards if fc.is_active)
+        
+        # Get features page content
+        features_page_header = db_session.query(FeaturesPageContent).filter_by(section='header', is_active=True).first()
+        features_page_hero = db_session.query(FeaturesPageContent).filter_by(section='hero', is_active=True).first()
+        
+        features_page_header_dict = features_page_header.as_dict() if features_page_header else None
+        features_page_hero_dict = features_page_hero.as_dict() if features_page_hero else None
+        
+        # Get features comparison items
+        comparison_items = db_session.query(FeaturesComparison).order_by(FeaturesComparison.display_order).all()
+        comparison_items_list = [item.as_dict() for item in comparison_items]
+        
+        total_comparison_items = len(comparison_items)
+        active_comparison_items = sum(1 for item in comparison_items if item.is_active)
+        
     context = {
         'hero_features': hero_features_list,
         'total_hero_features': total_hero_features,
@@ -582,7 +603,15 @@ def landing_page_management():
         'active_values': active_values,
         'subscription_plans': subscription_plans_list,
         'total_subscription_plans': total_subscription_plans,
-        'active_subscription_plans': active_subscription_plans
+        'active_subscription_plans': active_subscription_plans,
+        'feature_cards': feature_cards_list,
+        'total_feature_cards': total_feature_cards,
+        'active_feature_cards': active_feature_cards,
+        'features_page_header': features_page_header_dict,
+        'features_page_hero': features_page_hero_dict,
+        'comparison_items': comparison_items_list,
+        'total_comparison_items': total_comparison_items,
+        'active_comparison_items': active_comparison_items
     }
     
     return render_template('platmanager/platform_manager_landing_page.html', **context)
@@ -1598,6 +1627,234 @@ def delete_subscription_plan(plan_id):
                 }), 400
             
             db_session.delete(plan)
+            db_session.commit()
+            
+            return jsonify({'success': True}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+
+# ====================
+# HOMEPAGE FEATURE CARDS API
+# ====================
+
+@platform_bp.route('/api/feature-cards/create', methods=['POST'])
+@requires_roles_api('platform_manager')
+def create_feature_card():
+    """Create a new homepage feature card"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            # Create new feature card
+            feature_card = HomepageFeatureCard(
+                title=data['title'],
+                description=data['description'],
+                icon=data['icon'],
+                bg_image=data['bg_image'],
+                link_url=data.get('link_url'),
+                link_text=data.get('link_text'),
+                display_order=data.get('display_order', 0),
+                is_active=data.get('is_active', True)
+            )
+            
+            db_session.add(feature_card)
+            db_session.commit()
+            
+            return jsonify({'success': True, 'feature_card': feature_card.as_dict()}), 201
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+
+@platform_bp.route('/api/feature-cards/<int:feature_card_id>/update', methods=['POST'])
+@requires_roles_api('platform_manager')
+def update_feature_card(feature_card_id):
+    """Update an existing homepage feature card"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            feature_card = db_session.query(HomepageFeatureCard).filter_by(feature_card_id=feature_card_id).first()
+            
+            if not feature_card:
+                return jsonify({'success': False, 'error': 'Feature card not found'}), 404
+            
+            # Update fields
+            feature_card.title = data['title']
+            feature_card.description = data['description']
+            feature_card.icon = data['icon']
+            feature_card.bg_image = data['bg_image']
+            feature_card.link_url = data.get('link_url')
+            feature_card.link_text = data.get('link_text')
+            feature_card.display_order = data.get('display_order', 0)
+            
+            db_session.commit()
+            
+            return jsonify({'success': True, 'feature_card': feature_card.as_dict()}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+
+@platform_bp.route('/api/feature-cards/<int:feature_card_id>/toggle-status', methods=['POST'])
+@requires_roles_api('platform_manager')
+def toggle_feature_card_status(feature_card_id):
+    """Toggle active status of a homepage feature card"""
+    try:
+        with get_session() as db_session:
+            feature_card = db_session.query(HomepageFeatureCard).filter_by(feature_card_id=feature_card_id).first()
+            
+            if not feature_card:
+                return jsonify({'success': False, 'error': 'Feature card not found'}), 404
+            
+            feature_card.is_active = not feature_card.is_active
+            db_session.commit()
+            
+            return jsonify({'success': True, 'feature_card': feature_card.as_dict()}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+
+@platform_bp.route('/api/feature-cards/<int:feature_card_id>/delete', methods=['POST'])
+@requires_roles_api('platform_manager')
+def delete_feature_card(feature_card_id):
+    """Delete a homepage feature card"""
+    try:
+        with get_session() as db_session:
+            feature_card = db_session.query(HomepageFeatureCard).filter_by(feature_card_id=feature_card_id).first()
+            
+            if not feature_card:
+                return jsonify({'success': False, 'error': 'Feature card not found'}), 404
+            
+            db_session.delete(feature_card)
+            db_session.commit()
+            
+            return jsonify({'success': True}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+
+# ====================
+# FEATURES PAGE CONTENT API
+# ====================
+
+@platform_bp.route('/api/features-page/<string:section>/update', methods=['POST'])
+@requires_roles_api('platform_manager')
+def update_features_page_content(section):
+    """Update features page header or hero content"""
+    try:
+        if section not in ['header', 'hero']:
+            return jsonify({'success': False, 'error': 'Invalid section'}), 400
+        
+        data = request.json
+        
+        with get_session() as db_session:
+            content = db_session.query(FeaturesPageContent).filter_by(section=section, is_active=True).first()
+            
+            if content:
+                # Update existing
+                content.title = data['title']
+                content.content = data['content']
+            else:
+                # Create new
+                content = FeaturesPageContent(
+                    section=section,
+                    title=data['title'],
+                    content=data['content'],
+                    is_active=True
+                )
+                db_session.add(content)
+            
+            db_session.commit()
+            
+            return jsonify({'success': True, 'content': content.as_dict()}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+
+# ====================
+# FEATURES COMPARISON API
+# ====================
+
+@platform_bp.route('/api/comparison/create', methods=['POST'])
+@requires_roles_api('platform_manager')
+def create_comparison_item():
+    """Create a new comparison item"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            comparison = FeaturesComparison(
+                feature_text=data['feature_text'],
+                traditional_has=data.get('traditional_has', False),
+                attendai_has=data.get('attendai_has', True),
+                display_order=data.get('display_order', 0),
+                is_active=data.get('is_active', True)
+            )
+            
+            db_session.add(comparison)
+            db_session.commit()
+            
+            return jsonify({'success': True, 'comparison': comparison.as_dict()}), 201
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+
+@platform_bp.route('/api/comparison/<int:comparison_id>/update', methods=['POST'])
+@requires_roles_api('platform_manager')
+def update_comparison_item(comparison_id):
+    """Update an existing comparison item"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            comparison = db_session.query(FeaturesComparison).filter_by(comparison_id=comparison_id).first()
+            
+            if not comparison:
+                return jsonify({'success': False, 'error': 'Comparison item not found'}), 404
+            
+            comparison.feature_text = data['feature_text']
+            comparison.traditional_has = data.get('traditional_has', False)
+            comparison.attendai_has = data.get('attendai_has', True)
+            comparison.display_order = data.get('display_order', 0)
+            
+            db_session.commit()
+            
+            return jsonify({'success': True, 'comparison': comparison.as_dict()}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+
+@platform_bp.route('/api/comparison/<int:comparison_id>/toggle-status', methods=['POST'])
+@requires_roles_api('platform_manager')
+def toggle_comparison_status(comparison_id):
+    """Toggle active status of a comparison item"""
+    try:
+        with get_session() as db_session:
+            comparison = db_session.query(FeaturesComparison).filter_by(comparison_id=comparison_id).first()
+            
+            if not comparison:
+                return jsonify({'success': False, 'error': 'Comparison item not found'}), 404
+            
+            comparison.is_active = not comparison.is_active
+            db_session.commit()
+            
+            return jsonify({'success': True, 'comparison': comparison.as_dict()}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+
+@platform_bp.route('/api/comparison/<int:comparison_id>/delete', methods=['POST'])
+@requires_roles_api('platform_manager')
+def delete_comparison_item(comparison_id):
+    """Delete a comparison item"""
+    try:
+        with get_session() as db_session:
+            comparison = db_session.query(FeaturesComparison).filter_by(comparison_id=comparison_id).first()
+            
+            if not comparison:
+                return jsonify({'success': False, 'error': 'Comparison item not found'}), 404
+            
+            db_session.delete(comparison)
             db_session.commit()
             
             return jsonify({'success': True}), 200

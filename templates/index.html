@@ -485,107 +485,73 @@
 
 <!-- Feature Cards -->
 <div class="features-grid">
-    <!-- Our Team Card -->
-    <div class="feature-card card-custom">
-        <div class="feature-image" style="background-image: url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80');">
-            <div class="feature-image-content">
-                Meet Our Team
+    {% if feature_cards and feature_cards|length > 0 %}
+        {% for card in feature_cards %}
+        <div class="feature-card card-custom">
+            <div class="feature-image" style="background-image: url('{{ card.bg_image }}');">
+                <div class="feature-image-content">
+                    {{ card.icon }}
+                </div>
+            </div>
+            <div class="feature-content">
+                <h3>{{ card.title }}</h3>
+                <p>{{ card.description }}</p>
+                {% if card.link_url %}
+                    <a href="{{ card.link_url }}" class="btn-custom">{{ card.link_text or 'Learn More' }}</a>
+                {% endif %}
             </div>
         </div>
-        <div class="feature-content">
-            <div class="feature-icon">
-                <i class="fas fa-users"></i>
+        {% endfor %}
+    {% else %}
+        <!-- Fallback content if no feature cards are configured -->
+        <div class="feature-card card-custom">
+            <div class="feature-image" style="background-image: url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80');">
+                <div class="feature-image-content">
+                    Meet Our Team
+                </div>
             </div>
-            <h3>Our Team</h3>
-            <p>Learn more about AttendAI and the dedicated team behind our innovative solutions</p>
-            <a href="{{ url_for('main.about') }}" class="btn-custom">Learn More</a>
+            <div class="feature-content">
+                <div class="feature-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3>Our Team</h3>
+                <p>Learn more about AttendAI and the dedicated team behind our innovative solutions</p>
+                <a href="{{ url_for('main.about') }}" class="btn-custom">Learn More</a>
+            </div>
         </div>
-    </div>
 
-    <!-- Testimonials Card -->
-    <div class="feature-card card-custom">
-        <div class="feature-image" style="background-image: url('https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w-800&q=80');">
-            <div class="feature-image-content">
-                Success Stories
+        <div class="feature-card card-custom">
+            <div class="feature-image" style="background-image: url('https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w-800&q=80');">
+                <div class="feature-image-content">
+                    Success Stories
+                </div>
+            </div>
+            <div class="feature-content">
+                <div class="feature-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <h3>Testimonials</h3>
+                <p>Read glowing reviews from educational institutions and businesses using AttendAI</p>
+                <a href="{{ url_for('main.testimonials') }}" class="btn-custom">Read Stories</a>
             </div>
         </div>
-        <div class="feature-content">
-            <div class="feature-icon">
-                <i class="fas fa-star"></i>
-            </div>
-            <h3>Testimonials</h3>
-            <p>Read glowing reviews from educational institutions and businesses using AttendAI</p>
-            <a href="{{ url_for('main.testimonials') }}" class="btn-custom">Read Stories</a>
-        </div>
-    </div>
 
-    <!-- Plans Card -->
-    <div class="feature-card card-custom">
-        <div class="feature-image" style="background-image: url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80');">
-            <div class="feature-image-content">
-                Affordable Plans
+        <div class="feature-card card-custom">
+            <div class="feature-image" style="background-image: url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80');">
+                <div class="feature-image-content">
+                    Affordable Plans
+                </div>
+            </div>
+            <div class="feature-content">
+                <div class="feature-icon">
+                    <i class="fas fa-tags"></i>
+                </div>
+                <h3>Affordable Plans</h3>
+                <p>Choose from our range of subscription plans designed to suit institutions of all sizes</p>
+                <a href="{{ url_for('main.subscriptions') }}" class="btn-custom">View Plans</a>
             </div>
         </div>
-        <div class="feature-content">
-            <div class="feature-icon">
-                <i class="fas fa-tags"></i>
-            </div>
-            <h3>Affordable Plans</h3>
-            <p>Choose from our range of subscription plans designed to suit institutions of all sizes</p>
-            <a href="{{ url_for('main.subscriptions') }}" class="btn-custom">View Plans</a>
-        </div>
-    </div>
-
-    <!-- AI Features Card -->
-    <div class="feature-card card-custom">
-        <div class="feature-image" style="background-image: url('https://images.unsplash.com/photo-1677442136019-21780ecad995?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80');">
-            <div class="feature-image-content">
-                AI Technology
-            </div>
-        </div>
-        <div class="feature-content">
-            <div class="feature-icon">
-                <i class="fas fa-robot"></i>
-            </div>
-            <h3>AI Powered</h3>
-            <p>Leverage artificial intelligence for facial recognition and predictive analytics</p>
-            <a href="{{ url_for('main.features') }}" class="btn-custom">Explore Features</a>
-        </div>
-    </div>
-
-    <!-- Real-time Reports Card -->
-    <div class="feature-card card-custom">
-        <div class="feature-image" style="background-image: url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80');">
-            <div class="feature-image-content">
-                Data Analytics
-            </div>
-        </div>
-        <div class="feature-content">
-            <div class="feature-icon">
-                <i class="fas fa-chart-line"></i>
-            </div>
-            <h3>Real-time Reports</h3>
-            <p>Generate comprehensive attendance reports and analytics instantly</p>
-            <a href="{{ url_for('main.features') }}" class="btn-custom">See Analytics</a>
-        </div>
-    </div>
-
-    <!-- Easy Tracking Card -->
-    <div class="feature-card card-custom">
-        <div class="feature-image" style="background-image: url('https://images.unsplash.com/photo-1611224923853-80b023f02d71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80');">
-            <div class="feature-image-content">
-                QR Code Scanning
-            </div>
-        </div>
-        <div class="feature-content">
-            <div class="feature-icon">
-                <i class="fas fa-qrcode"></i>
-            </div>
-            <h3>Easy Tracking</h3>
-            <p>Mark attendance with a single click using QR codes or facial recognition</p>
-            <a href="{{ url_for('main.features') }}" class="btn-custom">Learn How</a>
-        </div>
-    </div>
+    {% endif %}
 </div>
 
 <!-- Final CTA Section -->

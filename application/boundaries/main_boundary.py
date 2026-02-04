@@ -13,7 +13,7 @@ from application.controls.auth_control import requires_roles
 from application.entities2 import ClassModel, UserModel, InstitutionModel, SubscriptionModel, CourseModel, AttendanceRecordModel, CourseUserModel, VenueModel, TestimonialModel
 from database.base import get_session
 from database.models import *
-from database.models import Feature, HeroFeature, Stat
+from database.models import Feature, HeroFeature, Stat, HomepageFeatureCard, FeaturesPageContent, FeaturesComparison
 from datetime import date, datetime, timedelta
 from collections import defaultdict
 
@@ -47,8 +47,22 @@ def home():
             }
             for s in stats_query
         ]
+        
+        # Get active feature cards
+        feature_cards_query = db_session.query(HomepageFeatureCard).filter_by(is_active=True).order_by(HomepageFeatureCard.display_order).all()
+        feature_cards = [
+            {
+                'title': fc.title,
+                'description': fc.description,
+                'icon': fc.icon,
+                'bg_image': fc.bg_image,
+                'link_url': fc.link_url,
+                'link_text': fc.link_text
+            }
+            for fc in feature_cards_query
+        ]
     
-    return render_template('index.html', hero_features=hero_features, stats=stats)
+    return render_template('index.html', hero_features=hero_features, stats=stats, feature_cards=feature_cards)
 
 @main_bp.route('/about')
 def about():
@@ -137,11 +151,37 @@ def features():
         # Convert to dictionaries
         main_features_list = [f.as_dict() for f in main_features]
         advanced_features_list = [f.as_dict() for f in advanced_features]
+        
+        # Get features page content
+        page_header = db_session.query(FeaturesPageContent).filter_by(section='header', is_active=True).first()
+        page_hero = db_session.query(FeaturesPageContent).filter_by(section='hero', is_active=True).first()
+        
+        # Default values if not set
+        header_data = {
+            'title': page_header.title if page_header else 'Powerful Features for Modern Attendance Management',
+            'content': page_header.content if page_header else 'Discover how AttendAI revolutionizes attendance tracking with AI-powered features designed for efficiency, accuracy, and ease of use.'
+        }
+        
+        hero_data = {
+            'title': page_hero.title if page_hero else 'Why Choose AttendAI?',
+            'content': page_hero.content if page_hero else 'Traditional attendance methods are time-consuming, error-prone, and lack insights. AttendAI transforms this process with intelligent automation, real-time analytics, and seamless integration - saving you hours of administrative work while providing valuable data-driven insights.'
+        }
+        
+        # Get comparison items
+        comparison_items = db_session.query(FeaturesComparison).filter_by(is_active=True).order_by(FeaturesComparison.display_order).all()
+        comparison_list = [{
+            'feature_text': item.feature_text,
+            'traditional_has': item.traditional_has,
+            'attendai_has': item.attendai_has
+        } for item in comparison_items]
     
     return render_template(
         'unregistered/features.html', 
         main_features=main_features_list,
-        advanced_features=advanced_features_list
+        advanced_features=advanced_features_list,
+        page_header=header_data,
+        page_hero=hero_data,
+        comparison_items=comparison_list
     )
 
 @main_bp.route('/subscriptions')

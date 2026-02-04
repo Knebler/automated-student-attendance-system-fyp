@@ -408,6 +408,52 @@ class AboutValue(Base, BaseMixin):
     display_order = Column(Integer, server_default="0")
     is_active = Column(Boolean, server_default="1")
     created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+# ====================
+# HOMEPAGE FEATURE CARDS
+# ====================
+class HomepageFeatureCard(Base, BaseMixin):
+    __tablename__ = "homepage_feature_cards"
+
+    feature_card_id = Column(Integer, primary_key=True)
+    title = Column(String(200), nullable=False)
+    description = Column(Text, nullable=False)
+    icon = Column(String(50), nullable=False)
+    bg_image = Column(String(500), nullable=False)
+    link_url = Column(String(500))
+    link_text = Column(String(100))
+    is_active = Column(Boolean, server_default="1")
+    display_order = Column(Integer, server_default="0")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+# ====================
+# FEATURES PAGE CONTENT
+# ====================
+class FeaturesPageContent(Base, BaseMixin):
+    __tablename__ = "features_page_content"
+
+    content_id = Column(Integer, primary_key=True)
+    section = Column(String(50), nullable=False)  # 'header' or 'hero'
+    title = Column(String(200), nullable=False)
+    content = Column(Text, nullable=False)
+    is_active = Column(Boolean, server_default="1")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+    updated_at = Column(DateTime, onupdate=text("CURRENT_TIMESTAMP"))
+
+# ====================
+# FEATURES COMPARISON TABLE
+# ====================
+class FeaturesComparison(Base, BaseMixin):
+    __tablename__ = "features_comparison"
+
+    comparison_id = Column(Integer, primary_key=True)
+    feature_text = Column(String(255), nullable=False)
+    traditional_has = Column(Boolean, nullable=False)  # False = ✗, True = ✓
+    attendai_has = Column(Boolean, nullable=False)  # False = ✗, True = ✓
+    display_order = Column(Integer, server_default="0")
+    is_active = Column(Boolean, server_default="1")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
 # =====================
 # PLATFORM ISSUES (USER REPORTS)
 # =====================

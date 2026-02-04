@@ -151,7 +151,7 @@
     }
 
     .traditional-column, .attendai-column {
-        padding: 1.5rem;
+        padding: 2rem;
         border-radius: 12px;
         background-color: white;
         border: 2px solid var(--border-color);
@@ -160,9 +160,11 @@
     .traditional-column h3, .attendai-column h3 {
         font-size: 1.5rem;
         color: var(--text-dark);
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
         text-align: center;
         font-weight: bold;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--primary-light);
     }
 
     .traditional-column ul, .attendai-column ul {
@@ -171,28 +173,36 @@
     }
 
     .traditional-column li, .attendai-column li {
-        padding: 0.75rem 0;
+        padding: 1rem;
         color: var(--text-dark);
         border-bottom: 1px solid var(--primary-light);
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        justify-content: space-between;
+        gap: 1rem;
     }
 
     .traditional-column li:last-child, .attendai-column li:last-child {
         border-bottom: none;
     }
 
-    .traditional-column li::before {
-        content: "✗";
-        color: #dc2626;
-        font-weight: bold;
+    .comparison-feature-text {
+        flex: 1;
     }
 
-    .attendai-column li::before {
-        content: "✓";
-        color: #059669;
+    .comparison-symbol {
+        font-size: 1.75rem;
         font-weight: bold;
+        min-width: 30px;
+        text-align: center;
+    }
+
+    .comparison-symbol.check {
+        color: #059669;
+    }
+
+    .comparison-symbol.cross {
+        color: #dc2626;
     }
 
     /* CTA Section */
@@ -432,14 +442,14 @@
 
 <!-- Page Header -->
 <div class="page-header">
-    <h1>Powerful Features for Modern Attendance Management</h1>
-    <p>Discover how AttendAI revolutionizes attendance tracking with AI-powered features designed for efficiency, accuracy, and ease of use.</p>
+    <h1>{{ page_header.title }}</h1>
+    <p>{{ page_header.content }}</p>
 </div>
 
 <!-- Hero Card -->
 <div class="hero-card card-custom">
-    <h2>Why Choose AttendAI?</h2>
-    <p>Traditional attendance methods are time-consuming, error-prone, and lack insights. AttendAI transforms this process with intelligent automation, real-time analytics, and seamless integration - saving you hours of administrative work while providing valuable data-driven insights.</p>
+    <h2>{{ page_hero.title }}</h2>
+    <p>{{ page_hero.content }}</p>
 </div>
 
 <!-- Main Features -->
@@ -490,27 +500,97 @@
         <div class="traditional-column">
             <h3>Traditional Methods</h3>
             <ul>
-                <li>Manual roll calls</li>
-                <li>Paper-based tracking</li>
-                <li>Time-consuming data entry</li>
-                <li>Human errors common</li>
-                <li>No real-time insights</li>
-                <li>Difficult to analyze trends</li>
-                <li>No automated reporting</li>
-                <li>Limited accessibility</li>
+                {% if comparison_items %}
+                    {% for item in comparison_items %}
+                        <li>
+                            <span class="comparison-feature-text">{{ item.feature_text }}</span>
+                            <span class="comparison-symbol {% if item.traditional_has %}check{% else %}cross{% endif %}">
+                                {% if item.traditional_has %}✓{% else %}✗{% endif %}
+                            </span>
+                        </li>
+                    {% endfor %}
+                {% else %}
+                    <li>
+                        <span class="comparison-feature-text">Manual roll calls</span>
+                        <span class="comparison-symbol check">✓</span>
+                    </li>
+                    <li>
+                        <span class="comparison-feature-text">Automated attendance marking</span>
+                        <span class="comparison-symbol cross">✗</span>
+                    </li>
+                    <li>
+                        <span class="comparison-feature-text">Paper-based tracking</span>
+                        <span class="comparison-symbol check">✓</span>
+                    </li>
+                    <li>
+                        <span class="comparison-feature-text">Digital tracking system</span>
+                        <span class="comparison-symbol cross">✗</span>
+                    </li>
+                    <li>
+                        <span class="comparison-feature-text">Time-consuming data entry</span>
+                        <span class="comparison-symbol check">✓</span>
+                    </li>
+                    <li>
+                        <span class="comparison-feature-text">Instant data processing</span>
+                        <span class="comparison-symbol cross">✗</span>
+                    </li>
+                    <li>
+                        <span class="comparison-feature-text">Human errors common</span>
+                        <span class="comparison-symbol check">✓</span>
+                    </li>
+                    <li>
+                        <span class="comparison-feature-text">99.8% accuracy rate</span>
+                        <span class="comparison-symbol cross">✗</span>
+                    </li>
+                {% endif %}
             </ul>
         </div>
         <div class="attendai-column">
             <h3>With AttendAI</h3>
             <ul>
-                <li>Automated attendance marking</li>
-                <li>Digital tracking system</li>
-                <li>Instant data processing</li>
-                <li>99.8% accuracy rate</li>
-                <li>Real-time dashboards</li>
-                <li>Advanced analytics</li>
-                <li>Automated report generation</li>
-                <li>Access anywhere, anytime</li>
+                {% if comparison_items %}
+                    {% for item in comparison_items %}
+                        <li>
+                            <span class="comparison-feature-text">{{ item.feature_text }}</span>
+                            <span class="comparison-symbol {% if item.attendai_has %}check{% else %}cross{% endif %}">
+                                {% if item.attendai_has %}✓{% else %}✗{% endif %}
+                            </span>
+                        </li>
+                    {% endfor %}
+                {% else %}
+                    <li>
+                        <span class="comparison-feature-text">Manual roll calls</span>
+                        <span class="comparison-symbol cross">✗</span>
+                    </li>
+                    <li>
+                        <span class="comparison-feature-text">Automated attendance marking</span>
+                        <span class="comparison-symbol check">✓</span>
+                    </li>
+                    <li>
+                        <span class="comparison-feature-text">Paper-based tracking</span>
+                        <span class="comparison-symbol cross">✗</span>
+                    </li>
+                    <li>
+                        <span class="comparison-feature-text">Digital tracking system</span>
+                        <span class="comparison-symbol check">✓</span>
+                    </li>
+                    <li>
+                        <span class="comparison-feature-text">Time-consuming data entry</span>
+                        <span class="comparison-symbol cross">✗</span>
+                    </li>
+                    <li>
+                        <span class="comparison-feature-text">Instant data processing</span>
+                        <span class="comparison-symbol check">✓</span>
+                    </li>
+                    <li>
+                        <span class="comparison-feature-text">Human errors common</span>
+                        <span class="comparison-symbol cross">✗</span>
+                    </li>
+                    <li>
+                        <span class="comparison-feature-text">99.8% accuracy rate</span>
+                        <span class="comparison-symbol check">✓</span>
+                    </li>
+                {% endif %}
             </ul>
         </div>
     </div>

@@ -8,7 +8,7 @@ from base import root_engine, engine, get_session
 from models import *
 
 # Import the new models
-from models import Feature, HeroFeature, Stat, AboutIntro, AboutStory, AboutMissionVision, TeamMember, AboutValue
+from models import Feature, HeroFeature, Stat, AboutIntro, AboutStory, AboutMissionVision, TeamMember, AboutValue, HomepageFeatureCard, FeaturesPageContent, FeaturesComparison
 
 def drop_database():
     with root_engine.connect() as conn:
@@ -823,6 +823,240 @@ def seed_about_values():
         
         session.commit()
         print(f"Added {len(values_data)} values")
+
+def seed_feature_cards():
+    with get_session() as session:
+        feature_cards_data = [
+            {
+                'title': 'Our Team',
+                'description': 'Learn more about AttendAI and the dedicated team behind our innovative solutions',
+                'icon': '👥',
+                'bg_image': 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+                'link_url': '/about',
+                'link_text': 'Learn More',
+                'display_order': 1,
+                'is_active': True
+            },
+            {
+                'title': 'Testimonials',
+                'description': 'Read glowing reviews from educational institutions and businesses using AttendAI',
+                'icon': '⭐',
+                'bg_image': 'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w-800&q=80',
+                'link_url': '/testimonials',
+                'link_text': 'Read Stories',
+                'display_order': 2,
+                'is_active': True
+            },
+            {
+                'title': 'Affordable Plans',
+                'description': 'Choose from our range of subscription plans designed to suit institutions of all sizes',
+                'icon': '💳',
+                'bg_image': 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+                'link_url': '/subscriptions',
+                'link_text': 'View Plans',
+                'display_order': 3,
+                'is_active': True
+            },
+            {
+                'title': 'AI Powered',
+                'description': 'Leverage artificial intelligence for facial recognition and predictive analytics',
+                'icon': '🤖',
+                'bg_image': 'https://images.unsplash.com/photo-1677442136019-21780ecad995?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+                'link_url': '/features',
+                'link_text': 'Explore Features',
+                'display_order': 4,
+                'is_active': True
+            },
+            {
+                'title': 'Real-time Reports',
+                'description': 'Generate comprehensive attendance reports and analytics instantly',
+                'icon': '📊',
+                'bg_image': 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+                'link_url': '/features',
+                'link_text': 'See Analytics',
+                'display_order': 5,
+                'is_active': True
+            },
+            {
+                'title': 'Easy Tracking',
+                'description': 'Mark attendance with a single click using QR codes or facial recognition',
+                'icon': '📱',
+                'bg_image': 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+                'link_url': '/features',
+                'link_text': 'Learn How',
+                'display_order': 6,
+                'is_active': True
+            }
+        ]
+        
+        for card_data in feature_cards_data:
+            feature_card = HomepageFeatureCard(**card_data)
+            session.add(feature_card)
+        
+        session.commit()
+        print(f"Added {len(feature_cards_data)} homepage feature cards")
+
+def seed_features_page_content():
+    with get_session() as session:
+        # Check if content already exists
+        existing_count = session.query(FeaturesPageContent).count()
+        if existing_count > 0:
+            print(f"Features page content already exists ({existing_count} records), skipping seed")
+            return
+        
+        content_data = [
+            {
+                'section': 'header',
+                'title': 'Powerful Features for Modern Attendance Management',
+                'content': 'Discover how AttendAI revolutionizes attendance tracking with AI-powered features designed for efficiency, accuracy, and ease of use.',
+                'is_active': True
+            },
+            {
+                'section': 'hero',
+                'title': 'Why Choose AttendAI?',
+                'content': 'Traditional attendance methods are time-consuming, error-prone, and lack insights. AttendAI transforms this process with intelligent automation, real-time analytics, and seamless integration - saving you hours of administrative work while providing valuable data-driven insights.',
+                'is_active': True
+            }
+        ]
+        
+        for content in content_data:
+            page_content = FeaturesPageContent(**content)
+            session.add(page_content)
+        
+        session.commit()
+        print(f"Added {len(content_data)} features page content items")
+
+def seed_features_comparison():
+    """Seed features comparison table with default data"""
+    with get_session() as session:
+        # Check if content already exists
+        existing_count = session.query(FeaturesComparison).count()
+        if existing_count > 0:
+            print(f"Features comparison items already exist ({existing_count} records), skipping seed")
+            return
+        
+        comparison_data = [
+            {
+                'feature_text': 'Manual roll calls',
+                'traditional_has': True,
+                'attendai_has': False,
+                'display_order': 1,
+                'is_active': True
+            },
+            {
+                'feature_text': 'Automated attendance marking',
+                'traditional_has': False,
+                'attendai_has': True,
+                'display_order': 2,
+                'is_active': True
+            },
+            {
+                'feature_text': 'Paper-based tracking',
+                'traditional_has': True,
+                'attendai_has': False,
+                'display_order': 3,
+                'is_active': True
+            },
+            {
+                'feature_text': 'Digital tracking system',
+                'traditional_has': False,
+                'attendai_has': True,
+                'display_order': 4,
+                'is_active': True
+            },
+            {
+                'feature_text': 'Time-consuming data entry',
+                'traditional_has': True,
+                'attendai_has': False,
+                'display_order': 5,
+                'is_active': True
+            },
+            {
+                'feature_text': 'Instant data processing',
+                'traditional_has': False,
+                'attendai_has': True,
+                'display_order': 6,
+                'is_active': True
+            },
+            {
+                'feature_text': 'Human errors common',
+                'traditional_has': True,
+                'attendai_has': False,
+                'display_order': 7,
+                'is_active': True
+            },
+            {
+                'feature_text': '99.8% accuracy rate',
+                'traditional_has': False,
+                'attendai_has': True,
+                'display_order': 8,
+                'is_active': True
+            },
+            {
+                'feature_text': 'No real-time insights',
+                'traditional_has': True,
+                'attendai_has': False,
+                'display_order': 9,
+                'is_active': True
+            },
+            {
+                'feature_text': 'Real-time dashboards',
+                'traditional_has': False,
+                'attendai_has': True,
+                'display_order': 10,
+                'is_active': True
+            },
+            {
+                'feature_text': 'Difficult to analyze trends',
+                'traditional_has': True,
+                'attendai_has': False,
+                'display_order': 11,
+                'is_active': True
+            },
+            {
+                'feature_text': 'Advanced analytics',
+                'traditional_has': False,
+                'attendai_has': True,
+                'display_order': 12,
+                'is_active': True
+            },
+            {
+                'feature_text': 'No automated reporting',
+                'traditional_has': True,
+                'attendai_has': False,
+                'display_order': 13,
+                'is_active': True
+            },
+            {
+                'feature_text': 'Automated report generation',
+                'traditional_has': False,
+                'attendai_has': True,
+                'display_order': 14,
+                'is_active': True
+            },
+            {
+                'feature_text': 'Limited accessibility',
+                'traditional_has': True,
+                'attendai_has': False,
+                'display_order': 15,
+                'is_active': True
+            },
+            {
+                'feature_text': 'Access anywhere, anytime',
+                'traditional_has': False,
+                'attendai_has': True,
+                'display_order': 16,
+                'is_active': True
+            }
+        ]
+        
+        for comparison in comparison_data:
+            comparison_item = FeaturesComparison(**comparison)
+            session.add(comparison_item)
+        
+        session.commit()
+        print(f"Added {len(comparison_data)} features comparison items")
+
 def seed_platform_issues():
     """Seed platform issues table with realistic dummy data"""
     with get_session() as session:
@@ -1104,6 +1338,15 @@ def seed_database():
     
     if row_count("About_Values") == 0:
         seed_about_values()
+    
+    if row_count("Homepage_Feature_Cards") == 0:
+        seed_feature_cards()
+    
+    if row_count("Features_Page_Content") == 0:
+        seed_features_page_content()
+    
+    if row_count("Features_Comparison") == 0:
+        seed_features_comparison()
 
     if row_count("Announcements") == 0:
         cols = [

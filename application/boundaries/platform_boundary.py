@@ -11,7 +11,7 @@ from application.entities2.subscription import SubscriptionModel
 from application.entities2.testimonial import TestimonialModel
 from application.entities2.user import UserModel
 from database.base import get_session
-from database.models import User, Feature, HeroFeature, Stat, AboutIntro, AboutStory, AboutMissionVision, TeamMember, AboutValue, SubscriptionPlan
+from database.models import User, Feature, HeroFeature, Stat, AboutIntro, AboutStory, AboutMissionVision, TeamMember, AboutValue, SubscriptionPlan, HomepageFeatureCard
 
 platform_bp = Blueprint('platform', __name__)
 
@@ -556,6 +556,13 @@ def landing_page_management():
         total_subscription_plans = len(subscription_plans)
         active_subscription_plans = sum(1 for sp in subscription_plans if sp.is_active)
         
+        # Get homepage feature cards
+        feature_cards = db_session.query(HomepageFeatureCard).order_by(HomepageFeatureCard.display_order).all()
+        feature_cards_list = [fc.as_dict() for fc in feature_cards]
+        
+        total_feature_cards = len(feature_cards)
+        active_feature_cards = sum(1 for fc in feature_cards if fc.is_active)
+        
     context = {
         'hero_features': hero_features_list,
         'total_hero_features': total_hero_features,
@@ -582,7 +589,10 @@ def landing_page_management():
         'active_values': active_values,
         'subscription_plans': subscription_plans_list,
         'total_subscription_plans': total_subscription_plans,
-        'active_subscription_plans': active_subscription_plans
+        'active_subscription_plans': active_subscription_plans,
+        'feature_cards': feature_cards_list,
+        'total_feature_cards': total_feature_cards,
+        'active_feature_cards': active_feature_cards
     }
     
     return render_template('platmanager/platform_manager_landing_page.html', **context)
@@ -1598,6 +1608,105 @@ def delete_subscription_plan(plan_id):
                 }), 400
             
             db_session.delete(plan)
+            db_session.commit()
+            
+            return jsonify({'success': True}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+
+# ====================
+# HOMEPAGE FEATURE CARDS API
+# ====================
+
+@platform_bp.route('/api/feature-cards/create', methods=['POST'])
+@requires_roles_api('platform_manager')
+def create_feature_card():
+    """Create a new homepage feature card"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            # Create new feature card
+            feature_card = HomepageFeatureCard(
+                title=data['title'],
+                description=data['description'],
+                icon=data['icon'],
+                bg_image=data['bg_image'],
+                link_url=data.get('link_url'),
+                link_text=data.get('link_text'),
+                display_order=data.get('display_order', 0),
+                is_active=data.get('is_active', True)
+            )
+            
+            db_session.add(feature_card)
+            db_session.commit()
+            
+            return jsonify({'success': True, 'feature_card': feature_card.as_dict()}), 201
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+
+@platform_bp.route('/api/feature-cards/<int:feature_card_id>/update', methods=['POST'])
+@requires_roles_api('platform_manager')
+def update_feature_card(feature_card_id):
+    """Update an existing homepage feature card"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            feature_card = db_session.query(HomepageFeatureCard).filter_by(feature_card_id=feature_card_id).first()
+            
+            if not feature_card:
+                return jsonify({'success': False, 'error': 'Feature card not found'}), 404
+            
+            # Update fields
+            feature_card.title = data['title']
+            feature_card.description = data['description']
+            feature_card.icon = data['icon']
+            feature_card.bg_image = data['bg_image']
+            feature_card.link_url = data.get('link_url')
+            feature_card.link_text = data.get('link_text')
+            feature_card.display_order = data.get('display_order', 0)
+            
+            db_session.commit()
+            
+            return jsonify({'success': True, 'feature_card': feature_card.as_dict()}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+
+@platform_bp.route('/api/feature-cards/<int:feature_card_id>/toggle-status', methods=['POST'])
+@requires_roles_api('platform_manager')
+def toggle_feature_card_status(feature_card_id):
+    """Toggle active status of a homepage feature card"""
+    try:
+        with get_session() as db_session:
+            feature_card = db_session.query(HomepageFeatureCard).filter_by(feature_card_id=feature_card_id).first()
+            
+            if not feature_card:
+                return jsonify({'success': False, 'error': 'Feature card not found'}), 404
+            
+            feature_card.is_active = not feature_card.is_active
+            db_session.commit()
+            
+            return jsonify({'success': True, 'feature_card': feature_card.as_dict()}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+
+@platform_bp.route('/api/feature-cards/<int:feature_card_id>/delete', methods=['POST'])
+@requires_roles_api('platform_manager')
+def delete_feature_card(feature_card_id):
+    """Delete a homepage feature card"""
+    try:
+        with get_session() as db_session:
+            feature_card = db_session.query(HomepageFeatureCard).filter_by(feature_card_id=feature_card_id).first()
+            
+            if not feature_card:
+                return jsonify({'success': False, 'error': 'Feature card not found'}), 404
+            
+            db_session.delete(feature_card)
             db_session.commit()
             
             return jsonify({'success': True}), 200

@@ -8,7 +8,7 @@ from base import root_engine, engine, get_session
 from models import *
 
 # Import the new models
-from models import Feature, HeroFeature, Stat, AboutIntro, AboutStory, AboutMissionVision, TeamMember, AboutValue
+from models import Feature, HeroFeature, Stat, AboutIntro, AboutStory, AboutMissionVision, TeamMember, AboutValue, HomepageFeatureCard
 
 def drop_database():
     with root_engine.connect() as conn:
@@ -823,6 +823,79 @@ def seed_about_values():
         
         session.commit()
         print(f"Added {len(values_data)} values")
+
+def seed_feature_cards():
+    with get_session() as session:
+        feature_cards_data = [
+            {
+                'title': 'Our Team',
+                'description': 'Learn more about AttendAI and the dedicated team behind our innovative solutions',
+                'icon': '👥',
+                'bg_image': 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+                'link_url': '/about',
+                'link_text': 'Learn More',
+                'display_order': 1,
+                'is_active': True
+            },
+            {
+                'title': 'Testimonials',
+                'description': 'Read glowing reviews from educational institutions and businesses using AttendAI',
+                'icon': '⭐',
+                'bg_image': 'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w-800&q=80',
+                'link_url': '/testimonials',
+                'link_text': 'Read Stories',
+                'display_order': 2,
+                'is_active': True
+            },
+            {
+                'title': 'Affordable Plans',
+                'description': 'Choose from our range of subscription plans designed to suit institutions of all sizes',
+                'icon': '💳',
+                'bg_image': 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+                'link_url': '/subscriptions',
+                'link_text': 'View Plans',
+                'display_order': 3,
+                'is_active': True
+            },
+            {
+                'title': 'AI Powered',
+                'description': 'Leverage artificial intelligence for facial recognition and predictive analytics',
+                'icon': '🤖',
+                'bg_image': 'https://images.unsplash.com/photo-1677442136019-21780ecad995?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+                'link_url': '/features',
+                'link_text': 'Explore Features',
+                'display_order': 4,
+                'is_active': True
+            },
+            {
+                'title': 'Real-time Reports',
+                'description': 'Generate comprehensive attendance reports and analytics instantly',
+                'icon': '📊',
+                'bg_image': 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+                'link_url': '/features',
+                'link_text': 'See Analytics',
+                'display_order': 5,
+                'is_active': True
+            },
+            {
+                'title': 'Easy Tracking',
+                'description': 'Mark attendance with a single click using QR codes or facial recognition',
+                'icon': '📱',
+                'bg_image': 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
+                'link_url': '/features',
+                'link_text': 'Learn How',
+                'display_order': 6,
+                'is_active': True
+            }
+        ]
+        
+        for card_data in feature_cards_data:
+            feature_card = HomepageFeatureCard(**card_data)
+            session.add(feature_card)
+        
+        session.commit()
+        print(f"Added {len(feature_cards_data)} homepage feature cards")
+
 def seed_platform_issues():
     """Seed platform issues table with realistic dummy data"""
     with get_session() as session:
@@ -1104,6 +1177,9 @@ def seed_database():
     
     if row_count("About_Values") == 0:
         seed_about_values()
+    
+    if row_count("Homepage_Feature_Cards") == 0:
+        seed_feature_cards()
 
     if row_count("Announcements") == 0:
         cols = [

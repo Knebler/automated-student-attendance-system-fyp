@@ -408,6 +408,24 @@ class AboutValue(Base, BaseMixin):
     display_order = Column(Integer, server_default="0")
     is_active = Column(Boolean, server_default="1")
     created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+# ====================
+# HOMEPAGE FEATURE CARDS
+# ====================
+class HomepageFeatureCard(Base, BaseMixin):
+    __tablename__ = "homepage_feature_cards"
+
+    feature_card_id = Column(Integer, primary_key=True)
+    title = Column(String(200), nullable=False)
+    description = Column(Text, nullable=False)
+    icon = Column(String(50), nullable=False)
+    bg_image = Column(String(500), nullable=False)
+    link_url = Column(String(500))
+    link_text = Column(String(100))
+    is_active = Column(Boolean, server_default="1")
+    display_order = Column(Integer, server_default="0")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
 # =====================
 # PLATFORM ISSUES (USER REPORTS)
 # =====================

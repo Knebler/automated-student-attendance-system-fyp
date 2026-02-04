@@ -13,7 +13,7 @@ from application.controls.auth_control import requires_roles
 from application.entities2 import ClassModel, UserModel, InstitutionModel, SubscriptionModel, CourseModel, AttendanceRecordModel, CourseUserModel, VenueModel, TestimonialModel
 from database.base import get_session
 from database.models import *
-from database.models import Feature, HeroFeature, Stat
+from database.models import Feature, HeroFeature, Stat, HomepageFeatureCard
 from datetime import date, datetime, timedelta
 from collections import defaultdict
 
@@ -47,8 +47,22 @@ def home():
             }
             for s in stats_query
         ]
+        
+        # Get active feature cards
+        feature_cards_query = db_session.query(HomepageFeatureCard).filter_by(is_active=True).order_by(HomepageFeatureCard.display_order).all()
+        feature_cards = [
+            {
+                'title': fc.title,
+                'description': fc.description,
+                'icon': fc.icon,
+                'bg_image': fc.bg_image,
+                'link_url': fc.link_url,
+                'link_text': fc.link_text
+            }
+            for fc in feature_cards_query
+        ]
     
-    return render_template('index.html', hero_features=hero_features, stats=stats)
+    return render_template('index.html', hero_features=hero_features, stats=stats, feature_cards=feature_cards)
 
 @main_bp.route('/about')
 def about():

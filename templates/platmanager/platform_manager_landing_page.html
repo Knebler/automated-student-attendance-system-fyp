@@ -436,6 +436,9 @@
     <button class="tab-button" onclick="switchTab('stats')">
         📊 Statistics
     </button>
+    <button class="tab-button" onclick="switchTab('feature-cards')">
+        🎴 Feature Cards
+    </button>
     <button class="tab-button" onclick="switchTab('features')">
         ⚡ Features
     </button>
@@ -603,6 +606,84 @@
         <div class="empty-state">
             <p>No stats found</p>
             <button class="btn-custom" onclick="openModal('stats', 'add')">Add Your First Stat</button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Feature Cards Tab -->
+<div id="feature-cards-tab" class="tab-content">
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>{{ total_feature_cards }}</h3>
+            <p>Total Feature Cards</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ active_feature_cards }}</h3>
+            <p>Active Feature Cards</p>
+        </div>
+    </div>
+
+    <div class="filter-section">
+        <div class="filter-controls">
+            <input type="text" id="featureCardsSearch" onkeyup="filterTable('feature-cards')" placeholder="Search feature cards...">
+            <button class="btn-custom" onclick="openModal('featureCards', 'add')">+ Add Feature Card</button>
+        </div>
+    </div>
+
+    <div class="content-table">
+        <div class="table-header">
+            <h2>Homepage Feature Cards</h2>
+        </div>
+        {% if feature_cards and feature_cards|length > 0 %}
+        <table id="featureCardsTable">
+            <thead>
+                <tr>
+                    <th>Order</th>
+                    <th>Title</th>
+                    <th>Icon</th>
+                    <th>Link</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for card in feature_cards %}
+                <tr>
+                    <td>{{ card.display_order }}</td>
+                    <td>{{ card.title }}</td>
+                    <td><span class="feature-icon">{{ card.icon }}</span></td>
+                    <td>
+                        {% if card.link_url %}
+                            <a href="{{ card.link_url }}" target="_blank" style="text-decoration: underline;">{{ card.link_text or 'Link' }}</a>
+                        {% else %}
+                            <span style="color: #999;">No link</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge {% if card.is_active %}badge-success{% else %}badge-warning{% endif %}">
+                            {{ 'Active' if card.is_active else 'Inactive' }}
+                        </span>
+                    </td>
+                    <td class="action-buttons">
+                        <button class="btn-icon btn-edit" onclick="editFeatureCard({{ card.feature_card_id }})" title="Edit">
+                            ✏️
+                        </button>
+                        <button class="btn-icon btn-toggle" onclick="toggleStatus('featureCards', {{ card.feature_card_id }}, {{ card.is_active|lower }})" title="Toggle Status">
+                            {{ '👁️' if card.is_active else '👁️‍🗨️' }}
+                        </button>
+                        <button class="btn-icon btn-delete" onclick="deleteItem('featureCards', {{ card.feature_card_id }}, '{{ card.title }}')" title="Delete">
+                            🗑️
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <p>No feature cards found</p>
+            <button class="btn-custom" onclick="openModal('featureCards', 'add')">Add Your First Feature Card</button>
         </div>
         {% endif %}
     </div>
@@ -1121,6 +1202,78 @@
     </div>
 </div>
 
+<!-- Feature Cards Modal -->
+<div id="featureCardsModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="featureCardsModalTitle">Add Feature Card</h2>
+            <button class="modal-close" onclick="closeModal('featureCards')">&times;</button>
+        </div>
+        <form id="featureCardsForm" onsubmit="saveItem(event, 'featureCards')">
+            <input type="hidden" id="featureCardId" name="feature_card_id">
+            
+            <div class="form-group">
+                <label for="featureCardTitle">Title*</label>
+                <input type="text" id="featureCardTitle" name="title" required maxlength="200" 
+                       placeholder="AI Features">
+            </div>
+            
+            <div class="form-group">
+                <label for="featureCardDescription">Description*</label>
+                <textarea id="featureCardDescription" name="description" required rows="4" 
+                          placeholder="Experience cutting-edge AI-powered attendance tracking..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="featureCardIcon">Icon (Emoji)*</label>
+                <input type="text" id="featureCardIcon" name="icon" required maxlength="10" 
+                       placeholder="🤖">
+            </div>
+            
+            <div class="form-group">
+                <label for="featureCardBgImage">Background Image URL*</label>
+                <input type="text" id="featureCardBgImage" name="bg_image" required 
+                       placeholder="https://images.unsplash.com/...">
+                <small>Unsplash or other image URL</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="featureCardLinkUrl">Link URL (Optional)</label>
+                <input type="text" id="featureCardLinkUrl" name="link_url" 
+                       placeholder="/features or https://example.com">
+                <small>Internal route or external URL</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="featureCardLinkText">Link Text (Optional)</label>
+                <input type="text" id="featureCardLinkText" name="link_text" maxlength="100" 
+                       placeholder="Learn More">
+                <small>Button text for the link</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="featureCardDisplayOrder">Display Order*</label>
+                <input type="number" id="featureCardDisplayOrder" name="display_order" required min="0" 
+                       value="0" placeholder="0">
+            </div>
+            
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" id="featureCardIsActive" name="is_active" checked>
+                    Active (visible to users)
+                </label>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-custom btn-outline-custom" onclick="closeModal('featureCards')">Cancel</button>
+                <button type="submit" class="btn-custom">
+                    <span id="featureCardsSubmitBtnText">Add Feature Card</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Feature Modal -->
 <div id="featuresModal" class="modal-overlay">
     <div class="modal-content">
@@ -1437,6 +1590,7 @@ const missionVisionData = {{ mission_vision|tojson|safe }};
 let teamMembersData = {{ team_members|tojson|safe }};
 let valuesData = {{ values|tojson|safe }};
 let subscriptionPlansData = {{ subscription_plans|tojson|safe }};
+let featureCardsData = {{ feature_cards|tojson|safe }};
 
 let featureCounter = 0;
 
@@ -1556,6 +1710,26 @@ function editFeature(id) {
     }
 }
 
+function editFeatureCard(id) {
+    const item = featureCardsData.find(fc => fc.feature_card_id === id);
+    if (item) {
+        document.getElementById('featureCardsModalTitle').textContent = 'Edit Feature Card';
+        document.getElementById('featureCardsSubmitBtnText').textContent = 'Update Feature Card';
+        document.getElementById('featureCardId').value = item.feature_card_id;
+        document.getElementById('featureCardTitle').value = item.title;
+        document.getElementById('featureCardDescription').value = item.description;
+        document.getElementById('featureCardIcon').value = item.icon;
+        document.getElementById('featureCardBgImage').value = item.bg_image;
+        document.getElementById('featureCardLinkUrl').value = item.link_url || '';
+        document.getElementById('featureCardLinkText').value = item.link_text || '';
+        document.getElementById('featureCardDisplayOrder').value = item.display_order;
+        document.getElementById('featureCardIsActive').checked = item.is_active;
+        
+        document.getElementById('featureCardsModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
 async function saveItem(event, type) {
     event.preventDefault();
     const formData = new FormData(event.target);
@@ -1589,6 +1763,22 @@ async function saveItem(event, type) {
         url = data.stat_id 
             ? `/platform/api/stats/${data.stat_id}/update`
             : '/platform/api/stats/create';
+    } else if (type === 'featureCards') {
+        idField = 'feature_card_id';
+        data = {
+            feature_card_id: formData.get(idField) || null,
+            title: formData.get('title'),
+            description: formData.get('description'),
+            icon: formData.get('icon'),
+            bg_image: formData.get('bg_image'),
+            link_url: formData.get('link_url'),
+            link_text: formData.get('link_text'),
+            display_order: parseInt(formData.get('display_order')),
+            is_active: document.getElementById('featureCardIsActive').checked
+        };
+        url = data.feature_card_id 
+            ? `/platform/api/feature-cards/${data.feature_card_id}/update`
+            : '/platform/api/feature-cards/create';
     } else if (type === 'team') {
         idField = 'team_member_id';
         const contributions = formData.get('contributions').split('\n').filter(c => c.trim());
@@ -1687,6 +1877,8 @@ async function toggleStatus(type, id, currentStatus) {
         url = `/platform/api/hero-features/${id}/toggle-status`;
     } else if (type === 'stats') {
         url = `/platform/api/stats/${id}/toggle-status`;
+    } else if (type === 'featureCards') {
+        url = `/platform/api/feature-cards/${id}/toggle-status`;
     } else if (type === 'team') {
         url = `/platform/api/team-members/${id}/toggle-status`;
     } else if (type === 'valuesTab') {
@@ -1725,6 +1917,8 @@ async function deleteItem(type, id, name) {
         url = `/platform/api/hero-features/${id}/delete`;
     } else if (type === 'stats') {
         url = `/platform/api/stats/${id}/delete`;
+    } else if (type === 'featureCards') {
+        url = `/platform/api/feature-cards/${id}/delete`;
     } else if (type === 'team') {
         url = `/platform/api/team-members/${id}/delete`;
     } else if (type === 'valuesTab') {
@@ -1767,6 +1961,13 @@ function filterTable(type) {
         rows.forEach(row => {
             const label = row.dataset.label;
             row.style.display = label.includes(searchTerm) ? '' : 'none';
+        });
+    } else if (type === 'feature-cards') {
+        rows = document.querySelectorAll('#featureCardsTable tbody tr');
+        searchTerm = document.getElementById('featureCardsSearch').value.toLowerCase();
+        rows.forEach(row => {
+            const title = row.cells[1].textContent.toLowerCase();
+            row.style.display = title.includes(searchTerm) ? '' : 'none';
         });
     } else if (type === 'team') {
         rows = document.querySelectorAll('#teamTableBody tr');
@@ -2045,7 +2246,7 @@ async function saveMissionVision(event) {
 }
 
 // Close modals on click outside
-['heroModal', 'statsModal', 'featuresModal', 'teamModal', 'valuesTabModal', 'subscriptionsModal', 'aboutIntroModal', 'aboutStoryModal', 'missionVisionModal'].forEach(modalId => {
+['heroModal', 'statsModal', 'featureCardsModal', 'featuresModal', 'teamModal', 'valuesTabModal', 'subscriptionsModal', 'aboutIntroModal', 'aboutStoryModal', 'missionVisionModal'].forEach(modalId => {
     document.getElementById(modalId).addEventListener('click', function(e) {
         if (e.target === this) {
             closeModal(modalId.replace('Modal', ''));
@@ -2056,7 +2257,7 @@ async function saveMissionVision(event) {
 // Close modals with Escape key
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-        ['hero', 'stats', 'features', 'team', 'valuesTab', 'subscriptions', 'aboutIntro', 'aboutStory', 'missionVision'].forEach(type => closeModal(type));
+        ['hero', 'stats', 'featureCards', 'features', 'team', 'valuesTab', 'subscriptions', 'aboutIntro', 'aboutStory', 'missionVision'].forEach(type => closeModal(type));
     }
 });
 </script>

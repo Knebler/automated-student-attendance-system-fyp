@@ -440,6 +440,20 @@ class FeaturesPageContent(Base, BaseMixin):
     created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
     updated_at = Column(DateTime, onupdate=text("CURRENT_TIMESTAMP"))
 
+# ====================
+# FEATURES COMPARISON TABLE
+# ====================
+class FeaturesComparison(Base, BaseMixin):
+    __tablename__ = "features_comparison"
+
+    comparison_id = Column(Integer, primary_key=True)
+    feature_text = Column(String(255), nullable=False)
+    traditional_has = Column(Boolean, nullable=False)  # False = ✗, True = ✓
+    attendai_has = Column(Boolean, nullable=False)  # False = ✗, True = ✓
+    display_order = Column(Integer, server_default="0")
+    is_active = Column(Boolean, server_default="1")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
 # =====================
 # PLATFORM ISSUES (USER REPORTS)
 # =====================

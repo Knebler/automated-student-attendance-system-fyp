@@ -829,6 +829,93 @@
         </div>
         {% endif %}
     </div>
+    
+    <!-- Comparison Table Section -->
+    <div class="content-table" style="margin-top: 3rem;">
+        <div class="table-header">
+            <h2>Comparison Table</h2>
+        </div>
+        
+        <div class="stats-grid" style="margin-bottom: 1.5rem;">
+            <div class="stat-card">
+                <h3>{{ total_comparison_items }}</h3>
+                <p>Total Comparison Items</p>
+            </div>
+            <div class="stat-card">
+                <h3>{{ active_comparison_items }}</h3>
+                <p>Active Items</p>
+            </div>
+        </div>
+        
+        <div class="filter-section">
+            <div class="filter-controls">
+                <button class="btn-custom" onclick="openModal('comparison', 'add')">
+                    ➕ Add Comparison Item
+                </button>
+            </div>
+        </div>
+        
+        {% if comparison_items %}
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Feature Text</th>
+                        <th>Traditional</th>
+                        <th>AttendAI</th>
+                        <th>Order</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in comparison_items %}
+                    <tr data-id="{{ item.comparison_id }}" 
+                        data-status="{{ 'active' if item.is_active else 'inactive' }}">
+                        <td>{{ item.feature_text }}</td>
+                        <td style="text-align: center; font-size: 1.5rem;">
+                            {% if item.traditional_has %}
+                                <span style="color: #10b981;">✓</span>
+                            {% else %}
+                                <span style="color: #ef4444;">✗</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center; font-size: 1.5rem;">
+                            {% if item.attendai_has %}
+                                <span style="color: #10b981;">✓</span>
+                            {% else %}
+                                <span style="color: #ef4444;">✗</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.display_order }}</td>
+                        <td>
+                            {% if item.is_active %}
+                                <span class="badge badge-success">Active</span>
+                            {% else %}
+                                <span class="badge badge-warning">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-icon btn-edit" onclick="editComparison({{ item.comparison_id }})" title="Edit">✏️</button>
+                                <button class="btn-icon btn-toggle" onclick="toggleStatus('comparison', {{ item.comparison_id }}, {{ 'true' if item.is_active else 'false' }})" title="Toggle">
+                                    {% if item.is_active %}👁️{% else %}🚫{% endif %}
+                                </button>
+                                <button class="btn-icon btn-delete" onclick="deleteItem('comparison', {{ item.comparison_id }}, '{{ item.feature_text }}')" title="Delete">🗑️</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No comparison items found</p>
+            <button class="btn-custom" onclick="openModal('comparison', 'add')">Add Your First Comparison Item</button>
+        </div>
+        {% endif %}
+    </div>
 </div>
 
 <!-- About Us Tab -->
@@ -1412,6 +1499,60 @@
     </div>
 </div>
 
+<!-- Comparison Item Modal -->
+<div id="comparisonModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="comparisonModalTitle">Add Comparison Item</h2>
+            <button class="modal-close" onclick="closeModal('comparison')">&times;</button>
+        </div>
+        
+        <form id="comparisonForm" onsubmit="saveComparison(event)">
+            <input type="hidden" id="comparisonId" name="comparison_id">
+            
+            <div class="form-group">
+                <label for="comparisonFeatureText">Feature Text*</label>
+                <input type="text" id="comparisonFeatureText" name="feature_text" required maxlength="255" 
+                       placeholder="Real-time dashboards">
+            </div>
+            
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" id="comparisonTraditionalHas" name="traditional_has">
+                    Traditional Methods Has This (✓ if checked, ✗ if unchecked)
+                </label>
+            </div>
+            
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" id="comparisonAttendaiHas" name="attendai_has" checked>
+                    AttendAI Has This (✓ if checked, ✗ if unchecked)
+                </label>
+            </div>
+            
+            <div class="form-group">
+                <label for="comparisonDisplayOrder">Display Order*</label>
+                <input type="number" id="comparisonDisplayOrder" name="display_order" required min="0" 
+                       value="0" placeholder="0">
+            </div>
+            
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" id="comparisonIsActive" name="is_active" checked>
+                    Active (visible to users)
+                </label>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-custom btn-outline-custom" onclick="closeModal('comparison')">Cancel</button>
+                <button type="submit" class="btn-custom">
+                    <span id="comparisonSubmitBtnText">Add Comparison Item</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- About Intro Modal -->
 <div id="aboutIntroModal" class="modal-overlay">
     <div class="modal-content">
@@ -1689,6 +1830,7 @@ function openModal(type, mode, itemId = null) {
         else if (type === 'team') title = 'Add Team Member';
         else if (type === 'valuesTab') title = 'Add Value';
         else if (type === 'subscriptions') title = 'Add Subscription Plan';
+        else if (type === 'comparison') title = 'Add Comparison Item';
         
         document.getElementById(`${type}ModalTitle`).textContent = title;
         document.getElementById(`${type}SubmitBtnText`).textContent = title;
@@ -1704,6 +1846,10 @@ function openModal(type, mode, itemId = null) {
             document.getElementById('valueIsActive').checked = true;
         } else if (type === 'subscriptions') {
             document.getElementById('planIsActive').checked = true;
+        } else if (type === 'comparison') {
+            document.getElementById('comparisonIsActive').checked = true;
+            document.getElementById('comparisonTraditionalHas').checked = false;
+            document.getElementById('comparisonAttendaiHas').checked = true;
         } else {
             document.getElementById('isActive').checked = true;
         }
@@ -1949,6 +2095,8 @@ async function toggleStatus(type, id, currentStatus) {
         url = `/platform/api/values/${id}/toggle-status`;
     } else if (type === 'subscriptions') {
         url = `/platform/api/subscription-plans/${id}/toggle-status`;
+    } else if (type === 'comparison') {
+        url = `/platform/api/comparison/${id}/toggle-status`;
     } else {
         url = `/platform/api/features/${id}/toggle-status`;
     }
@@ -1989,6 +2137,8 @@ async function deleteItem(type, id, name) {
         url = `/platform/api/values/${id}/delete`;
     } else if (type === 'subscriptions') {
         url = `/platform/api/subscription-plans/${id}/delete`;
+    } else if (type === 'comparison') {
+        url = `/platform/api/comparison/${id}/delete`;
     } else {
         url = `/platform/api/features/${id}/delete`;
     }
@@ -2371,8 +2521,69 @@ async function saveMissionVision(event) {
     }
 }
 
+// Comparison Functions
+function editComparison(comparisonId) {
+    const comparison = {{ comparison_items|tojson|safe }}.find(c => c.comparison_id === comparisonId);
+    
+    if (!comparison) {
+        alert('Comparison item not found');
+        return;
+    }
+    
+    document.getElementById('comparisonModalTitle').textContent = 'Edit Comparison Item';
+    document.getElementById('comparisonSubmitBtnText').textContent = 'Update';
+    document.getElementById('comparisonId').value = comparison.comparison_id;
+    document.getElementById('comparisonFeatureText').value = comparison.feature_text;
+    document.getElementById('comparisonTraditionalHas').checked = comparison.traditional_has;
+    document.getElementById('comparisonAttendaiHas').checked = comparison.attendai_has;
+    document.getElementById('comparisonDisplayOrder').value = comparison.display_order;
+    document.getElementById('comparisonIsActive').checked = comparison.is_active;
+    
+    document.getElementById('comparisonModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+async function saveComparison(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    const comparisonId = formData.get('comparison_id');
+    const isEdit = comparisonId && comparisonId !== '';
+    
+    const data = {
+        feature_text: formData.get('feature_text'),
+        traditional_has: formData.get('traditional_has') === 'on',
+        attendai_has: formData.get('attendai_has') === 'on',
+        display_order: parseInt(formData.get('display_order')),
+        is_active: formData.get('is_active') === 'on'
+    };
+    
+    try {
+        const url = isEdit 
+            ? `/platform/api/comparison/${comparisonId}/update`
+            : '/platform/api/comparison/create';
+        
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            closeModal('comparison');
+            window.location.reload();
+        } else {
+            alert(result.error || 'Failed to save comparison item');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while saving');
+    }
+}
+
 // Close modals on click outside
-['heroModal', 'statsModal', 'featureCardsModal', 'featuresModal', 'teamModal', 'valuesTabModal', 'subscriptionsModal', 'aboutIntroModal', 'aboutStoryModal', 'missionVisionModal', 'featuresPageContentModal'].forEach(modalId => {
+['heroModal', 'statsModal', 'featureCardsModal', 'featuresModal', 'teamModal', 'valuesTabModal', 'subscriptionsModal', 'aboutIntroModal', 'aboutStoryModal', 'missionVisionModal', 'featuresPageContentModal', 'comparisonModal'].forEach(modalId => {
     document.getElementById(modalId).addEventListener('click', function(e) {
         if (e.target === this) {
             closeModal(modalId.replace('Modal', ''));
@@ -2383,7 +2594,7 @@ async function saveMissionVision(event) {
 // Close modals with Escape key
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-        ['hero', 'stats', 'featureCards', 'features', 'team', 'valuesTab', 'subscriptions', 'aboutIntro', 'aboutStory', 'missionVision', 'featuresPageContent'].forEach(type => closeModal(type));
+        ['hero', 'stats', 'featureCards', 'features', 'team', 'valuesTab', 'subscriptions', 'aboutIntro', 'aboutStory', 'missionVision', 'featuresPageContent', 'comparison'].forEach(type => closeModal(type));
     }
 });
 </script>

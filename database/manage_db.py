@@ -8,7 +8,7 @@ from base import root_engine, engine, get_session
 from models import *
 
 # Import the new models
-from models import Feature, HeroFeature, Stat, AboutIntro, AboutStory, AboutMissionVision, TeamMember, AboutValue, HomepageFeatureCard, FeaturesPageContent
+from models import Feature, HeroFeature, Stat, AboutIntro, AboutStory, AboutMissionVision, TeamMember, AboutValue, HomepageFeatureCard, FeaturesPageContent, FeaturesComparison
 
 def drop_database():
     with root_engine.connect() as conn:
@@ -926,6 +926,137 @@ def seed_features_page_content():
         session.commit()
         print(f"Added {len(content_data)} features page content items")
 
+def seed_features_comparison():
+    """Seed features comparison table with default data"""
+    with get_session() as session:
+        # Check if content already exists
+        existing_count = session.query(FeaturesComparison).count()
+        if existing_count > 0:
+            print(f"Features comparison items already exist ({existing_count} records), skipping seed")
+            return
+        
+        comparison_data = [
+            {
+                'feature_text': 'Manual roll calls',
+                'traditional_has': True,
+                'attendai_has': False,
+                'display_order': 1,
+                'is_active': True
+            },
+            {
+                'feature_text': 'Automated attendance marking',
+                'traditional_has': False,
+                'attendai_has': True,
+                'display_order': 2,
+                'is_active': True
+            },
+            {
+                'feature_text': 'Paper-based tracking',
+                'traditional_has': True,
+                'attendai_has': False,
+                'display_order': 3,
+                'is_active': True
+            },
+            {
+                'feature_text': 'Digital tracking system',
+                'traditional_has': False,
+                'attendai_has': True,
+                'display_order': 4,
+                'is_active': True
+            },
+            {
+                'feature_text': 'Time-consuming data entry',
+                'traditional_has': True,
+                'attendai_has': False,
+                'display_order': 5,
+                'is_active': True
+            },
+            {
+                'feature_text': 'Instant data processing',
+                'traditional_has': False,
+                'attendai_has': True,
+                'display_order': 6,
+                'is_active': True
+            },
+            {
+                'feature_text': 'Human errors common',
+                'traditional_has': True,
+                'attendai_has': False,
+                'display_order': 7,
+                'is_active': True
+            },
+            {
+                'feature_text': '99.8% accuracy rate',
+                'traditional_has': False,
+                'attendai_has': True,
+                'display_order': 8,
+                'is_active': True
+            },
+            {
+                'feature_text': 'No real-time insights',
+                'traditional_has': True,
+                'attendai_has': False,
+                'display_order': 9,
+                'is_active': True
+            },
+            {
+                'feature_text': 'Real-time dashboards',
+                'traditional_has': False,
+                'attendai_has': True,
+                'display_order': 10,
+                'is_active': True
+            },
+            {
+                'feature_text': 'Difficult to analyze trends',
+                'traditional_has': True,
+                'attendai_has': False,
+                'display_order': 11,
+                'is_active': True
+            },
+            {
+                'feature_text': 'Advanced analytics',
+                'traditional_has': False,
+                'attendai_has': True,
+                'display_order': 12,
+                'is_active': True
+            },
+            {
+                'feature_text': 'No automated reporting',
+                'traditional_has': True,
+                'attendai_has': False,
+                'display_order': 13,
+                'is_active': True
+            },
+            {
+                'feature_text': 'Automated report generation',
+                'traditional_has': False,
+                'attendai_has': True,
+                'display_order': 14,
+                'is_active': True
+            },
+            {
+                'feature_text': 'Limited accessibility',
+                'traditional_has': True,
+                'attendai_has': False,
+                'display_order': 15,
+                'is_active': True
+            },
+            {
+                'feature_text': 'Access anywhere, anytime',
+                'traditional_has': False,
+                'attendai_has': True,
+                'display_order': 16,
+                'is_active': True
+            }
+        ]
+        
+        for comparison in comparison_data:
+            comparison_item = FeaturesComparison(**comparison)
+            session.add(comparison_item)
+        
+        session.commit()
+        print(f"Added {len(comparison_data)} features comparison items")
+
 def seed_platform_issues():
     """Seed platform issues table with realistic dummy data"""
     with get_session() as session:
@@ -1213,6 +1344,9 @@ def seed_database():
     
     if row_count("Features_Page_Content") == 0:
         seed_features_page_content()
+    
+    if row_count("Features_Comparison") == 0:
+        seed_features_comparison()
 
     if row_count("Announcements") == 0:
         cols = [

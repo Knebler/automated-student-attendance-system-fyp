@@ -13,7 +13,7 @@ from application.controls.auth_control import requires_roles
 from application.entities2 import ClassModel, UserModel, InstitutionModel, SubscriptionModel, CourseModel, AttendanceRecordModel, CourseUserModel, VenueModel, TestimonialModel
 from database.base import get_session
 from database.models import *
-from database.models import Feature, HeroFeature, Stat, HomepageFeatureCard, FeaturesPageContent
+from database.models import Feature, HeroFeature, Stat, HomepageFeatureCard, FeaturesPageContent, FeaturesComparison
 from datetime import date, datetime, timedelta
 from collections import defaultdict
 
@@ -166,13 +166,22 @@ def features():
             'title': page_hero.title if page_hero else 'Why Choose AttendAI?',
             'content': page_hero.content if page_hero else 'Traditional attendance methods are time-consuming, error-prone, and lack insights. AttendAI transforms this process with intelligent automation, real-time analytics, and seamless integration - saving you hours of administrative work while providing valuable data-driven insights.'
         }
+        
+        # Get comparison items
+        comparison_items = db_session.query(FeaturesComparison).filter_by(is_active=True).order_by(FeaturesComparison.display_order).all()
+        comparison_list = [{
+            'feature_text': item.feature_text,
+            'traditional_has': item.traditional_has,
+            'attendai_has': item.attendai_has
+        } for item in comparison_items]
     
     return render_template(
         'unregistered/features.html', 
         main_features=main_features_list,
         advanced_features=advanced_features_list,
         page_header=header_data,
-        page_hero=hero_data
+        page_hero=hero_data,
+        comparison_items=comparison_list
     )
 
 @main_bp.route('/subscriptions')

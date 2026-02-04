@@ -8,7 +8,7 @@ from base import root_engine, engine, get_session
 from models import *
 
 # Import the new models
-from models import Feature, HeroFeature, Stat, AboutIntro, AboutStory, AboutMissionVision, TeamMember, AboutValue, HomepageFeatureCard
+from models import Feature, HeroFeature, Stat, AboutIntro, AboutStory, AboutMissionVision, TeamMember, AboutValue, HomepageFeatureCard, FeaturesPageContent
 
 def drop_database():
     with root_engine.connect() as conn:
@@ -896,6 +896,36 @@ def seed_feature_cards():
         session.commit()
         print(f"Added {len(feature_cards_data)} homepage feature cards")
 
+def seed_features_page_content():
+    with get_session() as session:
+        # Check if content already exists
+        existing_count = session.query(FeaturesPageContent).count()
+        if existing_count > 0:
+            print(f"Features page content already exists ({existing_count} records), skipping seed")
+            return
+        
+        content_data = [
+            {
+                'section': 'header',
+                'title': 'Powerful Features for Modern Attendance Management',
+                'content': 'Discover how AttendAI revolutionizes attendance tracking with AI-powered features designed for efficiency, accuracy, and ease of use.',
+                'is_active': True
+            },
+            {
+                'section': 'hero',
+                'title': 'Why Choose AttendAI?',
+                'content': 'Traditional attendance methods are time-consuming, error-prone, and lack insights. AttendAI transforms this process with intelligent automation, real-time analytics, and seamless integration - saving you hours of administrative work while providing valuable data-driven insights.',
+                'is_active': True
+            }
+        ]
+        
+        for content in content_data:
+            page_content = FeaturesPageContent(**content)
+            session.add(page_content)
+        
+        session.commit()
+        print(f"Added {len(content_data)} features page content items")
+
 def seed_platform_issues():
     """Seed platform issues table with realistic dummy data"""
     with get_session() as session:
@@ -1180,6 +1210,9 @@ def seed_database():
     
     if row_count("Homepage_Feature_Cards") == 0:
         seed_feature_cards()
+    
+    if row_count("Features_Page_Content") == 0:
+        seed_features_page_content()
 
     if row_count("Announcements") == 0:
         cols = [

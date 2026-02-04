@@ -11,7 +11,7 @@ from application.entities2.subscription import SubscriptionModel
 from application.entities2.testimonial import TestimonialModel
 from application.entities2.user import UserModel
 from database.base import get_session
-from database.models import User, Feature, HeroFeature, Stat, AboutIntro, AboutStory, AboutMissionVision, TeamMember, AboutValue, SubscriptionPlan, HomepageFeatureCard
+from database.models import User, Feature, HeroFeature, Stat, AboutIntro, AboutStory, AboutMissionVision, TeamMember, AboutValue, SubscriptionPlan, HomepageFeatureCard, FeaturesPageContent
 
 platform_bp = Blueprint('platform', __name__)
 
@@ -563,6 +563,13 @@ def landing_page_management():
         total_feature_cards = len(feature_cards)
         active_feature_cards = sum(1 for fc in feature_cards if fc.is_active)
         
+        # Get features page content
+        features_page_header = db_session.query(FeaturesPageContent).filter_by(section='header', is_active=True).first()
+        features_page_hero = db_session.query(FeaturesPageContent).filter_by(section='hero', is_active=True).first()
+        
+        features_page_header_dict = features_page_header.as_dict() if features_page_header else None
+        features_page_hero_dict = features_page_hero.as_dict() if features_page_hero else None
+        
     context = {
         'hero_features': hero_features_list,
         'total_hero_features': total_hero_features,
@@ -592,7 +599,9 @@ def landing_page_management():
         'active_subscription_plans': active_subscription_plans,
         'feature_cards': feature_cards_list,
         'total_feature_cards': total_feature_cards,
-        'active_feature_cards': active_feature_cards
+        'active_feature_cards': active_feature_cards,
+        'features_page_header': features_page_header_dict,
+        'features_page_hero': features_page_hero_dict
     }
     
     return render_template('platmanager/platform_manager_landing_page.html', **context)
@@ -1710,6 +1719,44 @@ def delete_feature_card(feature_card_id):
             db_session.commit()
             
             return jsonify({'success': True}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+
+# ====================
+# FEATURES PAGE CONTENT API
+# ====================
+
+@platform_bp.route('/api/features-page/<string:section>/update', methods=['POST'])
+@requires_roles_api('platform_manager')
+def update_features_page_content(section):
+    """Update features page header or hero content"""
+    try:
+        if section not in ['header', 'hero']:
+            return jsonify({'success': False, 'error': 'Invalid section'}), 400
+        
+        data = request.json
+        
+        with get_session() as db_session:
+            content = db_session.query(FeaturesPageContent).filter_by(section=section, is_active=True).first()
+            
+            if content:
+                # Update existing
+                content.title = data['title']
+                content.content = data['content']
+            else:
+                # Create new
+                content = FeaturesPageContent(
+                    section=section,
+                    title=data['title'],
+                    content=data['content'],
+                    is_active=True
+                )
+                db_session.add(content)
+            
+            db_session.commit()
+            
+            return jsonify({'success': True, 'content': content.as_dict()}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 

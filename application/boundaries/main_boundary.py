@@ -13,7 +13,7 @@ from application.controls.auth_control import requires_roles
 from application.entities2 import ClassModel, UserModel, InstitutionModel, SubscriptionModel, CourseModel, AttendanceRecordModel, CourseUserModel, VenueModel, TestimonialModel
 from database.base import get_session
 from database.models import *
-from database.models import Feature, HeroFeature, Stat, HomepageFeatureCard
+from database.models import Feature, HeroFeature, Stat, HomepageFeatureCard, FeaturesPageContent
 from datetime import date, datetime, timedelta
 from collections import defaultdict
 
@@ -151,11 +151,28 @@ def features():
         # Convert to dictionaries
         main_features_list = [f.as_dict() for f in main_features]
         advanced_features_list = [f.as_dict() for f in advanced_features]
+        
+        # Get features page content
+        page_header = db_session.query(FeaturesPageContent).filter_by(section='header', is_active=True).first()
+        page_hero = db_session.query(FeaturesPageContent).filter_by(section='hero', is_active=True).first()
+        
+        # Default values if not set
+        header_data = {
+            'title': page_header.title if page_header else 'Powerful Features for Modern Attendance Management',
+            'content': page_header.content if page_header else 'Discover how AttendAI revolutionizes attendance tracking with AI-powered features designed for efficiency, accuracy, and ease of use.'
+        }
+        
+        hero_data = {
+            'title': page_hero.title if page_hero else 'Why Choose AttendAI?',
+            'content': page_hero.content if page_hero else 'Traditional attendance methods are time-consuming, error-prone, and lack insights. AttendAI transforms this process with intelligent automation, real-time analytics, and seamless integration - saving you hours of administrative work while providing valuable data-driven insights.'
+        }
     
     return render_template(
         'unregistered/features.html', 
         main_features=main_features_list,
-        advanced_features=advanced_features_list
+        advanced_features=advanced_features_list,
+        page_header=header_data,
+        page_hero=hero_data
     )
 
 @main_bp.route('/subscriptions')

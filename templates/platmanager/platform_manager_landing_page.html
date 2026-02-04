@@ -691,6 +691,39 @@
 
 <!-- Features Tab -->
 <div id="features-tab" class="tab-content">
+    <h2 style="text-align: center; margin-bottom: 2rem;">Features Page Content</h2>
+    
+    <!-- Page Header and Hero Section -->
+    <div class="mission-vision-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem; margin-bottom: 3rem;">
+        <div class="content-table">
+            <div class="table-header">
+                <h2>Page Header</h2>
+                <button class="btn-custom" onclick="editFeaturesPageContent('header')">✏️ Edit</button>
+            </div>
+            <div style="padding: 1.5rem;">
+                <h4 style="margin-bottom: 0.5rem;">Title:</h4>
+                <p id="featuresHeaderTitle" style="margin-bottom: 1rem;">{{ features_page_header.title if features_page_header else 'Not set' }}</p>
+                <h4 style="margin-bottom: 0.5rem;">Description:</h4>
+                <p id="featuresHeaderContent">{{ features_page_header.content if features_page_header else 'Not set' }}</p>
+            </div>
+        </div>
+        
+        <div class="content-table">
+            <div class="table-header">
+                <h2>Hero Card</h2>
+                <button class="btn-custom" onclick="editFeaturesPageContent('hero')">✏️ Edit</button>
+            </div>
+            <div style="padding: 1.5rem;">
+                <h4 style="margin-bottom: 0.5rem;">Title:</h4>
+                <p id="featuresHeroTitle" style="margin-bottom: 1rem;">{{ features_page_hero.title if features_page_hero else 'Not set' }}</p>
+                <h4 style="margin-bottom: 0.5rem;">Content:</h4>
+                <p id="featuresHeroContent">{{ features_page_hero.content if features_page_hero else 'Not set' }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <h2 style="text-align: center; margin: 3rem 0 2rem 0;">Feature Items Management</h2>
+    
     <div class="stats-grid">
         <div class="stat-card">
             <h3>{{ total_features }}</h3>
@@ -1343,6 +1376,37 @@
                 <button type="submit" class="btn-custom">
                     <span id="featuresSubmitBtnText">Add Feature</span>
                 </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Features Page Content Modal -->
+<div id="featuresPageContentModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="featuresPageContentModalTitle">Edit Features Page Content</h2>
+            <button class="modal-close" onclick="closeModal('featuresPageContent')">&times;</button>
+        </div>
+        <form id="featuresPageContentForm" onsubmit="saveFeaturesPageContent(event)">
+            <input type="hidden" id="featuresPageSection" name="section">
+            
+            <div class="form-group">
+                <label for="featuresPageTitle">Title*</label>
+                <input type="text" id="featuresPageTitle" name="title" required maxlength="200" 
+                       placeholder="Powerful Features for Modern Attendance Management">
+            </div>
+            
+            <div class="form-group">
+                <label for="featuresPageContent">Content*</label>
+                <textarea id="featuresPageContent" name="content" required rows="6" 
+                          placeholder="Discover how AttendAI revolutionizes attendance tracking..."></textarea>
+                <small>This will be displayed as the main text</small>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-custom btn-outline-custom" onclick="closeModal('featuresPageContent')">Cancel</button>
+                <button type="submit" class="btn-custom">Save Changes</button>
             </div>
         </form>
     </div>
@@ -2154,6 +2218,68 @@ function editMissionVision(type) {
     document.body.style.overflow = 'hidden';
 }
 
+// Features Page Content Functions
+function editFeaturesPageContent(section) {
+    const sectionData = section === 'header' 
+        ? {{ features_page_header|tojson|safe }} 
+        : {{ features_page_hero|tojson|safe }};
+    
+    const title = section === 'header' ? 'Page Header' : 'Hero Card';
+    document.getElementById('featuresPageContentModalTitle').textContent = `Edit Features ${title}`;
+    document.getElementById('featuresPageSection').value = section;
+    
+    if (sectionData) {
+        document.getElementById('featuresPageTitle').value = sectionData.title || '';
+        document.getElementById('featuresPageContent').value = sectionData.content || '';
+    } else {
+        document.getElementById('featuresPageTitle').value = '';
+        document.getElementById('featuresPageContent').value = '';
+    }
+    
+    document.getElementById('featuresPageContentModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+async function saveFeaturesPageContent(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    
+    const section = formData.get('section');
+    const data = {
+        title: formData.get('title'),
+        content: formData.get('content')
+    };
+    
+    try {
+        const response = await fetch(`/platform/api/features-page/${section}/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            closeModal('featuresPageContent');
+            alert('Features page content updated successfully!');
+            
+            // Update the displayed content
+            if (section === 'header') {
+                document.getElementById('featuresHeaderTitle').textContent = data.title;
+                document.getElementById('featuresHeaderContent').textContent = data.content;
+            } else {
+                document.getElementById('featuresHeroTitle').textContent = data.title;
+                document.getElementById('featuresHeroContent').textContent = data.content;
+            }
+        } else {
+            alert(result.message || 'Failed to update features page content');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while saving');
+    }
+}
+
 async function saveAboutIntro(event) {
     event.preventDefault();
     const formData = new FormData(event.target);
@@ -2246,7 +2372,7 @@ async function saveMissionVision(event) {
 }
 
 // Close modals on click outside
-['heroModal', 'statsModal', 'featureCardsModal', 'featuresModal', 'teamModal', 'valuesTabModal', 'subscriptionsModal', 'aboutIntroModal', 'aboutStoryModal', 'missionVisionModal'].forEach(modalId => {
+['heroModal', 'statsModal', 'featureCardsModal', 'featuresModal', 'teamModal', 'valuesTabModal', 'subscriptionsModal', 'aboutIntroModal', 'aboutStoryModal', 'missionVisionModal', 'featuresPageContentModal'].forEach(modalId => {
     document.getElementById(modalId).addEventListener('click', function(e) {
         if (e.target === this) {
             closeModal(modalId.replace('Modal', ''));
@@ -2257,7 +2383,7 @@ async function saveMissionVision(event) {
 // Close modals with Escape key
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-        ['hero', 'stats', 'featureCards', 'features', 'team', 'valuesTab', 'subscriptions', 'aboutIntro', 'aboutStory', 'missionVision'].forEach(type => closeModal(type));
+        ['hero', 'stats', 'featureCards', 'features', 'team', 'valuesTab', 'subscriptions', 'aboutIntro', 'aboutStory', 'missionVision', 'featuresPageContent'].forEach(type => closeModal(type));
     }
 });
 </script>

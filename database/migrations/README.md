@@ -20,6 +20,19 @@ This directory contains database migration scripts for the AttendAI application.
 - `display_order` (INT) - Display order on homepage
 - `created_at` (DATETIME) - Creation timestamp
 
+### add_features_page_content.py
+**Date:** 2026-02-04  
+**Description:** Adds the `features_page_content` table to store editable header and hero content for the features page.
+
+**Table Structure:**
+- `content_id` (INT) - Primary key
+- `section` (VARCHAR 50) - Section type: 'header' or 'hero'
+- `title` (VARCHAR 200) - Content title
+- `content` (TEXT) - Main content text
+- `is_active` (BOOLEAN) - Whether the content is visible
+- `created_at` (DATETIME) - Creation timestamp
+- `updated_at` (DATETIME) - Last update timestamp
+
 ## How to Run Migrations
 
 ### Windows (PowerShell)
@@ -28,11 +41,15 @@ This directory contains database migration scripts for the AttendAI application.
 # Navigate to the database directory
 cd c:\Users\User\Documents\automated-student-attendance-system-fyp\database
 
-# Apply migration (create table and seed data)
+# Apply homepage feature cards migration
 python migrations\add_homepage_feature_cards.py up
 
-# Rollback migration (drop table)
+# Apply features page content migration
+python migrations\add_features_page_content.py up
+
+# Rollback migrations if needed
 python migrations\add_homepage_feature_cards.py down
+python migrations\add_features_page_content.py down
 ```
 
 ### Linux/Mac
@@ -41,11 +58,15 @@ python migrations\add_homepage_feature_cards.py down
 # Navigate to the database directory
 cd ~/Documents/automated-student-attendance-system-fyp/database
 
-# Apply migration
+# Apply homepage feature cards migration
 python migrations/add_homepage_feature_cards.py up
 
-# Rollback migration
+# Apply features page content migration
+python migrations/add_features_page_content.py up
+
+# Rollback migrations if needed
 python migrations/add_homepage_feature_cards.py down
+python migrations/add_features_page_content.py down
 ```
 
 ## Migration Output

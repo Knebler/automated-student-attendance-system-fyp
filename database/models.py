@@ -426,6 +426,20 @@ class HomepageFeatureCard(Base, BaseMixin):
     display_order = Column(Integer, server_default="0")
     created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
 
+# ====================
+# FEATURES PAGE CONTENT
+# ====================
+class FeaturesPageContent(Base, BaseMixin):
+    __tablename__ = "features_page_content"
+
+    content_id = Column(Integer, primary_key=True)
+    section = Column(String(50), nullable=False)  # 'header' or 'hero'
+    title = Column(String(200), nullable=False)
+    content = Column(Text, nullable=False)
+    is_active = Column(Boolean, server_default="1")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+    updated_at = Column(DateTime, onupdate=text("CURRENT_TIMESTAMP"))
+
 # =====================
 # PLATFORM ISSUES (USER REPORTS)
 # =====================

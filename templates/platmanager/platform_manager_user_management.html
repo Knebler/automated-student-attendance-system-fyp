@@ -1537,7 +1537,17 @@ function renderUsers(data) {
         return;
     }
 
-    tbody.innerHTML = data.items.map(user => `
+    tbody.innerHTML = data.items.map(user => {
+        // Determine which action button to show based on is_active status
+        const actionButton = user.is_active 
+            ? `<button class="btn-action btn-deactivate" title="Deactivate User" onclick="activateUser(${user.user_id}, 'suspend')">
+                    <span class="action-icon">⏸️</span>
+               </button>`
+            : `<button class="btn-action btn-activate" title="Activate User" onclick="activateUser(${user.user_id}, 'activate')">
+                    <span class="action-icon">✅</span>
+               </button>`;
+
+        return `
         <tr>
             <td>
                 <div class="user-info">
@@ -1566,13 +1576,12 @@ function renderUsers(data) {
                     <button class="btn-action btn-edit" title="Edit User" onclick="openEditUserModal(${user.user_id})">
                         <span class="action-icon">✏️</span>
                     </button>
-                    <button class="btn-action btn-activate" title="Activate User" onclick="activateUser(${user.user_id})">
-                        <span class="action-icon">✅</span>
-                    </button>
+                    ${actionButton}
                 </div>
             </td>
         </tr>
-    `).join('');
+        `;
+    }).join('');
 }
 
 // Update pagination controls
@@ -1601,25 +1610,26 @@ function updatePagination(data) {
 }
 
 // Action button handlers
-function activateUser(userId) {
-    if (confirm('Are you sure you want to activate this user?')) {
+function activateUser(userId, action) {
+    if (confirm('Are you sure you want to toggle this user\'s status?')) {
         // Implement activation logic here
-        fetch(`api/users/${userId}/activate`, {
+        fetch(`api/users/${userId}/toggle-status`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-            }
+            },
+            body: JSON.stringify({ action: action })
         })
         .then(response => response.json())
         .then(result => {
             if (result.success) {
-                showAlert('User activated successfully!', 'success');
+                showAlert('User status toggled successfully!', 'success');
                 // Refresh the users list
                 setTimeout(() => {
                     fetchUsers(currentPage);
                 }, 1500);
             } else {
-                showAlert(`Error: ${result.error || 'Failed to activate user'}`, 'error');
+                showAlert(`Error: ${result.error || 'Failed to toggle user status'}`, 'error');
             }
         })
         .catch(error => {

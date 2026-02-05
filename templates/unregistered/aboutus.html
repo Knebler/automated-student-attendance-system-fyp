@@ -467,9 +467,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const teamMemberDetails = {
         {% for member in team_members %}
         '{{ member.team_member_id }}': {
-            name: '{{ member.name }}',
-            role: '{{ member.role }}',
-            description: '{{ member.description }}',
+            name: {{ member.name|tojson|safe }},
+            role: {{ member.role|tojson|safe }},
+            description: {{ member.description|tojson|safe }},
             contributions: {{ member.contributions|tojson|safe }},
             skills: {{ member.skills|tojson|safe }}
         }{% if not loop.last %},{% endif %}

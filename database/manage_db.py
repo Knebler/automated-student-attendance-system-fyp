@@ -26,7 +26,7 @@ def seed_subscription_plans():
             SubscriptionPlan(
                 name="Starter Plan",
                 description="Perfect for small institutions",
-                price_per_cycle=99.99,
+                price_per_cycle=100,
                 billing_cycle="monthly",
                 max_users=500,
                 features='{"facial_recognition": true, "basic_reporting": true, "email_support": true}'
@@ -34,7 +34,7 @@ def seed_subscription_plans():
             SubscriptionPlan(
                 name="Professional Plan",
                 description="For growing institutions",
-                price_per_cycle=199.99,
+                price_per_cycle=200,
                 billing_cycle="monthly",
                 max_users=2000,
                 features='{"facial_recognition": true, "advanced_reporting": true, "priority_support": true, "api_access": true}'
@@ -42,7 +42,7 @@ def seed_subscription_plans():
             SubscriptionPlan(
                 name="Enterprise Plan",
                 description="For large institutions",
-                price_per_cycle=499.99,
+                price_per_cycle=500,
                 billing_cycle="annual",
                 max_users=10000,
                 features='{"facial_recognition": true, "custom_reporting": true, "24/7_support": true, "api_access": true, "custom_integrations": true}'

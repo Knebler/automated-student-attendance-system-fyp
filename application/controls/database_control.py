@@ -142,7 +142,7 @@ class DatabaseControl:
         """, (
             'Starter Plan',
             'Perfect for small institutions getting started with automated attendance',
-            99.99,
+            100,
             'monthly',
             500,
             50,

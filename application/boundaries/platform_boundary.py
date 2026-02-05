@@ -11,7 +11,7 @@ from application.entities2.subscription import SubscriptionModel
 from application.entities2.testimonial import TestimonialModel
 from application.entities2.user import UserModel
 from database.base import get_session
-from database.models import User, Feature, HeroFeature, Stat, AboutIntro, AboutStory, AboutMissionVision, TeamMember, AboutValue, SubscriptionPlan, HomepageFeatureCard, FeaturesPageContent, FeaturesComparison
+from database.models import User, Feature, HeroFeature, Stat, AboutIntro, AboutStory, AboutMissionVision, TeamMember, AboutValue, SubscriptionPlan, HomepageFeatureCard, FeaturesPageContent, FeaturesComparison, FAQ
 
 platform_bp = Blueprint('platform', __name__)
 
@@ -577,6 +577,13 @@ def landing_page_management():
         total_comparison_items = len(comparison_items)
         active_comparison_items = sum(1 for item in comparison_items if item.is_active)
         
+        # Get FAQs
+        faqs = db_session.query(FAQ).order_by(FAQ.category, FAQ.display_order).all()
+        faqs_list = [faq.as_dict() for faq in faqs]
+        
+        total_faqs = len(faqs)
+        active_faqs = sum(1 for faq in faqs if faq.is_active)
+        
     context = {
         'hero_features': hero_features_list,
         'total_hero_features': total_hero_features,
@@ -611,7 +618,10 @@ def landing_page_management():
         'features_page_hero': features_page_hero_dict,
         'comparison_items': comparison_items_list,
         'total_comparison_items': total_comparison_items,
-        'active_comparison_items': active_comparison_items
+        'active_comparison_items': active_comparison_items,
+        'faqs': faqs_list,
+        'total_faqs': total_faqs,
+        'active_faqs': active_faqs
     }
     
     return render_template('platmanager/platform_manager_landing_page.html', **context)
@@ -1860,6 +1870,100 @@ def delete_comparison_item(comparison_id):
             return jsonify({'success': True}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 400
+
+
+# ======================
+# FAQ API ENDPOINTS
+# ======================
+
+@platform_bp.route('/api/faq/create', methods=['POST'])
+@requires_roles_api('platform_manager')
+def create_faq():
+    """Create a new FAQ"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            faq = FAQ(
+                category=data['category'],
+                question=data['question'],
+                answer=data['answer'],
+                display_order=data.get('display_order', 0),
+                is_active=data.get('is_active', True)
+            )
+            
+            db_session.add(faq)
+            db_session.commit()
+            
+            return jsonify({'success': True, 'message': 'FAQ created successfully'}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+
+@platform_bp.route('/api/faq/<int:faq_id>/update', methods=['POST'])
+@requires_roles_api('platform_manager')
+def update_faq(faq_id):
+    """Update an existing FAQ"""
+    try:
+        data = request.json
+        
+        with get_session() as db_session:
+            faq = db_session.query(FAQ).filter_by(faq_id=faq_id).first()
+            
+            if not faq:
+                return jsonify({'success': False, 'error': 'FAQ not found'}), 404
+            
+            # Update fields
+            faq.category = data.get('category', faq.category)
+            faq.question = data.get('question', faq.question)
+            faq.answer = data.get('answer', faq.answer)
+            faq.display_order = data.get('display_order', faq.display_order)
+            faq.is_active = data.get('is_active', faq.is_active)
+            
+            db_session.commit()
+            
+            return jsonify({'success': True, 'message': 'FAQ updated successfully'}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+
+@platform_bp.route('/api/faq/<int:faq_id>/toggle-status', methods=['POST'])
+@requires_roles_api('platform_manager')
+def toggle_faq_status(faq_id):
+    """Toggle FAQ active status"""
+    try:
+        with get_session() as db_session:
+            faq = db_session.query(FAQ).filter_by(faq_id=faq_id).first()
+            
+            if not faq:
+                return jsonify({'success': False, 'error': 'FAQ not found'}), 404
+            
+            faq.is_active = not faq.is_active
+            db_session.commit()
+            
+            return jsonify({'success': True, 'is_active': faq.is_active}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+
+@platform_bp.route('/api/faq/<int:faq_id>/delete', methods=['POST'])
+@requires_roles_api('platform_manager')
+def delete_faq(faq_id):
+    """Delete a FAQ"""
+    try:
+        with get_session() as db_session:
+            faq = db_session.query(FAQ).filter_by(faq_id=faq_id).first()
+            
+            if not faq:
+                return jsonify({'success': False, 'error': 'FAQ not found'}), 404
+            
+            db_session.delete(faq)
+            db_session.commit()
+            
+            return jsonify({'success': True}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
 
 
 @platform_bp.route('/api/debug-session', methods=['GET'])

@@ -454,6 +454,21 @@ class FeaturesComparison(Base, BaseMixin):
     is_active = Column(Boolean, server_default="1")
     created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
 
+# ====================
+# FAQ
+# ====================
+class FAQ(Base, BaseMixin):
+    __tablename__ = "faqs"
+
+    faq_id = Column(Integer, primary_key=True)
+    category = Column(String(50), nullable=False)  # 'general', 'features', 'pricing', 'technical', 'implementation'
+    question = Column(String(500), nullable=False)
+    answer = Column(Text, nullable=False)
+    display_order = Column(Integer, default=0)
+    is_active = Column(Boolean, server_default="1")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+    updated_at = Column(DateTime, onupdate=text("CURRENT_TIMESTAMP"))
+
 # =====================
 # PLATFORM ISSUES (USER REPORTS)
 # =====================

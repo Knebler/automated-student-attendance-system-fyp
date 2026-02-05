@@ -381,117 +381,95 @@
 <!-- General FAQs -->
 <div class="category-section active" id="general-faqs">
     <div class="faq-list">
-        <!-- FAQ 1 -->
-        <div class="faq-item active">
+        {% for faq in faqs.general %}
+        <div class="faq-item {% if loop.first %}active{% endif %}">
             <div class="faq-question" onclick="toggleFAQ(this)">
-                <span class="faq-question-text">What is AttendAI and how does it work?</span>
+                <span class="faq-question-text">{{ faq.question }}</span>
                 <span class="faq-icon">+</span>
             </div>
             <div class="faq-answer">
-                <p>AttendAI is an AI-powered attendance management system that revolutionizes how educational institutions and businesses track attendance. Our system uses multiple verification methods including facial recognition, QR code scanning, and mobile check-ins to accurately record attendance in real-time.</p>
-                <p>The platform processes attendance data through our secure cloud infrastructure, providing administrators with real-time dashboards, predictive analytics, and comprehensive reporting tools. Everything is designed to be user-friendly while maintaining enterprise-grade security and reliability.</p>
+                {% for paragraph in faq.answer.split('\n\n') %}
+                <p>{{ paragraph|safe }}</p>
+                {% endfor %}
             </div>
         </div>
-
-        <!-- FAQ 2 -->
-        <div class="faq-item">
-            <div class="faq-question" onclick="toggleFAQ(this)">
-                <span class="faq-question-text">Is there a free trial available?</span>
-                <span class="faq-icon">+</span>
-            </div>
-            <div class="faq-answer">
-                <p>Yes! We offer a 14-day free trial for all our plans. During the trial period, you'll have access to all features of the Professional plan, including AI face recognition, real-time analytics, and up to 500 student capacity. No credit card is required to start your trial.</p>
-                <p>Our support team will help you set up the system and provide training materials to ensure you get the most out of your trial period.</p>
-            </div>
-        </div>
-
-        <!-- FAQ 3 -->
-        <div class="faq-item">
-            <div class="faq-question" onclick="toggleFAQ(this)">
-                <span class="faq-question-text">How accurate is the facial recognition technology?</span>
-                <span class="faq-icon">+</span>
-            </div>
-            <div class="faq-answer">
-                <p>Our AI-powered facial recognition system achieves 99.8% accuracy in optimal conditions. The system uses advanced machine learning algorithms that continuously improve with use. Key features include:</p>
-                <p>• Works in various lighting conditions<br>
-                • Adapts to different angles and distances<br>
-                • Handles accessories like glasses and masks<br>
-                • Protects against spoofing attempts<br>
-                • Processes recognition in under 2 seconds</p>
-                <p>We also provide multiple fallback methods (QR codes, PINs) to ensure reliability in all situations.</p>
-            </div>
-        </div>
+        {% endfor %}
     </div>
 </div>
 
 <!-- Features FAQs -->
 <div class="category-section" id="features-faqs">
     <div class="faq-list">
-        <!-- FAQ 1 -->
+        {% for faq in faqs.features %}
         <div class="faq-item">
             <div class="faq-question" onclick="toggleFAQ(this)">
-                <span class="faq-question-text">Does AttendAI integrate with existing school management systems?</span>
+                <span class="faq-question-text">{{ faq.question }}</span>
                 <span class="faq-icon">+</span>
             </div>
             <div class="faq-answer">
-                <p>Yes, AttendAI offers seamless integration with popular school management systems including:</p>
-                <p>• Google Classroom and Microsoft Teams<br>
-                • Popular LMS platforms (Canvas, Moodle, Blackboard)<br>
-                • Student Information Systems (SIS)<br>
-                • Human Resource Management Systems (HRMS)</p>
-                <p>We provide comprehensive API documentation for custom integrations, and our technical team can assist with implementation to ensure smooth data synchronization.</p>
+                {% for paragraph in faq.answer.split('\n\n') %}
+                <p>{{ paragraph|safe }}</p>
+                {% endfor %}
             </div>
         </div>
-
-        <!-- FAQ 2 -->
-        <div class="faq-item">
-            <div class="faq-question" onclick="toggleFAQ(this)">
-                <span class="faq-question-text">Can parents or guardians receive attendance notifications?</span>
-                <span class="faq-icon">+</span>
-            </div>
-            <div class="faq-answer">
-                <p>Absolutely. AttendAI includes a comprehensive notification system that can alert parents and guardians via:</p>
-                <p>• Email notifications for daily, weekly, or monthly attendance reports<br>
-                • SMS alerts for immediate attendance concerns<br>
-                • Mobile app notifications through our dedicated parent portal<br>
-                • Customizable alert thresholds (e.g., notify when attendance drops below 90%)</p>
-                <p>Parents can also access a secure portal to view their child's attendance history, patterns, and receive automated alerts about upcoming parent-teacher meetings.</p>
-            </div>
-        </div>
+        {% endfor %}
     </div>
 </div>
 
 <!-- Pricing FAQs -->
 <div class="category-section" id="pricing-faqs">
     <div class="faq-list">
-        <!-- FAQ 1 -->
+        {% for faq in faqs.pricing %}
         <div class="faq-item">
             <div class="faq-question" onclick="toggleFAQ(this)">
-                <span class="faq-question-text">What payment methods do you accept?</span>
+                <span class="faq-question-text">{{ faq.question }}</span>
                 <span class="faq-icon">+</span>
             </div>
             <div class="faq-answer">
-                <p>We accept all major payment methods for your convenience:</p>
-                <p>• Credit and debit cards (Visa, MasterCard, American Express)<br>
-                • PayPal for quick online payments<br>
-                • Bank transfers for enterprise customers<br>
-                • Annual billing with 15% discount<br>
-                • Purchase orders for educational institutions</p>
-                <p>All payments are processed through secure, PCI-compliant payment gateways to ensure your financial information is protected.</p>
+                {% for paragraph in faq.answer.split('\n\n') %}
+                <p>{{ paragraph|safe }}</p>
+                {% endfor %}
             </div>
         </div>
+        {% endfor %}
+    </div>
+</div>
 
-        <!-- FAQ 2 -->
+<!-- Technical FAQs -->
+<div class="category-section" id="technical-faqs">
+    <div class="faq-list">
+        {% for faq in faqs.technical %}
         <div class="faq-item">
             <div class="faq-question" onclick="toggleFAQ(this)">
-                <span class="faq-question-text">Can I upgrade or downgrade my plan later?</span>
+                <span class="faq-question-text">{{ faq.question }}</span>
                 <span class="faq-icon">+</span>
             </div>
             <div class="faq-answer">
-                <p>Yes, you can change your plan at any time. When upgrading, the new features become available immediately, and you'll be charged the prorated difference for the remainder of your billing cycle. When downgrading, the changes take effect at the start of your next billing cycle.</p>
-                <p>Our system automatically handles data migration between plans, so you don't need to worry about losing any attendance records or settings when changing plans.</p>
+                {% for paragraph in faq.answer.split('\n\n') %}
+                <p>{{ paragraph|safe }}</p>
+                {% endfor %}
             </div>
         </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Implementation FAQs -->
+<div class="category-section" id="implementation-faqs">
+    <div class="faq-list">
+        {% for faq in faqs.implementation %}
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFAQ(this)">
+                <span class="faq-question-text">{{ faq.question }}</span>
+                <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                {% for paragraph in faq.answer.split('\n\n') %}
+                <p>{{ paragraph|safe }}</p>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
     </div>
 </div>
 
@@ -516,9 +494,8 @@
     <h3>Still Have Questions?</h3>
     <p>Our support team is here to help. Contact us through any of the channels below for personalized assistance.</p>
     <div class="contact-options">
-        <a href="mailto:support@attendai.com" class="contact-btn">✉ Email Support</a>
-        <a href="#" class="contact-btn">💬 Live Chat</a>
-        <a href="#" class="contact-btn">📞 Call Support</a>
+        <p style="font-size: 1.2rem; margin: 0.5rem 0;"><strong>Email:</strong> <a href="mailto:attend_ai@gmail.com" style="color: var(--text-dark); text-decoration: underline;">attend_ai@gmail.com</a></p>
+        <p style="font-size: 1.2rem; margin: 0.5rem 0;"><strong>Phone:</strong> +65 1234 1234</p>
     </div>
 </div>
 

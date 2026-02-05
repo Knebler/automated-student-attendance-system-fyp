@@ -454,6 +454,9 @@
     <button class="tab-button" onclick="switchTab('subscriptions')">
         💳 Subscription Plans
     </button>
+    <button class="tab-button" onclick="switchTab('faq')">
+        ❓ FAQs
+    </button>
 </div>
 
 <!-- Hero Features Tab -->
@@ -1210,6 +1213,94 @@
     </div>
 </div>
 
+<!-- FAQ Tab -->
+<div id="faq-tab" class="tab-content">
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>{{ total_faqs }}</h3>
+            <p>Total FAQs</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ active_faqs }}</h3>
+            <p>Active FAQs</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ total_faqs - active_faqs }}</h3>
+            <p>Inactive FAQs</p>
+        </div>
+    </div>
+
+    <div class="filter-section">
+        <div class="filter-controls">
+            <select id="faqCategoryFilter" onchange="filterTable('faq')">
+                <option value="">All Categories</option>
+                <option value="general">General</option>
+                <option value="features">Features</option>
+                <option value="pricing">Pricing & Plans</option>
+                <option value="technical">Technical</option>
+                <option value="implementation">Implementation</option>
+            </select>
+            <select id="faqStatusFilter" onchange="filterTable('faq')">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="content-table">
+        <div class="table-header">
+            <h2>FAQs</h2>
+            <button class="btn-custom" onclick="openModal('faq', 'add')">+ Add FAQ</button>
+        </div>
+        {% if faqs %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Category</th>
+                    <th>Question</th>
+                    <th>Order</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="faqTableBody">
+                {% for faq in faqs %}
+                <tr data-category="{{ faq.category }}" data-status="{% if faq.is_active %}active{% else %}inactive{% endif %}">
+                    <td>{{ faq.faq_id }}</td>
+                    <td>
+                        <span class="badge badge-info">{{ faq.category }}</span>
+                    </td>
+                    <td>{{ faq.question[:80] }}{% if faq.question|length > 80 %}...{% endif %}</td>
+                    <td>{{ faq.display_order }}</td>
+                    <td>
+                        {% if faq.is_active %}
+                        <span class="badge badge-success">Active</span>
+                        {% else %}
+                        <span class="badge badge-secondary">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td class="action-buttons">
+                        <button class="btn-icon btn-edit" onclick="editFaq({{ faq.faq_id }})" title="Edit">✏️</button>
+                        <button class="btn-icon btn-toggle" onclick="toggleStatus('faq', {{ faq.faq_id }}, {{ faq.is_active|lower }})" title="Toggle Status">
+                            {% if faq.is_active %}👁️{% else %}🚫{% endif %}
+                        </button>
+                        <button class="btn-icon btn-delete" onclick="deleteItem('faq', {{ faq.faq_id }}, '{{ faq.question[:50] }}')" title="Delete">🗑️</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <p>No FAQs found</p>
+            <button class="btn-custom" onclick="openModal('faq', 'add')">Add Your First FAQ</button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
 <!-- Hero Feature Modal -->
 <div id="heroModal" class="modal-overlay">
     <div class="modal-content">
@@ -1784,6 +1875,62 @@
     </div>
 </div>
 
+<!-- FAQ Modal -->
+<div id="faqModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="faqModalTitle">Add FAQ</h2>
+            <button type="button" class="modal-close" onclick="closeModal('faq')">&times;</button>
+        </div>
+        <form id="faqForm" onsubmit="saveItem(event, 'faq')">
+            <input type="hidden" id="faqId" name="faq_id">
+            
+            <div class="form-group">
+                <label for="faqCategory">Category *</label>
+                <select id="faqCategory" name="category" required>
+                    <option value="">Select Category</option>
+                    <option value="general">General</option>
+                    <option value="features">Features</option>
+                    <option value="pricing">Pricing & Plans</option>
+                    <option value="technical">Technical</option>
+                    <option value="implementation">Implementation</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="faqQuestion">Question *</label>
+                <input type="text" id="faqQuestion" name="question" maxlength="500" required>
+                <small>Maximum 500 characters</small>
+            </div>
+
+            <div class="form-group">
+                <label for="faqAnswer">Answer *</label>
+                <textarea id="faqAnswer" name="answer" rows="8" required></textarea>
+                <small>Use double line breaks for new paragraphs</small>
+            </div>
+
+            <div class="form-group">
+                <label for="faqDisplayOrder">Display Order</label>
+                <input type="number" id="faqDisplayOrder" name="display_order" min="0" value="0">
+            </div>
+
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" id="faqIsActive" name="is_active" checked>
+                    Active
+                </label>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-custom" style="background-color: #6c757d;" onclick="closeModal('faq')">Cancel</button>
+                <button type="submit" class="btn-custom">
+                    <span id="faqSubmitBtnText">Add FAQ</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 // Data from backend
 const heroFeaturesData = {{ hero_features|tojson|safe }};
@@ -1796,6 +1943,7 @@ let teamMembersData = {{ team_members|tojson|safe }};
 let valuesData = {{ values|tojson|safe }};
 let subscriptionPlansData = {{ subscription_plans|tojson|safe }};
 let featureCardsData = {{ feature_cards|tojson|safe }};
+let faqsData = {{ faqs|tojson|safe }};
 
 let featureCounter = 0;
 
@@ -1831,6 +1979,7 @@ function openModal(type, mode, itemId = null) {
         else if (type === 'valuesTab') title = 'Add Value';
         else if (type === 'subscriptions') title = 'Add Subscription Plan';
         else if (type === 'comparison') title = 'Add Comparison Item';
+        else if (type === 'faq') title = 'Add FAQ';
         
         document.getElementById(`${type}ModalTitle`).textContent = title;
         document.getElementById(`${type}SubmitBtnText`).textContent = title;
@@ -1850,6 +1999,8 @@ function openModal(type, mode, itemId = null) {
             document.getElementById('comparisonIsActive').checked = true;
             document.getElementById('comparisonTraditionalHas').checked = false;
             document.getElementById('comparisonAttendaiHas').checked = true;
+        } else if (type === 'faq') {
+            document.getElementById('faqIsActive').checked = true;
         } else {
             document.getElementById('isActive').checked = true;
         }
@@ -2039,6 +2190,19 @@ async function saveItem(event, type) {
         url = data.plan_id 
             ? `/platform/api/subscription-plans/${data.plan_id}/update`
             : '/platform/api/subscription-plans/create';
+    } else if (type === 'faq') {
+        idField = 'faq_id';
+        data = {
+            faq_id: formData.get(idField) || null,
+            category: formData.get('category'),
+            question: formData.get('question'),
+            answer: formData.get('answer'),
+            display_order: parseInt(formData.get('display_order')),
+            is_active: document.getElementById('faqIsActive').checked
+        };
+        url = data.faq_id 
+            ? `/platform/api/faq/${data.faq_id}/update`
+            : '/platform/api/faq/create';
     } else {
         idField = 'feature_id';
         data = {
@@ -2097,6 +2261,8 @@ async function toggleStatus(type, id, currentStatus) {
         url = `/platform/api/subscription-plans/${id}/toggle-status`;
     } else if (type === 'comparison') {
         url = `/platform/api/comparison/${id}/toggle-status`;
+    } else if (type === 'faq') {
+        url = `/platform/api/faq/${id}/toggle-status`;
     } else {
         url = `/platform/api/features/${id}/toggle-status`;
     }
@@ -2139,6 +2305,8 @@ async function deleteItem(type, id, name) {
         url = `/platform/api/subscription-plans/${id}/delete`;
     } else if (type === 'comparison') {
         url = `/platform/api/comparison/${id}/delete`;
+    } else if (type === 'faq') {
+        url = `/platform/api/faq/${id}/delete`;
     } else {
         url = `/platform/api/features/${id}/delete`;
     }
@@ -2196,6 +2364,20 @@ function filterTable(type) {
         rows.forEach(row => {
             const title = row.dataset.title.toLowerCase();
             row.style.display = title.includes(searchTerm) ? '' : 'none';
+        });
+    } else if (type === 'faq') {
+        rows = document.querySelectorAll('#faqTableBody tr');
+        const category = document.getElementById('faqCategoryFilter').value;
+        const status = document.getElementById('faqStatusFilter').value;
+        
+        rows.forEach(row => {
+            const rowCategory = row.dataset.category;
+            const rowStatus = row.dataset.status;
+            
+            const categoryMatch = !category || rowCategory === category;
+            const statusMatch = !status || rowStatus === status;
+            
+            row.style.display = (categoryMatch && statusMatch) ? '' : 'none';
         });
     } else {
         rows = document.querySelectorAll('#featuresTableBody tr');
@@ -2328,6 +2510,25 @@ function editSubscriptionPlan(id) {
         }
         
         document.getElementById('subscriptionsModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+// FAQ Section Functions
+function editFaq(id) {
+    const faq = faqsData.find(f => f.faq_id === id);
+    if (faq) {
+        document.getElementById('faqId').value = faq.faq_id;
+        document.getElementById('faqCategory').value = faq.category;
+        document.getElementById('faqQuestion').value = faq.question;
+        document.getElementById('faqAnswer').value = faq.answer;
+        document.getElementById('faqDisplayOrder').value = faq.display_order || 0;
+        document.getElementById('faqIsActive').checked = faq.is_active;
+        
+        document.getElementById('faqModalTitle').textContent = 'Edit FAQ';
+        document.getElementById('faqSubmitBtnText').textContent = 'Update FAQ';
+        
+        document.getElementById('faqModal').classList.add('active');
         document.body.style.overflow = 'hidden';
     }
 }
@@ -2583,7 +2784,7 @@ async function saveComparison(event) {
 }
 
 // Close modals on click outside
-['heroModal', 'statsModal', 'featureCardsModal', 'featuresModal', 'teamModal', 'valuesTabModal', 'subscriptionsModal', 'aboutIntroModal', 'aboutStoryModal', 'missionVisionModal', 'featuresPageContentModal', 'comparisonModal'].forEach(modalId => {
+['heroModal', 'statsModal', 'featureCardsModal', 'featuresModal', 'teamModal', 'valuesTabModal', 'subscriptionsModal', 'aboutIntroModal', 'aboutStoryModal', 'missionVisionModal', 'featuresPageContentModal', 'comparisonModal', 'faqModal'].forEach(modalId => {
     document.getElementById(modalId).addEventListener('click', function(e) {
         if (e.target === this) {
             closeModal(modalId.replace('Modal', ''));

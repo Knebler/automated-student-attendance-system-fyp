@@ -8,7 +8,7 @@ from base import root_engine, engine, get_session
 from models import *
 
 # Import the new models
-from models import Feature, HeroFeature, Stat, AboutIntro, AboutStory, AboutMissionVision, TeamMember, AboutValue, HomepageFeatureCard, FeaturesPageContent, FeaturesComparison
+from models import Feature, HeroFeature, Stat, AboutIntro, AboutStory, AboutMissionVision, TeamMember, AboutValue, HomepageFeatureCard, FeaturesPageContent, FeaturesComparison, FAQ
 
 def drop_database():
     with root_engine.connect() as conn:
@@ -1203,6 +1203,140 @@ def seed_platform_issues():
         print(f"Total Issues Created: {len(issues)}")
 
 
+def seed_faqs():
+    """Seed FAQs table with default data"""
+    with get_session() as session:
+        faqs = [
+            # General FAQs
+            FAQ(
+                category="general",
+                question="What is AttendAI and how does it work?",
+                answer="""AttendAI is an AI-powered attendance management system that revolutionizes how educational institutions and businesses track attendance. Our system uses multiple verification methods including facial recognition, QR code scanning, and mobile check-ins to accurately record attendance in real-time.
+
+The platform processes attendance data through our secure cloud infrastructure, providing administrators with real-time dashboards, predictive analytics, and comprehensive reporting tools. Everything is designed to be user-friendly while maintaining enterprise-grade security and reliability.""",
+                display_order=1,
+                is_active=True
+            ),
+            FAQ(
+                category="general",
+                question="Is there a free trial available?",
+                answer="""Yes! We offer a 14-day free trial for all our plans. During the trial period, you'll have access to all features of the Professional plan, including AI face recognition, real-time analytics, and up to 500 student capacity. No credit card is required to start your trial.
+
+Our support team will help you set up the system and provide training materials to ensure you get the most out of your trial period.""",
+                display_order=2,
+                is_active=True
+            ),
+            FAQ(
+                category="general",
+                question="How accurate is the facial recognition technology?",
+                answer="""Our AI-powered facial recognition system achieves 99.8% accuracy in optimal conditions. The system uses advanced machine learning algorithms that continuously improve with use. Key features include:
+
+• Works in various lighting conditions
+• Adapts to different angles and distances
+• Handles accessories like glasses and masks
+• Protects against spoofing attempts
+• Processes recognition in under 2 seconds
+
+We also provide multiple fallback methods (QR codes, PINs) to ensure reliability in all situations.""",
+                display_order=3,
+                is_active=True
+            ),
+            
+            # Features FAQs
+            FAQ(
+                category="features",
+                question="Does AttendAI integrate with existing school management systems?",
+                answer="""Yes, AttendAI offers seamless integration with popular school management systems including:
+
+• Google Classroom and Microsoft Teams
+• Popular LMS platforms (Canvas, Moodle, Blackboard)
+• Student Information Systems (SIS)
+• Human Resource Management Systems (HRMS)
+
+We provide comprehensive API documentation for custom integrations, and our technical team can assist with implementation to ensure smooth data synchronization.""",
+                display_order=1,
+                is_active=True
+            ),
+            FAQ(
+                category="features",
+                question="Can parents or guardians receive attendance notifications?",
+                answer="""Absolutely. AttendAI includes a comprehensive notification system that can alert parents and guardians via:
+
+• Email notifications for daily, weekly, or monthly attendance reports
+• SMS alerts for immediate attendance concerns
+• Mobile app notifications through our dedicated parent portal
+• Customizable alert thresholds (e.g., notify when attendance drops below 90%)
+
+Parents can also access a secure portal to view their child's attendance history, patterns, and receive automated alerts about upcoming parent-teacher meetings.""",
+                display_order=2,
+                is_active=True
+            ),
+            
+            # Pricing FAQs
+            FAQ(
+                category="pricing",
+                question="What payment methods do you accept?",
+                answer="""We accept all major payment methods for your convenience:
+
+• Credit and debit cards (Visa, MasterCard, American Express)
+• PayPal for quick online payments
+• Bank transfers for enterprise customers
+• Annual billing with 15% discount
+• Purchase orders for educational institutions
+
+All payments are processed through secure, PCI-compliant payment gateways to ensure your financial information is protected.""",
+                display_order=1,
+                is_active=True
+            ),
+            FAQ(
+                category="pricing",
+                question="Can I upgrade or downgrade my plan later?",
+                answer="""Yes, you can change your plan at any time. When upgrading, the new features become available immediately, and you'll be charged the prorated difference for the remainder of your billing cycle. When downgrading, the changes take effect at the start of your next billing cycle.
+
+Our system automatically handles data migration between plans, so you don't need to worry about losing any attendance records or settings when changing plans.""",
+                display_order=2,
+                is_active=True
+            ),
+            
+            # Technical FAQs (placeholder for future)
+            FAQ(
+                category="technical",
+                question="What are the system requirements for AttendAI?",
+                answer="""AttendAI is a cloud-based solution with minimal system requirements:
+
+• Web Browser: Chrome, Firefox, Safari, or Edge (latest versions)
+• Internet Connection: Minimum 5 Mbps for smooth operation
+• For facial recognition: Any device with a camera (720p or higher recommended)
+• Mobile App: iOS 12+ or Android 8+
+
+No special hardware or installation is required. The system works on desktops, laptops, tablets, and smartphones.""",
+                display_order=1,
+                is_active=True
+            ),
+            
+            # Implementation FAQs (placeholder for future)
+            FAQ(
+                category="implementation",
+                question="How long does it take to set up AttendAI?",
+                answer="""The setup process is quick and straightforward:
+
+• Initial Setup: 1-2 hours to configure your institution details
+• User Import: Bulk import students and staff via CSV (5-10 minutes)
+• Training: 2-hour training session for administrators
+• Facial Data Collection: Students can register in 30 seconds each
+• Go Live: Most institutions are fully operational within 1-3 days
+
+Our dedicated onboarding team guides you through every step and provides ongoing support.""",
+                display_order=1,
+                is_active=True
+            ),
+        ]
+        
+        session.add_all(faqs)
+        session.commit()
+        print(f"Added {len(faqs)} FAQs")
+
+
 def seed_database():
     import random
     zip_dict = lambda keys, list_of_values: [dict(zip(keys, values)) for values in list_of_values]
@@ -1372,6 +1506,9 @@ def seed_database():
 
     if row_count("Platform_Issues") == 0:
         seed_platform_issues()
+
+    if row_count("FAQs") == 0:
+        seed_faqs()
 
     print(f"Added 5 notifications to each user")
     print("Database seeded, models created")

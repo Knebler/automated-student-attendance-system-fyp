@@ -131,7 +131,29 @@ def about():
 @main_bp.route('/faq')
 def faq():
     """Public FAQ page"""
-    return render_template('unregistered/faq.html')
+    with get_session() as db_session:
+        # Get all active FAQs grouped by category
+        faqs_query = db_session.query(FAQ).filter_by(is_active=True).order_by(FAQ.category, FAQ.display_order).all()
+        
+        # Group FAQs by category
+        faqs_by_category = {
+            'general': [],
+            'features': [],
+            'pricing': [],
+            'technical': [],
+            'implementation': []
+        }
+        
+        for faq in faqs_query:
+            if faq.category in faqs_by_category:
+                faqs_by_category[faq.category].append({
+                    'faq_id': faq.faq_id,
+                    'question': faq.question,
+                    'answer': faq.answer,
+                    'display_order': faq.display_order
+                })
+    
+    return render_template('unregistered/faq.html', faqs=faqs_by_category)
 
 @main_bp.route('/features')
 def features():

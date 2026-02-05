@@ -36,7 +36,7 @@
     }
 
     .plan-card {
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--border-soft);
         border-radius: 16px;
         padding: 2.5rem 2rem;
         min-height: 600px;
@@ -165,7 +165,7 @@
         margin-top: 0;
         border-radius: 16px;
         overflow: hidden;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--border-soft);
         background-color: #ffffff;
         box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
     }
@@ -173,16 +173,16 @@
     th, td {
         padding: 1rem;
         text-align: center;
-        border-right: 1px solid #e2e8f0;
-        border-bottom: 1px solid #e2e8f0;
+        border-right: 1px solid var(--border-soft);
+        border-bottom: 1px solid var(--border-soft);
     }
 
     th:first-child, td:first-child {
-        border-left: 1px solid #e2e8f0;
+        border-left: 1px solid var(--border-soft);
     }
 
     tr:first-child th, tr:first-child td {
-        border-top: 1px solid #e2e8f0;
+        border-top: 1px solid var(--border-soft);
     }
 
     thead tr:first-child th:first-child {
@@ -377,8 +377,7 @@
             </ul>
             <div class="plan-button">
                 <a href="{{ url_for('auth.register', selected_plan_id=plan.plan_id, role='institution_admin') }}" 
-                   class="btn-custom {% if not features.is_popular %}btn-outline-custom{% endif %}"
-                   {% if features.is_popular %}style="background-color: #059669; border-color: #059669;"{% endif %}>
+                   class="btn-primary">
                    Get Started
                 </a>
             </div>
@@ -483,6 +482,6 @@
 <div class="page-header" style="margin-top: 4rem;">
     <h2>Still have questions?</h2>
     <p>Contact our sales team for personalized assistance in choosing the right plan for your organization.</p>
-    <a href="mailto:sales@attendai.com" class="btn-custom mt-3">Contact Sales</a>
+    <a href="mailto:sales@attendai.com" class="btn-primary mt-3">Contact Sales</a>
 </div>
 {% endblock %}

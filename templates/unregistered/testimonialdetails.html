@@ -6,38 +6,42 @@
 <style>
     /* Page Header */
     .page-header {
-        margin-bottom: 3rem;
+        margin-bottom: 2rem;
         padding: 2rem 0;
-        border-bottom: 2px solid var(--border-color);
+        border-bottom: 1px solid var(--border-soft);
+        max-width: 900px;
     }
 
     .back-link {
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-        color: var(--text-dark);
+        color: var(--text-light);
         text-decoration: none;
-        font-weight: 500;
+        font-weight: 400;
+        font-size: 0.95rem;
         margin-bottom: 1.5rem;
-        transition: color 0.3s ease;
+        transition: color 0.2s ease, border-color 0.2s ease;
+        border-bottom: 1px solid transparent;
     }
 
     .back-link:hover {
-        color: var(--text-light);
+        color: var(--text-dark);
         text-decoration: none;
+        border-bottom-color: var(--text-dark);
     }
 
     .back-arrow {
-        font-size: 1.2rem;
+        font-size: 1rem;
     }
 
     .testimonial-title {
         font-size: 2.5rem;
-        font-weight: bold;
+        font-weight: 600;
         color: var(--text-dark);
-        margin-bottom: 1rem;
+        margin-bottom: 0;
         font-style: italic;
-        line-height: 1.3;
+        line-height: 1.35;
     }
 
     /* Author Section */
@@ -46,19 +50,31 @@
         align-items: center;
         gap: 1.5rem;
         margin-bottom: 2rem;
-        padding: 1.5rem;
-        background-color: var(--primary-light);
-        border-radius: 12px;
-        border: 1px solid var(--border-color);
+        padding: 1.5rem 2rem;
+        background-color: #fff;
+        border-radius: 16px;
+        border: 1px solid var(--border-soft);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
     }
 
-    .author-avatar {
+    .author-avatar,
+    .author-avatar-placeholder {
         width: 80px;
         height: 80px;
         border-radius: 50%;
         object-fit: cover;
-        border: 3px solid white;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--border-soft);
+        flex-shrink: 0;
+    }
+
+    .author-avatar-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-light);
+        background-color: #f8fafc;
     }
 
     .author-info {
@@ -66,15 +82,15 @@
     }
 
     .author-name {
-        font-weight: bold;
+        font-weight: 600;
         color: var(--text-dark);
-        font-size: 1.5rem;
-        margin-bottom: 0.5rem;
+        font-size: 1.25rem;
+        margin-bottom: 0.35rem;
     }
 
     .author-title {
-        color: var(--text-dark);
-        font-size: 1.1rem;
+        color: var(--text-light);
+        font-size: 1rem;
         margin-bottom: 0.25rem;
     }
 
@@ -98,38 +114,42 @@
 
     /* Testimonial Content */
     .testimonial-content {
-        line-height: 1.8;
+        line-height: 1.75;
         color: var(--text-dark);
-        margin: 3rem 0;
+        margin: 2.5rem 0;
         word-wrap: break-word;
         overflow-wrap: break-word;
         word-break: break-word;
         max-width: 100%;
+        padding-top: 2rem;
+        border-top: 1px solid var(--border-soft);
     }
 
     .testimonial-content p {
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.25rem;
         text-align: justify;
-        font-size: 1.1rem;
+        font-size: 1.05rem;
         word-wrap: break-word;
         overflow-wrap: break-word;
         word-break: break-word;
     }
 
     .testimonial-content p:first-child::first-letter {
-        font-size: 3rem;
-        font-weight: bold;
+        font-size: 2.5rem;
+        font-weight: 600;
         float: left;
         line-height: 1;
-        margin: 0.1em 0.1em 0 0;
+        margin: 0.08em 0.08em 0 0;
         color: var(--text-dark);
+        opacity: 0.9;
     }
 
     /* Key Results Section */
     .results-section {
-        background-color: var(--primary-light);
-        border: 2px solid var(--border-color);
+        background-color: #fff;
+        border: 1px solid var(--border-soft);
         border-radius: 16px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
         padding: 2.5rem;
         margin: 3rem 0;
     }
@@ -151,9 +171,9 @@
     .result-item {
         text-align: center;
         padding: 1.5rem;
-        background-color: white;
+        background-color: #fff;
         border-radius: 12px;
-        border: 1px solid var(--border-color);
+        border: 1px solid var(--border-soft);
     }
 
     .result-value {
@@ -164,7 +184,7 @@
     }
 
     .result-label {
-        color: var(--text-dark);
+        color: var(--text-light);
         font-size: 0.95rem;
     }
 
@@ -188,15 +208,16 @@
 
     .gallery-item {
         height: 200px;
-        border: 2px solid var(--border-color);
-        border-radius: 12px;
+        border: 1px solid var(--border-soft);
+        border-radius: 16px;
         display: flex;
         align-items: center;
         justify-content: center;
-        background-color: var(--primary-light);
+        background-color: #fff;
         color: var(--text-light);
         font-size: 1rem;
         transition: transform 0.3s ease;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
     }
 
     .gallery-item:hover {
@@ -207,7 +228,7 @@
     .related-section {
         margin: 4rem 0;
         padding-top: 3rem;
-        border-top: 2px solid var(--border-color);
+        border-top: 1px solid var(--border-soft);
     }
 
     .related-section h3 {
@@ -225,42 +246,67 @@
     }
 
     .related-card {
-        border: 2px solid var(--border-color);
-        border-radius: 12px;
+        border: 1px solid var(--border-soft);
+        border-radius: 16px;
         padding: 1.5rem;
-        background-color: white;
+        background-color: #fff;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
         transition: all 0.3s ease;
         text-decoration: none;
-        display: block;
+        display: flex;
+        flex-direction: column;
+        color: inherit;
     }
 
     .related-card:hover {
-        transform: translateY(-5px);
+        transform: translateY(-4px);
         box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
         text-decoration: none;
+        color: inherit;
     }
 
     .related-author {
-        font-weight: bold;
+        font-weight: 600;
         color: var(--text-dark);
+        font-size: 1.05rem;
         margin-bottom: 0.5rem;
     }
 
     .related-excerpt {
         color: var(--text-dark);
         font-size: 0.95rem;
-        line-height: 1.5;
+        line-height: 1.55;
         margin-bottom: 1rem;
+        flex: 1;
         display: -webkit-box;
         -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
 
-    .read-more {
-        color: var(--text-light);
+    .related-card .read-more-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: auto;
+        padding: 0.5rem 1.25rem;
+        min-height: 2.5rem;
         font-size: 0.9rem;
-        font-weight: 500;
+        font-weight: 600;
+        color: #0b1220;
+        background: #fff;
+        border: 2px solid var(--border-soft);
+        border-radius: 50px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        width: fit-content;
+    }
+
+    .related-card:hover .read-more-link {
+        background-color: var(--primary-dark);
+        color: #fff;
+        border-color: var(--primary-dark);
+        text-decoration: none;
     }
 
     /* CTA Section */
@@ -268,9 +314,10 @@
         text-align: center;
         margin: 4rem 0;
         padding: 3rem;
-        background-color: var(--primary-light);
+        background-color: #fff;
         border-radius: 16px;
-        border: 2px solid var(--border-color);
+        border: 1px solid var(--border-soft);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
     }
 
     .cta-section h3 {
@@ -282,11 +329,18 @@
 
     .cta-section p {
         font-size: 1.1rem;
-        color: var(--text-dark);
+        color: var(--text-light);
         margin-bottom: 2rem;
         max-width: 800px;
         margin-left: auto;
         margin-right: auto;
+    }
+
+    .cta-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem;
     }
 
     /* Responsive */
@@ -309,15 +363,21 @@
             font-size: 2rem;
         }
 
+        .page-header {
+            max-width: 100%;
+        }
+
         .author-section {
             flex-direction: column;
             text-align: center;
             padding: 1.5rem;
         }
 
-        .author-avatar {
-            width: 100px;
-            height: 100px;
+        .author-avatar,
+        .author-avatar-placeholder {
+            width: 72px;
+            height: 72px;
+            font-size: 1.1rem;
         }
 
         .results-grid {
@@ -331,6 +391,9 @@
 
         .related-grid {
             grid-template-columns: 1fr;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .cta-section {
@@ -373,7 +436,7 @@
 
 <!-- Author Section -->
 <div class="author-section">
-    <div class="author-avatar-placeholder" style="width: 80px; height: 80px; border-radius: 50%; background-color: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--text-light); border: 3px solid white; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+    <div class="author-avatar-placeholder">
         {{ testimonial.user_name[:2]|upper }}
     </div>
     <div class="author-info">
@@ -414,7 +477,7 @@
                 <div class="related-author">{{ related.user_name }}</div>
                 <div style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.75rem;">{{ related.user_role|title }} at {{ related.institution_name }}</div>
                 <div class="related-excerpt">"{{ related.summary or related.content[:150] + '...' }}"</div>
-                <div class="read-more">Read Full Story →</div>
+                <span class="read-more-link">Read Full Story →</span>
             </a>
             {% endfor %}
         {% else %}
@@ -429,11 +492,13 @@
 <div class="cta-section">
     <h3>Ready to Transform Your Attendance Management?</h3>
     <p>Like {{ testimonial.institution_name }}, you can achieve significant improvements in efficiency, accuracy, and student outcomes with AttendAI. Register now and experience the difference.</p>
+    <div class="cta-buttons">
     {% if not session.user %}
-        <a class="btn-custom" href="{{ url_for('auth.register') }}" style="margin-right: 1rem;">Register With Us</a>
-        <a class="btn-custom btn-outline-custom" href="{{ url_for('main.subscriptions') }}">View Pricing</a>
+        <a class="btn-primary" href="{{ url_for('auth.register') }}">Register With Us</a>
+        <a class="btn-outline" href="{{ url_for('main.subscriptions') }}">View Pricing</a>
     {% else %}
-        <a class="btn-custom btn-outline-custom" href="{{ url_for('main.features') }}">Explore Features</a>
+        <a class="btn-outline" href="{{ url_for('main.features') }}">Explore Features</a>
     {% endif %}
+    </div>
 </div>
 {% endblock %}

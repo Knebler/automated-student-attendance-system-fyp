@@ -14,6 +14,7 @@
             --primary-dark: #0f172a;
             --primary-light: #f8fafc;
             --border-color: #0f172a;
+            --border-soft: #e2e8f0;
             --text-dark: #0f172a;
             --text-light: #64748b;
         }
@@ -105,7 +106,7 @@
         }
 
         .nav-link-custom:hover {
-            color: #e2e8f0;
+            color: var(--border-soft);
         }
 
         .nav-link-custom:hover::before {
@@ -363,6 +364,68 @@
         .btn-outline-custom:hover {
             background-color: var(--primary-dark);
             color: white;
+        }
+
+        .btn-primary,
+        .btn-outline {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 2rem;
+            min-width: 0;
+            height: 2.75rem;
+            box-sizing: border-box;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            line-height: 1.25;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            border: 2px solid var(--primary-dark);
+            background-color: var(--primary-dark);
+            color: #fff;
+        }
+
+        .btn-primary:hover,
+        .btn-primary:active {
+            background-color: #1e293b;
+            border-color: #1e293b;
+            color: #fff;
+            text-decoration: none;
+        }
+
+        .btn-outline {
+            border: 2px solid var(--border-soft);
+            background: #fff;
+            color: #0b1220;
+        }
+
+        .btn-outline:hover,
+        .btn-outline:active {
+            background-color: var(--primary-dark);
+            color: #fff;
+            border-color: var(--primary-dark);
+            text-decoration: none;
+        }
+
+        .btn-outline:focus-visible,
+        .btn-primary:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .btn-primary,
+            .btn-outline {
+                padding: 0.5rem 1.5rem;
+                font-size: 0.9rem;
+                height: auto;
+                min-height: 2.5rem;
+            }
         }
 
         .card-custom {

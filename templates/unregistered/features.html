@@ -130,10 +130,10 @@
     /* Comparison Section */
     .comparison-section {
         margin: 4rem 0;
-        background-color: var(--primary-light);
+        background-color: transparent;
         padding: 3rem;
         border-radius: 16px;
-        border: 2px solid var(--border-color);
+        border: none;
     }
 
     .comparison-section h2 {
@@ -154,7 +154,7 @@
         padding: 2rem;
         border-radius: 12px;
         background-color: white;
-        border: 2px solid var(--border-color);
+        border: none;
     }
 
     .traditional-column h3, .attendai-column h3 {
@@ -210,9 +210,9 @@
         text-align: center;
         margin: 4rem 0;
         padding: 3rem;
-        background-color: var(--primary-light);
+        background-color: white;
         border-radius: 16px;
-        border: 2px solid var(--border-color);
+        border: none;
     }
 
     .cta-section h2 {
@@ -497,7 +497,7 @@
 <div class="comparison-section">
     <h2>Traditional vs. AttendAI</h2>
     <div class="comparison-grid">
-        <div class="traditional-column">
+        <div class="traditional-column card-custom">
             <h3>Traditional Methods</h3>
             <ul>
                 {% if comparison_items %}
@@ -545,7 +545,7 @@
                 {% endif %}
             </ul>
         </div>
-        <div class="attendai-column">
+        <div class="attendai-column card-custom">
             <h3>With AttendAI</h3>
             <ul>
                 {% if comparison_items %}
@@ -597,7 +597,7 @@
 </div>
 
 <!-- CTA Section -->
-<div class="cta-section">
+<div class="cta-section card-custom">
     <h2>Ready to Transform Your Attendance Management?</h2>
     <p>Join thousands of educational institutions and businesses that have revolutionized their attendance tracking with AttendAI. Register now and experience the difference.</p>
     {% if not session.user %}

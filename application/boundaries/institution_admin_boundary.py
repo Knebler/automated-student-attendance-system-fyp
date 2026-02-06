@@ -342,6 +342,40 @@ def module_details(course_id):
         }
     return render_template('institution/admin/institution_admin_class_management_module_details.html', **context)
 
+@institution_bp.route('/manage_classes/<int:course_id>/delete', methods=['POST'])
+@requires_roles('admin')
+def delete_course(course_id):
+    """Delete a course"""
+    institution_id = session.get('institution_id')
+    
+    with get_session() as db_session:
+        course_model = CourseModel(db_session)
+        
+        # Verify course belongs to the institution
+        course = course_model.get_by_id(course_id)
+        if not course:
+            flash('Course not found.', 'error')
+            return redirect(url_for('institution.manage_classes'))
+        
+        if course.institution_id != institution_id:
+            flash('You do not have permission to delete this course.', 'error')
+            return redirect(url_for('institution.manage_classes'))
+        
+        try:
+            # Delete the course (cascade will handle related records)
+            course_name = course.name
+            success = course_model.delete(course_id)
+            
+            if success:
+                flash(f'Course "{course_name}" has been successfully deleted.', 'success')
+            else:
+                flash('Failed to delete the course.', 'error')
+                
+        except Exception as e:
+            flash(f'Error deleting course: {str(e)}', 'error')
+    
+    return redirect(url_for('institution.manage_classes'))
+
 @institution_bp.route('/manage_classes/<int:course_id>/add_class', methods=['GET'])
 @requires_roles('admin')
 def add_class_form(course_id):

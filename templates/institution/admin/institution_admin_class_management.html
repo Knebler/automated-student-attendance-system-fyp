@@ -41,6 +41,10 @@
                             <td>{{ course[3] }}</td>
                             <td class="actions-cell">
                                 <a href="{{ url_for('institution.module_details', course_id=course[0]) }}" class="btn-custom btn-manage">Manage</a>
+                                <form method="POST" action="{{ url_for('institution.delete_course', course_id=course[0]) }}" style="display: inline;" onsubmit="return confirmDelete('{{ course[1] }}')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn-custom btn-delete">Delete</button>
+                                </form>
                             </td>
                         </tr>
                         {% endfor %}
@@ -152,6 +156,22 @@
         background-color: #1e293b;
     }
 
+    .btn-delete {
+        padding: 0.5rem 1.5rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        background-color: #dc2626;
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-left: 0.5rem;
+    }
+
+    .btn-delete:hover {
+        background-color: #b91c1c;
+    }
+
     /* Responsive Design */
     @media (max-width: 768px) {
         .page-title {
@@ -251,6 +271,10 @@
             if (e.key === 'Enter') filterTable();
         });
     });
+
+    function confirmDelete(courseName) {
+        return confirm('Are you sure you want to delete the course "' + courseName + '"?\n\nThis will permanently delete:\n- All classes associated with this course\n- All attendance records for these classes\n- All student and lecturer enrollments\n\nThis action cannot be undone.');
+    }
     </script>
 
 

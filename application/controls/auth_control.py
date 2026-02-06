@@ -72,6 +72,19 @@ def authenticate_user(email, password):
             if not user.is_active:
                 return {'success': False, 'error': 'Account suspended. Please contact your institution administrator.'}
             
+            # Check if user's institution is suspended
+            if user.institution_id:
+                institution_model = InstitutionModel(db_session)
+                institution = institution_model.get_by_id(user.institution_id)
+                
+                if institution and institution.subscription:
+                    # Check if institution's subscription is inactive/suspended
+                    if not institution.subscription.is_active:
+                        return {
+                            'success': False, 
+                            'error': 'Your institution\'s subscription has been suspended. Please contact your institution administrator or platform support.'
+                        }
+            
             # Try bcrypt first (current standard)
             try:
                 if bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
@@ -110,6 +123,19 @@ class AuthControl:
                 return {'success': False, 'error': 'Invalid email or password'}
             if not user.is_active:
                 return {'success': False, 'error': 'Account suspended. Please contact your institution administrator.'}
+            
+            # Check if user's institution is suspended
+            if user.institution_id:
+                institution_model = InstitutionModel(db_session)
+                institution = institution_model.get_by_id(user.institution_id)
+                
+                if institution and institution.subscription:
+                    # Check if institution's subscription is inactive/suspended
+                    if not institution.subscription.is_active:
+                        return {
+                            'success': False, 
+                            'error': 'Your institution\'s subscription has been suspended. Please contact your institution administrator or platform support.'
+                        }
             
             # Try bcrypt first (current standard)
             try:

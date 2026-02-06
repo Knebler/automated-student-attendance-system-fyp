@@ -93,4 +93,54 @@ class CourseControl:
                 'students': []
             }
 
-
+    @staticmethod
+    def delete_course(course_id, institution_id):
+        """
+        Delete a course and all its related data
+        
+        Args:
+            course_id: The ID of the course to delete
+            institution_id: The institution ID to verify ownership
+            
+        Returns:
+            Dictionary with success status and message
+        """
+        try:
+            with get_session() as session:
+                course_model = CourseModel(session)
+                
+                # Verify course exists and belongs to the institution
+                course = course_model.get_by_id(course_id)
+                
+                if not course:
+                    return {
+                        'success': False,
+                        'error': 'Course not found'
+                    }
+                
+                if course.institution_id != institution_id:
+                    return {
+                        'success': False,
+                        'error': 'You do not have permission to delete this course'
+                    }
+                
+                # Delete the course (cascade delete will handle related records)
+                course_name = course.name
+                success = course_model.delete(course_id)
+                
+                if success:
+                    return {
+                        'success': True,
+                        'message': f'Course "{course_name}" has been successfully deleted'
+                    }
+                else:
+                    return {
+                        'success': False,
+                        'error': 'Failed to delete the course'
+                    }
+                
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Error deleting course: {str(e)}'
+            }

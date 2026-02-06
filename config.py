@@ -25,6 +25,10 @@ class Config:
     SQLALCHEMY_MAX_OVERFLOW = int(os.getenv('DB_MAX_OVERFLOW', '20'))
     SQLALCHEMY_POOL_RECYCLE = int(os.getenv('DB_POOL_RECYCLE', '300'))
     SQLALCHEMY_POOL_TIMEOUT = int(os.getenv('DB_POOL_TIMEOUT', '30'))
+
+    # SSL Settings
+    SSL_CERT_FILE = os.getenv('SSL_CERT_FILE', None)
+    SSL_KEY_FILE = os.getenv('SSL_KEY_FILE', None)
     
     # Application Settings
     UPLOAD_FOLDER = 'static/uploads'

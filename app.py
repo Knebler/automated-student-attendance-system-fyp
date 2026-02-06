@@ -386,4 +386,16 @@ if __name__ == '__main__':
     print("=" * 70)
     print("")
     
-    app.run(debug=True, host='0.0.0.0', port=app.config.get('PORT', 5000))
+    app_settings = {
+        'debug': True,
+        'host': '0.0.0.0',
+        'port': app.config.get('PORT', 443),
+    }
+    if app.config.get('SSL_CERT_FILE') and app.config.get('SSL_KEY_FILE'):
+        app_settings['ssl_context'] = (
+            app.config['SSL_CERT_FILE'],
+            app.config['SSL_KEY_FILE']
+        )
+        print("🔒 SSL enabled for Flask server")
+
+    app.run(**app_settings)

@@ -40,8 +40,8 @@
     .search-input {
         flex: 1;
         padding: 0.75rem 1.5rem;
-        border: 2px solid var(--border-color);
-        border-radius: 25px;
+        border: 1px solid var(--border-soft);
+        border-radius: 8px;
         font-size: 1rem;
         outline: none;
         font-family: 'Montserrat', sans-serif;
@@ -52,20 +52,7 @@
     }
 
     .search-btn {
-        background-color: var(--primary-dark);
-        color: white;
-        border: 2px solid var(--primary-dark);
-        padding: 0.75rem 2rem;
-        border-radius: 25px;
-        font-size: 1rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        font-family: 'Montserrat', sans-serif;
-    }
-
-    .search-btn:hover {
-        background-color: #1e293b;
-        border-color: #1e293b;
+        flex-shrink: 0;
     }
 
     /* FAQ Categories */
@@ -78,18 +65,7 @@
     }
 
     .category-tab {
-        padding: 0.75rem 1.5rem;
-        background-color: white;
-        border: 2px solid var(--border-color);
-        border-radius: 25px;
         cursor: pointer;
-        font-size: 0.95rem;
-        transition: all 0.3s ease;
-        color: var(--text-dark);
-    }
-
-    .category-tab:hover {
-        background-color: var(--primary-light);
     }
 
     .category-tab.active {
@@ -107,15 +83,16 @@
     }
 
     .faq-item {
-        border: 2px solid var(--border-color);
-        border-radius: 12px;
+        border: 1px solid var(--border-soft);
+        border-radius: 16px;
         overflow: hidden;
         background-color: white;
         transition: all 0.3s ease;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
     }
 
     .faq-item:hover {
-        border-color: #1e293b;
+        border-color: var(--border-soft);
     }
 
     .faq-question {
@@ -193,10 +170,11 @@
 
     /* Contact Section */
     .contact-section {
-        background-color: var(--primary-light);
-        border: 2px solid var(--border-color);
+        background-color: white;
+        border: 1px solid var(--border-soft);
         border-radius: 16px;
-        padding: 3rem;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+        padding: 2rem 2.5rem;
         margin: 4rem 0;
         text-align: center;
     }
@@ -204,32 +182,69 @@
     .contact-section h3 {
         font-size: 2rem;
         color: var(--text-dark);
-        margin-bottom: 1rem;
+        margin-bottom: 0.5rem;
         font-weight: bold;
     }
 
-    .contact-section p {
-        font-size: 1.1rem;
-        color: var(--text-dark);
-        margin-bottom: 2rem;
-        max-width: 800px;
+    .contact-section > p {
+        font-size: 0.95rem;
+        color: var(--text-light);
+        margin-bottom: 1.5rem;
+        max-width: 560px;
         margin-left: auto;
         margin-right: auto;
-        line-height: 1.6;
+        line-height: 1.5;
     }
 
     .contact-options {
         display: flex;
-        gap: 1rem;
+        gap: 1.25rem;
         justify-content: center;
         flex-wrap: wrap;
+        align-items: stretch;
+    }
+
+    .contact-options .contact-btn {
+        flex: 1 1 260px;
+        min-width: 260px;
+        max-width: 320px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 1rem 2.5rem;
+        border-radius: 50px;
+        gap: 0.35rem;
+        display: inline-flex;
+    }
+
+    .contact-options .contact-btn span:first-child {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-light);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .contact-options .contact-btn span:last-child {
+        font-size: 1rem;
+        font-weight: bold;
+        color: var(--text-dark);
+    }
+
+    .contact-options .contact-btn:hover span:first-child {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .contact-options .contact-btn:hover span:last-child {
+        color: white;
     }
 
     .contact-btn {
         padding: 0.75rem 1.5rem;
         background-color: white;
-        border: 2px solid var(--border-color);
-        border-radius: 25px;
+        border: 1px solid var(--border-soft);
+        border-radius: 50px;
         text-decoration: none;
         color: var(--text-dark);
         font-weight: 500;
@@ -255,20 +270,30 @@
     }
 
     .quick-link-card {
-        border: 2px solid var(--border-color);
-        border-radius: 12px;
-        padding: 1.5rem;
+        border: 1px solid var(--border-soft);
+        border-radius: 16px;
+        padding: 2rem 1.5rem;
         text-align: center;
         background-color: white;
         transition: all 0.3s ease;
         text-decoration: none;
         color: var(--text-dark);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
     }
 
     .quick-link-card:hover {
         transform: translateY(-5px);
-        border-color: #1e293b;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
         text-decoration: none;
+        color: var(--text-dark);
+    }
+
+    .quick-link-card:hover h4 {
+        color: var(--text-dark);
+    }
+
+    .quick-link-card:hover p {
+        color: var(--text-light);
     }
 
     .quick-link-card h4 {
@@ -316,11 +341,6 @@
             gap: 0.5rem;
         }
 
-        .category-tab {
-            padding: 0.5rem 1rem;
-            font-size: 0.9rem;
-        }
-
         .faq-question {
             padding: 1rem 1.25rem;
         }
@@ -333,6 +353,15 @@
             padding: 2rem 1.5rem;
         }
 
+        .contact-options {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .contact-options .contact-btn {
+            max-width: 100%;
+        }
+
         .quick-links {
             grid-template-columns: 1fr;
         }
@@ -343,12 +372,8 @@
             font-size: 1.75rem;
         }
 
-        .contact-options {
-            flex-direction: column;
-        }
-
-        .contact-btn {
-            justify-content: center;
+        .contact-options .contact-btn {
+            min-width: 0;
         }
 
         .faq-question-text {
@@ -366,16 +391,16 @@
 <!-- Search Section -->
 <div class="search-section">
     <input type="text" class="search-input" id="faqSearch" placeholder="Search questions...">
-    <button class="search-btn" onclick="searchFAQs()">Search</button>
+    <button type="button" class="search-btn btn-primary" onclick="searchFAQs()">Search</button>
 </div>
 
 <!-- Category Tabs -->
 <div class="category-tabs">
-    <div class="category-tab active" onclick="showCategory('general')">General</div>
-    <div class="category-tab" onclick="showCategory('features')">Features</div>
-    <div class="category-tab" onclick="showCategory('pricing')">Pricing & Plans</div>
-    <div class="category-tab" onclick="showCategory('technical')">Technical</div>
-    <div class="category-tab" onclick="showCategory('implementation')">Implementation</div>
+    <div class="category-tab btn-outline active" onclick="showCategory('general')">General</div>
+    <div class="category-tab btn-outline" onclick="showCategory('features')">Features</div>
+    <div class="category-tab btn-outline" onclick="showCategory('pricing')">Pricing & Plans</div>
+    <div class="category-tab btn-outline" onclick="showCategory('technical')">Technical</div>
+    <div class="category-tab btn-outline" onclick="showCategory('implementation')">Implementation</div>
 </div>
 
 <!-- General FAQs -->
@@ -494,8 +519,14 @@
     <h3>Still Have Questions?</h3>
     <p>Our support team is here to help. Contact us through any of the channels below for personalized assistance.</p>
     <div class="contact-options">
-        <p style="font-size: 1.2rem; margin: 0.5rem 0;"><strong>Email:</strong> <a href="mailto:attend_ai@gmail.com" style="color: var(--text-dark); text-decoration: underline;">attend_ai@gmail.com</a></p>
-        <p style="font-size: 1.2rem; margin: 0.5rem 0;"><strong>Phone:</strong> +65 1234 1234</p>
+        <a href="mailto:attend_ai@gmail.com" class="contact-btn">
+            <span>Email</span>
+            <span>attend_ai@gmail.com</span>
+        </a>
+        <a href="tel:+6512341234" class="contact-btn">
+            <span>Phone</span>
+            <span>+65 1234 1234</span>
+        </a>
     </div>
 </div>
 

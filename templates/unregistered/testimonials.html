@@ -35,13 +35,14 @@
     }
 
     .testimonial-card {
-        border: 2px solid var(--border-color);
+        border: 1px solid var(--border-soft);
         border-radius: 16px;
         padding: 2rem;
         min-height: 320px;
         display: flex;
         flex-direction: column;
         background-color: white;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
         transition: all 0.3s ease;
         position: relative;
         text-decoration: none;
@@ -49,7 +50,7 @@
     }
 
     .testimonial-card:hover {
-        transform: translateY(-5px);
+        transform: translateY(-4px);
         box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
         text-decoration: none;
         color: inherit;
@@ -88,7 +89,7 @@
     .testimonial-author {
         margin-top: auto;
         padding-top: 1.5rem;
-        border-top: 1px solid var(--primary-light);
+        border-top: 1px solid var(--border-soft);
     }
 
     .author-name {
@@ -118,40 +119,45 @@
 
     .star {
         color: #fbbf24;
-        font-size: 1.2rem;
+        font-size: 1.1rem;
     }
 
-    /* Read More Button */
+    /* Read More Button - matches site .btn-outline */
     .read-more-btn {
         margin-top: 1.5rem;
-        padding: 0.75rem 1.5rem;
-        background-color: var(--primary-light);
-        color: var(--text-dark);
-        border: 2px solid var(--border-color);
-        border-radius: 8px;
+        padding: 0.75rem 2rem;
+        min-height: 2.75rem;
+        box-sizing: border-box;
+        background: #fff;
+        color: #0b1220;
+        border: 2px solid var(--border-soft);
+        border-radius: 50px;
         font-weight: 600;
         font-size: 0.9rem;
         text-align: center;
         cursor: pointer;
         transition: all 0.3s ease;
         text-decoration: none;
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         width: fit-content;
         align-self: flex-start;
     }
 
-    .read-more-btn:hover {
-        background-color: var(--primary);
-        color: white;
+    .testimonial-card:hover .read-more-btn {
+        background-color: var(--primary-dark);
+        color: #fff;
+        border-color: var(--primary-dark);
         text-decoration: none;
-        transform: translateY(-2px);
     }
 
-    /* Stats Section */
+    /* Stats Section - section card style */
     .stats-section {
-        background-color: var(--primary-light);
-        border: 2px solid var(--border-color);
+        background-color: #fff;
+        border: 1px solid var(--border-soft);
         border-radius: 16px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
         padding: 3rem 2rem;
         margin: 4rem 0;
         text-align: center;
@@ -171,7 +177,7 @@
     }
 
     .stat-item p {
-        color: var(--text-dark);
+        color: var(--text-light);
         font-size: 1rem;
     }
 
@@ -181,44 +187,51 @@
         margin: 4rem 0;
     }
 
-    .trust-section h2 {
-        font-size: 2rem;
-        color: var(--text-dark);
-        margin-bottom: 2rem;
-        font-weight: bold;
-    }
-
-    .trust-logos {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 3rem;
-        flex-wrap: wrap;
-    }
-
-    .trust-logo {
-        font-size: 1.5rem;
-        color: var(--text-light);
-        font-weight: bold;
-        padding: 1rem 2rem;
-        border: 2px solid var(--border-color);
-        border-radius: 10px;
-        background-color: white;
-        min-width: 150px;
-        text-align: center;
-    }
-
-    /* Video Testimonials */
-    .video-section {
-        margin: 4rem 0;
-    }
-
+    .trust-section h2,
     .video-section h2 {
         text-align: center;
         font-size: 2rem;
         color: var(--text-dark);
         margin-bottom: 2rem;
         font-weight: bold;
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .trust-logos {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        justify-items: center;
+        align-items: center;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .trust-logo {
+        font-size: 1rem;
+        color: var(--text-dark);
+        font-weight: 600;
+        padding: 0.75rem 2rem;
+        border: 1px solid var(--border-soft);
+        border-radius: 50px;
+        background-color: #fff;
+        min-width: 140px;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: default;
+    }
+
+    .trust-logo:hover {
+        background-color: var(--primary-dark);
+        color: #fff;
+        border-color: var(--primary-dark);
+    }
+
+    /* Video Testimonials */
+    .video-section {
+        margin: 4rem 0;
     }
 
     .video-grid {
@@ -228,10 +241,11 @@
     }
 
     .video-card {
-        border: 2px solid var(--border-color);
+        border: 1px solid var(--border-soft);
         border-radius: 16px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
         padding: 2rem;
-        background-color: var(--primary-light);
+        background-color: #fff;
         text-align: center;
     }
 
@@ -254,14 +268,15 @@
         font-weight: bold;
     }
 
-    /* CTA Section */
+    /* CTA Section - matches Features/Home CTA */
     .cta-section {
         text-align: center;
         margin: 4rem 0;
         padding: 3rem;
-        background-color: var(--primary-light);
+        background-color: #fff;
         border-radius: 16px;
-        border: 2px solid var(--border-color);
+        border: 1px solid var(--border-soft);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
     }
 
     .cta-section h2 {
@@ -273,11 +288,18 @@
 
     .cta-section p {
         font-size: 1.1rem;
-        color: var(--text-dark);
+        color: var(--text-light);
         margin-bottom: 2rem;
         max-width: 800px;
         margin-left: auto;
         margin-right: auto;
+    }
+
+    .cta-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem;
     }
 
     /* Responsive */
@@ -288,6 +310,10 @@
         }
 
         .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .trust-logos {
             grid-template-columns: repeat(2, 1fr);
         }
     }
@@ -311,12 +337,13 @@
         }
 
         .trust-logos {
-            gap: 1rem;
+            grid-template-columns: 1fr;
+            max-width: 280px;
         }
 
         .trust-logo {
-            min-width: 120px;
-            padding: 0.75rem 1rem;
+            min-width: 0;
+            width: 100%;
         }
 
         .video-grid {
@@ -328,8 +355,9 @@
         }
 
         .read-more-btn {
-            padding: 0.5rem 1rem;
-            font-size: 0.85rem;
+            padding: 0.5rem 1.5rem;
+            min-height: 2.5rem;
+            font-size: 0.9rem;
         }
     }
 
@@ -392,7 +420,7 @@
             <h3 style="color: var(--text-light); margin-bottom: 1rem;">No testimonials available yet</h3>
             <p style="color: var(--text-light);">Be the first to share your experience with AttendAI!</p>
             {% if session.user %}
-                <a href="{{ url_for('main.submit_testimonial') }}" class="btn-custom" style="margin-top: 1rem;">Submit a Testimonial</a>
+                <a href="{{ url_for('main.submit_testimonial') }}" class="btn-primary" style="margin-top: 1rem;">Submit a Testimonial</a>
             {% endif %}
         </div>
     {% endif %}
@@ -436,11 +464,13 @@
 <div class="cta-section">
     <h2>Join Our Satisfied Customers</h2>
     <p>See for yourself why thousands of organizations trust AttendAI for their attendance management needs. Register now and experience the difference.</p>
+    <div class="cta-buttons">
     {% if not session.user %}
-        <a class="btn-custom" href="{{ url_for('auth.register') }}" style="margin-right: 1rem;">Register With Us</a>
-        <a class="btn-custom btn-outline-custom" href="{{ url_for('main.subscriptions') }}">View Pricing</a>
+        <a class="btn-primary" href="{{ url_for('auth.register') }}">Register With Us</a>
+        <a class="btn-outline" href="{{ url_for('main.subscriptions') }}">View Pricing</a>
     {% else %}
-        <a class="btn-custom btn-outline-custom" href="{{ url_for('main.features') }}">Explore Features</a>
+        <a class="btn-outline" href="{{ url_for('main.features') }}">Explore Features</a>
     {% endif %}
+    </div>
 </div>
 {% endblock %}

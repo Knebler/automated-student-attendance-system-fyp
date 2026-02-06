@@ -43,14 +43,14 @@
 
 .qa-unified {
     background: #f8fafc;
-    border-color: #e2e8f0;
+    border-color: var(--border-soft);
     color: #0f172a;
 }
 
 /* Unified section card style */
 .dashboard-card {
     background: #ffffff;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-soft);
     border-radius: 16px;
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
     overflow: hidden;
@@ -70,7 +70,7 @@
 /* Override dark borders */
 .main-container .card-custom {
     background: #ffffff;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-soft);
     border-radius: 16px;
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
     overflow: hidden;

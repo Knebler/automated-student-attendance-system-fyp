@@ -32,7 +32,7 @@
     /* Register form */
     .register-container .card {
         background-color: #ffffff;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--border-soft);
         border-radius: 12px;
         box-shadow: 0 8px 24px rgba(148, 163, 184, 0.25);
         overflow: hidden;
@@ -40,7 +40,7 @@
 
     .register-container .card-header {
         background-color: #ffffff;
-        border-bottom: 1px solid #e2e8f0;
+        border-bottom: 1px solid var(--border-soft);
         padding: 1.5rem;
     }
 
@@ -296,7 +296,7 @@
         left: 0;
         right: 0;
         background-color: #ffffff;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--border-soft);
         border-radius: 8px;
         box-shadow: 0 8px 24px rgba(148, 163, 184, 0.25);
         max-height: 0;
@@ -387,7 +387,7 @@
                                     <select id="selected_plan_id" name="selected_plan_id" class="form-select">
                                         <option value="">-- Select a plan --</option>
                                         {% for plan in subscription_plans %}
-                                            <option value="{{ plan.plan_id }}" {% if preselected_plan_id and preselected_plan_id|int == plan.plan_id %}selected{% endif %}>{{ plan.name }}{% if plan.price %} — {{ plan.price }}{% endif %}{% if plan.billing_cycle %} / {{ plan.billing_cycle }}{% endif %}</option>
+                                            <option value="{{ plan.plan_id }}" {% if preselected_plan_id and preselected_plan_id|int == plan.plan_id %}selected{% endif %}>{{ plan.name }} — ${{ "%.0f"|format(plan.price or 0) }} / {{ plan.billing_cycle or 'monthly' }}</option>
                                         {% endfor %}
                                     </select>
                                     <div class="custom-dropdown" id="custom-plan-dropdown">

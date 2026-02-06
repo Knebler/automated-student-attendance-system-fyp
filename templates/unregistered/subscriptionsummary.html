@@ -7,11 +7,12 @@
     /* Page Header */
     .page-header {
         text-align: center;
-        margin-bottom: 3rem;
+        margin-bottom: 0;
         padding: 2rem 0;
     }
 
-    .page-header h1 {
+    .page-header h1,
+    .page-header h2 {
         font-size: 2.5rem;
         color: var(--text-dark);
         margin-bottom: 1rem;
@@ -26,7 +27,7 @@
         line-height: 1.6;
     }
 
-    /* Plans Grid */
+    /* Pricing cards */
     .plans-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -35,9 +36,9 @@
     }
 
     .plan-card {
-        border: 2px solid var(--border-color);
-        border-radius: 15px;
-        padding: 2rem;
+        border: 1px solid var(--border-soft);
+        border-radius: 16px;
+        padding: 2.5rem 2rem;
         min-height: 600px;
         display: flex;
         flex-direction: column;
@@ -45,6 +46,7 @@
         transition: all 0.3s ease;
         position: relative;
         overflow: hidden;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
     }
 
     .plan-card:hover {
@@ -54,7 +56,7 @@
 
     .plan-card.popular {
         border-color: #059669;
-        border-width: 3px;
+        border-width: 2px;
     }
 
     .popular-badge {
@@ -66,7 +68,7 @@
         padding: 0.5rem 1.5rem;
         font-size: 0.85rem;
         font-weight: bold;
-        border-radius: 0 15px 0 15px;
+        border-radius: 0 16px 0 16px;
     }
 
     .plan-title {
@@ -81,7 +83,7 @@
 
     .plan-price {
         text-align: center;
-        margin: 1.5rem 0;
+        margin: 1.75rem 0 1.5rem;
     }
 
     .price-amount {
@@ -107,6 +109,7 @@
     .plan-features {
         list-style: none;
         margin: 1.5rem 0;
+        padding: 0;
     }
 
     .plan-features li {
@@ -125,6 +128,10 @@
     .feature-icon {
         color: #059669;
         font-weight: bold;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
     }
 
     .feature-unavailable {
@@ -139,7 +146,7 @@
 
     /* Plan Comparison */
     .comparison-table {
-        margin: 4rem 0;
+        margin: 0 0 4rem;
         overflow-x: auto;
     }
 
@@ -153,14 +160,45 @@
 
     table {
         width: 100%;
-        border-collapse: collapse;
-        margin-top: 1rem;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-top: 0;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid var(--border-soft);
+        background-color: #ffffff;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
     }
 
     th, td {
         padding: 1rem;
         text-align: center;
-        border: 1px solid var(--border-color);
+        border-right: 1px solid var(--border-soft);
+        border-bottom: 1px solid var(--border-soft);
+    }
+
+    th:first-child, td:first-child {
+        border-left: 1px solid var(--border-soft);
+    }
+
+    tr:first-child th, tr:first-child td {
+        border-top: 1px solid var(--border-soft);
+    }
+
+    thead tr:first-child th:first-child {
+        border-top-left-radius: 15px;
+    }
+
+    thead tr:first-child th:last-child {
+        border-top-right-radius: 15px;
+    }
+
+    tbody tr:last-child td:first-child {
+        border-bottom-left-radius: 15px;
+    }
+
+    tbody tr:last-child td:last-child {
+        border-bottom-right-radius: 15px;
     }
 
     th {
@@ -192,7 +230,11 @@
 
     /* FAQ Section */
     .faq-section {
-        margin: 4rem 0;
+        margin: 3rem 0;
+    }
+
+    .faq-section .plan-card {
+        min-height: 0;
     }
 
     .faq-section h2 {
@@ -204,28 +246,20 @@
     }
 
     .faq-item {
-        border: 2px solid var(--border-color);
-        border-radius: 10px;
-        padding: 1.5rem;
         margin-bottom: 1rem;
-        background-color: white;
-        transition: all 0.3s ease;
-    }
-
-    .faq-item:hover {
-        background-color: var(--primary-light);
     }
 
     .faq-question {
         font-weight: bold;
         color: var(--text-dark);
         margin-bottom: 0.5rem;
-        font-size: 1.1rem;
+        font-size: 1.2rem;
     }
 
     .faq-answer {
         color: var(--text-dark);
         line-height: 1.6;
+        font-size: 1rem;
     }
 
     /* Responsive */
@@ -250,7 +284,8 @@
             min-height: 500px;
         }
 
-        .page-header h1 {
+        .page-header h1,
+        .page-header h2 {
             font-size: 2rem;
         }
 
@@ -342,8 +377,7 @@
             </ul>
             <div class="plan-button">
                 <a href="{{ url_for('auth.register', selected_plan_id=plan.plan_id, role='institution_admin') }}" 
-                   class="btn-custom {% if not features.is_popular %}btn-outline-custom{% endif %}"
-                   {% if features.is_popular %}style="background-color: #059669; border-color: #059669;"{% endif %}>
+                   class="btn-primary">
                    Get Started
                 </a>
             </div>
@@ -353,8 +387,10 @@
 </div>
 
 <!-- Plan Comparison Table -->
-<div class="comparison-table">
+<div class="page-header">
     <h2>Plan Comparison</h2>
+</div>
+<div class="comparison-table">
     <table>
         <thead>
             <tr>
@@ -421,20 +457,22 @@
 
 <!-- FAQ Section -->
 <div class="faq-section">
-    <h2>Frequently Asked Questions</h2>
-    <div class="faq-item">
+    <div class="page-header">
+        <h2>Frequently Asked Questions</h2>
+    </div>
+    <div class="faq-item plan-card card-custom">
         <div class="faq-question">Can I switch plans later?</div>
         <div class="faq-answer">Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately, and you'll only pay the difference for the remainder of your billing cycle.</div>
     </div>
-    <div class="faq-item">
+    <div class="faq-item plan-card card-custom">
         <div class="faq-question">Is there a free trial?</div>
         <div class="faq-answer">Yes! All plans come with a 14-day free trial. No credit card required to start your trial.</div>
     </div>
-    <div class="faq-item">
+    <div class="faq-item plan-card card-custom">
         <div class="faq-question">What payment methods do you accept?</div>
         <div class="faq-answer">We accept all major credit cards (Visa, MasterCard, American Express), PayPal, and bank transfers for enterprise plans.</div>
     </div>
-    <div class="faq-item">
+    <div class="faq-item plan-card card-custom">
         <div class="faq-question">Can I cancel anytime?</div>
         <div class="faq-answer">Absolutely. You can cancel your subscription at any time. There are no cancellation fees, and you'll continue to have access until the end of your billing period.</div>
     </div>
@@ -444,6 +482,6 @@
 <div class="page-header" style="margin-top: 4rem;">
     <h2>Still have questions?</h2>
     <p>Contact our sales team for personalized assistance in choosing the right plan for your organization.</p>
-    <a href="mailto:sales@attendai.com" class="btn-custom mt-3">Contact Sales</a>
+    <a href="mailto:sales@attendai.com" class="btn-primary mt-3">Contact Sales</a>
 </div>
 {% endblock %}

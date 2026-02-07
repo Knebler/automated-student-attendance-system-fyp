@@ -96,6 +96,7 @@ class User(Base, BaseMixin):
     phone_number = Column(String(30))
     email = Column(String(150), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
+    profile_picture = Column(LargeBinary(length=(2**24)-1), nullable=True)  # MEDIUMBLOB (16MB max)
     is_active = Column(Boolean, server_default="1")
     date_joined = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
 

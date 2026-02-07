@@ -34,6 +34,7 @@ def dashboard():
         context = {
             'student_name': dashboard_data.get('student', {}).get('name', 'Student'),
             'student_info': dashboard_data.get('student', {}),
+            'facial_data_registered': dashboard_data.get('facial_data_registered', False),
             'today_classes': dashboard_data.get('today_classes', []),
             'announcements': dashboard_data.get('announcements', []),
             'current_time': dashboard_data.get('current_time', ''),
@@ -58,13 +59,147 @@ def profile():
             flash('Please log in to access your profile', 'warning')
             return redirect(url_for('auth.login'))
         
-        profile_data = StudentControl.get_student_profile(user_id)
-        return render_template('institution/student/student_profile_management.html', **profile_data)
+        # Get student data directly from database
+        with get_session() as db_session:
+            from database.models import User
+            
+            student = db_session.query(User).filter(User.user_id == user_id).first()
+            
+            if not student:
+                flash('Student profile not found', 'error')
+                return redirect(url_for('student.dashboard'))
+            
+            # Check if student has profile picture
+            has_profile_picture = hasattr(student, 'profile_picture') and student.profile_picture is not None
+            
+            # Prepare context with properly mapped field names
+            context = {
+                'student_name': student.name or '',
+                'student_email': student.email or '',
+                'student_phone': student.phone_number or '',
+                'student_gender': student.gender or '',
+                'has_profile_picture': has_profile_picture
+            }
+        
+        return render_template('institution/student/student_profile_management.html', **context)
         
     except Exception as e:
         current_app.logger.error(f"Error loading student profile: {e}")
+        import traceback
+        current_app.logger.error(traceback.format_exc())
         flash('An error occurred while loading your profile', 'danger')
-        return render_template('institution/student/student_profile_management.html')
+        return render_template('institution/student/student_profile_management.html', 
+                             student_email='', student_phone='', student_gender='')
+
+@student_bp.route('/api/profile-picture', methods=['GET'])
+@requires_roles('student')
+def get_profile_picture():
+    """API endpoint to get student profile picture"""
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        
+        with get_session() as db_session:
+            from database.models import User
+            
+            student = db_session.query(User).filter(User.user_id == user_id).first()
+            
+            if not student or not hasattr(student, 'profile_picture') or not student.profile_picture:
+                return jsonify({'success': False, 'error': 'No profile picture found'}), 404
+            
+            # Return the image as base64
+            import base64
+            image_base64 = base64.b64encode(student.profile_picture).decode('utf-8')
+            return jsonify({
+                'success': True,
+                'image': f'data:image/jpeg;base64,{image_base64}'
+            })
+            
+    except Exception as e:
+        current_app.logger.error(f"Error getting profile picture: {e}")
+        return jsonify({'success': False, 'error': 'Error loading profile picture'}), 500
+
+@student_bp.route('/api/profile/save', methods=['POST'])
+@requires_roles('student')
+def save_profile():
+    """API endpoint to save student profile including picture"""
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+        
+        with get_session() as db_session:
+            from database.models import User
+            from PIL import Image
+            import io
+            
+            student = db_session.query(User).filter(User.user_id == user_id).first()
+            
+            if not student:
+                return jsonify({'success': False, 'error': 'Student not found'}), 404
+            
+            # Update basic fields
+            if 'email' in data and data['email']:
+                student.email = data['email']
+            
+            if 'phone' in data:
+                student.phone_number = data['phone']
+            
+            if 'gender' in data and data['gender']:
+                student.gender = data['gender']
+            
+            # Handle profile picture if provided
+            if 'profile_picture' in data and data['profile_picture']:
+                try:
+                    # Extract base64 image data
+                    image_data = data['profile_picture']
+                    if 'base64,' in image_data:
+                        image_data = image_data.split('base64,')[1]
+                    
+                    # Decode base64
+                    image_bytes = base64.b64decode(image_data)
+                    
+                    # Open image with PIL
+                    image = Image.open(io.BytesIO(image_bytes))
+                    
+                    # Convert to RGB if necessary
+                    if image.mode in ('RGBA', 'LA', 'P'):
+                        background = Image.new('RGB', image.size, (255, 255, 255))
+                        if image.mode == 'P':
+                            image = image.convert('RGBA')
+                        background.paste(image, mask=image.split()[-1] if image.mode == 'RGBA' else None)
+                        image = background
+                    
+                    # Resize to 300x300 maintaining aspect ratio
+                    image.thumbnail((300, 300), Image.Resampling.LANCZOS)
+                    
+                    # Save as JPEG to binary
+                    output = io.BytesIO()
+                    image.save(output, format='JPEG', quality=85, optimize=True)
+                    student.profile_picture = output.getvalue()
+                    
+                except Exception as img_error:
+                    current_app.logger.error(f"Error processing image: {img_error}")
+                    return jsonify({'success': False, 'error': 'Invalid image format'}), 400
+            
+            db_session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Profile updated successfully'
+            })
+            
+    except Exception as e:
+        current_app.logger.error(f"Error saving profile: {e}")
+        import traceback
+        current_app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': 'Error saving profile'}), 500
 
 @student_bp.route('/facial-recognition-retrain')
 @requires_roles('student')

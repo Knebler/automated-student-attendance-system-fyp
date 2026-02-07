@@ -38,7 +38,8 @@ def submit_import_data_job(institution_id: int, file_data: bytes) -> str:
     thread.daemon = True
     ALL_IMPORT_JOBS[job_id] = {
         "institution_id": institution_id,
-        "import_users": {"ws_name": "Import Users", "total": 0, "success": 0, "failed": 0, "errors": []},
+        "import_students": {"ws_name": "Import Users", "total": 0, "success": 0, "failed": 0, "errors": []},
+        "import_lecturers": {"ws_name": "Import Users", "total": 0, "success": 0, "failed": 0, "errors": []},
         "import_venues": {"ws_name": "Import Venues", "total": 0, "success": 0, "failed": 0, "errors": []},
         "import_semesters": {"ws_name": "Import Semesters", "total": 0, "success": 0, "failed": 0, "errors": []},
         "import_courses": {"ws_name": "Import Courses", "total": 0, "success": 0, "failed": 0, "errors": []},
@@ -52,15 +53,17 @@ def process_excel_data(job_id: str, file_data: bytes):
     job_state = ALL_IMPORT_JOBS[job_id]
     try:
         wb = load_workbook(BytesIO(file_data))
-        import_tasks = ["import_users", "import_venues", "import_semesters", "import_courses", "assign_courses", "import_classes"]
+        import_tasks = ["import_students", "import_lecturers", "import_venues", "import_semesters", "import_courses", "assign_courses", "import_classes"]
 
-        # Update count first
+        # Update count first - special handling for students/lecturers which share same sheet
         for task in import_tasks:
             ws_name = job_state[task]["ws_name"]
             if ws_name not in wb.sheetnames:
                 job_state[task]["errors"].append({"row": 0, "error": f"Worksheet {ws_name} not found."})
                 continue
-            job_state[task]["total"] = wb[job_state[task]["ws_name"]].max_row - 1
+            # For students and lecturers, we'll count them during parsing
+            if task not in ["import_students", "import_lecturers"]:
+                job_state[task]["total"] = wb[job_state[task]["ws_name"]].max_row - 1
         if any(job_state[task]["errors"] for task in import_tasks):
             return
 
@@ -77,8 +80,9 @@ def process_excel_data(job_id: str, file_data: bytes):
                     error_msg = str(e.orig) if hasattr(e, 'orig') else str(e)
                     job_state[task_name]["errors"].append({"row": row_num, "error": error_msg})
 
-        users = parse_user_sheet(job_id, wb["Import Users"])
-        commit_to_db("import_users", users)
+        students, lecturers = parse_user_sheet(job_id, wb["Import Users"])
+        commit_to_db("import_students", students)
+        commit_to_db("import_lecturers", lecturers)
 
         venues = parse_venue_sheet(job_id, wb["Import Venues"])
         commit_to_db("import_venues", venues)
@@ -99,25 +103,47 @@ def process_excel_data(job_id: str, file_data: bytes):
         time.sleep(30) # Give about 30s before erasing all records of the run
         ALL_IMPORT_JOBS.pop(job_id)
 
-def parse_user_sheet(job_id: str, ws: Worksheet) -> List[User]:
-    task_name = "import_users"
+def parse_user_sheet(job_id: str, ws: Worksheet):
     # Columns are: Role, Name, Age, Gender, Email, Phone Number, Password
     base_info = {
         "institution_id": ALL_IMPORT_JOBS[job_id]["institution_id"],
     }
     headers = ['role', 'name', 'age', 'gender', 'email', 'phone_number', 'password']
-    users = []
+    students = []
+    lecturers = []
+    student_count = 0
+    lecturer_count = 0
+    
     for idx, row in enumerate(ws.iter_rows(), 1):
         if idx == 1:
             continue
         try:
             zipped_data = dict(zip(headers, [cell.value for cell in row]))
+            role = zipped_data.get('role', '').lower()
             zipped_data["password_hash"] = hash_password(zipped_data.pop("password"))
-            users.append((idx, User(**base_info, **zipped_data)))
+            user_obj = (idx, User(**base_info, **zipped_data))
+            
+            if role == 'student':
+                students.append(user_obj)
+                student_count += 1
+            elif role == 'lecturer':
+                lecturers.append(user_obj)
+                lecturer_count += 1
+            else:
+                # Default to student if role is unclear
+                students.append(user_obj)
+                student_count += 1
         except Exception as e:
-            ALL_IMPORT_JOBS[job_id][task_name]["failed"] += 1
-            ALL_IMPORT_JOBS[job_id][task_name]["errors"].append({"row": idx, "error": str(e)})
-    return users
+            # Track error in both categories for now
+            error_obj = {"row": idx, "error": str(e)}
+            ALL_IMPORT_JOBS[job_id]["import_students"]["failed"] += 1
+            ALL_IMPORT_JOBS[job_id]["import_students"]["errors"].append(error_obj)
+    
+    # Update totals
+    ALL_IMPORT_JOBS[job_id]["import_students"]["total"] = student_count
+    ALL_IMPORT_JOBS[job_id]["import_lecturers"]["total"] = lecturer_count
+    
+    return students, lecturers
 
 def parse_venue_sheet(job_id: str, ws: Worksheet) -> List[Venue]:
     task_name = "import_venues"

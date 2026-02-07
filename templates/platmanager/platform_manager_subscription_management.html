@@ -288,6 +288,18 @@
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
+    /* Over Capacity Row Styling */
+    .institutions-table tbody tr.over-capacity,
+    .subscriptions-table tbody tr.over-capacity {
+        background-color: #fee;
+        border-left: 4px solid #dc3545;
+    }
+
+    .institutions-table tbody tr.over-capacity:hover,
+    .subscriptions-table tbody tr.over-capacity:hover {
+        background-color: #fdd;
+    }
+
     /* Institution Info */
     .institution-info {
         display: flex;
@@ -1091,7 +1103,11 @@
                                             </td>
                                             <td>
                                                 <span style="font-weight: 600; color: var(--text-dark);">
+                                                    {% if institution.current_users > institution.max_users %}
+                                                        <span style="color: #dc2626;">{{ institution.current_users }}</span> / {{ institution.max_users if institution.max_users is defined else 'N/A' }}
+                                                    {% else %}
                                                     {{ institution.current_users if institution.current_users is defined else 0 }} / {{ institution.max_users if institution.max_users is defined else 'N/A' }}
+                                                    {% endif %}
                                                 </span>
                                             </td>
                                             <td>
@@ -1387,7 +1403,7 @@
         }
         
         tbody.innerHTML = filteredInstitutions.map(institution => `
-            <tr>
+            <tr class="${isOverCapacity(institution.users) ? 'over-capacity' : ''}">
                 <td>
                     <div class="institution-info">
                         <div class="institution-avatar">${getInitials(institution.name)}</div>
@@ -1401,7 +1417,7 @@
                     <span class="plan-badge ${institution.plan}">${capitalizeFirst(institution.plan)}</span>
                 </td>
                 <td>
-                    <span style="font-weight: 600; color: var(--text-dark);">${institution.users}</span>
+                    <span style="font-weight: 600; color: ${getUsersColor(institution.users)};">${institution.users}</span>
                 </td>
                 <td>${institution.created}</td>
                 <td>${institution.renewal}</td>
@@ -1431,6 +1447,30 @@
     
     function capitalizeFirst(str) {
         return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+    
+    function getUsersColor(usersText) {
+        // Parse "X / Y" format to check if current > max
+        const parts = usersText.split('/').map(p => p.trim());
+        if (parts.length === 2) {
+            const current = parseInt(parts[0]);
+            const max = parseInt(parts[1]);
+            if (!isNaN(current) && !isNaN(max) && current > max) {
+                return '#dc3545'; // Red color
+            }
+        }
+        return 'var(--text-dark)'; // Default color
+    }
+    
+    function isOverCapacity(usersText) {
+        // Parse "X / Y" format to check if current > max
+        const parts = usersText.split('/').map(p => p.trim());
+        if (parts.length === 2) {
+            const current = parseInt(parts[0]);
+            const max = parseInt(parts[1]);
+            return !isNaN(current) && !isNaN(max) && current > max;
+        }
+        return false;
     }
     
     // Reset filters

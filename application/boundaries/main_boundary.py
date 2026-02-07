@@ -38,14 +38,33 @@ def home():
             for hf in hero_features_query
         ]
         
-        # Get active stats
-        stats_query = db_session.query(Stat).filter_by(is_active=True).order_by(Stat.display_order).all()
+        # Calculate real stats from database
+        # 1. Count institutions
+        institution_count = db_session.query(Institution).count()
+        
+        # 2. Calculate average customer satisfaction from approved testimonials
+        avg_rating_result = db_session.query(func.avg(Testimonial.rating)).filter(
+            Testimonial.status == 'approved'
+        ).scalar()
+        customer_satisfaction = round(avg_rating_result, 1) if avg_rating_result else 0
+        
+        # 3. Count total active users
+        total_users = db_session.query(User).filter_by(is_active=True).count()
+        
+        # Build stats array
         stats = [
             {
-                'value': s.value,
-                'label': s.label
+                'value': str(institution_count),
+                'label': 'Active Institutions'
+            },
+            {
+                'value': f'{customer_satisfaction}/5',
+                'label': 'Customer Satisfaction'
+            },
+            {
+                'value': str(total_users),
+                'label': 'Total Users'
             }
-            for s in stats_query
         ]
         
         # Get active feature cards
@@ -227,7 +246,36 @@ def testimonials():
     with get_session() as db_session:
         testimonial_model = TestimonialModel(db_session)
         testimonial_detail = testimonial_model.testimonials()
-    return render_template('unregistered/testimonials.html', testimonials=testimonial_detail)
+        
+        # Calculate real stats from database
+        institution_count = db_session.query(Institution).count()
+        
+        # Calculate average customer satisfaction from approved testimonials
+        avg_rating_result = db_session.query(func.avg(Testimonial.rating)).filter(
+            Testimonial.status == 'approved'
+        ).scalar()
+        customer_satisfaction = round(avg_rating_result, 1) if avg_rating_result else 0
+        
+        # Count total active users
+        total_users = db_session.query(User).filter_by(is_active=True).count()
+        
+        # Build stats array
+        stats = [
+            {
+                'value': str(institution_count),
+                'label': 'Active Institutions'
+            },
+            {
+                'value': f'{customer_satisfaction}/5',
+                'label': 'Customer Satisfaction'
+            },
+            {
+                'value': str(total_users),
+                'label': 'Total Users'
+            }
+        ]
+        
+    return render_template('unregistered/testimonials.html', testimonials=testimonial_detail, stats=stats)
 
 @main_bp.route('/testimonials/<int:testimonial_id>')
 def testimonial_detail(testimonial_id):

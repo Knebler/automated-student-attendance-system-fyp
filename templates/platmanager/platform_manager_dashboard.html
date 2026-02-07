@@ -540,25 +540,6 @@
         <div class="card-custom dashboard-card">
             <div class="card-header-custom">System & Reports Snapshot</div>
             <div class="card-body-custom">
-                <div class="column-section mb-4">
-                    <h3 class="section-title">System Performance</h3>
-                    <div class="performance-box">
-                        <div class="status-row">
-                            <span class="stat-label">Overall Status:</span>
-                            <span class="checkmark">✓</span>
-                            <span class="status-normal">Normal</span>
-                        </div>
-                        <div class="stat-row">
-                            <span class="stat-label">Average Response Time:</span>
-                            <span class="stat-value">xx ms</span>
-                        </div>
-                        <div class="stat-row">
-                            <span class="stat-label">Last Incident:</span>
-                            <span class="stat-value">None in last 24h</span>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Plan Distribution -->
                 <div class="column-section">
                     <h3 class="section-title">Plan Distribution</h3>
@@ -578,20 +559,6 @@
                         </div>
                     </div>
                     {% endif %}
-                </div>
-
-                <div class="column-section">
-                    <h3 class="section-title">Recent Activity</h3>
-                    <div class="report-card">
-                        <div class="report-header">
-                            <span class="report-info">Last Login: Today</span>
-                            <span class="report-info">Active Sessions: 1</span>
-                        </div>
-                        <div class="report-footer">
-                            <span class="report-info">System Uptime: 99.9%</span>
-                            <a href="{{ url_for('platform.performance_management') }}" class="view-details-btn">View Metrics</a>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

@@ -649,6 +649,8 @@ class StudentControl:
         """Get all dashboard data for student"""
         try:
             with get_session() as db_session:
+                from database.models import FacialData
+                
                 user_model = UserModel(db_session)
                 class_model = ClassModel(db_session)
                 semester_model = SemesterModel(db_session)
@@ -660,6 +662,13 @@ class StudentControl:
                 student = user_model.get_by_id(user_id)
                 if not student:
                     return {'error': 'Student not found', 'success': False}
+                
+                # Check for facial data registration
+                facial_data = db_session.query(FacialData).filter(
+                    FacialData.user_id == user_id,
+                    FacialData.is_active == True
+                ).first()
+                facial_data_registered = facial_data is not None
                 
                 # Get current date and time
                 current_time = datetime.now()
@@ -788,6 +797,7 @@ class StudentControl:
                         'student_id': f"S{student.user_id:07d}",
                         'institution_id': student.institution_id
                     },
+                    'facial_data_registered': facial_data_registered,
                     'today_classes': today_classes,
                     'announcements': formatted_announcements,  # Preview announcements (3 items)
                     'all_announcements': formatted_all_announcements,  # All announcements for page (up to 50)

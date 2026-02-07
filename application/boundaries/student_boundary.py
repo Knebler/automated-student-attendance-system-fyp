@@ -34,6 +34,7 @@ def dashboard():
         context = {
             'student_name': dashboard_data.get('student', {}).get('name', 'Student'),
             'student_info': dashboard_data.get('student', {}),
+            'facial_data_registered': dashboard_data.get('facial_data_registered', False),
             'today_classes': dashboard_data.get('today_classes', []),
             'announcements': dashboard_data.get('announcements', []),
             'current_time': dashboard_data.get('current_time', ''),

@@ -67,10 +67,17 @@ class UserModel(BaseEntity[User]):
         q = (
             self.session
             .query(User.user_id, User.name, User.email, User.role, Institution.name, User.is_active)
+            .outerjoin(Institution, Institution.institution_id == User.institution_id)
             .filter(User.role == 'admin')
-            .join(Institution, Institution.institution_id == User.institution_id)
-            .filter_by(**filters)
         )
+        
+        # Apply additional filters if provided
+        if filters:
+            q = q.filter_by(**filters)
+        
+        # Order by user_id descending to show newest admins first
+        q = q.order_by(User.user_id.desc())
+        
         total = q.count()
         items = q.offset((page - 1) * per_page).limit(per_page).all()
 

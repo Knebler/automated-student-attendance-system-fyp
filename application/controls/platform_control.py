@@ -1140,8 +1140,6 @@ class PlatformControl:
                 # Use the create method from BaseEntity
                 created_user = user_model.create(**new_user)
                 
-                db_session.commit()
-                
                 return {
                     'success': True,
                     'message': 'Admin account created successfully',

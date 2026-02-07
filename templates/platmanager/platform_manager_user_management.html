@@ -1392,9 +1392,22 @@ async function fetchUsers(page) {
         }
         
         const data = await response.json();
-        allUsers = data.items; // Store all users
-        applyFilters(); // Apply any active filters
         currentPage = page;
+        
+        // Check if any filters are active
+        const hasActiveFilters = searchTerm !== '' || filterInstitution !== '' || filterStatus !== '';
+        
+        if (hasActiveFilters) {
+            // If filters are active, we need all users - store them
+            allUsers = data.items;
+            applyFilters();
+        } else {
+            // No filters - use server-side pagination directly
+            allUsers = data.items;
+            filteredUsers = data.items;
+            renderUsers(data);
+            updatePagination(data);
+        }
     } catch (error) {
         console.error('Error fetching users:', error);
         document.getElementById('usersTableBody').innerHTML = `
@@ -1407,6 +1420,16 @@ async function fetchUsers(page) {
 
 // Apply search and filters
 function applyFilters() {
+    // Check if any filters are active
+    const hasActiveFilters = searchTerm !== '' || filterInstitution !== '' || filterStatus !== '';
+    
+    if (!hasActiveFilters) {
+        // No filters - just fetch from server
+        fetchUsers(1);
+        return;
+    }
+    
+    // Filters are active - apply client-side filtering
     filteredUsers = allUsers.filter(user => {
         // Search by name or email
         const matchesSearch = searchTerm === '' || 

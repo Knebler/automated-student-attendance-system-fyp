@@ -167,9 +167,7 @@ class AuthControl:
             email = institution_data.get('email')
             full_name = institution_data.get('full_name')
             inst_name = institution_data.get('institution_name')
-            inst_address = institution_data.get('institution_address')
-            phone = institution_data.get('phone_number')
-            message = institution_data.get('message', '')
+            inst_address = institution_data.get('institution_address', '')
             selected_plan = institution_data.get('selected_plan_id')
             
             # Generate a temporary password
@@ -213,7 +211,7 @@ class AuthControl:
                     name=inst_name,
                     address=inst_address,
                     poc_name=full_name,
-                    poc_phone=phone,
+                    poc_phone=None,
                     poc_email=email,
                     subscription_id=subscription.subscription_id
                 )
@@ -226,7 +224,7 @@ class AuthControl:
                     institution_id=institution.institution_id,
                     role='admin',
                     name=full_name,
-                    phone_number=phone,
+                    phone_number=None,
                     email=email,
                     password_hash=password_hash,
                     is_active=False  # User inactive until subscription is approved

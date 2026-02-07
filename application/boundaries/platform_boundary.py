@@ -189,22 +189,41 @@ def subscription_management():
     
     # Transform subscriptions to match template structure
     institutions_for_template = []
-    for sub in subscriptions:
-        # Extract institution data from subscription
-        institution_data = {
-            'institution_id': sub.get('institution_id'),
-            'subscription_id': sub.get('subscription_id'),
-            'name': sub.get('institution_name', 'Unknown'),
-            'location': sub.get('institution_location', ''),
-            'initials': sub.get('initials', ''),
-            'plan': sub.get('plan_name', 'none'),
-            'status': sub.get('status', 'inactive'),
-            'subscription_start_date': sub.get('start_date', ''),
-            'subscription_end_date': sub.get('end_date', ''),
-            'contact_person': sub.get('contact_person', ''),
-            'contact_email': sub.get('contact_email', '')
-        }
-        institutions_for_template.append(institution_data)
+    with get_session() as db_session:
+        for sub in subscriptions:
+            institution_id = sub.get('institution_id')
+            
+            # Count current users for this institution
+            current_users = db_session.query(User).filter_by(
+                institution_id=institution_id,
+                is_active=True
+            ).count()
+            
+            # Get max_users from subscription plan
+            plan_id = sub.get('plan_id')
+            max_users = 'N/A'
+            if plan_id:
+                plan = db_session.query(SubscriptionPlan).filter_by(plan_id=plan_id).first()
+                if plan:
+                    max_users = plan.max_users
+            
+            # Extract institution data from subscription
+            institution_data = {
+                'institution_id': institution_id,
+                'subscription_id': sub.get('subscription_id'),
+                'name': sub.get('institution_name', 'Unknown'),
+                'location': sub.get('institution_location', ''),
+                'initials': sub.get('initials', ''),
+                'plan': sub.get('plan_name', 'none'),
+                'status': sub.get('status', 'inactive'),
+                'subscription_start_date': sub.get('start_date', ''),
+                'subscription_end_date': sub.get('end_date', ''),
+                'contact_person': sub.get('contact_person', ''),
+                'contact_email': sub.get('contact_email', ''),
+                'current_users': current_users,
+                'max_users': max_users
+            }
+            institutions_for_template.append(institution_data)
     
     context = {
         'institutions': institutions_for_template,

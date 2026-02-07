@@ -427,13 +427,24 @@ class PlatformControl:
                 subscription_id = institution.subscription_id if hasattr(institution, 'subscription_id') else None
                 subscription = subscription_model.get_by_id(subscription_id) if subscription_id else None
                 
+                # Get current user count for this institution
+                current_users = db_session.query(User).filter_by(
+                    institution_id=institution_id,
+                    is_active=True
+                ).count()
+                
+                # Get max users from subscription plan
+                max_users = institution_data['plan'].get('max_users', 'N/A') if institution_data['plan'] else 'N/A'
+                
                 return {
                     'success': True,
                     'institution': institution_data['institution'],
                     'subscription': institution_data['subscription'],
                     'plan': institution_data['plan'],
                     'admin_users': [user.as_sanitized_dict() for user in admin_users] if admin_users else [],
-                    'is_active': subscription.is_active if subscription else False
+                    'is_active': subscription.is_active if subscription else False,
+                    'current_users': current_users,
+                    'max_users': max_users
                 }
                 
         except Exception as e:
@@ -1128,8 +1139,6 @@ class PlatformControl:
                 
                 # Use the create method from BaseEntity
                 created_user = user_model.create(**new_user)
-                
-                db_session.commit()
                 
                 return {
                     'success': True,

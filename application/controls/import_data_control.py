@@ -70,10 +70,12 @@ def process_excel_data(job_id: str, file_data: bytes):
                 try:
                     with get_session() as session:
                         session.add(item)
+                        session.commit()
                     job_state[task_name]["success"] += 1
                 except Exception as e:
                     job_state[task_name]["failed"] += 1
-                    job_state[task_name]["errors"].append({"row": row_num, "error": str(e.orig)})
+                    error_msg = str(e.orig) if hasattr(e, 'orig') else str(e)
+                    job_state[task_name]["errors"].append({"row": row_num, "error": error_msg})
 
         users = parse_user_sheet(job_id, wb["Import Users"])
         commit_to_db("import_users", users)

@@ -1,5 +1,18 @@
 <nav class="navbar-custom">
-  <a class="navbar-brand-custom" href="{{ url_for('main.home') }}">AttendAI</a>
+  {% if session.role %}
+      {% set user_role = session.role if session.role else None %}
+      {% if user_role == 'platform_manager' %}
+          <a class="navbar-brand-custom" href="{{ url_for('platform.platform_dashboard') }}">AttendAI</a>
+      {% elif user_role == 'admin' %}
+          <a class="navbar-brand-custom" href="{{ url_for('institution.institution_dashboard') }}">AttendAI</a>
+      {% elif user_role == 'lecturer' %}
+          <a class="navbar-brand-custom" href="{{ url_for('institution_lecturer.lecturer_dashboard') }}">AttendAI</a>
+      {% elif user_role == 'student' %}
+          <a class="navbar-brand-custom" href="{{ url_for('student.dashboard') }}">AttendAI</a>
+      {% endif %}
+  {% else %}
+          <a class="navbar-brand-custom" href="{{ url_for('main.home') }}">AttendAI</a>
+  {% endif %}
   
   <button class="navbar-toggler-custom" onclick="toggleMobileMenu()">
       ☰

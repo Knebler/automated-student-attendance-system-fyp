@@ -58,20 +58,14 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="email" class="form-label">Email Address</label>
-                        <input type="email" id="email" class="form-control" placeholder="student@institution.edu" value="{{student_email}}">
+                        <input type="email" id="email" class="form-control" placeholder="{{student_email}}" value="{{student_email}}">
                         <div class="form-hint">Your institutional email address</div>
                     </div>
 
                     <div class="form-group">
                         <label for="phone" class="form-label">Phone Number</label>
-                        <input type="tel" id="phone" class="form-control" placeholder="+1 (555) 123-4567" value="{{student_phone}}">
+                        <input type="tel" id="phone" class="form-control" placeholder="{{student_phone if student_phone else '+1 (555) 123-4567'}}" value="{{student_phone}}">
                         <div class="form-hint">Used for important notifications</div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="dob" class="form-label">Date of Birth</label>
-                        <input type="date" id="dob" class="form-control" value="{{student_dob}}">
-                        <div class="form-hint">Format: MM/DD/YYYY</div>
                     </div>
 
                     <div class="form-group">
@@ -87,20 +81,9 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="program" class="form-label">Program/ Major</label>
-                        <input type="text" id="program" class="form-control" placeholder="Computer Science" value="{{student_program}}">
-                        <div class="form-hint">Your current program of study</div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="year" class="form-label">Year of Study</label>
-                        <select id="year" class="form-control">
-                            <option value="" disabled>Select year</option>
-                            <option value="1" {% if student_year == '1' %}selected{% endif %}>Year 1</option>
-                            <option value="2" {% if student_year == '2' %}selected{% endif %}>Year 2</option>
-                            <option value="3" {% if student_year == '3' %}selected{% endif %}>Year 3</option>
-                            <option value="4" {% if student_year == '4' %}selected{% endif %}>Year 4</option>
-                        </select>
+                        <label for="age" class="form-label">Age</label>
+                        <input type="number" id="age" class="form-control" placeholder="{{student_age if student_age else 'Enter your age'}}" value="{{student_age if student_age else ''}}" min="16" max="120">
+                        <div class="form-hint">Your current age</div>
                     </div>
                 </div>
 
@@ -483,8 +466,26 @@
         const profileForm = document.getElementById('profileForm');
         const resetButton = document.getElementById('resetButton');
         
-        // Store original form values for reset
+        // Store original form values and current image
         const originalValues = {};
+        let currentImageData = null;
+
+        // Load existing profile picture if available
+        {% if has_profile_picture %}
+        fetch('/student/api/profile-picture')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.image) {
+                    imagePreview.innerHTML = '';
+                    const img = document.createElement('img');
+                    img.src = data.image;
+                    img.alt = 'Profile picture';
+                    imagePreview.appendChild(img);
+                    currentImageData = data.image;
+                }
+            })
+            .catch(error => console.error('Error loading profile picture:', error));
+        {% endif %}
 
         // Format file size
         function formatFileSize(bytes) {
@@ -495,27 +496,87 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
+        // Resize and compress image
+        function resizeImage(file, maxWidth, maxHeight) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const img = new Image();
+                    
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        
+                        // Calculate new dimensions maintaining aspect ratio
+                        if (width > height) {
+                            if (width > maxWidth) {
+                                height = height * (maxWidth / width);
+                                width = maxWidth;
+                            }
+                        } else {
+                            if (height > maxHeight) {
+                                width = width * (maxHeight / height);
+                                height = maxHeight;
+                            }
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        // Convert to base64 (JPEG, 85% quality)
+                        const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                        resolve(resizedDataUrl);
+                    };
+                    
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
         // Update image preview
-        function updateImagePreview(file) {
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
+        async function updateImagePreview(file) {
+            try {
+                const resizedImage = await resizeImage(file, 300, 300);
+                currentImageData = resizedImage;
+                
                 imagePreview.innerHTML = '';
                 const img = document.createElement('img');
-                img.src = e.target.result;
+                img.src = resizedImage;
                 img.alt = 'Profile preview';
                 imagePreview.appendChild(img);
+            } catch (error) {
+                console.error('Error resizing image:', error);
+                alert('Error processing image. Please try another file.');
             }
-            
-            reader.readAsDataURL(file);
         }
 
         // Update file info display
-        function updateFileInfo(file) {
+        async function updateFileInfo(file) {
+            // Validate file type
+            if (!file.type.match(/^image\/(jpeg|jpg|png)$/)) {
+                alert('Please select a JPEG or PNG image file.');
+                return;
+            }
+            
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('File size must be less than 5MB.');
+                return;
+            }
+            
             fileName.textContent = file.name;
             fileSize.textContent = formatFileSize(file.size);
             fileInfo.classList.add('visible');
-            updateImagePreview(file);
+            await updateImagePreview(file);
         }
 
         // Browse button click
@@ -524,9 +585,9 @@
         });
 
         // File input change
-        fileInput.addEventListener('change', (e) => {
+        fileInput.addEventListener('change', async (e) => {
             if (e.target.files.length > 0) {
-                updateFileInfo(e.target.files[0]);
+                await updateFileInfo(e.target.files[0]);
             }
         });
 
@@ -540,7 +601,7 @@
             uploadArea.classList.remove('dragover');
         });
 
-        uploadArea.addEventListener('drop', (e) => {
+        uploadArea.addEventListener('drop', async (e) => {
             e.preventDefault();
             uploadArea.classList.remove('dragover');
             
@@ -548,9 +609,9 @@
                 const file = e.dataTransfer.files[0];
                 if (file.type.startsWith('image/')) {
                     fileInput.files = e.dataTransfer.files;
-                    updateFileInfo(file);
+                    await updateFileInfo(file);
                 } else {
-                    alert('Please select an image file (JPG, PNG, GIF)');
+                    alert('Please select an image file (JPG, PNG)');
                 }
             }
         });
@@ -561,6 +622,7 @@
             fileInfo.classList.remove('visible');
             fileName.textContent = 'No file selected';
             fileSize.textContent = '–';
+            currentImageData = null;
             imagePreview.innerHTML = `
                 <div class="preview-placeholder">
                     <span class="preview-icon">👤</span>
@@ -591,48 +653,99 @@
             fileInfo.classList.remove('visible');
             fileName.textContent = 'No file selected';
             fileSize.textContent = '–';
+            
+            // Reset to original or default image
+            {% if has_profile_picture %}
+            fetch('/student/api/profile-picture')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.image) {
+                        imagePreview.innerHTML = '';
+                        const img = document.createElement('img');
+                        img.src = data.image;
+                        img.alt = 'Profile picture';
+                        imagePreview.appendChild(img);
+                        currentImageData = data.image;
+                    }
+                });
+            {% else %}
+            currentImageData = null;
             imagePreview.innerHTML = `
                 <div class="preview-placeholder">
                     <span class="preview-icon">👤</span>
                     <p class="preview-text">No image selected</p>
                 </div>
             `;
+            {% endif %}
             
             alert('Form has been reset to original values');
         }
 
         // Form submission
-        profileForm.addEventListener('submit', function(e) {
+        profileForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
             // Validate form
             const email = document.getElementById('email').value;
             const phone = document.getElementById('phone').value;
+            const gender = document.getElementById('gender').value;
+            const age = document.getElementById('age').value;
             
             if (!email) {
                 alert('Please enter your email address');
                 return;
             }
             
-            if (!phone) {
-                alert('Please enter your phone number');
+            // Validate age if provided
+            if (age && (age < 16 || age > 120)) {
+                alert('Please enter a valid age between 16 and 120');
                 return;
             }
             
-            // Simulate form submission
+            // Prepare data to send
+            const formData = {
+                email: email,
+                phone: phone,
+                gender: gender,
+                age: age
+            };
+            
+            // Add profile picture if available
+            if (currentImageData) {
+                formData.profile_picture = currentImageData;
+            }
+            
+            // Show loading state
             const saveButton = profileForm.querySelector('.btn-save');
             const originalText = saveButton.textContent;
             saveButton.textContent = 'Saving...';
             saveButton.disabled = true;
             
-            setTimeout(() => {
-                alert('Profile updated successfully!');
+            try {
+                const response = await fetch('/student/api/profile/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Profile updated successfully!');
+                    // Update original values after successful save
+                    storeOriginalValues();
+                } else {
+                    alert('Error: ' + (result.error || 'Failed to update profile'));
+                }
+            } catch (error) {
+                console.error('Error saving profile:', error);
+                alert('An error occurred while saving your profile. Please try again.');
+            } finally {
                 saveButton.textContent = originalText;
                 saveButton.disabled = false;
-                
-                // Update original values after successful save
-                storeOriginalValues();
-            }, 1500);
+            }
         });
 
         // Reset button

@@ -201,6 +201,66 @@ def create_flask_app(config_name='default'):
         except Exception as e:
             app.logger.error(f"Error in background class status update: {e}")
     
+    def check_and_suspend_expired_subscriptions():
+        """Background job to check for expired subscriptions and suspend institutions"""
+        try:
+            with app.app_context():
+                from database.base import get_session
+                from application.entities2.subscription import SubscriptionModel
+                from database.models import Subscription, User
+                from datetime import datetime
+                
+                with get_session() as db_session:
+                    subscription_model = SubscriptionModel(db_session)
+                    
+                    # Query for subscriptions that are expired (end_date < now) but still active
+                    now = datetime.now()
+                    expired_active_subscriptions = (
+                        db_session.query(Subscription)
+                        .filter(
+                            Subscription.end_date.isnot(None),
+                            Subscription.end_date < now,
+                            Subscription.is_active == True
+                        )
+                        .all()
+                    )
+                    
+                    suspended_count = 0
+                    for subscription in expired_active_subscriptions:
+                        # Deactivate the subscription
+                        subscription.is_active = False
+                        
+                        # Deactivate all users in the institution
+                        if subscription.institution:
+                            institution_users = (
+                                db_session.query(User)
+                                .filter(User.institution_id == subscription.institution.institution_id)
+                                .all()
+                            )
+                            for user in institution_users:
+                                user.is_active = False
+                            
+                            app.logger.info(
+                                f"Suspended institution '{subscription.institution.name}' "
+                                f"(ID: {subscription.institution.institution_id}) - "
+                                f"Subscription expired on {subscription.end_date.strftime('%Y-%m-%d')}, "
+                                f"{len(institution_users)} user(s) deactivated"
+                            )
+                        else:
+                            app.logger.info(
+                                f"Suspended subscription ID {subscription.subscription_id} - "
+                                f"Expired on {subscription.end_date.strftime('%Y-%m-%d')}"
+                            )
+                        
+                        suspended_count += 1
+                    
+                    if suspended_count > 0:
+                        db_session.commit()
+                        app.logger.info(f"Background scheduler: Suspended {suspended_count} expired subscription(s)")
+                    
+        except Exception as e:
+            app.logger.error(f"Error in expired subscription check: {e}")
+    
     # Schedule the job to run every 2 minutes
     scheduler.add_job(
         func=update_all_class_statuses,
@@ -211,9 +271,20 @@ def create_flask_app(config_name='default'):
         replace_existing=True
     )
     
+    # Schedule the job to check for expired subscriptions every hour
+    scheduler.add_job(
+        func=check_and_suspend_expired_subscriptions,
+        trigger="interval",
+        hours=1,
+        id='check_expired_subscriptions_job',
+        name='Check and suspend expired subscriptions',
+        replace_existing=True
+    )
+    
     # Start the scheduler
     scheduler.start()
     app.logger.info("Background scheduler started - checking class statuses every 2 minutes")
+    app.logger.info("Background scheduler started - checking expired subscriptions every hour")
     
     # Run an immediate check on startup
     try:
@@ -221,6 +292,13 @@ def create_flask_app(config_name='default'):
         app.logger.info("Initial class status check completed on startup")
     except Exception as e:
         app.logger.error(f"Error in initial class status check: {e}")
+    
+    # Run an immediate check for expired subscriptions on startup
+    try:
+        check_and_suspend_expired_subscriptions()
+        app.logger.info("Initial expired subscription check completed on startup")
+    except Exception as e:
+        app.logger.error(f"Error in initial expired subscription check: {e}")
     
     # Shut down the scheduler when the app exits
     atexit.register(lambda: scheduler.shutdown())
@@ -308,4 +386,4 @@ if __name__ == '__main__':
     print("=" * 70)
     print("")
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=app.config.get('PORT', 5000))

@@ -288,6 +288,18 @@
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
+    /* Over Capacity Row Styling */
+    .institutions-table tbody tr.over-capacity,
+    .subscriptions-table tbody tr.over-capacity {
+        background-color: #fee;
+        border-left: 4px solid #dc3545;
+    }
+
+    .institutions-table tbody tr.over-capacity:hover,
+    .subscriptions-table tbody tr.over-capacity:hover {
+        background-color: #fdd;
+    }
+
     /* Institution Info */
     .institution-info {
         display: flex;
@@ -1004,34 +1016,6 @@
                                 View Pending Subscription Requests
                             </button>
                         </a>
-                        <div class="search-section mt-3">
-                            <div class="search-box">
-                                <input type="text" 
-                                       placeholder="Search by institution name, contact, or plan..." 
-                                       class="search-input" 
-                                       id="searchInput"
-                                       value="{{ search_term }}">
-                                <button class="btn-custom btn-search" id="searchButton">Search</button>
-                            </div>
-                        </div>
-
-                        <div class="filter-section mt-3">
-                            <select class="filter-select" id="statusFilter">
-                                <option value="">All Status</option>
-                                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
-                                <option value="suspended" {% if status_filter == 'suspended' %}selected{% endif %}>Suspended</option>
-                                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
-                                <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Expired</option>
-                            </select>
-                            <select class="filter-select" id="planFilter">
-                                <option value="">All Plans</option>
-                                <option value="starter" {% if plan_filter == 'starter' %}selected{% endif %}>Starter</option>
-                                <option value="pro" {% if plan_filter == 'pro' %}selected{% endif %}>Professional</option>
-                                <option value="enterprise" {% if plan_filter == 'enterprise' %}selected{% endif %}>Enterprise</option>
-                                <option value="custom" {% if plan_filter == 'custom' %}selected{% endif %}>Custom</option>
-                            </select>
-                            <button class="btn-custom btn-outline-custom btn-reset" id="resetFilters">Reset Filters</button>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -1053,6 +1037,37 @@
                     </div>
                 </div>
                 <div class="card-body-custom">
+                    <!-- Search and Filter Section -->
+                    <div class="search-section mb-4">
+                        <div class="search-box">
+                            <input type="text" 
+                                   placeholder="Search by institution name..." 
+                                   class="search-input" 
+                                   id="searchInput"
+                                   value="{{ search_term }}">
+                            <button class="btn-custom btn-primary-custom btn-search" id="searchButton">Search</button>
+                        </div>
+                        <div class="filter-section mt-3">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                                <select class="filter-select" id="statusFilter">
+                                    <option value="">All Status</option>
+                                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                                    <option value="suspended" {% if status_filter == 'suspended' %}selected{% endif %}>Suspended</option>
+                                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                                    <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Expired</option>
+                                </select>
+                                <select class="filter-select" id="planFilter">
+                                    <option value="">All Plans</option>
+                                    <option value="starter" {% if plan_filter == 'starter' %}selected{% endif %}>Starter</option>
+                                    <option value="pro" {% if plan_filter == 'pro' %}selected{% endif %}>Professional</option>
+                                    <option value="enterprise" {% if plan_filter == 'enterprise' %}selected{% endif %}>Enterprise</option>
+                                    <option value="custom" {% if plan_filter == 'custom' %}selected{% endif %}>Custom</option>
+                                </select>
+                            </div>
+                            <button class="btn-custom btn-reset mt-2" id="resetFilters" style="width: 100%;">Reset Filters</button>
+                        </div>
+                    </div>
+                    
                     <!-- Table Container -->
                     <div class="table-container">
                         <table class="institutions-table">
@@ -1060,6 +1075,7 @@
                                 <tr>
                                     <th>Institution Name</th>
                                     <th>Plan</th>
+                                    <th>Users</th>
                                     <th>Created On</th>
                                     <th>Subscription Renewal</th>
                                     <th>Status</th>
@@ -1083,6 +1099,15 @@
                                             <td>
                                                 <span class="plan-badge {{ institution.plan|lower }}">
                                                     {{ institution.plan|title if institution.plan != 'none' else 'No Plan' }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span style="font-weight: 600; color: var(--text-dark);">
+                                                    {% if institution.current_users > institution.max_users %}
+                                                        <span style="color: #dc2626;">{{ institution.current_users }}</span> / {{ institution.max_users if institution.max_users is defined else 'N/A' }}
+                                                    {% else %}
+                                                    {{ institution.current_users if institution.current_users is defined else 0 }} / {{ institution.max_users if institution.max_users is defined else 'N/A' }}
+                                                    {% endif %}
                                                 </span>
                                             </td>
                                             <td>
@@ -1257,11 +1282,6 @@
                                             </td>
                                             <td>
                                                 <div class="action-buttons">
-                                                    <button class="btn-action btn-review" 
-                                                            title="Review Request"
-                                                            onclick="reviewRequest('{{ request.subscription_id }}', '{{ request.name }}')">
-                                                        <span class="action-icon">📄</span>
-                                                    </button>
                                                     <button class="btn-action btn-approve" 
                                                             title="Approve Request"
                                                             onclick="processSubscriptionRequest('{{ request.subscription_id }}', 'approve', '{{ request.name }}')">
@@ -1310,66 +1330,206 @@
     // Pass subscription plans data to JavaScript
     const subscriptionPlans = {{ subscription_plans|tojson|safe }};
     
+    // Global variables for filtering
+    let allInstitutions = [];
+    let filteredInstitutions = [];
+    let searchTerm = '';
+    let filterStatus = '';
+    let filterPlan = '';
+    
+    // Fetch institutions data
+    function fetchInstitutions() {
+        // For now, parse the existing table data
+        const tbody = document.getElementById('institutionsTableBody');
+        const rows = tbody.querySelectorAll('tr');
+        
+        allInstitutions = [];
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length >= 7) {
+                const institution = {
+                    name: cells[0].querySelector('.institution-name')?.textContent || '',
+                    location: cells[0].querySelector('.institution-location')?.textContent || '',
+                    plan: cells[1].querySelector('.plan-badge')?.textContent.trim().toLowerCase() || '',
+                    users: cells[2].textContent.trim(),
+                    created: cells[3].textContent.trim(),
+                    renewal: cells[4].textContent.trim(),
+                    status: cells[5].querySelector('.status-badge')?.textContent.trim().toLowerCase() || '',
+                    actions: cells[6].innerHTML
+                };
+                allInstitutions.push(institution);
+            }
+        });
+        
+        applyFilters();
+    }
+    
+    // Apply search and filters
+    function applyFilters() {
+        filteredInstitutions = allInstitutions.filter(institution => {
+            // Search by institution name
+            const matchesSearch = searchTerm === '' || 
+                institution.name.toLowerCase().includes(searchTerm.toLowerCase());
+            
+            // Filter by status
+            const matchesStatus = filterStatus === '' || 
+                institution.status === filterStatus;
+            
+            // Filter by plan
+            const matchesPlan = filterPlan === '' || 
+                institution.plan === filterPlan;
+            
+            return matchesSearch && matchesStatus && matchesPlan;
+        });
+        
+        renderInstitutions();
+    }
+    
+    // Render filtered institutions
+    function renderInstitutions() {
+        const tbody = document.getElementById('institutionsTableBody');
+        const institutionCount = document.querySelector('.institution-count');
+        
+        if (filteredInstitutions.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-light); font-style: italic;">
+                        No institutions found matching your criteria.
+                    </td>
+                </tr>
+            `;
+            institutionCount.textContent = '0 institutions';
+            return;
+        }
+        
+        tbody.innerHTML = filteredInstitutions.map(institution => `
+            <tr class="${isOverCapacity(institution.users) ? 'over-capacity' : ''}">
+                <td>
+                    <div class="institution-info">
+                        <div class="institution-avatar">${getInitials(institution.name)}</div>
+                        <div class="institution-details">
+                            <div class="institution-name">${institution.name}</div>
+                            <div class="institution-location">${institution.location}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span class="plan-badge ${institution.plan}">${capitalizeFirst(institution.plan)}</span>
+                </td>
+                <td>
+                    <span style="font-weight: 600; color: ${getUsersColor(institution.users)};">${institution.users}</span>
+                </td>
+                <td>${institution.created}</td>
+                <td>${institution.renewal}</td>
+                <td>
+                    <span class="status-badge ${institution.status}">${capitalizeFirst(institution.status)}</span>
+                </td>
+                <td>${institution.actions}</td>
+            </tr>
+        `).join('');
+        
+        // Update count
+        const countText = filteredInstitutions.length === allInstitutions.length 
+            ? `${filteredInstitutions.length} institutions`
+            : `${filteredInstitutions.length} institutions (filtered from ${allInstitutions.length})`;
+        institutionCount.textContent = countText;
+    }
+    
+    // Helper functions
+    function getInitials(name) {
+        return name
+            .split(' ')
+            .map(word => word[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2);
+    }
+    
+    function capitalizeFirst(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+    
+    function getUsersColor(usersText) {
+        // Parse "X / Y" format to check if current > max
+        const parts = usersText.split('/').map(p => p.trim());
+        if (parts.length === 2) {
+            const current = parseInt(parts[0]);
+            const max = parseInt(parts[1]);
+            if (!isNaN(current) && !isNaN(max) && current > max) {
+                return '#dc3545'; // Red color
+            }
+        }
+        return 'var(--text-dark)'; // Default color
+    }
+    
+    function isOverCapacity(usersText) {
+        // Parse "X / Y" format to check if current > max
+        const parts = usersText.split('/').map(p => p.trim());
+        if (parts.length === 2) {
+            const current = parseInt(parts[0]);
+            const max = parseInt(parts[1]);
+            return !isNaN(current) && !isNaN(max) && current > max;
+        }
+        return false;
+    }
+    
+    // Reset filters
+    function resetFilters() {
+        searchTerm = '';
+        filterStatus = '';
+        filterPlan = '';
+        
+        document.getElementById('searchInput').value = '';
+        document.getElementById('statusFilter').value = '';
+        document.getElementById('planFilter').value = '';
+        
+        applyFilters();
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize - fetch existing data from table
+        fetchInstitutions();
+        
         // Search functionality
         const searchInput = document.getElementById('searchInput');
         const searchButton = document.getElementById('searchButton');
         const statusFilter = document.getElementById('statusFilter');
         const planFilter = document.getElementById('planFilter');
-        const resetFilters = document.getElementById('resetFilters');
-
-        function applyFilters() {
-            const searchTerm = searchInput.value.trim();
-            const statusValue = statusFilter.value;
-            const planValue = planFilter.value;
-            
-            // Build URL with filters
-            let url = new URL(window.location.href);
-            let params = new URLSearchParams(url.search);
-            
-            if (searchTerm) {
-                params.set('search', searchTerm);
-            } else {
-                params.delete('search');
-            }
-            
-            if (statusValue) {
-                params.set('status', statusValue);
-            } else {
-                params.delete('status');
-            }
-            
-            if (planValue) {
-                params.set('plan', planValue);
-            } else {
-                params.delete('plan');
-            }
-            
-            // Reset to page 1 when filtering
-            params.set('page', '1');
-            
-            // Navigate to filtered page
-            window.location.href = url.pathname + '?' + params.toString();
-        }
+        const resetFiltersBtn = document.getElementById('resetFilters');
 
         // Search button click
-        searchButton.addEventListener('click', applyFilters);
+        searchButton.addEventListener('click', () => {
+            searchTerm = searchInput.value.trim();
+            applyFilters();
+        });
         
         // Search input enter key
         searchInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
+                searchTerm = searchInput.value.trim();
                 applyFilters();
             }
         });
+        
+        // Real-time search (optional - searches as you type)
+        searchInput.addEventListener('input', (e) => {
+            searchTerm = e.target.value.trim();
+            applyFilters();
+        });
 
         // Filter change
-        statusFilter.addEventListener('change', applyFilters);
-        planFilter.addEventListener('change', applyFilters);
+        statusFilter.addEventListener('change', (e) => {
+            filterStatus = e.target.value;
+            applyFilters();
+        });
+        
+        planFilter.addEventListener('change', (e) => {
+            filterPlan = e.target.value;
+            applyFilters();
+        });
 
         // Reset filters
-        resetFilters.addEventListener('click', function() {
-            window.location.href = "{{ url_for('platform.subscription_management') }}";
-        });
+        resetFiltersBtn.addEventListener('click', resetFilters);
 
         // Create Institution Button
         const createInstitutionBtn = document.getElementById('createInstitutionBtn');

@@ -39,7 +39,7 @@ class BaseEntity(Generic[ModelType]):
         try:
             instance = self.model(**kwargs)
             self.session.add(instance)
-            self.session.commit()
+            self.session.flush()  # Flush to get the ID without committing
             self.session.refresh(instance)
             return instance
         except SQLAlchemyError as e:

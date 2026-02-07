@@ -649,6 +649,8 @@ class StudentControl:
         """Get all dashboard data for student"""
         try:
             with get_session() as db_session:
+                from database.models import FacialData
+                
                 user_model = UserModel(db_session)
                 class_model = ClassModel(db_session)
                 semester_model = SemesterModel(db_session)
@@ -660,6 +662,13 @@ class StudentControl:
                 student = user_model.get_by_id(user_id)
                 if not student:
                     return {'error': 'Student not found', 'success': False}
+                
+                # Check for facial data registration
+                facial_data = db_session.query(FacialData).filter(
+                    FacialData.user_id == user_id,
+                    FacialData.is_active == True
+                ).first()
+                facial_data_registered = facial_data is not None
                 
                 # Get current date and time
                 current_time = datetime.now()
@@ -780,14 +789,32 @@ class StudentControl:
                     formatted_announcements = []
                     formatted_all_announcements = []
                 
+                # Get institution name
+                institution_name = 'N/A'
+                if student.institution_id:
+                    from application.entities2.institution import InstitutionModel
+                    institution_model = InstitutionModel(db_session)
+                    institution = institution_model.get_by_id(student.institution_id)
+                    if institution:
+                        institution_name = institution.name
+                
+                # Format date joined
+                date_enrolled = 'N/A'
+                if hasattr(student, 'date_joined') and student.date_joined:
+                    date_enrolled = student.date_joined.strftime('%b %d, %Y')
+                
                 return {
                     'success': True,
                     'student': {
                         'name': student.name,
                         'email': student.email,
                         'student_id': f"S{student.user_id:07d}",
-                        'institution_id': student.institution_id
+                        'institution_id': student.institution_id,
+                        'institution_name': institution_name,
+                        'age': student.age if hasattr(student, 'age') and student.age else 'N/A',
+                        'date_enrolled': date_enrolled
                     },
+                    'facial_data_registered': facial_data_registered,
                     'today_classes': today_classes,
                     'announcements': formatted_announcements,  # Preview announcements (3 items)
                     'all_announcements': formatted_all_announcements,  # All announcements for page (up to 50)

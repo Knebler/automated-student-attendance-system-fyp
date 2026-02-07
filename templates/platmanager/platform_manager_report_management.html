@@ -304,9 +304,6 @@
                 <label for="status" class="form-label">Status</label>
                 <select name="status" id="status" class="form-select">
                     <option value="open" {% if status_filter == 'open' %}selected{% endif %}>Open</option>
-                    <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>In Progress</option>
-                    <option value="resolved" {% if status_filter == 'resolved' %}selected{% endif %}>Resolved</option>
-                    <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
                     <option value="" {% if status_filter == '' %}selected{% endif %}>All Status</option>
                 </select>
             </div>
@@ -316,12 +313,13 @@
                     <option value="">All Categories</option>
                     <option value="bug" {% if category_filter == 'bug' %}selected{% endif %}>Bug</option>
                     <option value="feature_request" {% if category_filter == 'feature_request' %}selected{% endif %}>Feature Request</option>
-                    <option value="ui_issue" {% if category_filter == 'ui_issue' %}selected{% endif %}>UI Issue</option>
+                    <option value="ui_ux" {% if category_filter == 'ui_ux' %}selected{% endif %}>UI Issue</option>
                     <option value="performance" {% if category_filter == 'performance' %}selected{% endif %}>Performance</option>
                     <option value="security" {% if category_filter == 'security' %}selected{% endif %}>Security</option>
                     <option value="data_issue" {% if category_filter == 'data_issue' %}selected{% endif %}>Data Issue</option>
-                    <option value="account_issue" {% if category_filter == 'account_issue' %}selected{% endif %}>Account Issue</option>
+                    <option value="account" {% if category_filter == 'account' %}selected{% endif %}>Account Issue</option>
                     <option value="billing" {% if category_filter == 'billing' %}selected{% endif %}>Billing</option>
+                    <option value="technical" {% if category_filter == 'technical' %}selected{% endif %}>Technical Issue</option>
                     <option value="other" {% if category_filter == 'other' %}selected{% endif %}>Other</option>
                 </select>
             </div>

@@ -932,6 +932,36 @@
                     </div>
                 </div>
                 <div class="card-body-custom">
+                    <!-- Search and Filter Section -->
+                    <div class="search-section mb-4">
+                        <div class="search-box">
+                            <input type="text" id="searchInput" class="search-input" 
+                                placeholder="Search by name or email..." />
+                            <button class="btn-custom btn-primary-custom btn-search" id="btnSearch">
+                                Search
+                            </button>
+                        </div>
+                        <div class="filter-section mt-3">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                                <select id="filterInstitution" class="filter-select">
+                                    <option value="">All Institutions</option>
+                                    {% if institutions %}
+                                        {% for institution in institutions %}
+                                            <option value="{{ institution.name }}">{{ institution.name }}</option>
+                                        {% endfor %}
+                                    {% endif %}
+                                </select>
+                                <select id="filterStatus" class="filter-select">
+                                    <option value="">All Status</option>
+                                    <option value="active">Active</option>
+                                    <option value="suspended">Suspended</option>
+                                </select>
+                            </div>
+                            <button class="btn-custom btn-reset mt-2" id="btnReset" style="width: 100%;">
+                                Reset Filters
+                            </button>
+                        </div>
+                    </div>
                     <!-- Table Container -->
                     <div class="table-container">
                         <table class="users-table">
@@ -1178,6 +1208,11 @@
 let currentPage = 1;
 const perPage = 5;
 let currentViewUserId = null;
+let allUsers = []; // Store all fetched users
+let filteredUsers = []; // Store filtered results
+let searchTerm = '';
+let filterInstitution = '';
+let filterStatus = '';
 
 // Modal Management Functions
 function openModal(modalTemplateId, data = null) {
@@ -1488,8 +1523,8 @@ async function fetchUsers(page) {
         }
         
         const data = await response.json();
-        renderUsers(data);
-        updatePagination(data);
+        allUsers = data.items; // Store all users
+        applyFilters(); // Apply any active filters
         currentPage = page;
     } catch (error) {
         console.error('Error fetching users:', error);
@@ -1499,6 +1534,56 @@ async function fetchUsers(page) {
             </tr>
         `;
     }
+}
+
+// Apply search and filters
+function applyFilters() {
+    filteredUsers = allUsers.filter(user => {
+        // Search by name or email
+        const matchesSearch = searchTerm === '' || 
+            user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.email.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        // Filter by institution
+        const matchesInstitution = filterInstitution === '' || 
+            user.institution_name === filterInstitution;
+        
+        // Filter by status
+        const matchesStatus = filterStatus === '' || 
+            (filterStatus === 'active' && user.is_active) ||
+            (filterStatus === 'suspended' && !user.is_active);
+        
+        return matchesSearch && matchesInstitution && matchesStatus;
+    });
+    
+    displayFilteredUsers();
+}
+
+// Display filtered users
+function displayFilteredUsers() {
+    const data = {
+        items: filteredUsers,
+        page: currentPage,
+        per_page: perPage,
+        total: filteredUsers.length,
+        pages: Math.ceil(filteredUsers.length / perPage) || 1
+    };
+    
+    renderUsers(data);
+    updatePagination(data);
+}
+
+// Reset all filters
+function resetFilters() {
+    searchTerm = '';
+    filterInstitution = '';
+    filterStatus = '';
+    
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterInstitution').value = '';
+    document.getElementById('filterStatus').value = '';
+    
+    applyFilters();
 }
 
 // Render users in table
@@ -1619,6 +1704,43 @@ function activateUser(userId, action) {
 document.addEventListener('DOMContentLoaded', function() {
     // Add Admin button
     document.getElementById('addAdminBtn').addEventListener('click', openAddAdminModal);
+    
+    // Search functionality
+    const searchInput = document.getElementById('searchInput');
+    const btnSearch = document.getElementById('btnSearch');
+    
+    btnSearch.addEventListener('click', () => {
+        searchTerm = searchInput.value.trim();
+        applyFilters();
+    });
+    
+    // Search on Enter key
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            searchTerm = searchInput.value.trim();
+            applyFilters();
+        }
+    });
+    
+    // Real-time search (optional - searches as you type)
+    searchInput.addEventListener('input', (e) => {
+        searchTerm = e.target.value.trim();
+        applyFilters();
+    });
+    
+    // Filter dropdowns
+    document.getElementById('filterInstitution').addEventListener('change', (e) => {
+        filterInstitution = e.target.value;
+        applyFilters();
+    });
+    
+    document.getElementById('filterStatus').addEventListener('change', (e) => {
+        filterStatus = e.target.value;
+        applyFilters();
+    });
+    
+    // Reset button
+    document.getElementById('btnReset').addEventListener('click', resetFilters);
     
     // Pagination buttons
     document.getElementById('btnPrev').addEventListener('click', () => {

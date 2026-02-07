@@ -7,9 +7,21 @@
 <div class="import-results-page" id="resultsPage">
     <h1 class="page-title">Import Data Results</h1>
     <div class="accordion" id="importResultsAccordion">
-        <div class="accordion-item" data-section="import_users">
+        <div class="accordion-item" data-section="import_students">
             <button class="accordion-header">
-                <span>Import Users</span>
+                <span>Import Students</span>
+                <span class="progress-text">Waiting...</span>
+                <span class="accordion-icon">▼</span>
+            </button>
+            <div class="accordion-content">
+                <div class="accordion-body">
+                    <div class="error-list"></div>
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item" data-section="import_lecturers">
+            <button class="accordion-header">
+                <span>Import Lecturers</span>
                 <span class="progress-text">Waiting...</span>
                 <span class="accordion-icon">▼</span>
             </button>
@@ -22,6 +34,18 @@
         <div class="accordion-item" data-section="import_venues">
             <button class="accordion-header">
                 <span>Import Venues</span>
+                <span class="progress-text">Waiting...</span>
+                <span class="accordion-icon">▼</span>
+            </button>
+            <div class="accordion-content">
+                <div class="accordion-body">
+                    <div class="error-list"></div>
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item" data-section="import_semesters">
+            <button class="accordion-header">
+                <span>Import Semesters</span>
                 <span class="progress-text">Waiting...</span>
                 <span class="accordion-icon">▼</span>
             </button>
@@ -319,7 +343,7 @@
     };
 
     function updateProgress(data) {
-        const sections = ['import_users', 'import_venues', 'import_courses', 'assign_courses', 'import_classes'];
+        const sections = ['import_students', 'import_lecturers', 'import_venues', 'import_semesters', 'import_courses', 'assign_courses', 'import_classes'];
         
         sections.forEach(section => {
             const sectionData = data[section];

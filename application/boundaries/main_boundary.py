@@ -244,8 +244,45 @@ def subscriptions():
 @main_bp.route('/testimonials')
 def testimonials():
     with get_session() as db_session:
-        testimonial_model = TestimonialModel(db_session)
-        testimonial_detail = testimonial_model.testimonials()
+        # Get filter parameters
+        rating_filter = request.args.get('rating', type=int)
+        role_filter = request.args.get('role', '').lower()
+        
+        # Build query for approved testimonials
+        query = db_session.query(Testimonial).join(User).filter(
+            Testimonial.status == 'approved'
+        )
+        
+        # Apply rating filter
+        if rating_filter:
+            query = query.filter(Testimonial.rating == rating_filter)
+        
+        # Apply role filter
+        if role_filter and role_filter in ['student', 'lecturer', 'admin']:
+            query = query.filter(User.role == role_filter)
+        
+        # Sort by latest (date_submitted descending)
+        query = query.order_by(Testimonial.date_submitted.desc())
+        
+        # Execute query
+        testimonials_db = query.all()
+        
+        # Convert to display format
+        testimonial_detail = []
+        for testimonial in testimonials_db:
+            user = db_session.query(User).filter_by(user_id=testimonial.user_id).first()
+            institution = db_session.query(Institution).filter_by(institution_id=user.institution_id).first() if user else None
+            
+            testimonial_detail.append({
+                'id': testimonial.testimonial_id,
+                'summary': testimonial.summary,
+                'content': testimonial.content,
+                'rating': testimonial.rating,
+                'date_submitted': testimonial.date_submitted,
+                'user_name': user.name if user else 'Unknown',
+                'user_role': user.role if user else 'Unknown',
+                'institution_name': institution.name if institution else 'Unknown'
+            })
         
         # Calculate real stats from database
         institution_count = db_session.query(Institution).count()
@@ -279,7 +316,12 @@ def testimonials():
         institutions = db_session.query(Institution.name).limit(3).all()
         institution_names = [inst.name for inst in institutions]
         
-    return render_template('unregistered/testimonials.html', testimonials=testimonial_detail, stats=stats, institutions=institution_names)
+    return render_template('unregistered/testimonials.html', 
+                         testimonials=testimonial_detail, 
+                         stats=stats, 
+                         institutions=institution_names,
+                         current_rating=rating_filter,
+                         current_role=role_filter)
 
 @main_bp.route('/testimonials/<int:testimonial_id>')
 def testimonial_detail(testimonial_id):

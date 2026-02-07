@@ -4,10 +4,92 @@
 
 {% block content %}
 <style>
+    /* Filter Bar */
+    .filter-section {
+        background-color: #fff;
+        border: 1px solid var(--border-soft);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .filter-form {
+        display: flex;
+        gap: 1.5rem;
+        align-items: flex-end;
+        flex-wrap: wrap;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .filter-group label {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--text-dark);
+    }
+
+    .filter-select {
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border-soft);
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-family: 'Montserrat', sans-serif;
+        background-color: #fff;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .filter-select:hover {
+        border-color: var(--primary-dark);
+    }
+
+    .filter-select:focus {
+        outline: none;
+        border-color: var(--primary-dark);
+        box-shadow: 0 0 0 3px rgba(11, 18, 32, 0.1);
+    }
+
+    .clear-filters-btn {
+        padding: 0.75rem 1.5rem;
+        background-color: #f3f4f6;
+        color: var(--text-dark);
+        border: 1px solid var(--border-soft);
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        align-self: flex-end;
+    }
+
+    .clear-filters-btn:hover {
+        background-color: var(--primary-dark);
+        color: #fff;
+        border-color: var(--primary-dark);
+        text-decoration: none;
+    }
+
+    .results-count {
+        margin-top: 1rem;
+        font-size: 0.9rem;
+        color: var(--text-light);
+        text-align: center;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-soft);
+    }
+
     /* Page Header */
     .page-header {
         text-align: center;
-        margin-bottom: 3rem;
+        margin-bottom: 2rem;
         padding: 2rem 0;
     }
 
@@ -389,6 +471,41 @@
 <div class="page-header">
     <h1>What Our Customers Say</h1>
     <p>Join thousands of educational institutions and businesses that trust AttendAI for their attendance management needs. Here's what they have to say about their experience.</p>
+</div>
+
+<!-- Filter Bar -->
+<div class="filter-section">
+    <form method="GET" action="{{ url_for('main.testimonials') }}" class="filter-form">
+        <div class="filter-group">
+            <label for="rating-filter">Filter by Rating:</label>
+            <select id="rating-filter" name="rating" class="filter-select" onchange="this.form.submit()">
+                <option value="">All Ratings</option>
+                <option value="5" {% if current_rating == 5 %}selected{% endif %}>★★★★★ (5 Stars)</option>
+                <option value="4" {% if current_rating == 4 %}selected{% endif %}>★★★★ (4 Stars)</option>
+                <option value="3" {% if current_rating == 3 %}selected{% endif %}>★★★ (3 Stars)</option>
+                <option value="2" {% if current_rating == 2 %}selected{% endif %}>★★ (2 Stars)</option>
+                <option value="1" {% if current_rating == 1 %}selected{% endif %}>★ (1 Star)</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label for="role-filter">Filter by Role:</label>
+            <select id="role-filter" name="role" class="filter-select" onchange="this.form.submit()">
+                <option value="">All Roles</option>
+                <option value="student" {% if current_role == 'student' %}selected{% endif %}>Student</option>
+                <option value="lecturer" {% if current_role == 'lecturer' %}selected{% endif %}>Lecturer</option>
+                <option value="admin" {% if current_role == 'admin' %}selected{% endif %}>Admin</option>
+            </select>
+        </div>
+        
+        {% if current_rating or current_role %}
+        <a href="{{ url_for('main.testimonials') }}" class="clear-filters-btn">Clear Filters</a>
+        {% endif %}
+    </form>
+    
+    <div class="results-count">
+        Showing {{ testimonials|length }} testimonial{{ 's' if testimonials|length != 1 else '' }}
+    </div>
 </div>
 
 <!-- Testimonials Grid -->

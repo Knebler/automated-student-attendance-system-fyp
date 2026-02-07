@@ -201,7 +201,7 @@
 
     .trust-logos {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(3, 1fr);
         gap: 1rem;
         justify-items: center;
         align-items: center;
@@ -443,10 +443,15 @@
 <div class="trust-section">
     <h2>Trusted By Leading Organizations</h2>
     <div class="trust-logos">
-        <div class="trust-logo">UNIVERSITY</div>
-        <div class="trust-logo">TECH CORP</div>
-        <div class="trust-logo">EDU GROUP</div>
-        <div class="trust-logo">GLOBAL INC</div>
+        {% if institutions and institutions|length > 0 %}
+            {% for institution in institutions %}
+            <div class="trust-logo">{{ institution }}</div>
+            {% endfor %}
+        {% else %}
+            <div class="trust-logo">UNIVERSITY</div>
+            <div class="trust-logo">TECH CORP</div>
+            <div class="trust-logo">EDU GROUP</div>
+        {% endif %}
     </div>
 </div>
 

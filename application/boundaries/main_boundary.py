@@ -275,7 +275,11 @@ def testimonials():
             }
         ]
         
-    return render_template('unregistered/testimonials.html', testimonials=testimonial_detail, stats=stats)
+        # Get 3 institution names for trust indicators
+        institutions = db_session.query(Institution.name).limit(3).all()
+        institution_names = [inst.name for inst in institutions]
+        
+    return render_template('unregistered/testimonials.html', testimonials=testimonial_detail, stats=stats, institutions=institution_names)
 
 @main_bp.route('/testimonials/<int:testimonial_id>')
 def testimonial_detail(testimonial_id):

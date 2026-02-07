@@ -416,7 +416,18 @@ def submit_testimonial():
         db_session.add(new_testimonial)
         db_session.commit()
         
-        return redirect(url_for('main.testimonials'))
+        # Redirect to role-specific dashboard
+        role = session.get('role')
+        if role == 'platform_manager':
+            return redirect(url_for('platform.platform_dashboard'))
+        elif role == 'admin':
+            return redirect(url_for('institution.institution_dashboard'))
+        elif role == 'lecturer':
+            return redirect(url_for('institution_lecturer.lecturer_dashboard'))
+        elif role == 'student':
+            return redirect(url_for('student.dashboard'))
+        else:
+            return redirect(url_for('main.home'))
     
 @main_bp.route('/report-issue')
 @requires_roles(['student', 'lecturer', 'admin'])

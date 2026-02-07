@@ -78,6 +78,7 @@ def profile():
                 'student_email': student.email or '',
                 'student_phone': student.phone_number or '',
                 'student_gender': student.gender or '',
+                'student_age': student.age if hasattr(student, 'age') else None,
                 'has_profile_picture': has_profile_picture
             }
         
@@ -153,6 +154,12 @@ def save_profile():
             
             if 'gender' in data and data['gender']:
                 student.gender = data['gender']
+            
+            if 'age' in data and data['age']:
+                try:
+                    student.age = int(data['age'])
+                except (ValueError, TypeError):
+                    pass  # Skip invalid age values
             
             # Handle profile picture if provided
             if 'profile_picture' in data and data['profile_picture']:

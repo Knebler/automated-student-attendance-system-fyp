@@ -67,6 +67,7 @@ class UserModel(BaseEntity[User]):
         q = (
             self.session
             .query(User.user_id, User.name, User.email, User.role, Institution.name, User.is_active)
+            .filter(User.role == 'admin')
             .join(Institution, Institution.institution_id == User.institution_id)
             .filter_by(**filters)
         )

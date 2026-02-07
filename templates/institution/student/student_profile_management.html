@@ -79,6 +79,12 @@
                             <option value="prefer-not-to-say" {% if student_gender == 'prefer-not-to-say' %}selected{% endif %}>Prefer not to say</option>
                         </select>
                     </div>
+
+                    <div class="form-group">
+                        <label for="age" class="form-label">Age</label>
+                        <input type="number" id="age" class="form-control" placeholder="{{student_age if student_age else 'Enter your age'}}" value="{{student_age if student_age else ''}}" min="16" max="120">
+                        <div class="form-hint">Your current age</div>
+                    </div>
                 </div>
 
                 <!-- Form Actions -->
@@ -683,9 +689,16 @@
             const email = document.getElementById('email').value;
             const phone = document.getElementById('phone').value;
             const gender = document.getElementById('gender').value;
+            const age = document.getElementById('age').value;
             
             if (!email) {
                 alert('Please enter your email address');
+                return;
+            }
+            
+            // Validate age if provided
+            if (age && (age < 16 || age > 120)) {
+                alert('Please enter a valid age between 16 and 120');
                 return;
             }
             
@@ -693,7 +706,8 @@
             const formData = {
                 email: email,
                 phone: phone,
-                gender: gender
+                gender: gender,
+                age: age
             };
             
             // Add profile picture if available

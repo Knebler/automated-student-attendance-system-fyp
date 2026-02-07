@@ -789,13 +789,30 @@ class StudentControl:
                     formatted_announcements = []
                     formatted_all_announcements = []
                 
+                # Get institution name
+                institution_name = 'N/A'
+                if student.institution_id:
+                    from application.entities2.institution import InstitutionModel
+                    institution_model = InstitutionModel(db_session)
+                    institution = institution_model.get_by_id(student.institution_id)
+                    if institution:
+                        institution_name = institution.name
+                
+                # Format date joined
+                date_enrolled = 'N/A'
+                if hasattr(student, 'date_joined') and student.date_joined:
+                    date_enrolled = student.date_joined.strftime('%b %d, %Y')
+                
                 return {
                     'success': True,
                     'student': {
                         'name': student.name,
                         'email': student.email,
                         'student_id': f"S{student.user_id:07d}",
-                        'institution_id': student.institution_id
+                        'institution_id': student.institution_id,
+                        'institution_name': institution_name,
+                        'age': student.age if hasattr(student, 'age') and student.age else 'N/A',
+                        'date_enrolled': date_enrolled
                     },
                     'facial_data_registered': facial_data_registered,
                     'today_classes': today_classes,

@@ -1058,10 +1058,9 @@
                                 </select>
                                 <select class="filter-select" id="planFilter">
                                     <option value="">All Plans</option>
-                                    <option value="starter" {% if plan_filter == 'starter' %}selected{% endif %}>Starter</option>
-                                    <option value="pro" {% if plan_filter == 'pro' %}selected{% endif %}>Professional</option>
-                                    <option value="enterprise" {% if plan_filter == 'enterprise' %}selected{% endif %}>Enterprise</option>
-                                    <option value="custom" {% if plan_filter == 'custom' %}selected{% endif %}>Custom</option>
+                                    {% for plan in subscription_plans %}
+                                    <option value="{{ plan.name|lower }}" {% if plan_filter == plan.name|lower %}selected{% endif %}>{{ plan.name }}</option>
+                                    {% endfor %}
                                 </select>
                             </div>
                             <button class="btn-custom btn-reset mt-2" id="resetFilters" style="width: 100%;">Reset Filters</button>

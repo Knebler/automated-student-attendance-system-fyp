@@ -1256,7 +1256,8 @@ AttendAI{% endblock %} {% block content %}
         },
         body: JSON.stringify({
           frame: frameData,
-          session_id: config.classId
+          class_id: config.classId,  // Send class_id to filter by enrolled students
+          session_id: config.classId  // Also send session_id for backward compatibility
         })
       });
       

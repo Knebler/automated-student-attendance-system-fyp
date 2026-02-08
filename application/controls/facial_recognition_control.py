@@ -87,18 +87,18 @@ class FacialRecognitionControl:
                 crop_img = frame[y:y+h, x:x+w, :]
                 resized_img = cv2.resize(crop_img, (50, 50)).flatten().reshape(1, -1)
                 
-                # Predict
+                # Predict using probability (same as attendance marking)
                 output = self.knn_model.predict(resized_img)
                 name = str(output[0])
                 
-                # Calculate confidence
-                distances, indices = self.knn_model.kneighbors(resized_img)
-                avg_distance = np.mean(distances)
-                confidence = max(0, 100 - avg_distance)  # Simple confidence calculation
+                # Calculate confidence using predict_proba (SAME as attendance marking)
+                # Keep confidence on 0-1 scale to match attendance marking logic
+                proba = self.knn_model.predict_proba(resized_img)
+                confidence = float(np.max(proba))  # Keep as 0-1 scale (SAME as attendance)
                 
                 recognitions.append({
                     'name': name,
-                    'confidence': round(confidence, 2),
+                    'confidence': round(confidence, 4),
                     'bbox': {'x': int(x), 'y': int(y), 'w': int(w), 'h': int(h)},
                     'student_id': self._get_student_id_by_name(name)
                 })

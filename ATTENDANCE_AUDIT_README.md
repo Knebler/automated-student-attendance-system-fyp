@@ -273,15 +273,17 @@ Potential improvements for future versions:
 ## Technical Details
 
 ### Confidence Threshold
-- Minimum confidence: 70%
+- **Minimum confidence: 50%** (SAME as attendance marking system)
 - Below threshold: Audit marked as FAIL
 - Above threshold: Compared with expected student ID
+- Confidence scale: 0-1 internally, displayed as 0-100% to users
 
 ### Facial Recognition Model
 - Uses KNN (K-Nearest Neighbors) classifier
 - Trained on registered student facial data
 - Haar Cascade for face detection
 - 50x50 pixel face image preprocessing
+- Same recognition algorithm as attendance marking for consistency
 
 ### Performance
 - Average audit time: 2-3 seconds

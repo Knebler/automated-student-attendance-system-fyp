@@ -1666,7 +1666,7 @@ def audit_class_attendance(class_id):
 @institution_bp.route('/attendance/audit/<int:attendance_id>', methods=['POST'])
 @requires_roles('admin')
 def audit_attendance_record(attendance_id):
-    """Audit a single attendance record using facial recognition"""
+    """Audit a single attendance record using facial recognition (NEW AI SYSTEM)"""
     institution_id = session.get('institution_id')
     admin_user_id = session.get('user_id')
     
@@ -1703,16 +1703,12 @@ def audit_attendance_record(attendance_id):
             if not student:
                 return jsonify({'success': False, 'error': 'Student not found'}), 404
             
-            # Use facial recognition to verify
-            from application.controls.facial_recognition_control import FacialRecognitionControl
+            # Use NEW AI SYSTEM from attendance_ai_blueprint approach
             import base64
-            
-            fr_control = FacialRecognitionControl()
-            if not fr_control.initialize(current_app):
-                return jsonify({
-                    'success': False,
-                    'error': 'Facial recognition system not initialized'
-                }), 500
+            import cv2
+            import numpy as np
+            from sklearn.neighbors import KNeighborsClassifier
+            from sqlalchemy import text
             
             # Decode base64 image
             try:
@@ -1722,11 +1718,140 @@ def audit_attendance_record(attendance_id):
             except Exception as e:
                 return jsonify({'success': False, 'error': f'Invalid image data: {str(e)}'}), 400
             
-            # Recognize face
-            recognition_result = fr_control.recognize_face_from_image(image_bytes)
+            # Decode image with cv2
+            try:
+                nparr = np.frombuffer(image_bytes, np.uint8)
+                frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                if frame is None:
+                    return jsonify({'success': False, 'error': 'Invalid image format'}), 400
+            except Exception as e:
+                return jsonify({'success': False, 'error': f'Failed to decode image: {str(e)}'}), 400
             
-            if not recognition_result['success']:
-                # Facial recognition failed
+            # Load facial data from database (class-specific)
+            query = text("""
+                SELECT DISTINCT fd.user_id, u.name, fd.face_encoding, fd.sample_count
+                FROM facial_data fd
+                JOIN users u ON fd.user_id = u.user_id
+                JOIN course_users cu ON u.user_id = cu.user_id
+                JOIN classes c ON cu.course_id = c.course_id AND cu.semester_id = c.semester_id
+                WHERE fd.is_active = TRUE 
+                    AND u.is_active = TRUE 
+                    AND u.role = 'student'
+                    AND c.class_id = :class_id
+            """)
+            results = db_session.execute(query, {'class_id': attendance_record.class_id}).fetchall()
+            
+            if not results:
+                return jsonify({
+                    'success': False,
+                    'error': 'No facial data available for students in this class'
+                }), 500
+            
+            # Build KNN model from database
+            import zlib
+            all_faces = []
+            all_labels = []
+            student_map = {}
+            
+            for row in results:
+                user_id, name, face_encoding, sample_count = row
+                
+                if face_encoding is None:
+                    continue
+                
+                try:
+                    raw_data = face_encoding
+                    rows = sample_count if sample_count else 100
+                    cols = 7500  # Default: 50x50x3
+                    
+                    # Check for SHAPE header (format: SHAPE:rows,cols;compressed_data)
+                    if raw_data[:6] == b'SHAPE:':
+                        try:
+                            header_end = raw_data.index(b';')
+                            shape_str = raw_data[6:header_end].decode('utf-8')
+                            rows, cols = map(int, shape_str.split(','))
+                            compressed = raw_data[header_end + 1:]
+                        except:
+                            compressed = raw_data
+                    else:
+                        compressed = raw_data
+                    
+                    # Decompress
+                    try:
+                        data = zlib.decompress(compressed)
+                    except zlib.error:
+                        data = compressed
+                    
+                    actual_size = len(data)
+                    
+                    # Validate and auto-detect format
+                    if cols not in [7500, 2500]:
+                        if actual_size % 7500 == 0:
+                            cols = 7500
+                            rows = actual_size // 7500
+                        elif actual_size % 2500 == 0:
+                            cols = 2500
+                            rows = actual_size // 2500
+                        else:
+                            current_app.logger.warning(f"Skipped {name}: Invalid format ({actual_size} bytes)")
+                            continue
+                    
+                    expected_size = rows * cols
+                    if actual_size != expected_size:
+                        if actual_size % 7500 == 0:
+                            rows = actual_size // 7500
+                            cols = 7500
+                        elif actual_size % 2500 == 0:
+                            rows = actual_size // 2500
+                            cols = 2500
+                        else:
+                            current_app.logger.warning(f"Skipped {name}: Size mismatch ({actual_size} bytes)")
+                            continue
+                    
+                    # Reshape and process
+                    faces_array = np.frombuffer(data, dtype=np.uint8).reshape(rows, cols)
+                    
+                    # Process each sample
+                    for face in faces_array:
+                        try:
+                            if cols == 7500:
+                                face_2d = face.reshape(50, 50, 3)
+                                gray = cv2.cvtColor(face_2d, cv2.COLOR_BGR2GRAY)
+                            else:
+                                gray = face.reshape(50, 50)
+                            
+                            enhanced = cv2.equalizeHist(gray.astype(np.uint8)).flatten()
+                            all_faces.append(enhanced)
+                            all_labels.append(user_id)
+                        except:
+                            continue
+                    
+                    student_map[user_id] = name
+                    
+                except Exception as e:
+                    current_app.logger.warning(f"Skipped facial data for user {user_id}: {e}")
+                    continue
+            
+            if not all_faces:
+                return jsonify({
+                    'success': False,
+                    'error': 'No valid facial data could be loaded'
+                }), 500
+            
+            # Train KNN
+            X = np.array(all_faces)
+            y = np.array(all_labels)
+            n_neighbors = min(5, len(X))
+            knn = KNeighborsClassifier(n_neighbors=n_neighbors)
+            knn.fit(X, y)
+            
+            # Detect faces in submitted image
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+            faces = face_cascade.detectMultiScale(gray, 1.1, 5, minSize=(60, 60))
+            
+            if len(faces) == 0:
+                # No face detected
                 attendance_record.audit_status = 'fail'
                 attendance_record.audited_at = datetime.now()
                 attendance_record.audited_by = admin_user_id
@@ -1735,13 +1860,54 @@ def audit_attendance_record(attendance_id):
                 return jsonify({
                     'success': True,
                     'audit_result': 'fail',
-                    'message': f"Audit failed: {recognition_result.get('error', 'Face not recognized')}",
+                    'message': 'No face detected in the image',
                     'attendance_id': attendance_id
                 })
             
-            # Check if recognized face matches the student
-            recognitions = recognition_result.get('recognitions', [])
+            # Process first detected face
+            recognitions = []
+            for (x, y, w, h) in faces:
+                face_roi = frame[y:y+h, x:x+w]
+                
+                # Extract features (same as attendance_ai_blueprint)
+                try:
+                    fh, fw = face_roi.shape[:2]
+                    if min(fh, fw) < 10:
+                        continue
+                    
+                    # Make square
+                    if fh != fw:
+                        size = min(fh, fw)
+                        sh, sw = (fh - size) // 2, (fw - size) // 2
+                        face_roi = face_roi[sh:sh+size, sw:sw+size]
+                    
+                    # Resize and enhance
+                    face_resized = cv2.resize(face_roi, (50, 50))
+                    if len(face_resized.shape) == 3:
+                        face_gray = cv2.cvtColor(face_resized, cv2.COLOR_BGR2GRAY)
+                    else:
+                        face_gray = face_resized
+                    
+                    enhanced = cv2.equalizeHist(face_gray.astype(np.uint8))
+                    features = enhanced.flatten().reshape(1, -1)
+                    
+                    # Predict
+                    predicted_id = knn.predict(features)[0]
+                    proba = knn.predict_proba(features)
+                    confidence = float(np.max(proba))
+                    
+                    recognitions.append({
+                        'user_id': predicted_id,
+                        'name': student_map.get(predicted_id, f'User {predicted_id}'),
+                        'confidence': confidence
+                    })
+                    
+                except Exception as e:
+                    current_app.logger.warning(f"Face processing error: {e}")
+                    continue
+            
             if not recognitions:
+                # Face detected but couldn't process
                 attendance_record.audit_status = 'fail'
                 attendance_record.audited_at = datetime.now()
                 attendance_record.audited_by = admin_user_id
@@ -1750,7 +1916,7 @@ def audit_attendance_record(attendance_id):
                 return jsonify({
                     'success': True,
                     'audit_result': 'fail',
-                    'message': 'No faces recognized in the image',
+                    'message': 'Could not process face in the image',
                     'attendance_id': attendance_id
                 })
             
@@ -1758,19 +1924,21 @@ def audit_attendance_record(attendance_id):
             best_match = max(recognitions, key=lambda r: r['confidence'])
             
             # Check if the recognized student ID matches
-            recognized_id = best_match.get('student_id')
+            recognized_id = best_match.get('user_id')
             confidence = best_match.get('confidence', 0)
+            recognized_name = best_match.get('name')
             
             # Determine audit result based on match and confidence
-            if confidence < 70:
+            # Use 0.5 threshold (same as attendance marking - on 0-1 scale)
+            if confidence < 0.5:
                 audit_result = 'fail'
-                message = f"Low confidence ({confidence:.1f}%) - Audit failed"
+                message = f"Low confidence ({confidence*100:.1f}%) - Audit failed"
             elif str(recognized_id) == str(student.user_id):
                 audit_result = 'pass'
-                message = f"Student verified successfully ({confidence:.1f}% confidence)"
+                message = f"Student verified successfully ({confidence*100:.1f}% confidence)"
             else:
                 audit_result = 'fail'
-                message = f"Face does not match expected student (detected: {best_match.get('name')})"
+                message = f"Face does not match expected student (detected: {recognized_name})"
             
             # Update attendance record
             attendance_record.audit_status = audit_result
@@ -1782,8 +1950,8 @@ def audit_attendance_record(attendance_id):
                 'success': True,
                 'audit_result': audit_result,
                 'message': message,
-                'confidence': confidence,
-                'recognized_name': best_match.get('name'),
+                'confidence': confidence * 100,  # Convert to percentage for display
+                'recognized_name': recognized_name,
                 'attendance_id': attendance_id
             })
             
@@ -1798,7 +1966,7 @@ def audit_attendance_record(attendance_id):
 @institution_bp.route('/attendance/class/<int:class_id>/bulk-audit', methods=['POST'])
 @requires_roles('admin')
 def bulk_audit_class(class_id):
-    """Bulk audit all attendance records for a class using a class photo"""
+    """Bulk audit all attendance records for a class using a class photo (NEW AI SYSTEM)"""
     institution_id = session.get('institution_id')
     admin_user_id = session.get('user_id')
     
@@ -1832,16 +2000,12 @@ def bulk_audit_class(class_id):
                     'results': []
                 })
             
-            # Use facial recognition to detect multiple faces
-            from application.controls.facial_recognition_control import FacialRecognitionControl
+            # Use NEW AI SYSTEM from attendance_ai_blueprint approach
             import base64
-            
-            fr_control = FacialRecognitionControl()
-            if not fr_control.initialize(current_app):
-                return jsonify({
-                    'success': False,
-                    'error': 'Facial recognition system not initialized'
-                }), 500
+            import cv2
+            import numpy as np
+            from sklearn.neighbors import KNeighborsClassifier
+            from sqlalchemy import text
             
             # Decode base64 image
             try:
@@ -1851,34 +2015,202 @@ def bulk_audit_class(class_id):
             except Exception as e:
                 return jsonify({'success': False, 'error': f'Invalid image data: {str(e)}'}), 400
             
-            # Recognize all faces in the image
-            recognition_result = fr_control.recognize_face_from_image(image_bytes)
+            # Decode image with cv2
+            try:
+                nparr = np.frombuffer(image_bytes, np.uint8)
+                frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                if frame is None:
+                    return jsonify({'success': False, 'error': 'Invalid image format'}), 400
+            except Exception as e:
+                return jsonify({'success': False, 'error': f'Failed to decode image: {str(e)}'}), 400
             
-            if not recognition_result['success']:
+            # Load facial data from database (class-specific)
+            query = text("""
+                SELECT DISTINCT fd.user_id, u.name, fd.face_encoding, fd.sample_count
+                FROM facial_data fd
+                JOIN users u ON fd.user_id = u.user_id
+                JOIN course_users cu ON u.user_id = cu.user_id
+                JOIN classes c ON cu.course_id = c.course_id AND cu.semester_id = c.semester_id
+                WHERE fd.is_active = TRUE 
+                    AND u.is_active = TRUE 
+                    AND u.role = 'student'
+                    AND c.class_id = :class_id
+            """)
+            results_db = db_session.execute(query, {'class_id': class_id}).fetchall()
+            
+            if not results_db:
                 return jsonify({
                     'success': False,
-                    'error': f"Face recognition failed: {recognition_result.get('error', 'Unknown error')}"
-                }), 400
+                    'error': 'No facial data available for students in this class'
+                }), 500
             
-            # Get all recognized faces
-            recognitions = recognition_result.get('recognitions', [])
+            # Build KNN model from database
+            import zlib
+            all_faces = []
+            all_labels = []
+            student_map = {}
             
-            if not recognitions:
+            for row in results_db:
+                user_id, name, face_encoding, sample_count = row
+                
+                if face_encoding is None:
+                    continue
+                
+                try:
+                    raw_data = face_encoding
+                    rows = sample_count if sample_count else 100
+                    cols = 7500  # Default: 50x50x3
+                    
+                    # Check for SHAPE header (format: SHAPE:rows,cols;compressed_data)
+                    if raw_data[:6] == b'SHAPE:':
+                        try:
+                            header_end = raw_data.index(b';')
+                            shape_str = raw_data[6:header_end].decode('utf-8')
+                            rows, cols = map(int, shape_str.split(','))
+                            compressed = raw_data[header_end + 1:]
+                        except:
+                            compressed = raw_data
+                    else:
+                        compressed = raw_data
+                    
+                    # Decompress
+                    try:
+                        data = zlib.decompress(compressed)
+                    except zlib.error:
+                        data = compressed
+                    
+                    actual_size = len(data)
+                    
+                    # Validate and auto-detect format
+                    if cols not in [7500, 2500]:
+                        if actual_size % 7500 == 0:
+                            cols = 7500
+                            rows = actual_size // 7500
+                        elif actual_size % 2500 == 0:
+                            cols = 2500
+                            rows = actual_size // 2500
+                        else:
+                            current_app.logger.warning(f"Skipped {name}: Invalid format ({actual_size} bytes)")
+                            continue
+                    
+                    expected_size = rows * cols
+                    if actual_size != expected_size:
+                        if actual_size % 7500 == 0:
+                            rows = actual_size // 7500
+                            cols = 7500
+                        elif actual_size % 2500 == 0:
+                            rows = actual_size // 2500
+                            cols = 2500
+                        else:
+                            current_app.logger.warning(f"Skipped {name}: Size mismatch ({actual_size} bytes)")
+                            continue
+                    
+                    # Reshape and process
+                    faces_array = np.frombuffer(data, dtype=np.uint8).reshape(rows, cols)
+                    
+                    # Process each sample
+                    for face in faces_array:
+                        try:
+                            if cols == 7500:
+                                face_2d = face.reshape(50, 50, 3)
+                                gray = cv2.cvtColor(face_2d, cv2.COLOR_BGR2GRAY)
+                            else:
+                                gray = face.reshape(50, 50)
+                            
+                            enhanced = cv2.equalizeHist(gray.astype(np.uint8)).flatten()
+                            all_faces.append(enhanced)
+                            all_labels.append(user_id)
+                        except:
+                            continue
+                    
+                    student_map[user_id] = name
+                    
+                except Exception as e:
+                    current_app.logger.warning(f"Skipped facial data for user {user_id}: {e}")
+                    continue
+            
+            if not all_faces:
+                return jsonify({
+                    'success': False,
+                    'error': 'No valid facial data could be loaded'
+                }), 500
+            
+            # Train KNN
+            X = np.array(all_faces)
+            y = np.array(all_labels)
+            n_neighbors = min(5, len(X))
+            knn = KNeighborsClassifier(n_neighbors=n_neighbors)
+            knn.fit(X, y)
+            
+            # Detect ALL faces in submitted image
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+            faces = face_cascade.detectMultiScale(gray, 1.1, 5, minSize=(60, 60))
+            
+            if len(faces) == 0:
                 return jsonify({
                     'success': False,
                     'error': 'No faces detected in the image. Please ensure students are clearly visible.'
                 }), 400
             
+            # Process all detected faces
+            recognitions = []
+            for (x, y, w, h) in faces:
+                face_roi = frame[y:y+h, x:x+w]
+                
+                # Extract features (same as attendance_ai_blueprint)
+                try:
+                    fh, fw = face_roi.shape[:2]
+                    if min(fh, fw) < 10:
+                        continue
+                    
+                    # Make square
+                    if fh != fw:
+                        size = min(fh, fw)
+                        sh, sw = (fh - size) // 2, (fw - size) // 2
+                        face_roi = face_roi[sh:sh+size, sw:sw+size]
+                    
+                    # Resize and enhance
+                    face_resized = cv2.resize(face_roi, (50, 50))
+                    if len(face_resized.shape) == 3:
+                        face_gray = cv2.cvtColor(face_resized, cv2.COLOR_BGR2GRAY)
+                    else:
+                        face_gray = face_resized
+                    
+                    enhanced = cv2.equalizeHist(face_gray.astype(np.uint8))
+                    features = enhanced.flatten().reshape(1, -1)
+                    
+                    # Predict
+                    predicted_id = knn.predict(features)[0]
+                    proba = knn.predict_proba(features)
+                    confidence = float(np.max(proba))
+                    
+                    recognitions.append({
+                        'user_id': predicted_id,
+                        'name': student_map.get(predicted_id, f'User {predicted_id}'),
+                        'confidence': confidence
+                    })
+                    
+                except Exception as e:
+                    current_app.logger.warning(f"Face processing error: {e}")
+                    continue
+            
+            if not recognitions:
+                return jsonify({
+                    'success': False,
+                    'error': 'Could not process faces in the image'
+                }), 400
+            
             # Create a map of student_id to best recognition match
             recognized_student_ids = {}
             for recognition in recognitions:
-                student_id = recognition.get('student_id')
+                user_id = recognition.get('user_id')
                 confidence = recognition.get('confidence', 0)
                 
-                if student_id and confidence >= 70:  # Minimum confidence threshold
+                if user_id and confidence >= 0.5:  # Minimum confidence threshold (0.5 on 0-1 scale)
                     # Keep the highest confidence match for each student
-                    if student_id not in recognized_student_ids or confidence > recognized_student_ids[student_id]['confidence']:
-                        recognized_student_ids[student_id] = {
+                    if user_id not in recognized_student_ids or confidence > recognized_student_ids[user_id]['confidence']:
+                        recognized_student_ids[user_id] = {
                             'confidence': confidence,
                             'name': recognition.get('name')
                         }
@@ -1889,11 +2221,11 @@ def bulk_audit_class(class_id):
             fail_count = 0
             
             for record, student in records:
-                student_id_str = str(student.user_id)
+                user_id = student.user_id
                 
-                if student_id_str in recognized_student_ids:
+                if user_id in recognized_student_ids:
                     # Student was recognized - PASS
-                    match_info = recognized_student_ids[student_id_str]
+                    match_info = recognized_student_ids[user_id]
                     record.audit_status = 'pass'
                     record.audited_at = datetime.now()
                     record.audited_by = admin_user_id
@@ -1903,8 +2235,8 @@ def bulk_audit_class(class_id):
                         'student_id': student.user_id,
                         'student_name': student.name,
                         'audit_result': 'pass',
-                        'confidence': match_info['confidence'],
-                        'message': f"Verified ({match_info['confidence']:.1f}% confidence)"
+                        'confidence': match_info['confidence'] * 100,  # Convert to percentage for display
+                        'message': f"Verified ({match_info['confidence']*100:.1f}% confidence)"
                     })
                     pass_count += 1
                 else:

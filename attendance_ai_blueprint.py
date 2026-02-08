@@ -314,6 +314,161 @@ def load_or_get_model():
             return None, {}
 
 
+def load_or_get_model_for_class(class_id):
+    """
+    Load KNN model from database, filtered to only students enrolled in the specified class.
+    This ensures facial recognition only matches students who are actually in the class.
+    """
+    from sklearn.neighbors import KNeighborsClassifier
+    
+    session = get_db_session()
+    if not session:
+        print("❌ No database session")
+        return None, {}
+    
+    try:
+        # Query to get only students enrolled in this specific class's course and semester
+        query = text("""
+            SELECT DISTINCT fd.user_id, u.name, fd.face_encoding, fd.sample_count
+            FROM facial_data fd
+            JOIN users u ON fd.user_id = u.user_id
+            JOIN course_users cu ON u.user_id = cu.user_id
+            JOIN classes c ON cu.course_id = c.course_id AND cu.semester_id = c.semester_id
+            WHERE fd.is_active = TRUE 
+                AND u.is_active = TRUE 
+                AND u.role = 'student'
+                AND c.class_id = :class_id
+        """)
+        results = session.execute(query, {'class_id': class_id}).fetchall()
+        
+        if not results:
+            print(f"⚠️ No enrolled students with facial data for class {class_id}")
+            return None, {}
+        
+        all_faces = []
+        all_labels = []
+        student_map = {}
+        skipped = []
+        
+        print(f"📊 Processing {len(results)} enrolled students for class {class_id}...")
+        
+        for row in results:
+            user_id, name, face_encoding, sample_count = row
+            
+            if face_encoding is None:
+                skipped.append(f"{name}: No data")
+                continue
+            
+            try:
+                raw_data = face_encoding
+                rows = sample_count if sample_count else 100
+                cols = 7500  # Default: 50x50x3
+                
+                # Check for SHAPE header
+                if raw_data[:6] == b'SHAPE:':
+                    try:
+                        header_end = raw_data.index(b';')
+                        shape_str = raw_data[6:header_end].decode('utf-8')
+                        rows, cols = map(int, shape_str.split(','))
+                        compressed = raw_data[header_end + 1:]
+                    except:
+                        compressed = raw_data
+                else:
+                    compressed = raw_data
+                
+                # Decompress
+                try:
+                    data = zlib.decompress(compressed)
+                except zlib.error:
+                    data = compressed
+                
+                actual_size = len(data)
+                
+                # Validate data size
+                if cols not in [7500, 2500]:
+                    # Try to auto-detect format
+                    if actual_size % 7500 == 0:
+                        cols = 7500
+                        rows = actual_size // 7500
+                    elif actual_size % 2500 == 0:
+                        cols = 2500
+                        rows = actual_size // 2500
+                    else:
+                        skipped.append(f"{name}: Invalid format ({actual_size} bytes)")
+                        print(f"⚠️ Skipping {name}: {actual_size} bytes - incompatible format")
+                        continue
+                
+                expected_size = rows * cols
+                
+                if actual_size != expected_size:
+                    # Try to find correct dimensions
+                    if actual_size % 7500 == 0:
+                        rows = actual_size // 7500
+                        cols = 7500
+                    elif actual_size % 2500 == 0:
+                        rows = actual_size // 2500
+                        cols = 2500
+                    else:
+                        skipped.append(f"{name}: Size mismatch ({actual_size} bytes)")
+                        print(f"⚠️ Skipping {name}: Cannot reshape {actual_size} bytes")
+                        continue
+                
+                # Now reshape
+                faces_array = np.frombuffer(data, dtype=np.uint8).reshape(rows, cols)
+                
+                # Process each sample
+                loaded_count = 0
+                for face in faces_array:
+                    try:
+                        if cols == 7500:
+                            face_2d = face.reshape(50, 50, 3)
+                            gray = cv2.cvtColor(face_2d, cv2.COLOR_BGR2GRAY)
+                        else:
+                            gray = face.reshape(50, 50)
+                        
+                        enhanced = cv2.equalizeHist(gray.astype(np.uint8)).flatten()
+                        all_faces.append(enhanced)
+                        all_labels.append(name)
+                        loaded_count += 1
+                    except:
+                        continue
+                
+                if loaded_count > 0:
+                    student_map[name] = {'user_id': user_id, 'student_id': user_id}
+                    print(f"✅ {name}: Loaded {loaded_count} samples")
+                
+            except Exception as e:
+                skipped.append(f"{name}: {str(e)}")
+                print(f"❌ Error loading {name}: {e}")
+                continue
+        
+        if not all_faces:
+            print(f"❌ No valid facial data found for class {class_id}!")
+            if skipped:
+                print("   Skipped students:", skipped)
+            return None, {}
+        
+        # Train KNN
+        X = np.array(all_faces)
+        y = np.array(all_labels)
+        n_neighbors = min(5, len(X))
+        
+        knn = KNeighborsClassifier(n_neighbors=n_neighbors)
+        knn.fit(X, y)
+        
+        print(f"✅ Class-specific model trained: {len(X)} samples, {len(student_map)} enrolled students")
+        if skipped:
+            print(f"⚠️ Skipped {len(skipped)} records")
+        
+        return knn, student_map
+        
+    except Exception as e:
+        print(f"❌ Class model loading error: {e}")
+        import traceback
+        traceback.print_exc()
+        return None, {}
+
+
 # ==================== LATE DETECTION ====================
 
 def determine_attendance_status(class_start_time, late_threshold_minutes=30):
@@ -379,7 +534,8 @@ def recognize_frame():
             return jsonify({'success': False, 'error': 'Invalid JSON'}), 400
         
         frame_data = data.get('frame')
-        session_id = data.get('session_id')
+        session_id = data.get('session_id')  # This is actually class_id
+        class_id = data.get('class_id', session_id)  # Accept either parameter name
         
         if not frame_data:
             return jsonify({'success': False, 'error': 'No frame'}), 400
@@ -395,16 +551,18 @@ def recognize_frame():
         except Exception as e:
             return jsonify({'success': False, 'error': f'Decode error: {e}'}), 400
         
-        # Load model
-        knn, student_map = load_or_get_model()
+        # Load model filtered by class enrollment
+        if class_id:
+            knn, student_map = load_or_get_model_for_class(class_id)
+        else:
+            # Fallback to all students if no class_id provided
+            knn, student_map = load_or_get_model()
         
         if knn is None:
-            skipped = _model_cache.get('skipped_students', [])
             return jsonify({
                 'success': False, 
-                'error': 'No valid facial data. Please re-import students using the fixed import page.',
-                'skipped_students': skipped,
-                'hint': 'Visit /api/debug/facial-data to see data status'
+                'error': 'No facial data available for enrolled students in this class.',
+                'hint': 'Ensure students are enrolled and have facial data imported'
             }), 400
         
         # Get class start time for late detection

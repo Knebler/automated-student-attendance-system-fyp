@@ -126,9 +126,11 @@
                 <video id="video" autoplay playsinline></video>
                 <canvas id="canvas" style="display: none;"></canvas>
                 <div class="camera-controls">
-                    <button class="btn-custom btn-capture" onclick="captureAndAudit()">📷 Capture & Audit</button>
+                    <button id="startAuditBtn" class="btn-custom btn-capture" onclick="startContinuousAudit()">▶️ Start Continuous Audit</button>
+                    <button id="stopAuditBtn" class="btn-custom btn-stop" onclick="stopContinuousAudit()" style="display: none;">⏸️ Stop Audit</button>
                     <button class="btn-custom btn-secondary" onclick="closeAuditModal()">Cancel</button>
                 </div>
+                <div id="auditStatus" class="audit-status" style="display: none;"></div>
             </div>
             <div id="auditResult" class="audit-result" style="display: none;"></div>
         </div>
@@ -156,9 +158,11 @@
                 <video id="bulkVideo" autoplay playsinline></video>
                 <canvas id="bulkCanvas" style="display: none;"></canvas>
                 <div class="camera-controls">
-                    <button class="btn-custom btn-capture" onclick="captureBulkAudit()">📸 Capture Class Photo & Audit</button>
+                    <button id="startBulkAuditBtn" class="btn-custom btn-capture" onclick="startContinuousBulkAudit()">▶️ Start Continuous Audit</button>
+                    <button id="stopBulkAuditBtn" class="btn-custom btn-stop" onclick="stopContinuousBulkAudit()" style="display: none;">⏸️ Stop Audit</button>
                     <button class="btn-custom btn-secondary" onclick="closeBulkAuditModal()">Cancel</button>
                 </div>
+                <div id="bulkAuditStatus" class="audit-status" style="display: none;"></div>
             </div>
             <div id="bulkAuditResult" class="bulk-audit-result" style="display: none;"></div>
         </div>
@@ -531,6 +535,33 @@
         font-size: 1.1rem;
     }
 
+    .btn-stop {
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+        background-color: #dc2626;
+    }
+
+    .btn-stop:hover {
+        background-color: #b91c1c;
+    }
+
+    .audit-status {
+        margin-top: 1rem;
+        padding: 1rem;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        background-color: #f0f9ff;
+        border: 2px solid #0ea5e9;
+        color: #0c4a6e;
+        text-align: center;
+    }
+
+    .audit-status.active {
+        background-color: #fef3c7;
+        border-color: #f59e0b;
+        color: #92400e;
+    }
+
     .audit-result {
         margin-top: 1.5rem;
         padding: 1.5rem;
@@ -726,6 +757,8 @@
 <script>
     let currentAttendanceId = null;
     let videoStream = null;
+    let continuousAuditInterval = null;
+    let isAuditRunning = false;
 
     function openAuditModal(attendanceId, studentName, studentId) {
         currentAttendanceId = attendanceId;
@@ -736,6 +769,7 @@
     }
 
     function closeAuditModal() {
+        stopContinuousAudit();
         document.getElementById('auditModal').style.display = 'none';
         stopCamera();
         currentAttendanceId = null;
@@ -764,7 +798,47 @@
         }
     }
 
+    function startContinuousAudit() {
+        if (isAuditRunning) return;
+        
+        isAuditRunning = true;
+        document.getElementById('startAuditBtn').style.display = 'none';
+        document.getElementById('stopAuditBtn').style.display = 'inline-block';
+        
+        const statusDiv = document.getElementById('auditStatus');
+        statusDiv.style.display = 'block';
+        statusDiv.className = 'audit-status active';
+        statusDiv.innerHTML = '🔄 Continuous audit running...';
+        
+        // Start continuous capture
+        captureAndAudit();
+        continuousAuditInterval = setInterval(() => {
+            if (isAuditRunning) {
+                captureAndAudit();
+            }
+        }, 3000); // Audit every 3 seconds
+    }
+
+    function stopContinuousAudit() {
+        if (!isAuditRunning) return;
+        
+        isAuditRunning = false;
+        if (continuousAuditInterval) {
+            clearInterval(continuousAuditInterval);
+            continuousAuditInterval = null;
+        }
+        
+        document.getElementById('startAuditBtn').style.display = 'inline-block';
+        document.getElementById('stopAuditBtn').style.display = 'none';
+        
+        const statusDiv = document.getElementById('auditStatus');
+        statusDiv.className = 'audit-status';
+        statusDiv.innerHTML = '⏸️ Audit stopped';
+    }
+
     async function captureAndAudit() {
+        if (!isAuditRunning) return;
+        
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
@@ -808,16 +882,15 @@
                 resultDiv.innerHTML = `
                     <strong>${result.audit_result === 'pass' ? '✓ AUDIT PASSED' : '✗ AUDIT FAILED'}</strong><br>
                     ${result.message}<br>
-                    ${result.confidence ? 'Confidence: ' + result.confidence.toFixed(1) + '%' : ''}
+                    ${result.confidence ? 'Confidence: ' + result.confidence.toFixed(1) + '%' : ''}<br>
+                    <small>${new Date().toLocaleTimeString()}</small>
                 `;
 
                 // Update the table row
                 updateTableRow(currentAttendanceId, result.audit_result);
-
-                // Close modal after 3 seconds
-                setTimeout(() => {
-                    closeAuditModal();
-                }, 3000);
+                
+                // If passed and continuous mode, we keep running
+                // If failed in single-shot mode, would auto-close but not in continuous
             } else {
                 resultDiv.className = 'audit-result error';
                 resultDiv.innerHTML = `<strong>Error:</strong> ${result.error}`;
@@ -903,6 +976,8 @@
 
     // ==================== BULK AUDIT FUNCTIONS ====================
     let bulkVideoStream = null;
+    let continuousBulkAuditInterval = null;
+    let isBulkAuditRunning = false;
 
     function openBulkAuditModal() {
         document.getElementById('bulkAuditModal').style.display = 'block';
@@ -911,6 +986,7 @@
     }
 
     function closeBulkAuditModal() {
+        stopContinuousBulkAudit();
         document.getElementById('bulkAuditModal').style.display = 'none';
         stopBulkCamera();
     }
@@ -938,7 +1014,47 @@
         }
     }
 
+    function startContinuousBulkAudit() {
+        if (isBulkAuditRunning) return;
+        
+        isBulkAuditRunning = true;
+        document.getElementById('startBulkAuditBtn').style.display = 'none';
+        document.getElementById('stopBulkAuditBtn').style.display = 'inline-block';
+        
+        const statusDiv = document.getElementById('bulkAuditStatus');
+        statusDiv.style.display = 'block';
+        statusDiv.className = 'audit-status active';
+        statusDiv.innerHTML = '🔄 Continuous bulk audit running...';
+        
+        // Start continuous capture
+        captureBulkAudit();
+        continuousBulkAuditInterval = setInterval(() => {
+            if (isBulkAuditRunning) {
+                captureBulkAudit();
+            }
+        }, 5000); // Bulk audit every 5 seconds (more processing intensive)
+    }
+
+    function stopContinuousBulkAudit() {
+        if (!isBulkAuditRunning) return;
+        
+        isBulkAuditRunning = false;
+        if (continuousBulkAuditInterval) {
+            clearInterval(continuousBulkAuditInterval);
+            continuousBulkAuditInterval = null;
+        }
+        
+        document.getElementById('startBulkAuditBtn').style.display = 'inline-block';
+        document.getElementById('stopBulkAuditBtn').style.display = 'none';
+        
+        const statusDiv = document.getElementById('bulkAuditStatus');
+        statusDiv.className = 'audit-status';
+        statusDiv.innerHTML = '⏸️ Bulk audit stopped';
+    }
+
     async function captureBulkAudit() {
+        if (!isBulkAuditRunning) return;
+        
         const video = document.getElementById('bulkVideo');
         const canvas = document.getElementById('bulkCanvas');
         const ctx = canvas.getContext('2d');
@@ -959,7 +1075,7 @@
         resultDiv.innerHTML = `
             <div class="bulk-summary">
                 <h4>⏳ Processing Bulk Audit...</h4>
-                <p>Detecting and verifying all faces in the class photo...</p>
+                <p>Detecting and verifying all faces in the class photo... ${new Date().toLocaleTimeString()}</p>
             </div>
         `;
 
@@ -1014,7 +1130,7 @@
         // Create summary
         let html = `
             <div class="bulk-summary">
-                <h4>✓ Bulk Audit Completed</h4>
+                <h4>✓ Bulk Audit Completed - ${new Date().toLocaleTimeString()}</h4>
                 <div class="bulk-stats">
                     <div class="bulk-stat">
                         <span class="bulk-stat-value">${result.audited_count}</span>

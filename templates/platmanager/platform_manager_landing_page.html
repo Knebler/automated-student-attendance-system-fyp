@@ -433,9 +433,6 @@
     <button class="tab-button active" onclick="switchTab('hero')">
         🎬 Hero Slideshow
     </button>
-    <button class="tab-button" onclick="switchTab('stats')">
-        📊 Statistics
-    </button>
     <button class="tab-button" onclick="switchTab('feature-cards')">
         🎴 Feature Cards
     </button>
@@ -534,81 +531,6 @@
         <div class="empty-state">
             <p>No hero features found</p>
             <button class="btn-custom" onclick="openModal('hero', 'add')">Add Your First Hero Feature</button>
-        </div>
-        {% endif %}
-    </div>
-</div>
-
-<!-- Stats Tab -->
-<div id="stats-tab" class="tab-content">
-    <div class="stats-grid">
-        <div class="stat-card">
-            <h3>{{ total_stats }}</h3>
-            <p>Total Stats</p>
-        </div>
-        <div class="stat-card">
-            <h3>{{ active_stats }}</h3>
-            <p>Active Stats</p>
-        </div>
-    </div>
-
-    <div class="filter-section">
-        <div class="filter-controls">
-            <input type="text" id="statsSearchInput" placeholder="Search stats..." onkeyup="filterTable('stats')">
-            <button class="btn-custom" onclick="openModal('stats', 'add')">
-                ➕ Add Stat
-            </button>
-        </div>
-    </div>
-
-    <div class="content-table">
-        <div class="table-header">
-            <h2>Statistics Section</h2>
-        </div>
-        
-        {% if stats %}
-        <div class="table-responsive">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Value</th>
-                        <th>Label</th>
-                        <th>Order</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="statsTableBody">
-                    {% for stat in stats %}
-                    <tr data-id="{{ stat.stat_id }}" data-label="{{ stat.label.lower() }}">
-                        <td><strong style="font-size: 1.5rem;">{{ stat.value }}</strong></td>
-                        <td>{{ stat.label }}</td>
-                        <td>{{ stat.display_order }}</td>
-                        <td>
-                            {% if stat.is_active %}
-                                <span class="badge badge-success">Active</span>
-                            {% else %}
-                                <span class="badge badge-warning">Inactive</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="btn-icon btn-edit" onclick="editStat({{ stat.stat_id }})" title="Edit">✏️</button>
-                                <button class="btn-icon btn-toggle" onclick="toggleStatus('stats', {{ stat.stat_id }}, {{ 'true' if stat.is_active else 'false' }})" title="Toggle">
-                                    {% if stat.is_active %}👁️{% else %}🚫{% endif %}
-                                </button>
-                                <button class="btn-icon btn-delete" onclick="deleteItem('stats', {{ stat.stat_id }}, '{{ stat.label }}')" title="Delete">🗑️</button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <div class="empty-state">
-            <p>No stats found</p>
-            <button class="btn-custom" onclick="openModal('stats', 'add')">Add Your First Stat</button>
         </div>
         {% endif %}
     </div>
@@ -1366,53 +1288,6 @@
     </div>
 </div>
 
-<!-- Stat Modal -->
-<div id="statsModal" class="modal-overlay">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2 id="statsModalTitle">Add Stat</h2>
-            <button class="modal-close" onclick="closeModal('stats')">&times;</button>
-        </div>
-        
-        <form id="statsForm" onsubmit="saveItem(event, 'stats')">
-            <input type="hidden" id="statId" name="stat_id">
-            
-            <div class="form-group">
-                <label for="statValue">Value*</label>
-                <input type="text" id="statValue" name="value" required maxlength="50" 
-                       placeholder="500+">
-                <small>E.g., "500+", "98%", "250K+"</small>
-            </div>
-            
-            <div class="form-group">
-                <label for="statLabel">Label*</label>
-                <input type="text" id="statLabel" name="label" required maxlength="200" 
-                       placeholder="Educational Institutions">
-            </div>
-            
-            <div class="form-group">
-                <label for="statDisplayOrder">Display Order*</label>
-                <input type="number" id="statDisplayOrder" name="display_order" required min="0" 
-                       value="0" placeholder="0">
-            </div>
-            
-            <div class="checkbox-group">
-                <label>
-                    <input type="checkbox" id="statIsActive" name="is_active" checked>
-                    Active (visible to users)
-                </label>
-            </div>
-            
-            <div class="modal-actions">
-                <button type="button" class="btn-custom btn-outline-custom" onclick="closeModal('stats')">Cancel</button>
-                <button type="submit" class="btn-custom">
-                    <span id="statsSubmitBtnText">Add Stat</span>
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
 <!-- Feature Cards Modal -->
 <div id="featureCardsModal" class="modal-overlay">
     <div class="modal-content">
@@ -1934,7 +1809,6 @@
 <script>
 // Data from backend
 const heroFeaturesData = {{ hero_features|tojson|safe }};
-const statsData = {{ stats|tojson|safe }};
 const featuresData = {{ features|tojson|safe }};
 const aboutIntroData = {{ about_intro|tojson|safe }};
 const aboutStoryData = {{ about_story|tojson|safe }};
@@ -1973,7 +1847,6 @@ function openModal(type, mode, itemId = null) {
     if (mode === 'add') {
         let title = 'Add Item';
         if (type === 'hero') title = 'Add Hero Feature';
-        else if (type === 'stats') title = 'Add Stat';
         else if (type === 'features') title = 'Add Feature';
         else if (type === 'team') title = 'Add Team Member';
         else if (type === 'valuesTab') title = 'Add Value';
@@ -1987,8 +1860,6 @@ function openModal(type, mode, itemId = null) {
         // Set defaults
         if (type === 'hero') {
             document.getElementById('heroIsActive').checked = true;
-        } else if (type === 'stats') {
-            document.getElementById('statIsActive').checked = true;
         } else if (type === 'team') {
             document.getElementById('teamIsActive').checked = true;
         } else if (type === 'valuesTab') {
@@ -2030,22 +1901,6 @@ function editHeroFeature(id) {
         document.getElementById('heroIsActive').checked = item.is_active;
         
         document.getElementById('heroModal').classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-}
-
-function editStat(id) {
-    const item = statsData.find(s => s.stat_id === id);
-    if (item) {
-        document.getElementById('statsModalTitle').textContent = 'Edit Stat';
-        document.getElementById('statsSubmitBtnText').textContent = 'Update Stat';
-        document.getElementById('statId').value = item.stat_id;
-        document.getElementById('statValue').value = item.value;
-        document.getElementById('statLabel').value = item.label;
-        document.getElementById('statDisplayOrder').value = item.display_order;
-        document.getElementById('statIsActive').checked = item.is_active;
-        
-        document.getElementById('statsModal').classList.add('active');
         document.body.style.overflow = 'hidden';
     }
 }
@@ -2112,18 +1967,6 @@ async function saveItem(event, type) {
         url = data.hero_feature_id 
             ? `/platform/api/hero-features/${data.hero_feature_id}/update`
             : '/platform/api/hero-features/create';
-    } else if (type === 'stats') {
-        idField = 'stat_id';
-        data = {
-            stat_id: formData.get(idField) || null,
-            value: formData.get('value'),
-            label: formData.get('label'),
-            display_order: parseInt(formData.get('display_order')),
-            is_active: document.getElementById('statIsActive').checked
-        };
-        url = data.stat_id 
-            ? `/platform/api/stats/${data.stat_id}/update`
-            : '/platform/api/stats/create';
     } else if (type === 'featureCards') {
         idField = 'feature_card_id';
         data = {
@@ -2249,8 +2092,6 @@ async function toggleStatus(type, id, currentStatus) {
     
     if (type === 'hero') {
         url = `/platform/api/hero-features/${id}/toggle-status`;
-    } else if (type === 'stats') {
-        url = `/platform/api/stats/${id}/toggle-status`;
     } else if (type === 'featureCards') {
         url = `/platform/api/feature-cards/${id}/toggle-status`;
     } else if (type === 'team') {
@@ -2293,8 +2134,6 @@ async function deleteItem(type, id, name) {
     let url;
     if (type === 'hero') {
         url = `/platform/api/hero-features/${id}/delete`;
-    } else if (type === 'stats') {
-        url = `/platform/api/stats/${id}/delete`;
     } else if (type === 'featureCards') {
         url = `/platform/api/feature-cards/${id}/delete`;
     } else if (type === 'team') {
@@ -2336,13 +2175,6 @@ function filterTable(type) {
         rows.forEach(row => {
             const title = row.dataset.title;
             row.style.display = title.includes(searchTerm) ? '' : 'none';
-        });
-    } else if (type === 'stats') {
-        rows = document.querySelectorAll('#statsTableBody tr');
-        searchTerm = document.getElementById('statsSearchInput').value.toLowerCase();
-        rows.forEach(row => {
-            const label = row.dataset.label;
-            row.style.display = label.includes(searchTerm) ? '' : 'none';
         });
     } else if (type === 'feature-cards') {
         rows = document.querySelectorAll('#featureCardsTable tbody tr');
@@ -2784,7 +2616,7 @@ async function saveComparison(event) {
 }
 
 // Close modals on click outside
-['heroModal', 'statsModal', 'featureCardsModal', 'featuresModal', 'teamModal', 'valuesTabModal', 'subscriptionsModal', 'aboutIntroModal', 'aboutStoryModal', 'missionVisionModal', 'featuresPageContentModal', 'comparisonModal', 'faqModal'].forEach(modalId => {
+['heroModal', 'featureCardsModal', 'featuresModal', 'teamModal', 'valuesTabModal', 'subscriptionsModal', 'aboutIntroModal', 'aboutStoryModal', 'missionVisionModal', 'featuresPageContentModal', 'comparisonModal', 'faqModal'].forEach(modalId => {
     document.getElementById(modalId).addEventListener('click', function(e) {
         if (e.target === this) {
             closeModal(modalId.replace('Modal', ''));
@@ -2795,7 +2627,7 @@ async function saveComparison(event) {
 // Close modals with Escape key
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-        ['hero', 'stats', 'featureCards', 'features', 'team', 'valuesTab', 'subscriptions', 'aboutIntro', 'aboutStory', 'missionVision', 'featuresPageContent', 'comparison'].forEach(type => closeModal(type));
+        ['hero', 'featureCards', 'features', 'team', 'valuesTab', 'subscriptions', 'aboutIntro', 'aboutStory', 'missionVision', 'featuresPageContent', 'comparison'].forEach(type => closeModal(type));
     }
 });
 </script>

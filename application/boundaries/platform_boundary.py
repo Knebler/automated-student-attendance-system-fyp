@@ -1484,6 +1484,33 @@ def toggle_user_status(user_id):
     else:
         return jsonify(result), 400
 
+@platform_bp.route('/api/users/<int:user_id>/delete', methods=['POST'])
+@requires_roles_api('platform_manager')
+def delete_user(user_id):
+    """Delete a user account and all associated data"""
+    data = request.json or {}
+    confirm = data.get('confirm', False)
+    
+    # Get reviewer ID from session (current platform manager)
+    reviewer_id = session.get('user_id')
+    
+    # Require explicit confirmation for safety
+    if not confirm:
+        return jsonify({
+            'success': False,
+            'error': 'Deletion requires explicit confirmation. Set "confirm": true in request body.',
+            'requires_confirmation': True,
+            'user_id': user_id
+        }), 400
+    
+    result = PlatformControl.delete_user(user_id, reviewer_id)
+    
+    if result['success']:
+        return jsonify(result), 200
+    else:
+        status_code = 404 if 'not found' in result.get('error', '').lower() else 400
+        return jsonify(result), status_code
+
 @platform_bp.route('/api/users/search', methods=['GET'])
 @requires_roles_api('platform_manager')
 def search_users():

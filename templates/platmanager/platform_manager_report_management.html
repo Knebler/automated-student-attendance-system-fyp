@@ -300,14 +300,14 @@
     <!-- Filters Section -->
     <div class="filters-section mb-4">
         <form method="GET" action="{{ url_for('platform.issue_management') }}" class="row g-3 align-items-end">
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label for="status" class="form-label">Status</label>
                 <select name="status" id="status" class="form-select">
                     <option value="open" {% if status_filter == 'open' %}selected{% endif %}>Open</option>
                     <option value="" {% if status_filter == '' %}selected{% endif %}>All Status</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label for="category" class="form-label">Category</label>
                 <select name="category" id="category" class="form-select">
                     <option value="">All Categories</option>
@@ -323,73 +323,39 @@
                     <option value="other" {% if category_filter == 'other' %}selected{% endif %}>Other</option>
                 </select>
             </div>
-            <div class="col-md-3">
-                <label for="search" class="form-label">Search</label>
-                <input type="text" name="search" id="search" class="form-control" 
-                       placeholder="Search in descriptions..." value="{{ request.args.get('search', '') }}">
-            </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <button type="submit" class="btn-custom primary-btn w-100">Apply Filters</button>
             </div>
         </form>
     </div>
 
     <div class="dashboard-grid">
-        <!-- Left Column: Issues Overview -->
+        <!-- Category Distribution -->
         <div class="card-custom">
-            <div class="card-header-custom">Issues Overview</div>
+            <div class="card-header-custom">Issues by Category</div>
             <div class="card-body-custom">
-                <div class="stats-box">
-                    <div class="stat-row mb-2">
-                        <span class="stat-label">Total Issues:</span>
-                        <span class="stat-value">{{ stats.total_issues if stats else total_issues }}</span>
-                    </div>
-                    <div class="stat-row mb-2">
-                        <span class="stat-label">Open Issues:</span>
-                        <span class="stat-value">{{ stats.open_issues if stats else 0 }}</span>
-                    </div>
-                    <div class="stat-row mb-2">
-                        <span class="stat-label">In Progress:</span>
-                        <span class="stat-value">{{ stats.in_progress if stats else 0 }}</span>
-                    </div>
-                    <div class="stat-row mb-2">
-                        <span class="stat-label">Resolved:</span>
-                        <span class="stat-value">{{ stats.resolved if stats else 0 }}</span>
-                    </div>
-                    <div class="stat-row mb-2">
-                        <span class="stat-label">Rejected:</span>
-                        <span class="stat-value">{{ stats.rejected if stats else 0 }}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Recent (7 days):</span>
-                        <span class="stat-value">{{ stats.recent_issues if stats else 0 }}</span>
-                    </div>
-                </div>
-                
-                <!-- Category Distribution -->
                 {% if stats and stats.category_distribution %}
-                <div class="mt-4">
-                    <h6 class="mb-2">Issues by Category</h6>
-                    <div class="category-distribution">
-                        {% for category, count in stats.category_distribution.items() %}
-                        <div class="category-item mb-1">
-                            <div class="d-flex justify-content-between">
-                                <span class="category-name">{{ category|replace('_', ' ')|title }}</span>
-                                <span class="category-count">{{ count }}</span>
-                            </div>
-                            <div class="progress" style="height: 6px;">
-                                <div class="progress-bar" role="progressbar"
-                                 style="--progress: {{ (count / stats.total_issues * 100) if stats.total_issues > 0 else 0 }}%; width: var(--progress);"></div>
-                            </div>
+                <div class="category-distribution">
+                    {% for category, count in stats.category_distribution.items() %}
+                    <div class="category-item mb-1">
+                        <div class="d-flex justify-content-between">
+                            <span class="category-name">{{ category|replace('_', ' ')|title }}</span>
+                            <span class="category-count">{{ count }}</span>
                         </div>
-                        {% endfor %}
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar" role="progressbar"
+                             style="--progress: {{ (count / stats.total_issues * 100) if stats.total_issues > 0 else 0 }}%; width: var(--progress);"></div>
+                        </div>
                     </div>
+                    {% endfor %}
                 </div>
+                {% else %}
+                <p class="text-muted">No category data available</p>
                 {% endif %}
             </div>
         </div>
 
-        <!-- Right Column: Issues List -->
+        <!-- Issues List -->
         <div class="card-custom">
             <div class="card-header-custom d-flex justify-content-between align-items-center">
                 <span>Platform Issues</span>

@@ -12,7 +12,10 @@
         <div class="card-body-custom">
             <div class="class-title-container mb-4">
                 <h2 class="class-title">{{course_name}} - L{{class_id}}</h2>
-                <a href="{{ url_for('institution.edit_class_form', course_id=course_id, class_id=class_id) }}" class="btn-custom btn-edit">Edit Class</a>
+                <div class="button-group">
+                    <a href="{{ url_for('institution.audit_class_attendance', class_id=class_id) }}" class="btn-custom btn-audit">🔍 Audit Attendance</a>
+                    <a href="{{ url_for('institution.edit_class_form', course_id=course_id, class_id=class_id) }}" class="btn-custom btn-edit">Edit Class</a>
+                </div>
             </div>
             
             <div class="class-info mb-4">
@@ -137,6 +140,43 @@
         align-items: center;
         gap: 1rem;
         flex-wrap: wrap;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .class-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--text-dark);
+        text-decoration: underline;
+        margin: 0;
+    }
+
+    /* Button Styles */
+    .btn-audit {
+        padding: 0.75rem 1.75rem;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        background-color: #2563eb;
+        color: white;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-audit:hover {
+        background-color: #1e40af;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     }
 
     .class-title {

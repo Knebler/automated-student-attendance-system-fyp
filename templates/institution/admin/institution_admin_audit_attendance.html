@@ -1,0 +1,1180 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Audit Attendance - AttendAI{% endblock %}
+
+{% block content %}
+<!-- CSRF Token for AJAX requests -->
+<meta name="csrf-token" content="{{ csrf_token() }}">
+
+<div class="dashboard-admin">
+    <h1 class="page-title mb-4">Audit Attendance - Class Details</h1>
+
+    <!-- Class Card -->
+    <div class="card-custom mb-4">
+        <div class="card-header-custom">Class Details</div>
+        <div class="card-body-custom">
+            <div class="class-title-container mb-4">
+                <h2 class="class-title">{{course_name}} - L{{class_id}}</h2>
+                <div class="button-group">
+                    <a href="{{ url_for('institution.attendance_class_details', class_id=class_id) }}" class="btn-custom btn-secondary">Back to Attendance</a>
+                </div>
+            </div>
+            
+            <div class="class-info mb-4">
+                <div class="info-group">
+                    <span><strong>Date: </strong>{{ class.start_time }}</span>
+                    <span><strong>Venue: </strong>{{ class.venue }}</span>
+                </div>
+                <div class="info-group">
+                    <span><strong>Lecturer: </strong>{{ class.lecturer }}</span>
+                    <span><strong>Status: </strong>
+                        {% if class_status == 'completed' %}
+                            <span class="status-badge completed">Completed</span>
+                        {% elif class_status == 'in_progress' %}
+                            <span class="status-badge ongoing">Ongoing</span>
+                        {% elif class_status == 'cancelled' %}
+                            <span class="status-badge cancelled">Cancelled</span>
+                        {% else %}
+                            <span class="status-badge upcoming">Upcoming</span>
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="info-group">
+                    <span><strong>Total Records: </strong>{{ records|length }}</span>
+                    <span><strong>Audited: </strong>{{ records|selectattr('audit_status', 'ne', 'no_audit')|list|length }}</span>
+                </div>
+            </div>
+
+            <div class="records-section">
+                <div class="section-header mb-3">
+                    <h3 class="section-title">Attendance Records - Audit</h3>
+                    <button class="btn-bulk-audit" onclick="openBulkAuditModal()">
+                        📸 Bulk Audit Entire Class
+                    </button>
+                </div>
+                
+                <!-- Audit Instructions -->
+                <div class="alert-info mb-4">
+                    <strong>ℹ️ Audit Instructions:</strong> Use individual "📷 Audit" buttons to verify each student, or click "📸 Bulk Audit Entire Class" to capture a class photo and audit all students at once.
+                </div>
+
+                <!-- Records Table -->
+                <div class="table-responsive">
+                    <table class="records-table">
+                        <thead>
+                            <tr>
+                                <th>Student Name</th>
+                                <th>Student ID</th>
+                                <th>Attendance Status</th>
+                                <th>Audit Status</th>
+                                <th>Audited At</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in records %}
+                            <tr class="row-{{ r.audit_status }}" data-attendance-id="{{ r.attendance_id }}">
+                                <td>{{ r.student_name }}</td>
+                                <td>{{ r.student_id }}</td>
+                                <td>
+                                    <span class="status-{{ r.status }}">{{ r.status|upper }}</span>
+                                </td>
+                                <td>
+                                    <span class="audit-badge audit-{{ r.audit_status }}">
+                                        {% if r.audit_status == 'pass' %}
+                                            ✓ PASS
+                                        {% elif r.audit_status == 'fail' %}
+                                            ✗ FAIL
+                                        {% else %}
+                                            ⏳ NOT AUDITED
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td>{{ r.audited_at.strftime('%Y-%m-%d %H:%M') if r.audited_at else 'N/A' }}</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-audit" onclick="openAuditModal({{ r.attendance_id }}, '{{ r.student_name }}', {{ r.student_id }})">
+                                            📷 Audit
+                                        </button>
+                                        <button class="btn-manual" onclick="manualAudit({{ r.attendance_id }}, 'pass')">
+                                            ✓ Pass
+                                        </button>
+                                        <button class="btn-manual-fail" onclick="manualAudit({{ r.attendance_id }}, 'fail')">
+                                            ✗ Fail
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Audit Modal -->
+<div id="auditModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Audit Attendance - <span id="modalStudentName"></span></h3>
+            <span class="close" onclick="closeAuditModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="camera-section">
+                <video id="video" autoplay playsinline></video>
+                <canvas id="canvas" style="display: none;"></canvas>
+                <div class="camera-controls">
+                    <button id="startAuditBtn" class="btn-custom btn-capture" onclick="startContinuousAudit()">▶️ Start Continuous Audit</button>
+                    <button id="stopAuditBtn" class="btn-custom btn-stop" onclick="stopContinuousAudit()" style="display: none;">⏸️ Stop Audit</button>
+                    <button class="btn-custom btn-secondary" onclick="closeAuditModal()">Cancel</button>
+                </div>
+                <div id="auditStatus" class="audit-status" style="display: none;"></div>
+            </div>
+            <div id="auditResult" class="audit-result" style="display: none;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Audit Modal -->
+<div id="bulkAuditModal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3>📸 Bulk Audit - Entire Class</h3>
+            <span class="close" onclick="closeBulkAuditModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="bulk-instructions mb-3">
+                <p><strong>Instructions:</strong></p>
+                <ul>
+                    <li>Capture a class photo showing all students who attended</li>
+                    <li>Ensure students' faces are clearly visible and well-lit</li>
+                    <li>The system will detect and verify all faces in the photo</li>
+                    <li>Students detected will PASS, others will FAIL the audit</li>
+                </ul>
+            </div>
+            <div class="camera-section">
+                <video id="bulkVideo" autoplay playsinline></video>
+                <canvas id="bulkCanvas" style="display: none;"></canvas>
+                <div class="camera-controls">
+                    <button id="startBulkAuditBtn" class="btn-custom btn-capture" onclick="startContinuousBulkAudit()">▶️ Start Continuous Audit</button>
+                    <button id="stopBulkAuditBtn" class="btn-custom btn-stop" onclick="stopContinuousBulkAudit()" style="display: none;">⏸️ Stop Audit</button>
+                    <button class="btn-custom btn-secondary" onclick="closeBulkAuditModal()">Cancel</button>
+                </div>
+                <div id="bulkAuditStatus" class="audit-status" style="display: none;"></div>
+            </div>
+            <div id="bulkAuditResult" class="bulk-audit-result" style="display: none;"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Page Specific Styles */
+    .dashboard-admin {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        font-style: italic;
+        color: var(--text-dark);
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 1rem;
+    }
+
+    /* Class Title Container */
+    .class-title-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .class-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--text-dark);
+        text-decoration: underline;
+        margin: 0;
+    }
+
+    /* Class Info */
+    .class-info {
+        background-color: var(--primary-light);
+        border-radius: 10px;
+        padding: 1.5rem;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .info-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .info-group span {
+        font-size: 0.9rem;
+        color: var(--text-dark);
+    }
+
+    .info-group strong {
+        color: var(--primary-dark);
+    }
+
+    /* Alert */
+    .alert-info {
+        background-color: #e3f2fd;
+        border: 2px solid #2196f3;
+        border-radius: 10px;
+        padding: 1rem 1.5rem;
+        color: #1565c0;
+        font-size: 0.95rem;
+    }
+
+    /* Status Badges */
+    .status-badge {
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        display: inline-block;
+    }
+
+    .status-badge.completed {
+        color: #059669;
+        background-color: #f0fdf4;
+        border: 1px solid #059669;
+    }
+
+    .status-badge.ongoing {
+        color: #2563eb;
+        background-color: #eff6ff;
+        border: 1px solid #2563eb;
+    }
+
+    .status-badge.upcoming {
+        color: #7c3aed;
+        background-color: #faf5ff;
+        border: 1px solid #7c3aed;
+    }
+
+    .status-badge.cancelled {
+        color: #dc2626;
+        background-color: #fef2f2;
+        border: 1px solid #dc2626;
+    }
+
+    /* Audit Badges */
+    .audit-badge {
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        display: inline-block;
+    }
+
+    .audit-badge.audit-pass {
+        color: #059669;
+        background-color: #f0fdf4;
+        border: 2px solid #059669;
+    }
+
+    .audit-badge.audit-fail {
+        color: #dc2626;
+        background-color: #fef2f2;
+        border: 2px solid #dc2626;
+    }
+
+    .audit-badge.audit-no_audit {
+        color: #f59e0b;
+        background-color: #fffbeb;
+        border: 2px solid #f59e0b;
+    }
+
+    /* Section Title */
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .section-title {
+        font-weight: 700;
+        margin-bottom: 0;
+        font-size: 1.25rem;
+        color: var(--text-dark);
+    }
+
+    .btn-bulk-audit {
+        padding: 0.75rem 1.75rem;
+        border-radius: 25px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-bulk-audit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    /* Records Table */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .records-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+
+    .records-table thead {
+        background-color: var(--primary-dark);
+        color: white;
+    }
+
+    .records-table th {
+        padding: 1rem 1.25rem;
+        text-align: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .records-table th:first-child {
+        text-align: left;
+        border-radius: 8px 0 0 8px;
+    }
+
+    .records-table th:last-child {
+        border-radius: 0 8px 8px 0;
+    }
+
+    .records-table td {
+        padding: 1rem 1.25rem;
+        text-align: center;
+        font-size: 0.9rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .records-table td:first-child {
+        text-align: left;
+    }
+
+    /* Row colors based on audit status */
+    .row-pass {
+        background-color: #f0fdf4;
+    }
+
+    .row-fail {
+        background-color: #fef2f2;
+    }
+
+    .row-no_audit {
+        background-color: #fffbeb;
+    }
+
+    /* Action buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .btn-audit {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        background-color: #2563eb;
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-audit:hover {
+        background-color: #1e40af;
+        transform: translateY(-2px);
+    }
+
+    .btn-manual {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        background-color: #059669;
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-manual:hover {
+        background-color: #047857;
+    }
+
+    .btn-manual-fail {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        background-color: #dc2626;
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-manual-fail:hover {
+        background-color: #b91c1c;
+    }
+
+    .btn-secondary {
+        background-color: #6b7280;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background-color: #4b5563;
+    }
+
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+    }
+
+    .modal-content {
+        background-color: white;
+        margin: 5% auto;
+        padding: 0;
+        border-radius: 15px;
+        width: 90%;
+        max-width: 700px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem;
+        border-bottom: 2px solid var(--border-color);
+        background-color: var(--primary-light);
+        border-radius: 15px 15px 0 0;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        font-size: 1.5rem;
+        color: var(--primary-dark);
+    }
+
+    .close {
+        color: #aaa;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: color 0.3s;
+    }
+
+    .close:hover {
+        color: #000;
+    }
+
+    .modal-body {
+        padding: 2rem;
+    }
+
+    .camera-section {
+        text-align: center;
+    }
+
+    #video {
+        width: 100%;
+        max-width: 640px;
+        border-radius: 10px;
+        border: 2px solid var(--border-color);
+        margin-bottom: 1rem;
+    }
+
+    .camera-controls {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 1rem;
+    }
+
+    .btn-capture {
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+    }
+
+    .btn-stop {
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+        background-color: #dc2626;
+    }
+
+    .btn-stop:hover {
+        background-color: #b91c1c;
+    }
+
+    .audit-status {
+        margin-top: 1rem;
+        padding: 1rem;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        background-color: #f0f9ff;
+        border: 2px solid #0ea5e9;
+        color: #0c4a6e;
+        text-align: center;
+    }
+
+    .audit-status.active {
+        background-color: #fef3c7;
+        border-color: #f59e0b;
+        color: #92400e;
+    }
+
+    .audit-result {
+        margin-top: 1.5rem;
+        padding: 1.5rem;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: 500;
+    }
+
+    .audit-result.success {
+        background-color: #f0fdf4;
+        border: 2px solid #059669;
+        color: #059669;
+    }
+
+    .audit-result.error {
+        background-color: #fef2f2;
+        border: 2px solid #dc2626;
+        color: #dc2626;
+    }
+
+    /* Bulk Audit Modal */
+    .modal-large {
+        max-width: 900px;
+    }
+
+    .bulk-instructions {
+        background-color: #f0f9ff;
+        border: 2px solid #0ea5e9;
+        border-radius: 10px;
+        padding: 1rem 1.5rem;
+        color: #0c4a6e;
+    }
+
+    .bulk-instructions p {
+        margin: 0 0 0.5rem 0;
+        font-weight: 600;
+    }
+
+    .bulk-instructions ul {
+        margin: 0;
+        padding-left: 1.5rem;
+    }
+
+    .bulk-instructions li {
+        margin: 0.25rem 0;
+    }
+
+    #bulkVideo {
+        width: 100%;
+        max-width: 800px;
+        border-radius: 10px;
+        border: 2px solid var(--border-color);
+        margin-bottom: 1rem;
+    }
+
+    .bulk-audit-result {
+        margin-top: 1.5rem;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .bulk-summary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+
+    .bulk-summary h4 {
+        margin: 0 0 1rem 0;
+        font-size: 1.3rem;
+    }
+
+    .bulk-stats {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .bulk-stat {
+        text-align: center;
+    }
+
+    .bulk-stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        display: block;
+    }
+
+    .bulk-stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+
+    .bulk-results-list {
+        background-color: white;
+        border-radius: 10px;
+        padding: 1rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .bulk-result-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border-soft);
+    }
+
+    .bulk-result-item:last-child {
+        border-bottom: none;
+    }
+
+    .bulk-result-item.pass {
+        background-color: #f0fdf4;
+    }
+
+    .bulk-result-item.fail {
+        background-color: #fef2f2;
+    }
+
+    .bulk-result-info {
+        flex: 1;
+    }
+
+    .bulk-result-name {
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+
+    .bulk-result-message {
+        font-size: 0.85rem;
+        color: var(--text-light);
+        margin-top: 0.25rem;
+    }
+
+    .bulk-result-badge {
+        font-weight: 600;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+    }
+
+    .bulk-result-badge.pass {
+        background-color: #059669;
+        color: white;
+    }
+
+    .bulk-result-badge.fail {
+        background-color: #dc2626;
+        color: white;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        .class-info {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 1.75rem;
+        }
+
+        .class-title-container {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .class-info {
+            grid-template-columns: 1fr;
+        }
+
+        .records-table {
+            font-size: 0.8rem;
+        }
+
+        .records-table th,
+        .records-table td {
+            padding: 0.75rem 0.5rem;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<script>
+    let currentAttendanceId = null;
+    let videoStream = null;
+    let continuousAuditInterval = null;
+    let isAuditRunning = false;
+
+    function openAuditModal(attendanceId, studentName, studentId) {
+        currentAttendanceId = attendanceId;
+        document.getElementById('modalStudentName').textContent = studentName + ' (ID: ' + studentId + ')';
+        document.getElementById('auditModal').style.display = 'block';
+        document.getElementById('auditResult').style.display = 'none';
+        startCamera();
+    }
+
+    function closeAuditModal() {
+        stopContinuousAudit();
+        document.getElementById('auditModal').style.display = 'none';
+        stopCamera();
+        currentAttendanceId = null;
+    }
+
+    async function startCamera() {
+        try {
+            const video = document.getElementById('video');
+            videoStream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                } 
+            });
+            video.srcObject = videoStream;
+        } catch (error) {
+            console.error('Error accessing camera:', error);
+            alert('Could not access camera. Please check permissions.');
+        }
+    }
+
+    function stopCamera() {
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+            videoStream = null;
+        }
+    }
+
+    function startContinuousAudit() {
+        if (isAuditRunning) return;
+        
+        isAuditRunning = true;
+        document.getElementById('startAuditBtn').style.display = 'none';
+        document.getElementById('stopAuditBtn').style.display = 'inline-block';
+        
+        const statusDiv = document.getElementById('auditStatus');
+        statusDiv.style.display = 'block';
+        statusDiv.className = 'audit-status active';
+        statusDiv.innerHTML = '🔄 Continuous audit running...';
+        
+        // Start continuous capture
+        captureAndAudit();
+        continuousAuditInterval = setInterval(() => {
+            if (isAuditRunning) {
+                captureAndAudit();
+            }
+        }, 3000); // Audit every 3 seconds
+    }
+
+    function stopContinuousAudit() {
+        if (!isAuditRunning) return;
+        
+        isAuditRunning = false;
+        if (continuousAuditInterval) {
+            clearInterval(continuousAuditInterval);
+            continuousAuditInterval = null;
+        }
+        
+        document.getElementById('startAuditBtn').style.display = 'inline-block';
+        document.getElementById('stopAuditBtn').style.display = 'none';
+        
+        const statusDiv = document.getElementById('auditStatus');
+        statusDiv.className = 'audit-status';
+        statusDiv.innerHTML = '⏸️ Audit stopped';
+    }
+
+    async function captureAndAudit() {
+        if (!isAuditRunning) return;
+        
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas dimensions to match video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        // Draw video frame to canvas
+        ctx.drawImage(video, 0, 0);
+
+        // Convert to base64
+        const imageData = canvas.toDataURL('image/jpeg', 0.8);
+
+        // Show loading state
+        const resultDiv = document.getElementById('auditResult');
+        resultDiv.style.display = 'block';
+        resultDiv.className = 'audit-result';
+        resultDiv.innerHTML = '⏳ Processing audit...';
+
+        // Send to server
+        try {
+            // Get CSRF token from meta tag
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            
+            const response = await fetch(`/institution/attendance/audit/${currentAttendanceId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    image: imageData
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                resultDiv.className = 'audit-result ' + (result.audit_result === 'pass' ? 'success' : 'error');
+                resultDiv.innerHTML = `
+                    <strong>${result.audit_result === 'pass' ? '✓ AUDIT PASSED' : '✗ AUDIT FAILED'}</strong><br>
+                    ${result.message}<br>
+                    ${result.confidence ? 'Confidence: ' + result.confidence.toFixed(1) + '%' : ''}<br>
+                    <small>${new Date().toLocaleTimeString()}</small>
+                `;
+
+                // Update the table row
+                updateTableRow(currentAttendanceId, result.audit_result);
+                
+                // If passed and continuous mode, we keep running
+                // If failed in single-shot mode, would auto-close but not in continuous
+            } else {
+                resultDiv.className = 'audit-result error';
+                resultDiv.innerHTML = `<strong>Error:</strong> ${result.error}`;
+            }
+        } catch (error) {
+            resultDiv.className = 'audit-result error';
+            resultDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
+        }
+    }
+
+    async function manualAudit(attendanceId, status) {
+        if (!confirm(`Are you sure you want to manually mark this as ${status.toUpperCase()}?`)) {
+            return;
+        }
+
+        try {
+            // Get CSRF token from meta tag
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            
+            const response = await fetch(`/institution/attendance/audit/${attendanceId}/manual`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    audit_status: status
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                updateTableRow(attendanceId, status);
+                alert('Audit status updated successfully');
+            } else {
+                alert('Error: ' + result.error);
+            }
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    }
+
+    function updateTableRow(attendanceId, auditStatus) {
+        const row = document.querySelector(`tr[data-attendance-id="${attendanceId}"]`);
+        if (row) {
+            // Update row class
+            row.className = `row-${auditStatus}`;
+
+            // Update audit badge
+            const auditCell = row.querySelector('.audit-badge');
+            if (auditCell) {
+                auditCell.className = `audit-badge audit-${auditStatus}`;
+                if (auditStatus === 'pass') {
+                    auditCell.innerHTML = '✓ PASS';
+                } else if (auditStatus === 'fail') {
+                    auditCell.innerHTML = '✗ FAIL';
+                } else {
+                    auditCell.innerHTML = '⏳ NOT AUDITED';
+                }
+            }
+
+            // Update audited at time
+            const timeCell = row.querySelectorAll('td')[4];
+            if (timeCell) {
+                const now = new Date();
+                timeCell.textContent = now.toISOString().slice(0, 16).replace('T', ' ');
+            }
+        }
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('auditModal');
+        const bulkModal = document.getElementById('bulkAuditModal');
+        if (event.target === modal) {
+            closeAuditModal();
+        }
+        if (event.target === bulkModal) {
+            closeBulkAuditModal();
+        }
+    }
+
+    // ==================== BULK AUDIT FUNCTIONS ====================
+    let bulkVideoStream = null;
+    let continuousBulkAuditInterval = null;
+    let isBulkAuditRunning = false;
+
+    function openBulkAuditModal() {
+        document.getElementById('bulkAuditModal').style.display = 'block';
+        document.getElementById('bulkAuditResult').style.display = 'none';
+        startBulkCamera();
+    }
+
+    function closeBulkAuditModal() {
+        stopContinuousBulkAudit();
+        document.getElementById('bulkAuditModal').style.display = 'none';
+        stopBulkCamera();
+    }
+
+    async function startBulkCamera() {
+        try {
+            const video = document.getElementById('bulkVideo');
+            bulkVideoStream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
+                } 
+            });
+            video.srcObject = bulkVideoStream;
+        } catch (error) {
+            console.error('Error accessing camera:', error);
+            alert('Could not access camera. Please check permissions.');
+        }
+    }
+
+    function stopBulkCamera() {
+        if (bulkVideoStream) {
+            bulkVideoStream.getTracks().forEach(track => track.stop());
+            bulkVideoStream = null;
+        }
+    }
+
+    function startContinuousBulkAudit() {
+        if (isBulkAuditRunning) return;
+        
+        isBulkAuditRunning = true;
+        document.getElementById('startBulkAuditBtn').style.display = 'none';
+        document.getElementById('stopBulkAuditBtn').style.display = 'inline-block';
+        
+        const statusDiv = document.getElementById('bulkAuditStatus');
+        statusDiv.style.display = 'block';
+        statusDiv.className = 'audit-status active';
+        statusDiv.innerHTML = '🔄 Continuous bulk audit running...';
+        
+        // Start continuous capture
+        captureBulkAudit();
+        continuousBulkAuditInterval = setInterval(() => {
+            if (isBulkAuditRunning) {
+                captureBulkAudit();
+            }
+        }, 5000); // Bulk audit every 5 seconds (more processing intensive)
+    }
+
+    function stopContinuousBulkAudit() {
+        if (!isBulkAuditRunning) return;
+        
+        isBulkAuditRunning = false;
+        if (continuousBulkAuditInterval) {
+            clearInterval(continuousBulkAuditInterval);
+            continuousBulkAuditInterval = null;
+        }
+        
+        document.getElementById('startBulkAuditBtn').style.display = 'inline-block';
+        document.getElementById('stopBulkAuditBtn').style.display = 'none';
+        
+        const statusDiv = document.getElementById('bulkAuditStatus');
+        statusDiv.className = 'audit-status';
+        statusDiv.innerHTML = '⏸️ Bulk audit stopped';
+    }
+
+    async function captureBulkAudit() {
+        if (!isBulkAuditRunning) return;
+        
+        const video = document.getElementById('bulkVideo');
+        const canvas = document.getElementById('bulkCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas dimensions to match video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        // Draw video frame to canvas
+        ctx.drawImage(video, 0, 0);
+
+        // Convert to base64
+        const imageData = canvas.toDataURL('image/jpeg', 0.9);
+
+        // Show loading state
+        const resultDiv = document.getElementById('bulkAuditResult');
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = `
+            <div class="bulk-summary">
+                <h4>⏳ Processing Bulk Audit...</h4>
+                <p>Detecting and verifying all faces in the class photo... ${new Date().toLocaleTimeString()}</p>
+            </div>
+        `;
+
+        // Send to server
+        try {
+            // Get CSRF token from meta tag
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            
+            const response = await fetch(`/institution/attendance/class/{{ class_id }}/bulk-audit`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    image: imageData
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Display bulk audit results
+                displayBulkResults(result);
+                
+                // Update all affected table rows
+                result.results.forEach(item => {
+                    updateTableRow(item.attendance_id, item.audit_result);
+                });
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="bulk-summary" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);">
+                        <h4>✗ Bulk Audit Failed</h4>
+                        <p>${result.error}</p>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Bulk audit error:', error);
+            resultDiv.innerHTML = `
+                <div class="bulk-summary" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);">
+                    <h4>✗ Error</h4>
+                    <p>${error.message}</p>
+                </div>
+            `;
+        }
+    }
+
+    function displayBulkResults(result) {
+        const resultDiv = document.getElementById('bulkAuditResult');
+        
+        // Create summary
+        let html = `
+            <div class="bulk-summary">
+                <h4>✓ Bulk Audit Completed - ${new Date().toLocaleTimeString()}</h4>
+                <div class="bulk-stats">
+                    <div class="bulk-stat">
+                        <span class="bulk-stat-value">${result.audited_count}</span>
+                        <span class="bulk-stat-label">Total Audited</span>
+                    </div>
+                    <div class="bulk-stat">
+                        <span class="bulk-stat-value" style="color: #86efac;">${result.pass_count}</span>
+                        <span class="bulk-stat-label">Passed</span>
+                    </div>
+                    <div class="bulk-stat">
+                        <span class="bulk-stat-value" style="color: #fca5a5;">${result.fail_count}</span>
+                        <span class="bulk-stat-label">Failed</span>
+                    </div>
+                    <div class="bulk-stat">
+                        <span class="bulk-stat-value">${result.faces_detected}</span>
+                        <span class="bulk-stat-label">Faces Detected</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bulk-results-list">
+                <h5 style="margin: 0 0 1rem 0; font-weight: 600;">Detailed Results:</h5>
+        `;
+        
+        // Add individual results
+        result.results.forEach(item => {
+            const statusClass = item.audit_result === 'pass' ? 'pass' : 'fail';
+            const statusText = item.audit_result === 'pass' ? '✓ PASS' : '✗ FAIL';
+            
+            html += `
+                <div class="bulk-result-item ${statusClass}">
+                    <div class="bulk-result-info">
+                        <div class="bulk-result-name">${item.student_name} (ID: ${item.student_id})</div>
+                        <div class="bulk-result-message">${item.message}</div>
+                    </div>
+                    <span class="bulk-result-badge ${statusClass}">${statusText}</span>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        resultDiv.innerHTML = html;
+        
+        // Stop camera after successful audit
+        stopBulkCamera();
+    }
+</script>
+{% endblock %}

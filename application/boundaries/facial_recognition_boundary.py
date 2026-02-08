@@ -90,7 +90,8 @@ def recognize_face():
         best_recognition = max(recognitions, key=lambda r: r['confidence'])
         
         # If confidence is too low, require manual verification
-        if best_recognition['confidence'] < 70:  # Threshold
+        # Use 0.5 threshold to match attendance marking logic
+        if best_recognition['confidence'] < 0.5:  # Threshold (SAME as attendance marking)
             return jsonify({
                 'success': False,
                 'error': 'Low confidence recognition',

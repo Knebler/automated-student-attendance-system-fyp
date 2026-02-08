@@ -347,6 +347,11 @@
         color: #dc2626;
     }
 
+    .btn-delete:hover {
+        background-color: #fef2f2;
+        color: #dc2626;
+    }
+
     .action-icon {
         font-size: 1rem;
     }
@@ -1531,6 +1536,9 @@ function renderUsers(data) {
                         <span class="action-icon">✏️</span>
                     </button>
                     ${actionButton}
+                    <button class="btn-action btn-delete" title="Delete User" onclick="deleteUser(${user.user_id}, '${user.name}')">
+                        <span class="action-icon">🗑️</span>
+                    </button>
                 </div>
             </td>
         </tr>
@@ -1584,6 +1592,34 @@ function activateUser(userId, action) {
                 }, 1500);
             } else {
                 showAlert(`Error: ${result.error || 'Failed to toggle user status'}`, 'error');
+            }
+        })
+        .catch(error => {
+            showAlert(`Error: ${error.message}`, 'error');
+        });
+    }
+}
+
+// Delete user function
+function deleteUser(userId, userName) {
+    if (confirm(`Are you sure you want to delete user "${userName}"? This action cannot be undone and will remove all associated data.`)) {
+        fetch(`api/users/${userId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ confirm: true })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                showAlert('User deleted successfully!', 'success');
+                // Refresh the users list
+                setTimeout(() => {
+                    fetchUsers(currentPage);
+                }, 1500);
+            } else {
+                showAlert(`Error: ${result.error || 'Failed to delete user'}`, 'error');
             }
         })
         .catch(error => {

@@ -25,6 +25,7 @@ GenderEnum = Enum("male", "female", "other", name="gender_enum")
 ClassStatusEnum = Enum("scheduled", "in_progress", "completed", "cancelled", name="class_status_enum")
 AttendanceStatusEnum = Enum("unmarked", "present", "absent", "late", "excused", name="attendance_status_enum")
 MarkedByEnum = Enum("system", "lecturer", name="marked_by_enum")
+AuditStatusEnum = Enum("no_audit", "pass", "fail", name="audit_status_enum")
 ReportScheduleEnum = Enum("one", "daily", "weekly", "monthly", name="report_schedule_enum")
 TestimonialStatusEnum = Enum("pending", "approved", "rejected", name="testimonial_status_enum")
 AttendanceAppealStatusEnum = Enum("pending", "approved", "rejected", name="attendance_appeal_status_enum")
@@ -243,6 +244,9 @@ class AttendanceRecord(Base, BaseMixin):
     captured_image_id = Column(Integer)
     notes = Column(Text)
     recorded_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+    audit_status = Column(AuditStatusEnum, server_default="no_audit", nullable=False)
+    audited_at = Column(DateTime)
+    audited_by = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), index=True)
 
 # =====================
 # ATTENDANCE APPEAL

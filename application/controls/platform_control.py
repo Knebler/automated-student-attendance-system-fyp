@@ -1302,6 +1302,117 @@ class PlatformControl:
                 'error': f'Error updating user status: {str(e)}'
             }
 
+    def delete_user(user_id: int, reviewer_id: Optional[int] = None) -> Dict[str, Any]:
+        """Delete a user account and all associated data."""
+        try:
+            with get_session() as db_session:
+                user_model = UserModel(db_session)
+                
+                # Get user details
+                user = user_model.get_by_id(user_id)
+                if not user:
+                    return {
+                        'success': False,
+                        'error': f'User with ID {user_id} not found.'
+                    }
+                
+                user_name = user.name
+                user_email = user.email
+                user_role = user.role
+                
+                # Track what we're deleting
+                deletion_summary = {
+                    'user_name': user_name,
+                    'user_email': user_email,
+                    'user_role': user_role,
+                    'deleted_facial_data': 0,
+                    'deleted_attendance_records': 0,
+                    'deleted_enrollments': 0,
+                    'deleted_classes': 0,
+                    'deleted_announcements': 0,
+                    'deleted_notifications': 0,
+                    'deleted_testimonials': 0,
+                    'deleted_platform_issues': 0
+                }
+                
+                # Delete facial data for this user
+                facial_deleted = db_session.query(FacialData).filter(
+                    FacialData.user_id == user_id
+                ).delete(synchronize_session=False)
+                deletion_summary['deleted_facial_data'] = facial_deleted
+                
+                # Delete attendance records where user is the student
+                attendance_deleted = db_session.query(AttendanceRecord).filter(
+                    AttendanceRecord.student_id == user_id
+                ).delete(synchronize_session=False)
+                deletion_summary['deleted_attendance_records'] = attendance_deleted
+                
+                # Delete notifications for this user
+                notifications_deleted = db_session.query(Notification).filter(
+                    Notification.user_id == user_id
+                ).delete(synchronize_session=False)
+                deletion_summary['deleted_notifications'] = notifications_deleted
+                
+                # Delete testimonials by this user
+                testimonials_deleted = db_session.query(Testimonial).filter(
+                    Testimonial.user_id == user_id
+                ).delete(synchronize_session=False)
+                deletion_summary['deleted_testimonials'] = testimonials_deleted
+                
+                # Delete course enrollments for this user
+                enrollments_deleted = db_session.query(CourseUser).filter(
+                    CourseUser.user_id == user_id
+                ).delete(synchronize_session=False)
+                deletion_summary['deleted_enrollments'] = enrollments_deleted
+                
+                # Delete platform issues reported by this user
+                platform_issues_deleted = db_session.query(PlatformIssue).filter(
+                    PlatformIssue.user_id == user_id
+                ).delete(synchronize_session=False)
+                deletion_summary['deleted_platform_issues'] = platform_issues_deleted
+                
+                # Handle lecturer-specific data
+                if user_role == 'lecturer':
+                    # Delete classes taught by this lecturer
+                    classes_deleted = db_session.query(Class).filter(
+                        Class.lecturer_id == user_id
+                    ).delete(synchronize_session=False)
+                    deletion_summary['deleted_classes'] = classes_deleted
+                    
+                    # Delete announcements created by this lecturer
+                    announcements_deleted = db_session.query(Announcement).filter(
+                        Announcement.created_by == user_id
+                    ).delete(synchronize_session=False)
+                    deletion_summary['deleted_announcements'] = announcements_deleted
+                
+                # Delete the user account itself
+                db_session.query(User).filter(
+                    User.user_id == user_id
+                ).delete(synchronize_session=False)
+                
+                db_session.commit()
+                
+                return {
+                    'success': True,
+                    'message': f'User {user_name} ({user_email}) has been successfully deleted.',
+                    'deletion_summary': deletion_summary
+                }
+                
+        except IntegrityError as e:
+            if 'db_session' in locals():
+                db_session.rollback()
+            return {
+                'success': False,
+                'error': f'Cannot delete user due to database constraints: {str(e)}'
+            }
+        except Exception as e:
+            if 'db_session' in locals():
+                db_session.rollback()
+            return {
+                'success': False,
+                'error': f'Error deleting user: {str(e)}'
+            }
+
     def search_users(search_term='', role='', status='', page=1, per_page=10):
         """Search users with filters - using existing pm_retrieve_page method"""
         try:

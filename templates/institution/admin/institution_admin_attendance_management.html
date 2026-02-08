@@ -347,6 +347,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const prevPageBtn = document.getElementById('prevPage');
     const nextPageBtn = document.getElementById('nextPage');
     const pageInfo = document.getElementById('pageInfo');
+    const paginationControls = document.getElementById('paginationControls');
     const dateFilter = document.getElementById('dateFilter');
     const courseFilter = document.getElementById('courseFilter');
     const clearFiltersBtn = document.getElementById('clearFilters');
@@ -420,6 +421,13 @@ document.addEventListener('DOMContentLoaded', function() {
             classesContainer.innerHTML = '<div class="no-results">No classes found matching your filters.</div>';
         } else {
             classesContainer.innerHTML = classesToShow.map(renderClassRow).join('');
+        }
+        
+        // Hide pagination if less than 7 classes
+        if (filteredClasses.length < 7) {
+            paginationControls.style.display = 'none';
+        } else {
+            paginationControls.style.display = 'flex';
         }
         
         // Update pagination controls

@@ -62,9 +62,16 @@
                 <!-- Search and Filter -->
                 <div class="search-filter-container mb-4">
                     <div class="search-bar">
-                        <input type="text" class="search-input" placeholder="Search by name or ID">
-                        <input type="text" class="filter-input" placeholder="Filter by status">
-                        <button class="btn-custom search-btn">Search</button>
+                        <input type="text" id="searchInput" class="search-input" placeholder="Search by name or ID">
+                        <select id="statusFilter" class="filter-input">
+                            <option value="">All Statuses</option>
+                            <option value="present">Present</option>
+                            <option value="absent">Absent</option>
+                            <option value="late">Late</option>
+                            <option value="excused">Excused</option>
+                            <option value="unmarked">Unmarked</option>
+                        </select>
+                        <button id="clearSearch" class="btn-custom search-btn">Clear</button>
                     </div>
                 </div>
 
@@ -79,9 +86,9 @@
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="recordsTableBody">
                             {% for r in records %}
-                            <tr class="row-{{ r.status }}">
+                            <tr class="row-{{ r.status }}" data-name="{{ r.student_name or r.student_id }}" data-id="{{ r.student_id }}" data-status="{{ r.status }}">
                                 <td>{{ r.student_name or r.student_id }}</td>
                                 <td>{{ r.student_id }}</td>
                                 <td><span class="status-{{ r.status }}">{{ r.status|upper }}</span></td>
@@ -103,9 +110,17 @@
                 </div>
 
                 <!-- Pagination -->
-                <div class="pagination mt-4">
-                    <span>Page 1 of 1</span>
-                    <span class="pagination-arrow">›</span>
+                <div class="pagination mt-4" id="paginationContainer">
+                    <button id="prevPage" class="pagination-btn" disabled>
+                        <span class="pagination-arrow">‹</span> Previous
+                    </button>
+                    <span id="pageInfo">Page 1 of 1</span>
+                    <button id="nextPage" class="pagination-btn" disabled>
+                        Next <span class="pagination-arrow">›</span>
+                    </button>
+                </div>
+                <div class="results-count">
+                    <span id="resultsCount">Showing {{ records|length }} of {{ records|length }} records</span>
                 </div>
             </div>
         </div>
@@ -287,6 +302,13 @@
         border-radius: 25px;
         font-size: 0.9rem;
         background-color: white;
+        cursor: pointer;
+    }
+
+    .filter-input:focus,
+    .search-input:focus {
+        outline: none;
+        border-color: var(--primary-dark);
     }
 
     .search-btn {
@@ -436,7 +458,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 0.5rem;
+        gap: 1rem;
         padding-top: 1rem;
         border-top: 1px solid var(--border-color);
         color: var(--text-dark);
@@ -446,11 +468,40 @@
         font-size: 0.9rem;
     }
 
-    .pagination-arrow {
+    .pagination-btn {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        background-color: var(--primary-dark);
+        color: white;
+        border: none;
         cursor: pointer;
+        transition: background-color 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+        background-color: #1e293b;
+    }
+
+    .pagination-btn:disabled {
+        background-color: #9ca3af;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    .pagination-arrow {
         font-weight: bold;
-        padding: 0.25rem;
-        color: var(--primary-dark);
+        font-size: 1rem;
+    }
+
+    .results-count {
+        text-align: center;
+        margin-top: 1rem;
+        font-size: 0.9rem;
+        color: var(--text-dark);
     }
 
     /* Generate Button */
@@ -527,4 +578,137 @@
         }
     }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get all table rows
+    const tableBody = document.getElementById('recordsTableBody');
+    const allRows = Array.from(tableBody.querySelectorAll('tr'));
+    
+    // Get filter elements
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('statusFilter');
+    const clearBtn = document.getElementById('clearSearch');
+    const resultsCount = document.getElementById('resultsCount');
+    const resultsCountContainer = resultsCount.parentElement;
+    
+    // Pagination elements
+    const prevPageBtn = document.getElementById('prevPage');
+    const nextPageBtn = document.getElementById('nextPage');
+    const pageInfo = document.getElementById('pageInfo');
+    const paginationContainer = document.getElementById('paginationContainer');
+    
+    // Pagination settings
+    const itemsPerPage = 10;
+    let currentPage = 1;
+    let filteredRows = [...allRows];
+    
+    // Filter function
+    function applyFilters() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        const statusValue = statusFilter.value.toLowerCase();
+        
+        filteredRows = allRows.filter(row => {
+            const name = row.getAttribute('data-name').toLowerCase();
+            const id = row.getAttribute('data-id').toLowerCase();
+            const status = row.getAttribute('data-status').toLowerCase();
+            
+            // Check search term (name or ID)
+            const matchesSearch = searchTerm === '' || 
+                                name.includes(searchTerm) || 
+                                id.includes(searchTerm);
+            
+            // Check status filter
+            const matchesStatus = statusValue === '' || status === statusValue;
+            
+            return matchesSearch && matchesStatus;
+        });
+        
+        // Reset to first page
+        currentPage = 1;
+        renderTable();
+    }
+    
+    // Render table with pagination
+    function renderTable() {
+        // Remove any existing "no results" row first
+        const existingNoResults = tableBody.querySelector('.no-results-row');
+        if (existingNoResults) {
+            existingNoResults.remove();
+        }
+        
+        // Hide all rows first
+        allRows.forEach(row => row.style.display = 'none');
+        
+        // Calculate pagination
+        const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const rowsToShow = filteredRows.slice(startIndex, endIndex);
+        
+        // Show filtered rows for current page
+        rowsToShow.forEach(row => row.style.display = '');
+        
+        // Update results count
+        const showingStart = filteredRows.length > 0 ? startIndex + 1 : 0;
+        const showingEnd = Math.min(endIndex, filteredRows.length);
+        resultsCount.textContent = `Showing ${showingStart}-${showingEnd} of ${filteredRows.length} records`;
+        
+        // Hide pagination and results count if less than 7 records
+        if (filteredRows.length < 7) {
+            paginationContainer.style.display = 'none';
+            resultsCountContainer.style.display = 'none';
+        } else {
+            paginationContainer.style.display = 'flex';
+            resultsCountContainer.style.display = 'block';
+        }
+        
+        // Update pagination controls
+        pageInfo.textContent = `Page ${currentPage} of ${totalPages || 1}`;
+        prevPageBtn.disabled = currentPage === 1;
+        nextPageBtn.disabled = currentPage >= totalPages || totalPages === 0;
+        
+        // Show "no results" message if needed
+        if (filteredRows.length === 0) {
+            const noResultsRow = document.createElement('tr');
+            noResultsRow.className = 'no-results-row';
+            noResultsRow.innerHTML = '<td colspan="4" style="text-align: center; padding: 2rem; color: #6b7280;">No records found matching your search criteria.</td>';
+            tableBody.appendChild(noResultsRow);
+        }
+    }
+    
+    // Clear filters
+    function clearFilters() {
+        searchInput.value = '';
+        statusFilter.value = '';
+        filteredRows = [...allRows];
+        currentPage = 1;
+        renderTable();
+    }
+    
+    // Event listeners
+    searchInput.addEventListener('input', applyFilters);
+    statusFilter.addEventListener('change', applyFilters);
+    clearBtn.addEventListener('click', clearFilters);
+    
+    prevPageBtn.addEventListener('click', function() {
+        if (currentPage > 1) {
+            currentPage--;
+            renderTable();
+        }
+    });
+    
+    nextPageBtn.addEventListener('click', function() {
+        const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderTable();
+        }
+    });
+    
+    // Initial render
+    renderTable();
+});
+</script>
+
 {% endblock %}

@@ -35,6 +35,7 @@
             <div class="announcement-actions">
                 <form method="POST" action="{{ url_for('institution.delete_announcement', announcement_id=announcement['announcement_id']) }}" 
                       onsubmit="return confirm('Are you sure you want to delete this announcement? This action cannot be undone.');">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn-delete-custom">Delete Announcement</button>
                 </form>
             </div>

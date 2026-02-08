@@ -6,53 +6,59 @@
 <div class="dashboard-admin">
     <h1 class="page-title mb-4">Attendance Management</h1>
 
+    <!-- Filter Controls -->
+    <div class="card-custom mb-4">
+        <div class="card-header-custom">Filter Classes</div>
+        <div class="card-body-custom">
+            <div class="filter-controls">
+                <div class="filter-group">
+                    <label for="dateFilter"><strong>Date:</strong></label>
+                    <input type="date" id="dateFilter" class="filter-input">
+                </div>
+                <div class="filter-group">
+                    <label for="courseFilter"><strong>Course:</strong></label>
+                    <select id="courseFilter" class="filter-input">
+                        <option value="">All Courses</option>
+                        {% for course in courses %}
+                        <option value="{{ course.name }}">{{ course.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <button id="clearFilters" class="btn-clear-filters">Clear Filters</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Classes Card -->
     <div class="card-custom mb-4">
-        <div class="card-header-custom">Classes ({{ classes|length }})</div>
-        <div class="card-body-custom">
-            {% if classes %}
-                {% for class in classes %}
-                <div class="class-row mb-3">
-                    <div class="class-info">
-                        <div class="info-group">
-                            <span><strong>Module:</strong> {{ class.module_name }}</span>
-                            <span><strong>Class ID:</strong> {{ class.class_id }}</span>
-                            <span><strong>Date:</strong> {{ class.date.strftime('%d/%m/%Y %H:%M') if class.date else 'N/A' }}</span>
-                        </div>
-                        <div class="info-group">
-                            <span><strong>Venue:</strong> {{ class.venue }}</span>
-                            <span><strong>Lecturer:</strong> {{ class.lecturer }}</span>
-                        </div>
-                        <div class="info-group">
-                            <span><strong>Total:</strong> {{ class.total }}</span>
-                            <span><strong>Present:</strong> <span class="status-badge status-present">{{ class.present }}</span></span>
-                        </div>
-                        <div class="info-group">
-                            <span><strong>Absent:</strong> <span class="status-badge status-absent">{{ class.absent }}</span></span>
-                            <span><strong>Late:</strong> <span class="status-badge status-late">{{ class.late }}</span></span>
-                        </div>
-                        <div class="info-group">
-                            <span><strong>Excused:</strong> <span class="status-badge status-excused">{{ class.excused }}</span></span>
-                            <span><strong>Unmarked:</strong> <span class="status-badge status-unmarked">{{ class.unmarked }}</span></span>
-                        </div>
-                    </div>
-                    <a href="{{ url_for('institution.attendance_class_details', class_id=class.class_id) }}" class="btn-custom details-btn">View Details</a>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="class-row mb-3">
-                    <div class="class-info">
-                        <div class="info-group">
-                            <span>No classes found</span>
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
+        <div class="card-header-custom">
+            <span>Classes (<span id="classCount">{{ classes|length }}</span>)</span>
+        </div>
+        <div class="card-body-custom" id="classesContainer">
+            <!-- Classes will be rendered here by JavaScript -->
+        </div>
+        
+        <!-- Pagination Controls -->
+        <div class="pagination" id="paginationControls">
+            <button id="prevPage" class="pagination-btn" disabled>
+                <span class="pagination-arrow">←</span> Previous
+            </button>
+            <span id="pageInfo" class="page-info">Page 1 of 1</span>
+            <button id="nextPage" class="pagination-btn" disabled>
+                Next <span class="pagination-arrow">→</span>
+            </button>
         </div>
     </div>
 
     
 </div>
+
+<!-- Store classes data in a script tag for JavaScript access -->
+<script id="classesData" type="application/json">
+{{ classes|tojson }}
+</script>
 
 <style>
     /* Page Specific Styles */
@@ -157,22 +163,100 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 0.5rem;
+        gap: 1rem;
         padding-top: 1rem;
         border-top: 1px solid var(--border-color);
         margin-top: 1.5rem;
     }
 
-    .pagination span {
+    .pagination-btn {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
         font-size: 0.9rem;
-        color: var(--text-dark);
+        background-color: var(--primary-dark);
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
 
-    .pagination-arrow {
+    .pagination-btn:hover:not(:disabled) {
+        background-color: #1e293b;
+    }
+
+    .pagination-btn:disabled {
+        background-color: #9ca3af;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    .page-info {
+        font-size: 0.9rem;
+        color: var(--text-dark);
+        font-weight: 500;
+    }
+
+    .pagination .pagination-arrow {
         font-size: 1rem;
+    }
+
+    /* Filter Controls */
+    .filter-controls {
+        display: flex;
+        gap: 1.5rem;
+        align-items: flex-end;
+        flex-wrap: wrap;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        min-width: 200px;
+    }
+
+    .filter-group label {
+        font-size: 0.9rem;
         color: var(--primary-dark);
+    }
+
+    .filter-input {
+        padding: 0.5rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        background-color: white;
+        transition: border-color 0.3s ease;
+    }
+
+    .filter-input:focus {
+        outline: none;
+        border-color: var(--primary-dark);
+    }
+
+    .btn-clear-filters {
+        padding: 0.5rem 1.5rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        background-color: #6b7280;
+        color: white;
+        border: none;
         cursor: pointer;
-        padding: 0.25rem;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-clear-filters:hover {
+        background-color: #4b5563;
+    }
+
+    .no-results {
+        text-align: center;
+        padding: 2rem;
+        color: var(--text-dark);
+        font-size: 1rem;
     }
 
     /* Generate Reports Button */
@@ -236,6 +320,170 @@
             padding: 0.75rem 2rem;
             font-size: 1rem;
         }
+
+        .filter-controls {
+            flex-direction: column;
+        }
+
+        .filter-group {
+            width: 100%;
+        }
     }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get classes data from script tag
+    const classesData = JSON.parse(document.getElementById('classesData').textContent);
+    
+    // Pagination settings
+    const itemsPerPage = 10;
+    let currentPage = 1;
+    let filteredClasses = [...classesData];
+    
+    // Get DOM elements
+    const classesContainer = document.getElementById('classesContainer');
+    const classCount = document.getElementById('classCount');
+    const prevPageBtn = document.getElementById('prevPage');
+    const nextPageBtn = document.getElementById('nextPage');
+    const pageInfo = document.getElementById('pageInfo');
+    const dateFilter = document.getElementById('dateFilter');
+    const courseFilter = document.getElementById('courseFilter');
+    const clearFiltersBtn = document.getElementById('clearFilters');
+    
+    // Format date for display
+    function formatDate(dateStr) {
+        if (!dateStr) return 'N/A';
+        const date = new Date(dateStr);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${day}/${month}/${year} ${hours}:${minutes}`;
+    }
+    
+    // Format date for comparison (YYYY-MM-DD)
+    function formatDateForComparison(dateStr) {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    
+    // Render a single class row
+    function renderClassRow(classData) {
+        return `
+            <div class="class-row mb-3">
+                <div class="class-info">
+                    <div class="info-group">
+                        <span><strong>Module:</strong> ${classData.module_name || 'N/A'}</span>
+                        <span><strong>Class ID:</strong> ${classData.class_id || 'N/A'}</span>
+                        <span><strong>Date:</strong> ${formatDate(classData.date)}</span>
+                    </div>
+                    <div class="info-group">
+                        <span><strong>Venue:</strong> ${classData.venue || 'N/A'}</span>
+                        <span><strong>Lecturer:</strong> ${classData.lecturer || 'N/A'}</span>
+                    </div>
+                    <div class="info-group">
+                        <span><strong>Total:</strong> ${classData.total || 0}</span>
+                        <span><strong>Present:</strong> <span class="status-badge status-present">${classData.present || 0}</span></span>
+                    </div>
+                    <div class="info-group">
+                        <span><strong>Absent:</strong> <span class="status-badge status-absent">${classData.absent || 0}</span></span>
+                        <span><strong>Late:</strong> <span class="status-badge status-late">${classData.late || 0}</span></span>
+                    </div>
+                    <div class="info-group">
+                        <span><strong>Excused:</strong> <span class="status-badge status-excused">${classData.excused || 0}</span></span>
+                        <span><strong>Unmarked:</strong> <span class="status-badge status-unmarked">${classData.unmarked || 0}</span></span>
+                    </div>
+                </div>
+                <a href="/institution/attendance/class/${classData.class_id}" class="btn-custom details-btn">View Details</a>
+            </div>
+        `;
+    }
+    
+    // Render classes for current page
+    function renderClasses() {
+        const totalPages = Math.ceil(filteredClasses.length / itemsPerPage);
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const classesToShow = filteredClasses.slice(startIndex, endIndex);
+        
+        // Update class count
+        classCount.textContent = filteredClasses.length;
+        
+        // Render classes
+        if (classesToShow.length === 0) {
+            classesContainer.innerHTML = '<div class="no-results">No classes found matching your filters.</div>';
+        } else {
+            classesContainer.innerHTML = classesToShow.map(renderClassRow).join('');
+        }
+        
+        // Update pagination controls
+        pageInfo.textContent = `Page ${currentPage} of ${totalPages || 1}`;
+        prevPageBtn.disabled = currentPage === 1;
+        nextPageBtn.disabled = currentPage >= totalPages || totalPages === 0;
+    }
+    
+    // Apply filters
+    function applyFilters() {
+        const selectedDate = dateFilter.value;
+        const selectedCourse = courseFilter.value;
+        
+        filteredClasses = classesData.filter(classData => {
+            // Date filter
+            if (selectedDate && formatDateForComparison(classData.date) !== selectedDate) {
+                return false;
+            }
+            
+            // Course filter
+            if (selectedCourse && classData.module_name !== selectedCourse) {
+                return false;
+            }
+            
+            return true;
+        });
+        
+        // Reset to first page
+        currentPage = 1;
+        renderClasses();
+    }
+    
+    // Clear filters
+    function clearFilters() {
+        dateFilter.value = '';
+        courseFilter.value = '';
+        filteredClasses = [...classesData];
+        currentPage = 1;
+        renderClasses();
+    }
+    
+    // Event listeners
+    dateFilter.addEventListener('change', applyFilters);
+    courseFilter.addEventListener('change', applyFilters);
+    clearFiltersBtn.addEventListener('click', clearFilters);
+    
+    prevPageBtn.addEventListener('click', function() {
+        if (currentPage > 1) {
+            currentPage--;
+            renderClasses();
+        }
+    });
+    
+    nextPageBtn.addEventListener('click', function() {
+        const totalPages = Math.ceil(filteredClasses.length / itemsPerPage);
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderClasses();
+        }
+    });
+    
+    // Initial render
+    renderClasses();
+});
+</script>
+
 {% endblock %}

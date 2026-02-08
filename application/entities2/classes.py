@@ -303,13 +303,13 @@ class ClassModel(BaseEntity[Class]):
 
     def student_attendance_absent_late(self, user_id):
         headers = [
-            "class_id", "course_code", "course_name", "start_date", "venue", "lecturer", "attendance_id", "status"
+            "class_id", "course_code", "course_name", "start_date", "venue", "lecturer", "attendance_id", "status", "audit_status"
         ]
         Lecturer = aliased(User)
         data = (
             self.session
             .query(Class.class_id, Course.code, Course.name, Class.start_time, Venue.name, Lecturer.name
-                   , AttendanceRecord.attendance_id, func.coalesce(AttendanceRecord.status, "unmarked"))
+                   , AttendanceRecord.attendance_id, func.coalesce(AttendanceRecord.status, "unmarked"), AttendanceRecord.audit_status)
             .select_from(Semester)
             .join(CourseUser, Semester.semester_id == CourseUser.semester_id)
             .join(User, CourseUser.user_id == User.user_id)
@@ -333,8 +333,16 @@ class ClassModel(BaseEntity[Class]):
             .distinct(Class.class_id)
             .all()
         )
-        data = [d for d in data if d[-1] in ["absent", "late"]]
-        return self.add_headers(headers, data)
+        # Include absent, late, or audit-failed records
+        filtered_data = []
+        for row in data:
+            status = row[7]  # Status is now at index 7
+            audit_status = row[8]  # Audit status at index 8
+            # Check if status is absent/late, or if audit failed
+            if status in ["absent", "late"] or audit_status == 'fail':
+                filtered_data.append(row)
+        
+        return self.add_headers(headers, filtered_data)
 
     def student_attendance_monthly(self, user_id, num_months: int=4):
         n_months_ago = datetime.now() - timedelta(days=30 * num_months)

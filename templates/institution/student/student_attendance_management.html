@@ -219,6 +219,12 @@
         border: 1px solid #f59e0b;
     }
 
+    .month-status.audit-fail {
+        background-color: #fee2e2;
+        color: #7f1d1d;
+        border: 1px solid #ef4444;
+    }
+
     /* Charts */
     .chart-container {
         width: 100%;
@@ -892,7 +898,7 @@
                     <!-- Absent Classes -->
                     <div class="absent-section">
                         <div class="section-header">
-                            <h3 class="section-title">Absent Classes</h3>
+                            <h3 class="section-title">Absent & Failed Audits</h3>
                             <a href="{{ url_for('student.appeal_management') }}" class="section-count">{{classes|length}} classes</a>
                         </div>
 
@@ -903,7 +909,11 @@
                                     <div class="absent-class">
                                         <div class="flex-column justify-between">
                                             <strong>{{class.course_code}}</strong>
-                                            <span class="month-status warning">{{class.status|capitalize}}</span>
+                                            {% if class.audit_status == 'fail' %}
+                                                <span class="month-status audit-fail">Audit Failed</span>
+                                            {% else %}
+                                                <span class="month-status warning">{{class.status|capitalize}}</span>
+                                            {% endif %}
                                         </div>
                                         <span>{{class.course_name}}</span>
                                     </div>
@@ -928,7 +938,7 @@
                         </div>
 
                         <div class="view-all">
-                            <a href="{{ url_for('student.appeal_management') }}" class="view-all-link">View All Absent Records →</a>
+                            <a href="{{ url_for('student.appeal_management') }}" class="view-all-link">View All Records Requiring Attention →</a>
                         </div>
                     </div>
                 </div>

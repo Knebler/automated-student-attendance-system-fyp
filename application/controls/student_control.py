@@ -259,8 +259,9 @@ class StudentControl:
                     )
                 
                     # Determine if appeal is possible
+                    # Can appeal if: status is absent/late OR audit failed
                     can_appeal = (
-                        record.status in ['absent', 'late'] and 
+                        (record.status in ['absent', 'late'] or record.audit_status == 'fail') and 
                         not appeal_exists and
                         (datetime.now() - class_obj.start_time).days <= 7  # Within 7 days
                     )
@@ -279,7 +280,9 @@ class StudentControl:
                         'status': record.status,
                         'recorded_at': record.recorded_at.strftime("%Y-%m-%d %H:%M") if record.recorded_at else None,
                         'notes': record.notes,
-                        'can_appeal': can_appeal
+                        'can_appeal': can_appeal,
+                        'audit_status': record.audit_status,
+                        'audited_at': record.audited_at.strftime("%Y-%m-%d %H:%M") if record.audited_at else None
                     })
             
                 # Generate month filter options (last 6 months)
@@ -473,12 +476,12 @@ class StudentControl:
                         'message': 'An appeal for this attendance record already exists'
                     }
                 
-                # Check if status is appealable (absent or late)
-                if record.status not in ['absent', 'late']:
+                # Check if status is appealable (absent, late, or audit failed)
+                if record.status not in ['absent', 'late'] and record.audit_status != 'fail':
                     return {
                         'success': False,
                         'can_appeal': False,
-                        'message': 'Only absent or late records can be appealed'
+                        'message': 'Only absent, late, or audit-failed records can be appealed'
                     }
                 
                 return {

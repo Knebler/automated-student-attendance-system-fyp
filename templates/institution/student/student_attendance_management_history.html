@@ -349,6 +349,38 @@
         border: 1px solid #6366f1;
     }
 
+    /* Audit Status Badges */
+    .audit-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        font-weight: 700;
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .audit-status.pass {
+        background: linear-gradient(135deg, #d1fae5, #10b981);
+        color: #064e3b;
+        border: 1px solid #10b981;
+    }
+
+    .audit-status.fail {
+        background: linear-gradient(135deg, #fee2e2, #ef4444);
+        color: #7f1d1d;
+        border: 1px solid #ef4444;
+    }
+
+    .audit-status.no_audit {
+        background: linear-gradient(135deg, #f3f4f6, #9ca3af);
+        color: #374151;
+        border: 1px solid #9ca3af;
+    }
+
     .status-icon {
         font-size: 1rem;
     }
@@ -866,8 +898,21 @@
                     {% for record in records %}
                     <div class="record-item">
                         <div class="record-header">
-                            <span class="record-status {{ record.status }}">{{ record.status|title }}</span>
-                            <span class="record-date">{{ record.date_formatted }}</span>
+                            <div class="status-date-wrapper">
+                                <span class="record-status {{ record.status }}">{{ record.status|title }}</span>
+                                <span class="record-date">{{ record.date_formatted }}</span>
+                            </div>
+                            {% if record.audit_status and record.audit_status != 'no_audit' %}
+                            <div style="margin-top: 0.5rem;">
+                                <span class="audit-status {{ record.audit_status }}">
+                                    {% if record.audit_status == 'pass' %}
+                                        ✓ Audit: Pass
+                                    {% elif record.audit_status == 'fail' %}
+                                        ✗ Audit: Fail
+                                    {% endif %}
+                                </span>
+                            </div>
+                            {% endif %}
                         </div>
                         <div class="record-details">
                             <div class="detail-item">
@@ -886,8 +931,23 @@
                                 <span class="detail-label">Lecturer:</span>
                                 <span class="detail-value">{{ record.lecturer_name }}</span>
                             </div>
+                            {% if record.audit_status and record.audit_status != 'no_audit' %}
+                            <div class="detail-item">
+                                <span class="detail-label">Audit Status:</span>
+                                <span class="detail-value">
+                                    {% if record.audit_status == 'pass' %}
+                                        <span style="color: #10b981; font-weight: 700;">✓ Verified (Pass)</span>
+                                    {% elif record.audit_status == 'fail' %}
+                                        <span style="color: #ef4444; font-weight: 700;">✗ Not Verified (Fail)</span>
+                                    {% endif %}
+                                    {% if record.audited_at %}
+                                        <br><small style="color: var(--text-light); font-size: 0.85rem;">Audited on {{ record.audited_at }}</small>
+                                    {% endif %}
+                                </span>
+                            </div>
+                            {% endif %}
                         </div>
-                        {% if record.status in ['absent', 'late'] and record.can_appeal %}
+                        {% if record.can_appeal %}
                         <div class="record-actions">
                             <a href="{{ url_for('student.appeal_form', attendance_record_id=record.attendance_id) }}" class="btn-custom btn-appeal">Appeal</a>
                         </div>

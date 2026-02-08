@@ -20,6 +20,13 @@ ROOT_URL = "mysql+pymysql://{}:{}@{}:{}".format(*db_details[:-1])
 connect_args = {}
 if os.environ['DB_SSL_ENABLED'] == 'true':
     ssl_ca_path = os.getenv('DB_SSL_CA', None)
+    
+    # If path is relative, resolve it relative to the project root (where .env is located)
+    if not os.path.isabs(ssl_ca_path):
+        # Get the project root directory (2 levels up from database/base.py)
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        ssl_ca_path = os.path.join(project_root, ssl_ca_path)
+    
     if not os.path.exists(ssl_ca_path):
         print(f"SSL enabled but certificate not found at {ssl_ca_path}")
         print("Download it using: curl -o DigiCertGlobalRootCA.crt https://cacerts.digicert.com/DigiCertGlobalRootCA.crt")

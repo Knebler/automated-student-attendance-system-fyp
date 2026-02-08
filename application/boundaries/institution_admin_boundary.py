@@ -6,7 +6,7 @@ from application.controls.import_data_control import ALL_IMPORT_JOBS, submit_imp
 from application.entities2 import *
 from database.base import get_session
 from database.models import *
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from collections import defaultdict
 import json
 import time
@@ -1605,4 +1605,385 @@ def delete_announcement(announcement_id):
     
     flash('Announcement deleted successfully', 'success')
     return redirect(url_for('institution.manage_announcements'))
+
+
+# =====================
+# ATTENDANCE AUDIT ROUTES
+# =====================
+
+@institution_bp.route('/attendance/class/<int:class_id>/audit', methods=['GET'])
+@requires_roles('admin')
+def audit_class_attendance(class_id):
+    """View audit page for a specific class"""
+    institution_id = session.get('institution_id')
+    
+    with get_session() as db_session:
+        class_model = ClassModel(db_session)
+        
+        # Verify class belongs to institution
+        if not class_model.class_is_institution(class_id, institution_id):
+            abort(401)
+        
+        class_obj = class_model.get_by_id(class_id)
+        if not class_obj:
+            flash('Class not found', 'error')
+            return redirect(url_for('institution.manage_attendance'))
+        
+        # Get attendance records with audit status
+        records = db_session.query(AttendanceRecord, User).join(
+            User, AttendanceRecord.student_id == User.user_id
+        ).filter(
+            AttendanceRecord.class_id == class_id
+        ).all()
+        
+        # Format records for display
+        formatted_records = []
+        for record, student in records:
+            formatted_records.append({
+                'attendance_id': record.attendance_id,
+                'student_id': student.user_id,
+                'student_name': student.name,
+                'student_email': student.email,
+                'status': record.status,
+                'audit_status': record.audit_status,
+                'audited_at': record.audited_at,
+                'marked_by': record.marked_by,
+                'recorded_at': record.recorded_at
+            })
+        
+        context = {
+            'class': class_model.admin_class_details(class_id),
+            'records': formatted_records,
+            'class_id': class_id,
+            'course_id': class_obj.course_id,
+            'course_name': class_model.get_course_name(class_id),
+            'class_status': class_obj.status,
+        }
+    
+    return render_template('institution/admin/institution_admin_audit_attendance.html', **context)
+
+
+@institution_bp.route('/attendance/audit/<int:attendance_id>', methods=['POST'])
+@requires_roles('admin')
+def audit_attendance_record(attendance_id):
+    """Audit a single attendance record using facial recognition"""
+    institution_id = session.get('institution_id')
+    admin_user_id = session.get('user_id')
+    
+    data = request.get_json() or {}
+    image_data = data.get('image')
+    
+    if not image_data:
+        return jsonify({'success': False, 'error': 'Image data is required'}), 400
+    
+    try:
+        with get_session() as db_session:
+            # Get attendance record
+            attendance_record = db_session.query(AttendanceRecord).filter(
+                AttendanceRecord.attendance_id == attendance_id
+            ).first()
+            
+            if not attendance_record:
+                return jsonify({'success': False, 'error': 'Attendance record not found'}), 404
+            
+            # Verify the class belongs to the institution
+            class_obj = db_session.query(Class).join(Course).filter(
+                Class.class_id == attendance_record.class_id,
+                Course.institution_id == institution_id
+            ).first()
+            
+            if not class_obj:
+                return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+            
+            # Get student info
+            student = db_session.query(User).filter(
+                User.user_id == attendance_record.student_id
+            ).first()
+            
+            if not student:
+                return jsonify({'success': False, 'error': 'Student not found'}), 404
+            
+            # Use facial recognition to verify
+            from application.controls.facial_recognition_control import FacialRecognitionControl
+            import base64
+            
+            fr_control = FacialRecognitionControl()
+            if not fr_control.initialize(current_app):
+                return jsonify({
+                    'success': False,
+                    'error': 'Facial recognition system not initialized'
+                }), 500
+            
+            # Decode base64 image
+            try:
+                image_bytes = base64.b64decode(
+                    image_data.split(',')[1] if ',' in image_data else image_data
+                )
+            except Exception as e:
+                return jsonify({'success': False, 'error': f'Invalid image data: {str(e)}'}), 400
+            
+            # Recognize face
+            recognition_result = fr_control.recognize_face_from_image(image_bytes)
+            
+            if not recognition_result['success']:
+                # Facial recognition failed
+                attendance_record.audit_status = 'fail'
+                attendance_record.audited_at = datetime.now()
+                attendance_record.audited_by = admin_user_id
+                db_session.commit()
+                
+                return jsonify({
+                    'success': True,
+                    'audit_result': 'fail',
+                    'message': f"Audit failed: {recognition_result.get('error', 'Face not recognized')}",
+                    'attendance_id': attendance_id
+                })
+            
+            # Check if recognized face matches the student
+            recognitions = recognition_result.get('recognitions', [])
+            if not recognitions:
+                attendance_record.audit_status = 'fail'
+                attendance_record.audited_at = datetime.now()
+                attendance_record.audited_by = admin_user_id
+                db_session.commit()
+                
+                return jsonify({
+                    'success': True,
+                    'audit_result': 'fail',
+                    'message': 'No faces recognized in the image',
+                    'attendance_id': attendance_id
+                })
+            
+            # Get best recognition match
+            best_match = max(recognitions, key=lambda r: r['confidence'])
+            
+            # Check if the recognized student ID matches
+            recognized_id = best_match.get('student_id')
+            confidence = best_match.get('confidence', 0)
+            
+            # Determine audit result based on match and confidence
+            if confidence < 70:
+                audit_result = 'fail'
+                message = f"Low confidence ({confidence:.1f}%) - Audit failed"
+            elif str(recognized_id) == str(student.user_id):
+                audit_result = 'pass'
+                message = f"Student verified successfully ({confidence:.1f}% confidence)"
+            else:
+                audit_result = 'fail'
+                message = f"Face does not match expected student (detected: {best_match.get('name')})"
+            
+            # Update attendance record
+            attendance_record.audit_status = audit_result
+            attendance_record.audited_at = datetime.now()
+            attendance_record.audited_by = admin_user_id
+            db_session.commit()
+            
+            return jsonify({
+                'success': True,
+                'audit_result': audit_result,
+                'message': message,
+                'confidence': confidence,
+                'recognized_name': best_match.get('name'),
+                'attendance_id': attendance_id
+            })
+            
+    except Exception as e:
+        current_app.logger.error(f"Error auditing attendance: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'Error processing audit: {str(e)}'
+        }), 500
+
+
+@institution_bp.route('/attendance/class/<int:class_id>/bulk-audit', methods=['POST'])
+@requires_roles('admin')
+def bulk_audit_class(class_id):
+    """Bulk audit all attendance records for a class using a class photo"""
+    institution_id = session.get('institution_id')
+    admin_user_id = session.get('user_id')
+    
+    data = request.get_json() or {}
+    image_data = data.get('image')
+    
+    if not image_data:
+        return jsonify({'success': False, 'error': 'Image data is required for bulk audit'}), 400
+    
+    try:
+        with get_session() as db_session:
+            class_model = ClassModel(db_session)
+            
+            # Verify class belongs to institution
+            if not class_model.class_is_institution(class_id, institution_id):
+                return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+            
+            # Get all attendance records that haven't been audited or failed audit
+            records = db_session.query(AttendanceRecord, User).join(
+                User, AttendanceRecord.student_id == User.user_id
+            ).filter(
+                AttendanceRecord.class_id == class_id,
+                AttendanceRecord.status.in_(['present', 'late'])  # Only audit students marked as present/late
+            ).all()
+            
+            if not records:
+                return jsonify({
+                    'success': True,
+                    'message': 'No records to audit',
+                    'audited_count': 0,
+                    'results': []
+                })
+            
+            # Use facial recognition to detect multiple faces
+            from application.controls.facial_recognition_control import FacialRecognitionControl
+            import base64
+            
+            fr_control = FacialRecognitionControl()
+            if not fr_control.initialize(current_app):
+                return jsonify({
+                    'success': False,
+                    'error': 'Facial recognition system not initialized'
+                }), 500
+            
+            # Decode base64 image
+            try:
+                image_bytes = base64.b64decode(
+                    image_data.split(',')[1] if ',' in image_data else image_data
+                )
+            except Exception as e:
+                return jsonify({'success': False, 'error': f'Invalid image data: {str(e)}'}), 400
+            
+            # Recognize all faces in the image
+            recognition_result = fr_control.recognize_face_from_image(image_bytes)
+            
+            if not recognition_result['success']:
+                return jsonify({
+                    'success': False,
+                    'error': f"Face recognition failed: {recognition_result.get('error', 'Unknown error')}"
+                }), 400
+            
+            # Get all recognized faces
+            recognitions = recognition_result.get('recognitions', [])
+            
+            if not recognitions:
+                return jsonify({
+                    'success': False,
+                    'error': 'No faces detected in the image. Please ensure students are clearly visible.'
+                }), 400
+            
+            # Create a map of student_id to best recognition match
+            recognized_student_ids = {}
+            for recognition in recognitions:
+                student_id = recognition.get('student_id')
+                confidence = recognition.get('confidence', 0)
+                
+                if student_id and confidence >= 70:  # Minimum confidence threshold
+                    # Keep the highest confidence match for each student
+                    if student_id not in recognized_student_ids or confidence > recognized_student_ids[student_id]['confidence']:
+                        recognized_student_ids[student_id] = {
+                            'confidence': confidence,
+                            'name': recognition.get('name')
+                        }
+            
+            # Process each attendance record
+            audit_results = []
+            pass_count = 0
+            fail_count = 0
+            
+            for record, student in records:
+                student_id_str = str(student.user_id)
+                
+                if student_id_str in recognized_student_ids:
+                    # Student was recognized - PASS
+                    match_info = recognized_student_ids[student_id_str]
+                    record.audit_status = 'pass'
+                    record.audited_at = datetime.now()
+                    record.audited_by = admin_user_id
+                    
+                    audit_results.append({
+                        'attendance_id': record.attendance_id,
+                        'student_id': student.user_id,
+                        'student_name': student.name,
+                        'audit_result': 'pass',
+                        'confidence': match_info['confidence'],
+                        'message': f"Verified ({match_info['confidence']:.1f}% confidence)"
+                    })
+                    pass_count += 1
+                else:
+                    # Student was NOT recognized - FAIL
+                    record.audit_status = 'fail'
+                    record.audited_at = datetime.now()
+                    record.audited_by = admin_user_id
+                    
+                    audit_results.append({
+                        'attendance_id': record.attendance_id,
+                        'student_id': student.user_id,
+                        'student_name': student.name,
+                        'audit_result': 'fail',
+                        'confidence': 0,
+                        'message': 'Not detected in class photo'
+                    })
+                    fail_count += 1
+            
+            db_session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': f'Bulk audit completed: {pass_count} passed, {fail_count} failed',
+                'audited_count': pass_count + fail_count,
+                'pass_count': pass_count,
+                'fail_count': fail_count,
+                'faces_detected': len(recognitions),
+                'results': audit_results
+            })
+            
+    except Exception as e:
+        current_app.logger.error(f"Error in bulk audit: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'Error processing bulk audit: {str(e)}'
+        }), 500
+
+
+@institution_bp.route('/attendance/audit/<int:attendance_id>/manual', methods=['POST'])
+@requires_roles('admin')
+def manual_audit_update(attendance_id):
+    """Manually update audit status without facial recognition"""
+    institution_id = session.get('institution_id')
+    admin_user_id = session.get('user_id')
+    
+    data = request.get_json() or {}
+    audit_status = data.get('audit_status')
+    
+    if audit_status not in ['pass', 'fail', 'no_audit']:
+        return jsonify({'success': False, 'error': 'Invalid audit status'}), 400
+    
+    with get_session() as db_session:
+        # Get attendance record
+        attendance_record = db_session.query(AttendanceRecord).filter(
+            AttendanceRecord.attendance_id == attendance_id
+        ).first()
+        
+        if not attendance_record:
+            return jsonify({'success': False, 'error': 'Attendance record not found'}), 404
+        
+        # Verify the class belongs to the institution
+        class_obj = db_session.query(Class).join(Course).filter(
+            Class.class_id == attendance_record.class_id,
+            Course.institution_id == institution_id
+        ).first()
+        
+        if not class_obj:
+            return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+        
+        # Update audit status
+        attendance_record.audit_status = audit_status
+        attendance_record.audited_at = datetime.now()
+        attendance_record.audited_by = admin_user_id
+        db_session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Audit status updated to {audit_status}',
+            'attendance_id': attendance_id,
+            'audit_status': audit_status
+        })
             

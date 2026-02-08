@@ -1629,11 +1629,12 @@ def audit_class_attendance(class_id):
             flash('Class not found', 'error')
             return redirect(url_for('institution.manage_attendance'))
         
-        # Get attendance records with audit status
+        # Get attendance records with audit status (only present students)
         records = db_session.query(AttendanceRecord, User).join(
             User, AttendanceRecord.student_id == User.user_id
         ).filter(
-            AttendanceRecord.class_id == class_id
+            AttendanceRecord.class_id == class_id,
+            AttendanceRecord.status == 'present'
         ).all()
         
         # Format records for display

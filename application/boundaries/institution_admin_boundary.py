@@ -1010,11 +1010,18 @@ def manage_attendance():
     institution_id = session.get('institution_id')
     with get_session() as db_session:
         class_model = ClassModel(db_session)
+        course_model = CourseModel(db_session)
         # Update class statuses before fetching
         class_model.update_class_statuses(institution_id=institution_id)
         classes = class_model.get_all_classes_with_attendance(institution_id)
+        
+        # Get unique courses for filtering
+        courses = course_model.get_all(institution_id=institution_id)
+        unique_courses = [{"course_id": c.course_id, "name": c.name} for c in courses]
 
-    return render_template('institution/admin/institution_admin_attendance_management.html', classes=classes)
+    return render_template('institution/admin/institution_admin_attendance_management.html', 
+                         classes=classes, 
+                         courses=unique_courses)
 
 
 @institution_bp.route('/attendance/reports')

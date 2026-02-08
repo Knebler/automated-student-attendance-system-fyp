@@ -325,6 +325,8 @@
                             <p><strong>Selected Plan:</strong> {{ selected_plan.name }}</p>
                             <p><strong>Price:</strong> ${{ "%.2f"|format(selected_plan.price_per_cycle) }} {{ selected_plan.billing_cycle }}</p>
                             {% endif %}
+                            <p><strong>Postal Code:</strong> {{ registration_data.institution_address or '—' }}</p>
+                            <p><strong>Address:</strong> {{ registration_data.detailed_address or '--' }}</p>
                         </div>
                     </div>
                 </div>
@@ -337,9 +339,8 @@
                     <div class="card-body" style="padding: 0;">
                         <form id="payment-form" method="POST" action="{{ url_for('auth.process_payment') }}">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="registration_data" value="{{ registration_data_json }}">
-                            
-                            <!-- Stripe Card Element -->
+                            <input type="hidden" name="registration_data" id="registration_data_hidden" value="{{ registration_data_json }}">
+
                             <div class="mb-3">
                                 <label for="card-element" class="form-label">Credit or Debit Card</label>
                                 <div id="card-element">
@@ -486,7 +487,7 @@
                 spinner.classList.add('d-none');
                 return;
             }
-            
+
             // Add payment method ID to form
             const paymentMethodInput = document.createElement('input');
             paymentMethodInput.type = 'hidden';

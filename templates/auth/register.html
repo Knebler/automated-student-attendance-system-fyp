@@ -198,6 +198,47 @@
         min-width: 0;
     }
 
+    .register-container .postal-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        width: 100%;
+    }
+
+    .register-container .postal-row .form-control {
+        max-width: 8em;
+        flex: 0 0 auto;
+    }
+
+    .register-container .postal-row .btn {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .register-container .postal-help-text {
+        margin-top: 0.5rem;
+    }
+
+    .register-container .warning-text,
+    .register-container .not-found-text {
+        margin-top: 0.25rem;
+    }
+
+    .register-container .detailed-address-label {
+        margin-top: 0.5rem;
+    }
+
+    .register-container .detailed-address-value {
+        margin-top: 0.25rem;
+    }
+
+    .register-container .map-wrapper {
+        margin-top: 0.5rem;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid var(--border-soft, #cbd5e1);
+    }
+
     /* Responsive adjustments */
     @media (max-width: 768px) {
         .register-container {
@@ -421,18 +462,20 @@
                             </div>
 
                             <div class="mb-3 d-none" id="inst-address-group">
-                                <label for="institution_address" class="form-label">Institution Address</label>
-                                <input type="text" class="form-control" id="institution_address" name="institution_address" placeholder="Postal address or campus location">
-                            </div>
-
-                            <div class="mb-3 d-none" id="inst-phone-group">
-                                <label for="phone_number" class="form-label">Contact Phone</label>
-                                <input type="text" class="form-control" id="phone_number" name="phone_number" placeholder="Optional phone number">
-                            </div>
-
-                            <div class="mb-3 d-none" id="inst-message-group">
-                                <label for="message" class="form-label">Message</label>
-                                <textarea class="form-control" id="message" name="message" rows="3" placeholder="Optional message to the platform managers."></textarea>
+                                <label for="institution_address" class="form-label">Singapore Postal Code</label>
+                                <div class="postal-row">
+                                    <input type="text" class="form-control" id="institution_address" name="institution_address" placeholder="e.g., 530123" maxlength="6" inputmode="numeric" autocomplete="postal-code" pattern="[0-9]{6}">
+                                    <button type="button" class="btn btn-primary" id="locate-on-map-btn">Locate on Map</button>
+                                </div>
+                                <input type="hidden" name="detailed_address" id="detailed_address" value="">
+                                <small class="form-text text-muted postal-help-text">6-digit SG postal code only.</small>
+                                <p class="form-text text-muted warning-text d-none" id="postal-warning">Please enter a 6-digit Singapore postal code.</p>
+                                <p class="form-text text-muted not-found-text d-none" id="postal-not-found">Not found. Please check the postal code.</p>
+                                <p class="form-text text-muted detailed-address-label d-none" id="detailed-address-label">Address Details:</p>
+                                <p class="form-text detailed-address-value d-none" id="detailed-address-text" style="color: #0f172a;"></p>
+                                <div class="map-wrapper d-none" id="map-container">
+                                    <iframe id="map-iframe" title="Map location" style="width: 100%; height: 280px; border: 0;"></iframe>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -453,8 +496,6 @@
         const instGroup = document.getElementById('inst-name-group');
         const instInput = document.getElementById('institution_name');
         const instAddressGroup = document.getElementById('inst-address-group');
-        const instPhoneGroup = document.getElementById('inst-phone-group');
-        const instMessageGroup = document.getElementById('inst-message-group');
         const instPlanGroup = document.getElementById('inst-plan-group');
         const selectedPlan = document.getElementById('selected_plan_id');
 
@@ -464,8 +505,6 @@
                 // Show all institution registration fields
                 instGroup.classList.remove('d-none');
                 instAddressGroup.classList.remove('d-none');
-                instPhoneGroup.classList.remove('d-none');
-                instMessageGroup.classList.remove('d-none');
                 instPlanGroup.classList.remove('d-none');
 
                 instInput.setAttribute('required', 'required');
@@ -477,8 +516,6 @@
                 // Students / lecturers pick an existing institution
                 instGroup.classList.add('d-none');
                 instAddressGroup.classList.add('d-none');
-                instPhoneGroup.classList.add('d-none');
-                instMessageGroup.classList.add('d-none');
                 instPlanGroup.classList.add('d-none');
 
                 instInput.removeAttribute('required');
@@ -490,8 +527,6 @@
                 // Other roles (platform_manager) - hide all institution-specific fields
                 instGroup.classList.add('d-none');
                 instAddressGroup.classList.add('d-none');
-                instPhoneGroup.classList.add('d-none');
-                instMessageGroup.classList.add('d-none');
                 instPlanGroup.classList.add('d-none');
 
                 instInput.removeAttribute('required');
@@ -784,7 +819,105 @@
         });
     })();
 
+    // Singapore postal code map
+    (function() {
+        const postalInput = document.getElementById('institution_address');
+        const locateBtn = document.getElementById('locate-on-map-btn');
+        const mapContainer = document.getElementById('map-container');
+        const mapIframe = document.getElementById('map-iframe');
+        const detailedAddressLabel = document.getElementById('detailed-address-label');
+        const detailedAddressText = document.getElementById('detailed-address-text');
+        const postalWarning = document.getElementById('postal-warning');
+        const postalNotFound = document.getElementById('postal-not-found');
+        const detailedAddressInput = document.getElementById('detailed_address');
+        const SG_POSTAL_REGEX = /^[0-9]{6}$/;
+        const PARTIAL_MSG = 'Singapore (detailed address not available for this postal code)';
 
+        if (!postalInput || !locateBtn || !mapContainer || !mapIframe) return;
+
+        function showMap(url) {
+            mapIframe.src = url;
+            mapContainer.classList.remove('d-none');
+        }
+
+        function hideMap() {
+            mapIframe.src = '';
+            mapContainer.classList.add('d-none');
+        }
+
+        function setDetailedAddress(displayText, valueToStore) {
+            var show = (displayText === null || displayText === '') ? '' : String(displayText);
+            var store = (valueToStore === undefined) ? show : ((valueToStore === null || valueToStore === '') ? '' : String(valueToStore));
+            if (detailedAddressInput) detailedAddressInput.value = store;
+            if (detailedAddressLabel) detailedAddressLabel.classList.toggle('d-none', !show);
+            if (detailedAddressText) {
+                detailedAddressText.textContent = show;
+                detailedAddressText.classList.toggle('d-none', !show);
+            }
+        }
+
+        function showNotFound() {
+            if (postalNotFound) postalNotFound.classList.remove('d-none');
+        }
+
+        function hideNotFound() {
+            if (postalNotFound) postalNotFound.classList.add('d-none');
+        }
+
+        function isGenericSingapore(displayName) {
+            var s = (displayName || '').trim();
+            return s === 'Singapore' || s === 'Singapore, Singapore';
+        }
+
+        function updatePostalState() {
+            var raw = (postalInput.value || '').trim();
+            var digitsOnly = raw.replace(/\D/g, '').slice(0, 6);
+            if (digitsOnly !== raw) postalInput.value = digitsOnly;
+            var len = digitsOnly.length;
+            if (postalWarning) postalWarning.classList.toggle('d-none', len === 0 || len === 6);
+            locateBtn.disabled = len !== 6;
+        }
+
+        postalInput.addEventListener('input', updatePostalState);
+        postalInput.addEventListener('change', updatePostalState);
+        updatePostalState();
+
+        locateBtn.addEventListener('click', function() {
+            var raw = (postalInput.value || '').trim();
+            if (!SG_POSTAL_REGEX.test(raw)) return;
+
+            hideNotFound();
+            hideMap();
+            setDetailedAddress('', '');
+
+            var query = raw + ' Singapore';
+            var nominatimUrl = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query);
+            fetch(nominatimUrl, { headers: { 'Accept': 'application/json' } })
+                .then(function(res) { return res.json(); })
+                .then(function(results) {
+                    if (!results || results.length === 0) {
+                        showNotFound();
+                        setDetailedAddress('', '');
+                        return;
+                    }
+                    var first = results[0];
+                    var displayName = (first && first.display_name) ? String(first.display_name).trim() : '';
+                    if (isGenericSingapore(displayName)) {
+                        hideNotFound();
+                        setDetailedAddress(PARTIAL_MSG, '');
+                    } else {
+                        hideNotFound();
+                        setDetailedAddress(displayName || query, displayName || query);
+                    }
+                    var embedUrl = 'https://www.google.com/maps?q=' + encodeURIComponent(query) + '&output=embed';
+                    showMap(embedUrl);
+                })
+                .catch(function() {
+                    showNotFound();
+                    setDetailedAddress('', '');
+                });
+        });
+    })();
 
     // required field + email format
     (function () {
@@ -854,6 +987,14 @@
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(value)) {
             showError(field, 'Please enter a valid email address.');
+            return false;
+        }
+        }
+
+        // Singapore postal code (6 digits) when institution address field is visible
+        if (field.id === 'institution_address' && value !== '' && !field.closest('.d-none')) {
+        if (!/^[0-9]{6}$/.test(value)) {
+            showError(field, 'Please enter a 6-digit Singapore postal code.');
             return false;
         }
         }

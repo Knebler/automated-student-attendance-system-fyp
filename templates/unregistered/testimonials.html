@@ -108,6 +108,30 @@
         line-height: 1.6;
     }
 
+    /* Filter button */
+    .category-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .category-tab {
+        cursor: pointer;
+    }
+
+    .category-tab.active {
+        background-color: var(--primary-dark);
+        color: white;
+        border-color: var(--primary-dark);
+    }
+
+    .testimonial-empty-state {
+        margin-top: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
     /* Testimonials Grid */
     .testimonials-grid {
         display: grid;
@@ -132,7 +156,7 @@
     }
 
     .testimonial-card:hover {
-        transform: translateY(-4px);
+        transform: translateY(-5px);
         box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
         text-decoration: none;
         color: inherit;
@@ -201,13 +225,13 @@
 
     .star {
         color: #fbbf24;
-        font-size: 1.1rem;
+        font-size: 1.2rem;
     }
 
-    /* Read More Button - matches site .btn-outline */
+    /* Read More Button */
     .read-more-btn {
         margin-top: 1.5rem;
-        padding: 0.75rem 2rem;
+        padding: 0.75rem 1.5rem;
         min-height: 2.75rem;
         box-sizing: border-box;
         background: #fff;
@@ -390,14 +414,6 @@
             grid-template-columns: repeat(3, 1fr);
             gap: 1.5rem;
         }
-
-        .stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-
-        .trust-logos {
-            grid-template-columns: repeat(2, 1fr);
-        }
     }
 
     @media (max-width: 768px) {
@@ -409,37 +425,13 @@
             font-size: 2rem;
         }
 
-        .stats-section {
-            padding: 2rem 1.5rem;
-        }
-
-        .stats-grid {
-            grid-template-columns: 1fr;
-            gap: 1.5rem;
-        }
-
-        .trust-logos {
-            grid-template-columns: 1fr;
-            max-width: 280px;
-        }
-
-        .trust-logo {
-            min-width: 0;
-            width: 100%;
-        }
-
-        .video-grid {
-            grid-template-columns: 1fr;
-        }
-
         .cta-section {
             padding: 2rem 1.5rem;
         }
 
         .read-more-btn {
-            padding: 0.5rem 1.5rem;
-            min-height: 2.5rem;
-            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
         }
     }
 
@@ -451,10 +443,6 @@
 
         .page-header h1 {
             font-size: 1.75rem;
-        }
-
-        .stat-item h3 {
-            font-size: 2rem;
         }
 
         .testimonials-grid {
@@ -512,7 +500,7 @@
 <div class="testimonials-grid">
     {% if testimonials and testimonials|length > 0 %}
         {% for testimonial in testimonials %}
-        <a href="{{ url_for('main.testimonial_detail', testimonial_id=testimonial.id) }}" class="testimonial-card">
+        <a href="{{ url_for('main.testimonial_detail', testimonial_id=testimonial.id) }}" class="testimonial-card" data-role="{{ testimonial.user_role }}">
             <div class="testimonial-quote">"</div>
             <div class="testimonial-content">
                 <div class="testimonial-rating">
@@ -575,14 +563,55 @@
 <!-- CTA Section -->
 <div class="cta-section">
     <h2>Join Our Satisfied Customers</h2>
-    <p>See for yourself why thousands of organizations trust AttendAI for their attendance management needs. Register now and experience the difference.</p>
+    <p>See for yourself why thousands of organizations trust AttendAI for their attendance management needs. Start your free trial today and experience the difference.</p>
     <div class="cta-buttons">
-    {% if not session.user %}
         <a class="btn-primary" href="{{ url_for('auth.register') }}">Register With Us</a>
         <a class="btn-outline" href="{{ url_for('main.subscriptions') }}">View Pricing</a>
-    {% else %}
-        <a class="btn-outline" href="{{ url_for('main.features') }}">Explore Features</a>
-    {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    var filterRow = document.getElementById('testimonial-filter-row');
+    var emptyMsg = document.getElementById('testimonial-filter-empty');
+    var cards = document.querySelectorAll('.testimonials-grid .testimonial-card[data-role]');
+    if (!filterRow || !cards.length) return;
+
+    function setActivePill(activeBtn) {
+        filterRow.querySelectorAll('.category-tab').forEach(function(btn) {
+            btn.classList.remove('active');
+            btn.setAttribute('aria-pressed', 'false');
+        });
+        activeBtn.classList.add('active');
+        activeBtn.setAttribute('aria-pressed', 'true');
+    }
+
+    function filterByRole(role) {
+        var visible = 0;
+        cards.forEach(function(card) {
+            var cardRole = (card.getAttribute('data-role') || '').toLowerCase();
+            var show = role === 'all' || cardRole === role;
+            card.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+        if (emptyMsg) {
+            if (role !== 'all' && visible === 0) {
+                emptyMsg.classList.remove('d-none');
+            } else {
+                emptyMsg.classList.add('d-none');
+            }
+        }
+    }
+
+    filterRow.querySelectorAll('button[data-filter]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var role = this.getAttribute('data-filter');
+            setActivePill(this);
+            filterByRole(role);
+        });
+    });
+})();
+</script>
 {% endblock %}

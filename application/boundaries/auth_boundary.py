@@ -121,9 +121,8 @@ def register():
                 'password': password,
                 'role': role,
                 'institution_name': institution_name,
-                'institution_address': request.form.get('institution_address') or '',
-                'phone_number': request.form.get('phone_number') or '',
-                'message': request.form.get('message') or '',
+                'institution_address': (request.form.get('institution_address') or '').strip(),
+                'detailed_address': (request.form.get('detailed_address') or '').strip(),
                 'selected_plan_id': request.form.get('selected_plan_id') or None
             }
             
@@ -330,9 +329,7 @@ def complete_registration():
         'email': registration_data['email'],
         'full_name': registration_data['name'],
         'institution_name': registration_data['institution_name'],
-        'institution_address': registration_data.get('institution_address', ''),
-        'phone_number': registration_data.get('phone_number', ''),
-        'message': registration_data.get('message', ''),
+        'institution_address': registration_data.get('detailed_address') or registration_data.get('institution_address', ''),
         'selected_plan_id': registration_data.get('selected_plan_id'),
         'stripe_subscription_id': registration_data.get('stripe_subscription_id'),
         'stripe_customer_id': registration_data.get('stripe_customer_id')

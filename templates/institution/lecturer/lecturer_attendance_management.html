@@ -83,6 +83,7 @@ AttendAI{% endblock %} {% block content %}
   <div id="liveUpdateIndicator" class="live-update-indicator mb-3">
     <span class="pulse-dot"></span>
     <span id="liveUpdateText">Live updates active</span>
+    <span id="monitoringStatus" class="monitoring-badge">Monitoring: OFF</span>
   </div>
 
   <!-- Webcam Recognition Panel -->
@@ -204,6 +205,10 @@ AttendAI{% endblock %} {% block content %}
             >{{ student.status | default('Unmarked') }}</span
           >
           <span class="last-updated">{{ student.recorded_at | default('') }}</span>
+          <span class="last-seen-indicator" style="display: none;">
+            <span class="last-seen-dot"></span>
+            <span class="last-seen-text"></span>
+          </span>
         </div>
 
         <div class="attendance-controls">
@@ -307,6 +312,21 @@ AttendAI{% endblock %} {% block content %}
     100% { transform: scale(1); opacity: 1; }
   }
 
+  .monitoring-badge {
+    margin-left: auto;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: #fef3c7;
+    color: #d97706;
+  }
+
+  .monitoring-badge.active {
+    background: #d1fae5;
+    color: #059669;
+  }
+
   .class-info-card {
     background-color: var(--primary-dark);
     color: white;
@@ -334,10 +354,6 @@ AttendAI{% endblock %} {% block content %}
     font-size: 1rem;
   }
 
-  .detail-icon {
-    font-size: 1.25rem;
-  }
-
   .search-section {
     background-color: var(--primary-light);
     border-radius: 15px;
@@ -358,12 +374,6 @@ AttendAI{% endblock %} {% block content %}
     border-radius: 50px;
     background-color: white;
     font-size: 0.9rem;
-    color: var(--text-dark);
-  }
-
-  .search-box input:focus {
-    outline: none;
-    border-color: var(--primary-dark);
   }
 
   .search-icon {
@@ -371,7 +381,6 @@ AttendAI{% endblock %} {% block content %}
     left: 1rem;
     top: 50%;
     transform: translateY(-50%);
-    color: var(--text-light);
   }
 
   .filter-select {
@@ -380,12 +389,7 @@ AttendAI{% endblock %} {% block content %}
     border-radius: 50px;
     background-color: white;
     font-size: 0.9rem;
-    color: var(--text-dark);
     min-width: 180px;
-  }
-
-  .btn-icon {
-    margin-right: 0.5rem;
   }
 
   .btn-recognition {
@@ -394,12 +398,6 @@ AttendAI{% endblock %} {% block content %}
     color: white !important;
     padding: 0.875rem 1.5rem !important;
     font-weight: 600 !important;
-  }
-
-  .btn-recognition:hover {
-    background: linear-gradient(135deg, #047857 0%, #065f46 100%) !important;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
   }
 
   .btn-recognition.active {
@@ -413,10 +411,8 @@ AttendAI{% endblock %} {% block content %}
     100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
   }
 
-  /* Webcam Panel Styles */
-  .webcam-panel {
-    animation: slideDown 0.3s ease;
-  }
+  /* Webcam Panel */
+  .webcam-panel { animation: slideDown 0.3s ease; }
 
   @keyframes slideDown {
     from { opacity: 0; transform: translateY(-20px); }
@@ -430,24 +426,12 @@ AttendAI{% endblock %} {% block content %}
     padding: 0.5rem 1rem;
     border-radius: 20px;
     cursor: pointer;
-    font-weight: 500;
-    transition: background 0.2s;
-  }
-
-  .btn-close-panel:hover {
-    background: rgba(255,255,255,0.3);
   }
 
   .webcam-container {
     display: grid;
     grid-template-columns: 1fr 350px;
     gap: 1.5rem;
-  }
-
-  .video-section {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
   }
 
   .video-wrapper {
@@ -462,7 +446,7 @@ AttendAI{% endblock %} {% block content %}
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transform: scaleX(-1); /* Mirror */
+    transform: scaleX(-1);
   }
 
   #overlayCanvas {
@@ -472,7 +456,7 @@ AttendAI{% endblock %} {% block content %}
     width: 100%;
     height: 100%;
     pointer-events: none;
-    transform: scaleX(-1); /* Mirror to match video */
+    transform: scaleX(-1);
   }
 
   .video-status {
@@ -488,16 +472,7 @@ AttendAI{% endblock %} {% block content %}
     color: white;
   }
 
-  .video-status.hidden {
-    display: none;
-  }
-
-  .status-loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-  }
+  .video-status.hidden { display: none; }
 
   .spinner {
     width: 40px;
@@ -508,15 +483,14 @@ AttendAI{% endblock %} {% block content %}
     animation: spin 1s linear infinite;
   }
 
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
   .webcam-controls {
     display: flex;
     align-items: center;
     gap: 1rem;
     flex-wrap: wrap;
+    margin-top: 1rem;
   }
 
   .btn-control {
@@ -528,13 +502,6 @@ AttendAI{% endblock %} {% block content %}
     border-radius: 25px;
     background: white;
     cursor: pointer;
-    font-weight: 500;
-    transition: all 0.2s;
-  }
-
-  .btn-control:hover {
-    border-color: var(--primary-dark);
-    background: var(--primary-light);
   }
 
   .recognition-stats {
@@ -546,35 +513,7 @@ AttendAI{% endblock %} {% block content %}
     border-radius: 25px;
   }
 
-  .stat-item {
-    display: flex;
-    gap: 0.5rem;
-    font-size: 0.9rem;
-  }
-
-  .stat-label {
-    color: var(--text-light);
-  }
-
-  .stat-value {
-    font-weight: 700;
-    color: var(--primary-dark);
-  }
-
-  .recognition-log-section {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .recognition-log-section h4 {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-dark);
-    margin-bottom: 0.75rem;
-  }
-
   .log-container {
-    flex: 1;
     max-height: 200px;
     overflow-y: auto;
     background: #f8fafc;
@@ -584,15 +523,7 @@ AttendAI{% endblock %} {% block content %}
     font-size: 0.8rem;
   }
 
-  .log-entry {
-    padding: 0.25rem 0;
-    border-bottom: 1px solid var(--border-soft);
-  }
-
-  .log-entry:last-child {
-    border-bottom: none;
-  }
-
+  .log-entry { padding: 0.25rem 0; border-bottom: 1px solid #e2e8f0; }
   .log-entry.success { color: #059669; }
   .log-entry.error { color: #dc2626; }
   .log-entry.info { color: #0891b2; }
@@ -614,12 +545,6 @@ AttendAI{% endblock %} {% block content %}
     background: #d1fae5;
     border-radius: 8px;
     border-left: 4px solid #059669;
-    animation: fadeIn 0.3s ease;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateX(-10px); }
-    to { opacity: 1; transform: translateX(0); }
   }
 
   .recognized-item.late {
@@ -637,49 +562,9 @@ AttendAI{% endblock %} {% block content %}
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    font-size: 0.9rem;
   }
 
-  .recognized-item.late .recognized-avatar {
-    background: #d97706;
-  }
-
-  .recognized-info {
-    flex: 1;
-  }
-
-  .recognized-name {
-    font-weight: 600;
-    color: var(--text-dark);
-    font-size: 0.9rem;
-  }
-
-  .recognized-time {
-    font-size: 0.75rem;
-    color: var(--text-light);
-  }
-
-  .recognized-status {
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    background: #059669;
-    color: white;
-  }
-
-  .recognized-item.late .recognized-status {
-    background: #d97706;
-  }
-
-  .empty-recognized {
-    text-align: center;
-    padding: 2rem;
-    color: var(--text-light);
-    font-size: 0.9rem;
-  }
-
-  /* Student Cards */
+  /* Summary */
   .students-header {
     display: flex;
     justify-content: space-between;
@@ -688,33 +573,18 @@ AttendAI{% endblock %} {% block content %}
     gap: 1rem;
   }
 
-  .students-header h3 {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: var(--text-dark);
-    margin: 0;
-  }
-
   .attendance-summary {
     display: flex;
     gap: 1.5rem;
+    flex-wrap: wrap;
   }
 
-  .summary-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9rem;
-  }
-
+  .summary-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
   .summary-item.present { color: #059669; }
   .summary-item.absent { color: #dc2626; }
   .summary-item.late { color: #d97706; }
 
-  .summary-item strong {
-    font-size: 1.1rem;
-  }
-
+  /* Student Cards */
   .students-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -754,11 +624,7 @@ AttendAI{% endblock %} {% block content %}
     border: 2px solid var(--border-color);
   }
 
-  .student-photo img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
+  .student-photo img { width: 100%; height: 100%; object-fit: cover; }
 
   .student-photo-placeholder {
     width: 100%;
@@ -769,28 +635,11 @@ AttendAI{% endblock %} {% block content %}
     justify-content: center;
     font-size: 1.25rem;
     font-weight: bold;
-    color: var(--primary-dark);
-    text-transform: uppercase;
   }
 
-  .student-info h4 {
-    font-size: 1.1rem;
-    font-weight: bold;
-    color: var(--text-dark);
-    margin-bottom: 0.25rem;
-  }
-
-  .student-id {
-    font-size: 0.85rem;
-    color: var(--primary-dark);
-    font-weight: 600;
-    margin-bottom: 0.125rem;
-  }
-
-  .student-email {
-    font-size: 0.8rem;
-    color: var(--text-light);
-  }
+  .student-info h4 { font-size: 1.1rem; font-weight: bold; margin-bottom: 0.25rem; }
+  .student-id { font-size: 0.85rem; color: var(--primary-dark); font-weight: 600; }
+  .student-email { font-size: 0.8rem; color: var(--text-light); }
 
   .student-status {
     display: flex;
@@ -798,7 +647,9 @@ AttendAI{% endblock %} {% block content %}
     align-items: center;
     margin-bottom: 1rem;
     padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--border-soft);
+    border-bottom: 1px solid #e2e8f0;
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
 
   .status-badge {
@@ -809,45 +660,32 @@ AttendAI{% endblock %} {% block content %}
     text-transform: capitalize;
   }
 
-  .status-present {
-    background-color: #f0fdf4;
-    color: #059669;
-    border: 1px solid #059669;
-  }
+  .status-present { background-color: #f0fdf4; color: #059669; border: 1px solid #059669; }
+  .status-absent { background-color: #fef2f2; color: #dc2626; border: 1px solid #dc2626; }
+  .status-late { background-color: #fffbeb; color: #d97706; border: 1px solid #d97706; }
+  .status-pending, .status-unmarked { background-color: #f3f4f6; color: #6b7280; border: 1px solid #9ca3af; }
 
-  .status-absent {
-    background-color: #fef2f2;
-    color: #dc2626;
-    border: 1px solid #dc2626;
-  }
-
-  .status-late {
-    background-color: #fffbeb;
-    color: #d97706;
-    border: 1px solid #d97706;
-  }
-
-  .status-pending, .status-unmarked {
-    background-color: #f3f4f6;
-    color: #6b7280;
-    border: 1px solid #9ca3af;
-  }
-
-  .last-updated {
-    font-size: 0.75rem;
-    color: var(--text-light);
-  }
-
-  .attendance-controls {
+  .last-seen-indicator {
     display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    background: #f1f5f9;
+    border-radius: 10px;
   }
 
-  .attendance-buttons {
-    display: flex;
-    gap: 0.5rem;
+  .last-seen-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #059669;
   }
+
+  .last-seen-dot.warning { background: #d97706; }
+  .last-seen-dot.danger { background: #dc2626; }
+
+  .attendance-buttons { display: flex; gap: 0.5rem; }
 
   .attendance-btn {
     flex: 1;
@@ -865,38 +703,12 @@ AttendAI{% endblock %} {% block content %}
     transition: all 0.2s ease;
   }
 
-  .attendance-btn.present {
-    color: #059669;
-    border-color: #059669;
-  }
-
-  .attendance-btn.present:hover,
-  .attendance-btn.present.active {
-    background-color: #059669;
-    color: white;
-  }
-
-  .attendance-btn.absent {
-    color: #dc2626;
-    border-color: #dc2626;
-  }
-
-  .attendance-btn.absent:hover,
-  .attendance-btn.absent.active {
-    background-color: #dc2626;
-    color: white;
-  }
-
-  .attendance-btn.late {
-    color: #d97706;
-    border-color: #d97706;
-  }
-
-  .attendance-btn.late:hover,
-  .attendance-btn.late.active {
-    background-color: #d97706;
-    color: white;
-  }
+  .attendance-btn.present { color: #059669; border-color: #059669; }
+  .attendance-btn.present:hover, .attendance-btn.present.active { background-color: #059669; color: white; }
+  .attendance-btn.absent { color: #dc2626; border-color: #dc2626; }
+  .attendance-btn.absent:hover, .attendance-btn.absent.active { background-color: #dc2626; color: white; }
+  .attendance-btn.late { color: #d97706; border-color: #d97706; }
+  .attendance-btn.late:hover, .attendance-btn.late.active { background-color: #d97706; color: white; }
 
   .notes-input {
     width: 100%;
@@ -904,109 +716,17 @@ AttendAI{% endblock %} {% block content %}
     border: 1px solid var(--border-color);
     border-radius: 6px;
     font-size: 0.85rem;
-    color: var(--text-dark);
+    margin-top: 0.75rem;
   }
 
-  .notes-input:focus {
-    outline: none;
-    border-color: var(--primary-dark);
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: 3rem;
-  }
-
-  .empty-state-content {
-    max-width: 400px;
-    margin: 0 auto;
-  }
-
-  .empty-state-icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    color: var(--text-light);
-  }
-
-  .empty-state h4 {
-    font-size: 1.5rem;
-    color: var(--text-dark);
-    margin-bottom: 0.5rem;
-  }
-
-  .empty-state p {
-    color: var(--text-light);
-    margin-bottom: 1.5rem;
-  }
-
-  /* Responsive */
   @media (max-width: 1200px) {
-    .students-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-
-    .webcam-container {
-      grid-template-columns: 1fr;
-    }
-
-    .recognition-log-section {
-      order: -1;
-    }
+    .students-grid { grid-template-columns: repeat(2, 1fr); }
+    .webcam-container { grid-template-columns: 1fr; }
   }
 
   @media (max-width: 768px) {
-    .page-title {
-      font-size: 1.75rem;
-    }
-
-    .class-info-card {
-      padding: 1rem;
-    }
-
-    .class-code {
-      font-size: 1.25rem;
-    }
-
-    .class-details {
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .search-section .d-flex {
-      flex-direction: column;
-      align-items: stretch;
-    }
-
-    .search-box {
-      max-width: 100%;
-    }
-
-    .students-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .students-header {
-      flex-direction: column;
-      align-items: stretch;
-    }
-
-    .attendance-summary {
-      justify-content: space-between;
-    }
-
-    .attendance-buttons {
-      flex-direction: column;
-    }
-
-    .webcam-controls {
-      justify-content: center;
-    }
-
-    .recognition-stats {
-      margin-left: 0;
-      width: 100%;
-      justify-content: center;
-    }
+    .students-grid { grid-template-columns: 1fr; }
+    .attendance-buttons { flex-direction: column; }
   }
 </style>
 
@@ -1015,18 +735,14 @@ AttendAI{% endblock %} {% block content %}
 (function() {
   'use strict';
   
-  // ==================== CONFIGURATION ====================
   const config = {
     apiBaseUrl: window.location.origin,
     classId: "{{ class.id }}",
     csrfToken: "{{ csrf_token() }}",
     lecturerId: "{{ user.user_id }}",
     markAttendanceUrl: "{{ url_for('attendance.mark_attendance') }}",
-    sessionStartTime: "{{ class.time.split('-')[0].strip() if class.time and '-' in class.time else '00:00' }}",
-    lateThresholdMinutes: 30
   };
   
-  // ==================== STATE ====================
   let state = {
     webcamActive: false,
     isPaused: false,
@@ -1035,7 +751,6 @@ AttendAI{% endblock %} {% block content %}
     ctx: null,
     stream: null,
     animationId: null,
-    recognitionInterval: null,
     facingMode: 'user',
     studentMap: {},
     recognizedStudents: new Set(),
@@ -1044,47 +759,69 @@ AttendAI{% endblock %} {% block content %}
     lastFpsUpdate: Date.now(),
     fps: 0,
     attendanceCheckInterval: null,
-    pollCount: 0
+    monitoringActive: false
   };
 
-  // ==================== INITIALIZATION ====================
   function init() {
-    console.log('🎓 Attendance Manager with Browser Webcam Initialized');
-    console.log('📋 Class ID:', config.classId);
-    
+    console.log('🎓 Attendance Manager Initialized');
     state.studentMap = buildStudentMap();
     state.video = document.getElementById('webcamVideo');
     state.canvas = document.getElementById('overlayCanvas');
     state.ctx = state.canvas.getContext('2d');
-    
     startAttendancePolling();
+    
+    // Start recognition session to enable presence tracking
+    startRecognitionSession();
   }
 
   function buildStudentMap() {
     const map = { byId: {}, byName: {}, byUserId: {}, allCards: [] };
-    
     document.querySelectorAll('.student-card').forEach(card => {
       const id = card.dataset.id;
       const userId = card.dataset.userId;
       const studentId = card.dataset.studentId;
       const name = card.dataset.name;
-      
       map.allCards.push({ card, id, userId, studentId, name });
       if (id) map.byId[String(id)] = card;
       if (userId) map.byUserId[String(userId)] = card;
+      if (studentId) map.byUserId[String(studentId)] = card;
       if (name) map.byName[name.toLowerCase().trim()] = card;
     });
-    
     return map;
   }
 
-  // ==================== WEBCAM FUNCTIONS ====================
-  async function toggleWebcam() {
-    if (state.webcamActive) {
-      stopWebcam();
-    } else {
-      await startWebcam();
+  async function startRecognitionSession() {
+    try {
+      const response = await fetch(`${config.apiBaseUrl}/api/recognition/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': config.csrfToken },
+        body: JSON.stringify({ class_id: config.classId, session_id: config.classId })
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log('✅ Recognition session started for presence tracking');
+        console.log('   Early departure enabled:', data.early_departure_enabled);
+        state.monitoringActive = true;
+        
+        const monitorBadge = document.getElementById('monitoringStatus');
+        if (monitorBadge) {
+          monitorBadge.textContent = 'Monitoring: ON';
+          monitorBadge.classList.add('active');
+        }
+        
+        showToast('Presence monitoring started', 'success');
+      }
+    } catch (e) {
+      console.warn('Could not start recognition session:', e);
+      showToast('Could not start monitoring', 'warning');
     }
+  }
+
+  // ==================== WEBCAM ====================
+  async function toggleWebcam() {
+    if (state.webcamActive) stopWebcam();
+    else await startWebcam();
   }
 
   async function startWebcam() {
@@ -1099,16 +836,10 @@ AttendAI{% endblock %} {% block content %}
     videoStatus.classList.remove('hidden');
     
     try {
-      const constraints = {
-        video: {
-          facingMode: state.facingMode,
-          width: { ideal: 640 },
-          height: { ideal: 480 }
-        },
+      state.stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: state.facingMode, width: { ideal: 640 }, height: { ideal: 480 } },
         audio: false
-      };
-      
-      state.stream = await navigator.mediaDevices.getUserMedia(constraints);
+      });
       state.video.srcObject = state.stream;
       
       state.video.onloadedmetadata = () => {
@@ -1116,92 +847,47 @@ AttendAI{% endblock %} {% block content %}
         state.canvas.height = state.video.videoHeight;
         videoStatus.classList.add('hidden');
         state.webcamActive = true;
-        addLog('Camera started successfully', 'success');
+        addLog('Camera started', 'success');
         startRecognitionLoop();
       };
-      
     } catch (error) {
-      console.error('Camera error:', error);
       addLog(`Camera error: ${error.message}`, 'error');
-      videoStatus.innerHTML = `
-        <div class="status-loading">
-          <span style="font-size: 2rem;">❌</span>
-          <span>Camera access denied</span>
-          <span style="font-size: 0.8rem; opacity: 0.7;">Please allow camera access and try again</span>
-        </div>
-      `;
-      
       btn.classList.remove('active');
       btnText.textContent = 'Start Face Recognition';
     }
   }
 
   function stopWebcam() {
-    const panel = document.getElementById('webcamPanel');
-    const btn = document.getElementById('faceRecognitionBtn');
-    const btnText = document.getElementById('faceRecognitionBtnText');
-    
-    // Stop recognition loop
-    if (state.animationId) {
-      cancelAnimationFrame(state.animationId);
-      state.animationId = null;
-    }
-    
-    if (state.recognitionInterval) {
-      clearInterval(state.recognitionInterval);
-      state.recognitionInterval = null;
-    }
-    
-    // Stop video stream
-    if (state.stream) {
-      state.stream.getTracks().forEach(track => track.stop());
-      state.stream = null;
-    }
-    
-    if (state.video) {
-      state.video.srcObject = null;
-    }
+    if (state.animationId) cancelAnimationFrame(state.animationId);
+    if (state.stream) state.stream.getTracks().forEach(track => track.stop());
+    if (state.video) state.video.srcObject = null;
     
     state.webcamActive = false;
     state.isPaused = false;
     
-    panel.style.display = 'none';
-    btn.classList.remove('active');
-    btnText.textContent = 'Start Face Recognition';
-    
+    document.getElementById('webcamPanel').style.display = 'none';
+    document.getElementById('faceRecognitionBtn').classList.remove('active');
+    document.getElementById('faceRecognitionBtnText').textContent = 'Start Face Recognition';
     addLog('Camera stopped', 'info');
   }
 
   function togglePause() {
     state.isPaused = !state.isPaused;
-    const pauseIcon = document.getElementById('pauseIcon');
-    const pauseText = document.getElementById('pauseText');
-    
-    if (state.isPaused) {
-      pauseIcon.textContent = '▶️';
-      pauseText.textContent = 'Resume';
-      addLog('Recognition paused', 'warn');
-    } else {
-      pauseIcon.textContent = '⏸️';
-      pauseText.textContent = 'Pause';
-      addLog('Recognition resumed', 'info');
-    }
+    document.getElementById('pauseIcon').textContent = state.isPaused ? '▶️' : '⏸️';
+    document.getElementById('pauseText').textContent = state.isPaused ? 'Resume' : 'Pause';
   }
 
   async function switchCamera() {
     state.facingMode = state.facingMode === 'user' ? 'environment' : 'user';
-    addLog(`Switching to ${state.facingMode === 'user' ? 'front' : 'back'} camera`, 'info');
-    
     if (state.webcamActive) {
       stopWebcam();
-      setTimeout(() => startWebcam(), 500);
+      setTimeout(startWebcam, 500);
     }
   }
 
   // ==================== RECOGNITION LOOP ====================
   function startRecognitionLoop() {
     let lastRecognitionSent = 0;
-    const recognitionInterval = 1000; // Send frame for recognition every 1 second
     
     function loop() {
       if (!state.webcamActive) return;
@@ -1209,7 +895,6 @@ AttendAI{% endblock %} {% block content %}
       state.frameCount++;
       const now = Date.now();
       
-      // Update FPS every second
       if (now - state.lastFpsUpdate >= 1000) {
         state.fps = state.frameCount;
         state.frameCount = 0;
@@ -1217,12 +902,10 @@ AttendAI{% endblock %} {% block content %}
         document.getElementById('fpsCounter').textContent = state.fps;
       }
       
-      // Draw video frame to canvas for processing
       if (!state.isPaused && state.video.readyState === state.video.HAVE_ENOUGH_DATA) {
         state.ctx.drawImage(state.video, 0, 0);
         
-        // Send frame for recognition periodically
-        if (now - lastRecognitionSent >= recognitionInterval) {
+        if (now - lastRecognitionSent >= 1000) {
           lastRecognitionSent = now;
           sendFrameForRecognition();
         }
@@ -1230,7 +913,6 @@ AttendAI{% endblock %} {% block content %}
       
       state.animationId = requestAnimationFrame(loop);
     }
-    
     loop();
   }
 
@@ -1238,56 +920,31 @@ AttendAI{% endblock %} {% block content %}
     if (state.isPaused || !state.webcamActive) return;
     
     try {
-      // Capture frame as base64
       const tempCanvas = document.createElement('canvas');
-      tempCanvas.width = 320; // Smaller for faster upload
+      tempCanvas.width = 320;
       tempCanvas.height = 240;
-      const tempCtx = tempCanvas.getContext('2d');
-      tempCtx.drawImage(state.video, 0, 0, 320, 240);
+      tempCanvas.getContext('2d').drawImage(state.video, 0, 0, 320, 240);
       
-      const frameData = tempCanvas.toDataURL('image/jpeg', 0.7);
-      
-      // Send to server for recognition
       const response = await fetch(`${config.apiBaseUrl}/api/recognize-frame`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': config.csrfToken
-        },
-        body: JSON.stringify({
-          frame: frameData,
-          class_id: config.classId,  // Send class_id to filter by enrolled students
-          session_id: config.classId  // Also send session_id for backward compatibility
-        })
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': config.csrfToken },
+        body: JSON.stringify({ frame: tempCanvas.toDataURL('image/jpeg', 0.7), session_id: config.classId })
       });
       
       const data = await response.json();
-      
-      if (data.success && data.faces && data.faces.length > 0) {
-        processRecognitionResults(data.faces);
-      }
-      
-    } catch (error) {
-      // Silently handle errors to avoid spamming console
-      if (error.message.includes('NetworkError')) {
-        addLog('Network error - retrying...', 'warn');
-      }
-    }
+      if (data.success && data.faces) processRecognitionResults(data.faces);
+    } catch (error) {}
   }
 
   function processRecognitionResults(faces) {
     for (const face of faces) {
       const { name, confidence, student_id, status } = face;
-      
       if (!name || name === 'Unknown' || confidence < 0.7) continue;
       
-      // Check if already recognized recently (within 30 seconds)
       const lastTime = state.lastRecognitionTime[name] || 0;
       if (Date.now() - lastTime < 30000) continue;
-      
       state.lastRecognitionTime[name] = Date.now();
       
-      // Mark attendance
       if (student_id && !state.recognizedStudents.has(student_id)) {
         markAttendanceFromRecognition(student_id, name, status || 'present', confidence);
         state.recognizedStudents.add(student_id);
@@ -1299,43 +956,25 @@ AttendAI{% endblock %} {% block content %}
     try {
       const response = await fetch(`${config.apiBaseUrl}/api/attendance/mark`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': config.csrfToken
-        },
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': config.csrfToken },
         body: JSON.stringify({
-          student_id: studentId,
-          session_id: config.classId,
-          class_id: config.classId,
-          status: status,
-          recognition_data: {
-            confidence: confidence,
-            source: 'browser_webcam',
-            timestamp: new Date().toISOString()
-          }
+          student_id: studentId, session_id: config.classId, class_id: config.classId, status: status,
+          recognition_data: { confidence, source: 'browser_webcam', timestamp: new Date().toISOString() }
         })
       });
       
       const data = await response.json();
-      
       if (data.success && !data.already_present) {
         addLog(`✅ ${name} marked as ${status} (${Math.round(confidence * 100)}%)`, 'success');
         addRecognizedStudent(name, status);
         updateRecognizedCounter();
         
-        // Update UI immediately
         const card = findStudentCard({ name, student_id: studentId });
-        if (card) {
-          applyVisualUpdate(card, status, new Date().toLocaleTimeString(), name);
-        }
-        
+        if (card) applyVisualUpdate(card, status, new Date().toLocaleTimeString(), name);
         showToast(`${name} marked as ${status}`, 'success');
-      } else if (data.already_present) {
-        addLog(`${name} already marked`, 'info');
       }
-      
     } catch (error) {
-      addLog(`Error marking ${name}: ${error.message}`, 'error');
+      addLog(`Error: ${error.message}`, 'error');
     }
   }
 
@@ -1354,13 +993,8 @@ AttendAI{% endblock %} {% block content %}
       </div>
       <span class="recognized-status">${status.toUpperCase()}</span>
     `;
-    
     list.insertBefore(item, list.firstChild);
-    
-    // Keep only last 10
-    while (list.children.length > 10) {
-      list.removeChild(list.lastChild);
-    }
+    while (list.children.length > 10) list.removeChild(list.lastChild);
   }
 
   function updateRecognizedCounter() {
@@ -1374,36 +1008,38 @@ AttendAI{% endblock %} {% block content %}
     entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
     log.appendChild(entry);
     log.scrollTop = log.scrollHeight;
-    
-    // Keep only last 50 entries
-    while (log.children.length > 50) {
-      log.removeChild(log.firstChild);
-    }
+    while (log.children.length > 50) log.removeChild(log.firstChild);
   }
 
   // ==================== ATTENDANCE POLLING ====================
   function startAttendancePolling() {
     if (state.attendanceCheckInterval) clearInterval(state.attendanceCheckInterval);
-    state.attendanceCheckInterval = setInterval(fetchAttendanceUpdates, 3000);
+    // Poll every 2 seconds for faster updates
+    state.attendanceCheckInterval = setInterval(fetchAttendanceUpdates, 2000);
     fetchAttendanceUpdates();
   }
 
   async function fetchAttendanceUpdates() {
-    state.pollCount++;
-    
     try {
       const response = await fetch(`${config.apiBaseUrl}/api/attendance/class/${config.classId}`);
       const data = await response.json();
       
+      // Update monitoring status
+      state.monitoringActive = data.monitoring_active;
+      const monitorBadge = document.getElementById('monitoringStatus');
+      if (monitorBadge) {
+        monitorBadge.textContent = data.monitoring_active ? 'Monitoring: ON' : 'Monitoring: OFF';
+        monitorBadge.classList.toggle('active', data.monitoring_active);
+      }
+      
       document.getElementById('liveUpdateText').textContent = 
-        `Live updates active - ${data.count || 0} attendance records`;
+        `Live updates • ${data.count || 0} records`;
       
       if (data.success && data.records) {
         syncAttendanceWithAPI(data.records);
       }
       
       updateSummaryCounts();
-      
     } catch (error) {
       console.error('Poll error:', error);
     }
@@ -1415,26 +1051,45 @@ AttendAI{% endblock %} {% block content %}
       if (!card) continue;
       
       const currentStatus = getCardVisualStatus(card);
+      
+      // Check if status changed
       if (currentStatus !== record.status) {
+        console.log(`📊 Status change: ${record.name} ${currentStatus} → ${record.status}`);
         applyVisualUpdate(card, record.status, record.recorded_at, record.name);
+      }
+      
+      // Update last seen indicator if available
+      if (record.last_seen && record.minutes_since_seen !== undefined) {
+        updateLastSeenIndicator(card, record.minutes_since_seen, record.is_still_present);
       }
     }
   }
 
+  function updateLastSeenIndicator(card, minutesAgo, isPresent) {
+    const indicator = card.querySelector('.last-seen-indicator');
+    if (!indicator) return;
+    
+    const dot = indicator.querySelector('.last-seen-dot');
+    const text = indicator.querySelector('.last-seen-text');
+    
+    indicator.style.display = 'flex';
+    text.textContent = minutesAgo === 0 ? 'Just now' : `${minutesAgo}m ago`;
+    
+    dot.classList.remove('warning', 'danger');
+    if (minutesAgo > 1 && minutesAgo <= 2) dot.classList.add('warning');
+    else if (minutesAgo > 2) dot.classList.add('danger');
+  }
+
   function findStudentCard(record) {
     const { name, student_id } = record;
-    
     if (student_id) {
-      const idStr = String(student_id);
-      const card = state.studentMap.byId[idStr] || state.studentMap.byUserId[idStr];
+      const card = state.studentMap.byId[String(student_id)] || state.studentMap.byUserId[String(student_id)];
       if (card) return card;
     }
-    
     if (name) {
       const card = state.studentMap.byName[name.toLowerCase().trim()];
       if (card) return card;
     }
-    
     return null;
   }
 
@@ -1457,7 +1112,9 @@ AttendAI{% endblock %} {% block content %}
     const badge = card.querySelector('.status-badge');
     if (badge) {
       badge.className = `status-badge status-${status}`;
-      badge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+      // Format status text nicely
+      const statusText = status === 'left_early' ? 'Left Early' : status.charAt(0).toUpperCase() + status.slice(1);
+      badge.textContent = statusText;
     }
     
     card.querySelectorAll('.attendance-btn').forEach(btn => {
@@ -1488,46 +1145,28 @@ AttendAI{% endblock %} {% block content %}
   function markAttendance(studentId, status) {
     fetch(config.markAttendanceUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": config.csrfToken,
-      },
+      headers: { "Content-Type": "application/json", "X-CSRFToken": config.csrfToken },
       body: JSON.stringify({
-        class_id: config.classId,
-        lecturer_id: config.lecturerId,
-        student_id: studentId,
-        status: status,
-      }),
-    })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          showToast(`Marked as ${status}`, "success");
-          fetchAttendanceUpdates();
-        } else {
-          showToast(data.error || "Failed", "warning");
-        }
+        class_id: config.classId, lecturer_id: config.lecturerId, student_id: studentId, status: status
       })
-      .catch(error => {
-        console.error("Error:", error);
-        showToast("Error occurred", "warning");
-      });
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        showToast(`Marked as ${status}`, "success");
+        fetchAttendanceUpdates();
+      } else {
+        showToast(data.error || "Failed", "warning");
+      }
+    });
   }
 
   function saveNote(studentId, note) {
-    return fetch(config.markAttendanceUrl, {
+    fetch(config.markAttendanceUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": config.csrfToken,
-      },
-      body: JSON.stringify({
-        class_id: config.classId,
-        lecturer_id: config.lecturerId,
-        student_id: studentId,
-        notes: note,
-      }),
-    }).then(response => response.json());
+      headers: { "Content-Type": "application/json", "X-CSRFToken": config.csrfToken },
+      body: JSON.stringify({ class_id: config.classId, lecturer_id: config.lecturerId, student_id: studentId, notes: note })
+    });
   }
 
   function searchStudents() {
@@ -1554,21 +1193,19 @@ AttendAI{% endblock %} {% block content %}
   }
 
   function showToast(message, type = "info") {
+    const colors = {
+      success: { bg: "#f0fdf4", color: "#059669", border: "#059669" },
+      warning: { bg: "#fffbeb", color: "#d97706", border: "#d97706" },
+      info: { bg: "#f0f9ff", color: "#0891b2", border: "#0891b2" }
+    };
+    const c = colors[type] || colors.info;
+    
     const toast = document.createElement("div");
     toast.textContent = message;
     toast.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: ${type === "success" ? "#f0fdf4" : type === "warning" ? "#fffbeb" : "#f0f9ff"};
-      color: ${type === "success" ? "#059669" : type === "warning" ? "#d97706" : "#0891b2"};
-      border: 2px solid ${type === "success" ? "#059669" : type === "warning" ? "#d97706" : "#0891b2"};
-      padding: 1rem 1.5rem;
-      border-radius: 8px;
-      z-index: 1001;
-      font-weight: 600;
-      max-width: 300px;
-      animation: slideIn 0.3s ease;
+      position: fixed; top: 20px; right: 20px; background: ${c.bg}; color: ${c.color};
+      border: 2px solid ${c.border}; padding: 1rem 1.5rem; border-radius: 8px;
+      z-index: 1001; font-weight: 600; max-width: 300px;
     `;
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
@@ -1576,29 +1213,17 @@ AttendAI{% endblock %} {% block content %}
 
   // ==================== PUBLIC API ====================
   window.AttendanceManager = {
-    toggleWebcam,
-    stopWebcam,
-    togglePause,
-    switchCamera,
-    markAttendance,
-    saveNote,
-    searchStudents,
-    filterStudents,
-    refreshAttendance
+    toggleWebcam, stopWebcam, togglePause, switchCamera,
+    markAttendance, saveNote, searchStudents, filterStudents, refreshAttendance
   };
 
-  // Cleanup on page unload
   window.addEventListener('beforeunload', () => {
     stopWebcam();
     if (state.attendanceCheckInterval) clearInterval(state.attendanceCheckInterval);
   });
 
-  // Initialize
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
 })();
 </script>
 {% endblock %} {% endblock %}

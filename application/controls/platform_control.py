@@ -514,35 +514,63 @@ class PlatformControl:
                     subscription = subscription_model.get_by_subscription_id(subscription_id)
                     
                     if subscription:
-                        # Handle plan update - need to find plan by name
+                        print(f"DEBUG: Found subscription {subscription_id} for institution {institution_id}")
+                        print(f"DEBUG: Current plan_id: {subscription.plan_id if hasattr(subscription, 'plan_id') else 'N/A'}")
+                        
+                        # Handle plan update - can be either plan_id (int) or plan name (str)
                         if 'plan' in update_data and update_data['plan']:
-                            plan_name = update_data['plan']
-                            # Find the plan by name
-                            from database.models import SubscriptionPlan
-                            plan = db_session.query(SubscriptionPlan).filter(
-                                SubscriptionPlan.name.ilike(f'%{plan_name}%')
-                            ).first()
+                            plan_value = update_data['plan']
+                            print(f"DEBUG: Attempting to update plan to: {plan_value} (type: {type(plan_value)})")
                             
-                            if plan:
-                                subscription.plan_id = plan.plan_id
-                            else:
-                                # If plan not found, try to match common plan names
-                                plan_mapping = {
-                                    'starter': 'Starter',
-                                    'pro': 'Professional',
-                                    'enterprise': 'Enterprise',
-                                    'custom': 'Custom'
-                                }
-                                if plan_name in plan_mapping:
-                                    plan = db_session.query(SubscriptionPlan).filter(
-                                        SubscriptionPlan.name == plan_mapping[plan_name]
-                                    ).first()
-                                    if plan:
-                                        subscription.plan_id = plan.plan_id
+                            # Check if it's a plan_id (integer) or plan name (string)
+                            try:
+                                # Try to convert to integer - if successful, it's a plan_id
+                                plan_id = int(plan_value)
+                                # Verify the plan exists
+                                from database.models import SubscriptionPlan
+                                plan = db_session.query(SubscriptionPlan).filter(
+                                    SubscriptionPlan.plan_id == plan_id
+                                ).first()
+                                
+                                if plan:
+                                    subscription.plan_id = plan.plan_id
+                                    print(f"DEBUG: Successfully set plan_id to {plan.plan_id} ({plan.name})")
+                                else:
+                                    print(f"Warning: Plan with ID {plan_id} not found")
+                            except (ValueError, TypeError):
+                                # It's a plan name, search by name
+                                print(f"DEBUG: Treating as plan name, searching...")
+                                from database.models import SubscriptionPlan
+                                plan = db_session.query(SubscriptionPlan).filter(
+                                    SubscriptionPlan.name.ilike(f'%{plan_value}%')
+                                ).first()
+                                
+                                if plan:
+                                    subscription.plan_id = plan.plan_id
+                                    print(f"DEBUG: Found plan by name: {plan.name} (ID: {plan.plan_id})")
+                                else:
+                                    # Try to match common plan names
+                                    plan_mapping = {
+                                        'starter': 'Starter',
+                                        'pro': 'Professional',
+                                        'enterprise': 'Enterprise',
+                                        'custom': 'Custom'
+                                    }
+                                    plan_name_lower = str(plan_value).lower()
+                                    if plan_name_lower in plan_mapping:
+                                        plan = db_session.query(SubscriptionPlan).filter(
+                                            SubscriptionPlan.name == plan_mapping[plan_name_lower]
+                                        ).first()
+                                        if plan:
+                                            subscription.plan_id = plan.plan_id
+                                            print(f"DEBUG: Found plan by mapping: {plan.name} (ID: {plan.plan_id})")
+                    else:
+                        print(f"WARNING: Subscription {subscription_id} not found for institution {institution_id}")
                         
                         # Handle status update
                         if 'status' in update_data and update_data['status']:
                             new_status = update_data['status']
+                            print(f"DEBUG: Updating subscription status to: {new_status}")
                             now = datetime.now()
                             
                             if new_status == 'active':
@@ -550,17 +578,23 @@ class PlatformControl:
                                 # Set end date to 1 year from now if not set
                                 if not subscription.end_date:
                                     subscription.end_date = now + timedelta(days=365)
+                                print(f"DEBUG: Set subscription to active, end_date: {subscription.end_date}")
                             elif new_status == 'suspended':
                                 subscription.is_active = False
                                 # Ensure end date is set (for suspended status)
                                 if not subscription.end_date:
                                     subscription.end_date = now + timedelta(days=365)
+                                print(f"DEBUG: Set subscription to suspended")
                             elif new_status == 'pending':
                                 subscription.is_active = False
                                 subscription.end_date = None
+                                print(f"DEBUG: Set subscription to pending")
                             elif new_status == 'expired':
                                 subscription.is_active = False
                                 # Set end date to past if not set
+                                if not subscription.end_date:
+                                    subscription.end_date = now - timedelta(days=1)
+                                print(f"DEBUG: Set subscription to expired")
                                 if not subscription.end_date:
                                     subscription.end_date = now - timedelta(days=1)
                         
@@ -600,7 +634,9 @@ class PlatformControl:
                         if 'poc_name' in institution_updates:
                             admin_user.name = institution_updates['poc_name']
                 
+                print(f"DEBUG: Committing changes to database for institution {institution_id}")
                 db_session.commit()
+                print(f"DEBUG: Successfully committed changes")
                 
                 # Get updated institution data
                 updated_institution = institution_model.get_by_id(institution_id)

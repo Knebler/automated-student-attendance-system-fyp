@@ -400,8 +400,8 @@ def submit_testimonial():
             testimonial_status = 'rejected'
             flash(f'Your testimonial was automatically rejected: {analysis["reason"]}. Please revise and resubmit with appropriate content.', 'danger')
         else:
-            testimonial_status = 'pending'
-            flash('Thank you for your testimonial! It has been submitted and is pending approval by our platform team.', 'success')
+            testimonial_status = 'approved'
+            flash('Thank you for your testimonial! It has been approved and published.', 'success')
         
         # Create testimonial with determined status
         new_testimonial = Testimonial(

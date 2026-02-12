@@ -48,7 +48,8 @@ FACE_DETECTION_NEIGHBORS = 5
 FACE_CASCADE = None
 _model_cache = {
     'knn': None, 'labels': None, 'student_map': {}, 'last_loaded': None,
-    'lock': threading.Lock(), 'skipped_students': [], 'mode': RECOGNITION_MODE
+    'lock': threading.Lock(), 'skipped_students': [], 'mode': RECOGNITION_MODE,
+    'class_id': None  # Track which class the model is for
 }
 _presence_tracker = {}
 _presence_tracker_lock = threading.Lock()
@@ -171,10 +172,13 @@ def generate_augmented_samples(face_img, sample_count=100, mode='upper_face'):
     return np.array(all_samples, dtype=np.uint8)
 
 
-def load_or_get_model():
+def load_or_get_model(class_id=None):
     from sklearn.neighbors import KNeighborsClassifier
     with _model_cache['lock']:
-        if _model_cache['knn'] is not None and _model_cache['last_loaded']:
+        # Check if we can reuse cached model for the same class
+        if (_model_cache['knn'] is not None and 
+            _model_cache['last_loaded'] and 
+            _model_cache['class_id'] == class_id):
             if (datetime.now() - _model_cache['last_loaded']).total_seconds() < 300:
                 return _model_cache['knn'], _model_cache['student_map']
         
@@ -183,11 +187,43 @@ def load_or_get_model():
             return None, {}
         
         try:
-            results = session.execute(text("""
-                SELECT fd.user_id, u.name, fd.face_encoding, fd.sample_count
-                FROM facial_data fd JOIN users u ON fd.user_id = u.user_id
-                WHERE fd.is_active = TRUE AND u.is_active = TRUE
-            """)).fetchall()
+            # If class_id is provided, only load students enrolled in that class
+            if class_id:
+                # Get course_id and semester_id for the class
+                class_info = session.execute(text("""
+                    SELECT course_id, semester_id 
+                    FROM classes 
+                    WHERE class_id = :cid
+                """), {'cid': class_id}).fetchone()
+                
+                if class_info and class_info[0] and class_info[1]:
+                    course_id, semester_id = class_info
+                    # Load only enrolled students' facial data
+                    results = session.execute(text("""
+                        SELECT fd.user_id, u.name, fd.face_encoding, fd.sample_count
+                        FROM facial_data fd 
+                        JOIN users u ON fd.user_id = u.user_id
+                        JOIN course_users cu ON u.user_id = cu.user_id
+                        WHERE fd.is_active = TRUE 
+                        AND u.is_active = TRUE 
+                        AND u.role = 'student'
+                        AND cu.course_id = :cid 
+                        AND cu.semester_id = :sid
+                    """), {'cid': course_id, 'sid': semester_id}).fetchall()
+                else:
+                    # Fallback to all students if class info not found
+                    results = session.execute(text("""
+                        SELECT fd.user_id, u.name, fd.face_encoding, fd.sample_count
+                        FROM facial_data fd JOIN users u ON fd.user_id = u.user_id
+                        WHERE fd.is_active = TRUE AND u.is_active = TRUE AND u.role = 'student'
+                    """)).fetchall()
+            else:
+                # No class specified - load all students (backward compatibility)
+                results = session.execute(text("""
+                    SELECT fd.user_id, u.name, fd.face_encoding, fd.sample_count
+                    FROM facial_data fd JOIN users u ON fd.user_id = u.user_id
+                    WHERE fd.is_active = TRUE AND u.is_active = TRUE AND u.role = 'student'
+                """)).fetchall()
             
             if not results:
                 return None, {}
@@ -275,7 +311,9 @@ def load_or_get_model():
             _model_cache['knn'] = knn
             _model_cache['student_map'] = student_map
             _model_cache['last_loaded'] = datetime.now()
-            print(f"✅ Model trained: {len(X)} samples, {len(student_map)} students")
+            _model_cache['class_id'] = class_id
+            class_info = f" for class {class_id}" if class_id else " (all students)"
+            print(f"✅ Model trained: {len(X)} samples, {len(student_map)} students{class_info}")
             return knn, student_map
         except Exception as e:
             print(f"❌ Model error: {e}")
@@ -566,7 +604,8 @@ def recognize_frame():
         if frame is None:
             return jsonify({'success': False, 'error': 'Invalid image'}), 400
         
-        knn, student_map = load_or_get_model()
+        # Load model with class filter to only recognize enrolled students
+        knn, student_map = load_or_get_model(class_id=session_id)
         if knn is None:
             return jsonify({'success': False, 'error': 'No model'}), 400
         
@@ -631,11 +670,14 @@ def health():
 
 @attendance_ai_bp.route('/model/reload', methods=['POST'])
 def reload_model():
+    data = request.get_json(silent=True) or {}
+    class_id = data.get('class_id')
     with _model_cache['lock']:
         _model_cache['knn'] = None
         _model_cache['last_loaded'] = None
-    knn, student_map = load_or_get_model()
-    return jsonify({'success': knn is not None, 'student_count': len(student_map)})
+        _model_cache['class_id'] = None
+    knn, student_map = load_or_get_model(class_id=class_id)
+    return jsonify({'success': knn is not None, 'student_count': len(student_map), 'class_id': class_id})
 
 
 @attendance_ai_bp.route('/sessions', methods=['GET'])

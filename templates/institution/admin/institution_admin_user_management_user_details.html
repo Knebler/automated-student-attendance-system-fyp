@@ -37,7 +37,7 @@
                         <button class="btn-custom btn-unsuspend">Unsuspend User</button>
                     </form>
                     {% endif %}
-                    <form action="/institution/manage_users/{{ user_details.id }}/delete" method='POST'>
+                    <form action="/institution/manage_users/{{ user_details.user_id }}/delete" method='POST'>
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="user_role" value="{{ user_details.role }}">
                         <button class="btn-custom btn-delete">Delete User</button>

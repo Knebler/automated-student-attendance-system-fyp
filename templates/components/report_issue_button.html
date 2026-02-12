@@ -148,12 +148,13 @@
     
     .report-issue-modal-content {
         background-color: white;
+        overflow-y: scroll;
         width: 90%;
         max-width: 700px;
         max-height: 90vh;
+        /* max-height: 80vh; */
         border-radius: 20px;
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-        overflow: hidden;
         display: flex;
         flex-direction: column;
         animation: slideUp 0.3s ease;
@@ -227,8 +228,10 @@
     
     .modal-body {
         padding: 2rem;
-        overflow-y: auto;
-        flex-grow: 1;
+        overflow-y: scroll;
+        max-height: 50vh;
+        /* overflow-y: auto; */
+        /* flex-grow: 1; */
     }
     
     /* User Info Card */

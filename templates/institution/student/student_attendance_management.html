@@ -1025,6 +1025,12 @@
             }
             
             // Calculation
+            // Pie chart show whole circle when only one data type exists
+            function clampArcEnd(startAngle, segmentAngle) {
+                const endAngle = startAngle + segmentAngle;
+                if (segmentAngle >= 360) return startAngle + 359.99;
+                return endAngle;
+            }
             
             let currentAngle = 0;
             const totalMarked = present + late + excused + absent;
@@ -1032,8 +1038,9 @@
             // Present
             if (present > 0) {
                 const presentAngle = (present / totalMarked) * 360;
+                const endAngle = clampArcEnd(currentAngle, presentAngle);
                 const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                path.setAttribute('d', createArc(currentAngle, currentAngle + presentAngle, innerRadius, radius));
+                path.setAttribute('d', createArc(currentAngle, endAngle, innerRadius, radius));
                 path.setAttribute('class', 'chart-segment chart-segment-present');
                 svg.appendChild(path);
                 currentAngle += presentAngle;
@@ -1042,8 +1049,9 @@
             // Late
             if (late > 0) {
                 const lateAngle = (late / totalMarked) * 360;
+                const endAngle = clampArcEnd(currentAngle, lateAngle);
                 const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                path.setAttribute('d', createArc(currentAngle, currentAngle + lateAngle, innerRadius, radius));
+                path.setAttribute('d', createArc(currentAngle, endAngle, innerRadius, radius));
                 path.setAttribute('class', 'chart-segment chart-segment-late');
                 svg.appendChild(path);
                 currentAngle += lateAngle;
@@ -1052,8 +1060,9 @@
             // Excused
             if (excused > 0) {
                 const excusedAngle = (excused / totalMarked) * 360;
+                const endAngle = clampArcEnd(currentAngle, excusedAngle);
                 const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                path.setAttribute('d', createArc(currentAngle, currentAngle + excusedAngle, innerRadius, radius));
+                path.setAttribute('d', createArc(currentAngle, endAngle, innerRadius, radius));
                 path.setAttribute('class', 'chart-segment chart-segment-excused');
                 svg.appendChild(path);
                 currentAngle += excusedAngle;
@@ -1062,8 +1071,9 @@
             // Absent
             if (absent > 0) {
                 const absentAngle = (absent / totalMarked) * 360;
+                const endAngle = clampArcEnd(currentAngle, absentAngle);
                 const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                path.setAttribute('d', createArc(currentAngle, currentAngle + absentAngle, innerRadius, radius));
+                path.setAttribute('d', createArc(currentAngle, endAngle, innerRadius, radius));
                 path.setAttribute('class', 'chart-segment chart-segment-absent');
                 svg.appendChild(path);
             }

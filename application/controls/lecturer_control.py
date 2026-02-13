@@ -259,7 +259,7 @@ class LecturerControl:
                         'email': student.email,
                         'phone_number': student.phone_number,
                         'initials': ''.join([name[0] for name in student.name.split()[:2]]).upper() if student.name else '',
-                        'attendance_status': record.status if record else 'unmarked',
+                        'attendance_status': record.status if record else None,
                         'attendance_id': record.attendance_id if record else None,
                         'marked_by': record.marked_by if record else None,
                         'notes': record.notes if record else None,
@@ -467,7 +467,7 @@ class LecturerControl:
                         'absent': 0,
                         'late': 0,
                         'excused': 0,
-                        'unmarked': 0
+                        'unmarked_count': 0
                     },
                     'by_course': {},
                     'daily_attendance': {},
@@ -493,7 +493,7 @@ class LecturerControl:
                                 'absent': 0,
                                 'late': 0,
                                 'excused': 0,
-                                'unmarked': 0
+                                'unmarked_count': 0
                             },
                             'attendance_rate': 0
                         }
@@ -512,11 +512,11 @@ class LecturerControl:
                         statistics['by_course'][course_key]['attendance_summary'][record.status] += 1
                         statistics['attendance_summary'][record.status] += 1
                     
-                    # Calculate unmarked
+                    # Calculate unmarked count (students without attendance records)
                     marked_count = len(attendance_records)
                     unmarked_count = student_count - marked_count
-                    statistics['by_course'][course_key]['attendance_summary']['unmarked'] += unmarked_count
-                    statistics['attendance_summary']['unmarked'] += unmarked_count
+                    statistics['by_course'][course_key]['attendance_summary']['unmarked_count'] += unmarked_count
+                    statistics['attendance_summary']['unmarked_count'] += unmarked_count
                     
                     # Track for overall rate
                     present_count = sum(1 for r in attendance_records if r.status == 'present')

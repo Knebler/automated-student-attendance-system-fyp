@@ -197,9 +197,11 @@ def create_flask_app(config_name='default'):
                     class_model = ClassModel(db_session)
                     updated_count = class_model.update_class_statuses()
                     if updated_count > 0:
-                        app.logger.info(f"Background scheduler: Updated {updated_count} class(es) and sent notifications")
+                        app.logger.info(f"✅ Scheduler: {updated_count} class(es) updated")
         except Exception as e:
-            app.logger.error(f"Error in background class status update: {e}")
+            app.logger.error(f"❌ Scheduler error: {e}")
+            import traceback
+            app.logger.error(traceback.format_exc())
     
     def check_and_suspend_expired_subscriptions():
         """Background job to check for expired subscriptions and suspend institutions"""
@@ -261,11 +263,11 @@ def create_flask_app(config_name='default'):
         except Exception as e:
             app.logger.error(f"Error in expired subscription check: {e}")
     
-    # Schedule the job to run every 2 minutes
+    # Schedule the job to run every 5 seconds (DEBUG MODE)
     scheduler.add_job(
         func=update_all_class_statuses,
         trigger="interval",
-        minutes=2,
+        seconds=5,
         id='update_class_statuses_job',
         name='Update class statuses and send notifications',
         replace_existing=True
@@ -283,7 +285,7 @@ def create_flask_app(config_name='default'):
     
     # Start the scheduler
     scheduler.start()
-    app.logger.info("Background scheduler started - checking class statuses every 2 minutes")
+    app.logger.info("Background scheduler started - checking class statuses every 5 seconds (DEBUG MODE)")
     app.logger.info("Background scheduler started - checking expired subscriptions every hour")
     
     # Run an immediate check on startup

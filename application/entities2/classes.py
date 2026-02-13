@@ -15,7 +15,7 @@ class ClassModel(BaseEntity[Class]):
     def update_class_statuses(self, institution_id=None):
         """
         Update class statuses in the database based on current time.
-        Also marks unmarked attendance as 'absent' for completed classes.
+        Also creates absent records for completed classes.
         Sends notifications to students when class is starting in 30 mins or has started.
         Returns number of classes updated.
         """
@@ -83,12 +83,14 @@ class ClassModel(BaseEntity[Class]):
             Class.status.notin_(['completed', 'cancelled'])
         ).all()
         
+        if len(completed_classes) > 0:
+            print(f"📊 Found {len(completed_classes)} completed class(es) - creating absent records")
+        
         for cls in completed_classes:
             cls.status = 'completed'
             updated_count += 1
             
-            # Mark any unmarked attendance as 'absent' for this completed class
-            # Get all students enrolled in this class
+            # Create absent records for students with no attendance record
             enrolled_students = (
                 self.session.query(User.user_id)
                 .join(CourseUser, CourseUser.user_id == User.user_id)
@@ -100,7 +102,6 @@ class ClassModel(BaseEntity[Class]):
             
             student_ids = [s[0] for s in enrolled_students]
             
-            # Get students who already have attendance records
             existing_records = (
                 self.session.query(AttendanceRecord.student_id)
                 .filter(AttendanceRecord.class_id == cls.class_id)
@@ -109,7 +110,7 @@ class ClassModel(BaseEntity[Class]):
             
             existing_student_ids = {r[0] for r in existing_records}
             
-            # Create absent records for students without attendance
+            absent_created = 0
             for student_id in student_ids:
                 if student_id not in existing_student_ids:
                     new_record = AttendanceRecord(
@@ -119,6 +120,10 @@ class ClassModel(BaseEntity[Class]):
                         marked_by='system'
                     )
                     self.session.add(new_record)
+                    absent_created += 1
+            
+            if absent_created > 0:
+                print(f"   ✅ Class {cls.class_id}: {absent_created} students marked absent")
         
         # Update in_progress classes (started but not ended, and status is not 'in_progress', 'completed', or 'cancelled')
         in_progress_classes = query.filter(
@@ -309,7 +314,7 @@ class ClassModel(BaseEntity[Class]):
         data = (
             self.session
             .query(Class.class_id, Course.code, Course.name, Class.start_time, Venue.name, Lecturer.name
-                   , AttendanceRecord.attendance_id, func.coalesce(AttendanceRecord.status, "unmarked"), AttendanceRecord.audit_status)
+                   , AttendanceRecord.attendance_id, AttendanceRecord.status, AttendanceRecord.audit_status)
             .select_from(Semester)
             .join(CourseUser, Semester.semester_id == CourseUser.semester_id)
             .join(User, CourseUser.user_id == User.user_id)
@@ -371,7 +376,7 @@ class ClassModel(BaseEntity[Class]):
         headers = ["student_name", "student_id", "status"]
         records = (
             self.session
-            .query(User.name, User.user_id, func.coalesce(AttendanceRecord.status, "unmarked"))
+            .query(User.name, User.user_id, AttendanceRecord.status)
             .select_from(Class)
             .join(Course, Class.course_id == Course.course_id)
             .join(CourseUser, 
@@ -740,7 +745,7 @@ class ClassModel(BaseEntity[Class]):
     def get_all_classes_with_attendance(self, institution_id):
         """Get all classes for an institution with attendance statistics"""
         headers = ["class_id", "module_name", "date", "venue", "lecturer", 
-                   "total", "present", "absent", "late", "excused", "unmarked"]
+                   "total", "present", "absent", "late", "excused"]
         
         # Subqueries for attendance counts
         q_total = (

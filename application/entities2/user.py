@@ -110,7 +110,7 @@ class UserModel(BaseEntity[User]):
                 Semester.name,
                 Course.code,
                 Class.class_id,
-                func.coalesce(AttendanceRecord.status, "unmarked"),
+                AttendanceRecord.status,
             )
             .select_from(CourseUser)
             .join(Semester, Semester.semester_id == CourseUser.semester_id)

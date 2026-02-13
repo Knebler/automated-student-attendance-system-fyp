@@ -178,12 +178,12 @@ AttendAI{% endblock %} {% block content %}
     <div class="students-grid" id="studentsGrid">
       {% for student in students %}
       <div
-        class="student-card card-custom {{ student.status | default('unmarked') }}"
+        class="student-card card-custom {{ student.status | default('pending') }}"
         data-id="{{ student.id }}"
         data-user-id="{{ student.user_id | default(student.id) }}"
         data-student-id="{{ student.student_id | default(student.user_id) | default(student.id) }}"
         data-name="{{ student.name }}"
-        data-status="{{ student.status | default('unmarked') }}"
+        data-status="{{ student.status | default('pending') }}"
       >
         <div class="student-header">
           <div class="student-photo">
@@ -201,8 +201,8 @@ AttendAI{% endblock %} {% block content %}
         </div>
 
         <div class="student-status">
-          <span class="status-badge status-{{ student.status | default('unmarked') }}"
-            >{{ student.status | default('Unmarked') }}</span
+          <span class="status-badge status-{{ student.status | default('pending') }}"
+            >{{ student.status | default('Pending') }}</span
           >
           <span class="last-updated">{{ student.recorded_at | default('') }}</span>
           <span class="last-seen-indicator" style="display: none;">
@@ -663,7 +663,7 @@ AttendAI{% endblock %} {% block content %}
   .status-present { background-color: #f0fdf4; color: #059669; border: 1px solid #059669; }
   .status-absent { background-color: #fef2f2; color: #dc2626; border: 1px solid #dc2626; }
   .status-late { background-color: #fffbeb; color: #d97706; border: 1px solid #d97706; }
-  .status-pending, .status-unmarked { background-color: #f3f4f6; color: #6b7280; border: 1px solid #9ca3af; }
+  .status-pending { background-color: #f3f4f6; color: #6b7280; border: 1px solid #9ca3af; }
 
   .last-seen-indicator {
     display: flex;

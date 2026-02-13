@@ -102,7 +102,7 @@ class SemesterModel(BaseEntity[Semester]):
         return dict(
             self.session
             .query(
-                func.coalesce(AttendanceRecord.status, "unmarked").label("status"),
+                AttendanceRecord.status.label("status"),
                 func.count(Class.class_id).label("count")
             )
             .join(CourseUser, (CourseUser.course_id == Class.course_id) & (CourseUser.semester_id == Class.semester_id))
@@ -113,6 +113,6 @@ class SemesterModel(BaseEntity[Semester]):
             )
             .filter(CourseUser.user_id == student_id)
             .filter(func.date(Semester.start_date) <= func.now(), func.date(Semester.end_date) >= func.now())
-            .group_by(func.coalesce(AttendanceRecord.status, "unmarked"))
+            .group_by(AttendanceRecord.status)
             .all()
         )

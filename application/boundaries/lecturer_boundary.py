@@ -106,8 +106,7 @@ def manage_attendance():
     # Process attendance records
     with get_session() as db_session:
         
-        # Step 4 & 5: Check if attendance records exist, create if not
-        attendance_records_created = 0
+        # Prepare student data for template
         students_data = []
         
         for student_info in students_list:
@@ -121,42 +120,17 @@ def manage_attendance():
                 .first()
             )
             
-            if not existing_record:
-                # Use AttendanceControl to create attendance record
-                result = AttendanceControl.mark_attendance(
-                    current_app,
-                    class_id=class_id,
-                    student_id=student_id,
-                    status='unmarked',
-                    marked_by='system',
-                    lecturer_id=user_id,
-                    notes=None
-                )
-                
-                if result['success']:
-                    attendance_records_created += 1
-                else:
-                    # Log error but continue processing other students
-                    current_app.logger.warning(f"Failed to create attendance for student {student_id}: {result.get('error')}")
-            
             # Prepare student data for template
-            student_record = (
-                db_session.query(AttendanceRecord)
-                .filter(AttendanceRecord.class_id == class_id)
-                .filter(AttendanceRecord.student_id == student_id)
-                .first()
-            )
-            
             students_data.append(
                 {
                     'id': student_id,
                     'name': student_info['name'],
                     'email': student_info.get('email', ''),
                     'id_number': student_info.get('id_number', str(student_id)),
-                    'status': student_record.status if student_record else 'pending',
+                    'status': existing_record.status if existing_record else 'pending',
                     'photo_url': None,
-                    'recorded_at': student_record.recorded_at.strftime('%d %B %Y %I:%M %p') if student_record else None,
-                    'notes': student_record.notes if student_record else None,
+                    'recorded_at': existing_record.recorded_at.strftime('%d %B %Y %I:%M %p') if existing_record else None,
+                    'notes': existing_record.notes if existing_record else None,
                 }
             )
    

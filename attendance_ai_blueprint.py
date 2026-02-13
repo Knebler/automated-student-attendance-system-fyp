@@ -4,7 +4,7 @@ Attendance AI API Blueprint - CLEAN VERSION
 Features:
 - Upper face recognition (works with/without masks)
 - Multiple face detection and recognition
-- Auto-mark absent when class ends (handles 'unmarked' status)
+- Auto-mark absent when class ends (creates records for students without attendance)
 - Early departure detection (anti-cheat)
 - Browser webcam support
 - Proper late detection based on class time
@@ -55,6 +55,9 @@ _presence_tracker = {}
 _presence_tracker_lock = threading.Lock()
 _presence_check_threads = {}
 _auto_absent_jobs = {}
+_last_frame_time = {}  # Track last frame received time for each class
+_last_frame_time_lock = threading.Lock()
+CAMERA_INACTIVE_TIMEOUT_MINUTES = 2  # Stop monitoring if no frames for 2 minutes
 
 
 def load_face_detector():
@@ -349,7 +352,6 @@ def determine_attendance_status(class_start_time):
 def mark_absent_for_class(class_id, force=False):
     """
     Mark absent for students without records.
-    Also UPDATE 'unmarked' status to 'absent'.
     """
     try:
         print(f"\n{'='*50}")
@@ -389,17 +391,14 @@ def mark_absent_for_class(class_id, force=False):
         
         print(f"   Enrolled students: {len(enrolled)}")
         
-        # Get existing records with their status
-        existing = {row[0]: row[1] for row in session.execute(text("SELECT student_id, status FROM attendance_records WHERE class_id = :cid"), {'cid': class_id}).fetchall()}
+        # Get existing records
+        existing = {row[0] for row in session.execute(text("SELECT student_id FROM attendance_records WHERE class_id = :cid"), {'cid': class_id}).fetchall()}
         print(f"   Existing records: {len(existing)}")
         
         inserted = 0
-        updated = 0
         
         for student_id, name in enrolled:
-            current_status = existing.get(student_id)
-            
-            if current_status is None:
+            if student_id not in existing:
                 # No record - INSERT absent
                 session.execute(text("""
                     INSERT INTO attendance_records (class_id, student_id, status, marked_by, lecturer_id, notes, recorded_at)
@@ -407,26 +406,15 @@ def mark_absent_for_class(class_id, force=False):
                 """), {'cid': class_id, 'sid': student_id, 'lid': lecturer_id})
                 inserted += 1
                 print(f"   📝 INSERT absent: {name}")
-            
-            elif current_status in ('unmarked', 'unknown', ''):
-                # Has 'unmarked' - UPDATE to absent
-                session.execute(text("""
-                    UPDATE attendance_records SET status = 'absent', marked_by = 'system_auto',
-                    notes = CONCAT(COALESCE(notes, ''), ' | Updated from unmarked')
-                    WHERE class_id = :cid AND student_id = :sid
-                """), {'cid': class_id, 'sid': student_id})
-                updated += 1
-                print(f"   🔄 UPDATE absent: {name} (was '{current_status}')")
         
-        total = inserted + updated
-        if total > 0:
+        if inserted > 0:
             session.commit()
-            print(f"\n✅ Done: {inserted} inserted, {updated} updated")
+            print(f"\n✅ Done: {inserted} absent records created")
         else:
             print(f"\nℹ️ No changes needed")
         
         print(f"{'='*50}\n")
-        return total
+        return inserted
     except Exception as e:
         print(f"❌ Error: {e}")
         import traceback
@@ -463,22 +451,21 @@ def check_early_departures(class_id):
         if not session:
             return 0
         
-        now = datetime.now()
-        threshold = timedelta(minutes=EARLY_DEPARTURE_THRESHOLD_MINUTES)
-        
-        print(f"\n👁️ Checking early departures for class {class_id}")
-        print(f"   Threshold: {EARLY_DEPARTURE_THRESHOLD_MINUTES} minutes")
-        
         # Get presence tracker data for this class
         with _presence_tracker_lock:
             class_tracker = _presence_tracker.get(class_id, {})
             tracked_students = dict(class_tracker)  # Copy to avoid lock issues
         
-        print(f"   Tracked students: {len(tracked_students)}")
-        
+        # Skip silently if no students are being tracked
         if not tracked_students:
-            print(f"   ⚠️ No students being tracked by camera")
             return 0
+        
+        now = datetime.now()
+        threshold = timedelta(minutes=EARLY_DEPARTURE_THRESHOLD_MINUTES)
+        
+        print(f"\n👁️ Checking early departures for class {class_id}")
+        print(f"   Threshold: {EARLY_DEPARTURE_THRESHOLD_MINUTES} minutes")
+        print(f"   Tracked students: {len(tracked_students)}")
         
         # Check each tracked student
         for student_id, tracker_data in tracked_students.items():
@@ -545,16 +532,46 @@ def start_presence_monitoring(class_id):
         if class_id not in _presence_tracker:
             _presence_tracker[class_id] = {}
     
+    # Initialize last frame time
+    with _last_frame_time_lock:
+        _last_frame_time[class_id] = datetime.now()
+    
     def monitor():
         import time
         print(f"👁️ Started presence monitoring thread for class {class_id}")
         print(f"   Check interval: {PRESENCE_CHECK_INTERVAL_MINUTES} minutes")
         print(f"   Departure threshold: {EARLY_DEPARTURE_THRESHOLD_MINUTES} minutes")
+        print(f"   Camera timeout: {CAMERA_INACTIVE_TIMEOUT_MINUTES} minutes")
         
         while class_id in _presence_check_threads:
             time.sleep(PRESENCE_CHECK_INTERVAL_MINUTES * 60)
             if class_id in _presence_check_threads:  # Check again after sleep
-                check_early_departures(class_id)
+                # Check if camera is still active
+                camera_active = True  # Default to active if no frame time recorded yet
+                with _last_frame_time_lock:
+                    last_frame = _last_frame_time.get(class_id)
+                
+                if last_frame:
+                    time_since_frame = datetime.now() - last_frame
+                    camera_active = time_since_frame <= timedelta(minutes=CAMERA_INACTIVE_TIMEOUT_MINUTES)
+                    
+                    if not camera_active:
+                        print(f"📷 Camera inactive for {int(time_since_frame.total_seconds() / 60)} minutes - auto-stopping monitoring for class {class_id}")
+                        # Stop without final check since camera is inactive
+                        if class_id in _presence_check_threads:
+                            del _presence_check_threads[class_id]
+                        with _presence_tracker_lock:
+                            if class_id in _presence_tracker:
+                                del _presence_tracker[class_id]
+                        with _last_frame_time_lock:
+                            if class_id in _last_frame_time:
+                                del _last_frame_time[class_id]
+                        print(f"✅ Monitoring STOPPED for class {class_id} (camera inactive)")
+                        break
+                
+                # Only perform early departure check if camera is active
+                if camera_active:
+                    check_early_departures(class_id)
         
         print(f"👁️ Stopped presence monitoring thread for class {class_id}")
     
@@ -566,7 +583,7 @@ def start_presence_monitoring(class_id):
 
 
 def stop_presence_monitoring(class_id):
-    """Stop monitoring and do final early departure check."""
+    """Stop monitoring and do final early departure check (for manual stops only)."""
     # Ensure class_id is int for consistency
     class_id = int(class_id)
     
@@ -575,13 +592,23 @@ def stop_presence_monitoring(class_id):
     if class_id in _presence_check_threads:
         del _presence_check_threads[class_id]
     
-    # Final check for early departures
-    check_early_departures(class_id)
+    # Final check for early departures (only if students are tracked and camera was active)
+    with _presence_tracker_lock:
+        has_tracked_students = bool(_presence_tracker.get(class_id, {}))
+    
+    if has_tracked_students:
+        print(f"   Performing final early departure check...")
+        check_early_departures(class_id)
     
     # Clear tracker
     with _presence_tracker_lock:
         if class_id in _presence_tracker:
             del _presence_tracker[class_id]
+    
+    # Clear last frame time
+    with _last_frame_time_lock:
+        if class_id in _last_frame_time:
+            del _last_frame_time[class_id]
     
     print(f"✅ Monitoring STOPPED for class {class_id}")
 
@@ -612,6 +639,10 @@ def recognize_frame():
         class_start_time = None
         if session_id:
             try:
+                # Update last frame time for camera activity tracking
+                with _last_frame_time_lock:
+                    _last_frame_time[session_id] = datetime.now()
+                
                 result = get_db_session().execute(text("SELECT start_time FROM classes WHERE class_id = :cid"), {'cid': session_id}).fetchone()
                 if result:
                     class_start_time = result[0]
@@ -773,11 +804,15 @@ def get_class_attendance(sid):
         if not session:
             return jsonify({'success': False}), 500
         
-        # Trigger early departure check if monitoring is active
-        if sid in _presence_check_threads or sid in _presence_tracker:
-            departed = check_early_departures(sid)
-            if departed > 0:
-                print(f"📋 Early departure check found {departed} students who left")
+        # Trigger early departure check only if monitoring is active AND students are being tracked
+        if sid in _presence_check_threads:
+            with _presence_tracker_lock:
+                has_tracked_students = bool(_presence_tracker.get(sid, {}))
+            
+            if has_tracked_students:
+                departed = check_early_departures(sid)
+                if departed > 0:
+                    print(f"📋 Early departure check found {departed} students who left")
         
         records = session.execute(text("""
             SELECT ar.attendance_id, ar.student_id, u.name, ar.status, ar.recorded_at
@@ -860,15 +895,13 @@ def test_auto_absent(class_id):
         existing = {row[0]: row[1] for row in session.execute(text("SELECT student_id, status FROM attendance_records WHERE class_id = :cid"), {'cid': class_id}).fetchall()}
         
         would_insert = [{'id': sid, 'name': name} for sid, name in enrolled if sid not in existing]
-        would_update = [{'id': sid, 'name': name, 'was': existing[sid]} for sid, name in enrolled if existing.get(sid) in ('unmarked', 'unknown', '')]
-        already_ok = [{'id': sid, 'name': name, 'status': existing[sid]} for sid, name in enrolled if existing.get(sid) in ('present', 'late', 'absent')]
+        already_ok = [{'id': sid, 'name': name, 'status': existing[sid]} for sid, name in enrolled if sid in existing]
         
         return jsonify({
             'success': True,
             'class_id': class_id,
             'enrolled': len(enrolled),
             'would_insert_absent': would_insert,
-            'would_update_to_absent': would_update,
             'already_has_status': already_ok
         })
     except Exception as e:
@@ -882,6 +915,9 @@ def start_recognition():
     if class_id:
         # Convert to int for consistency
         class_id = int(class_id)
+        # Initialize last frame time
+        with _last_frame_time_lock:
+            _last_frame_time[class_id] = datetime.now()
         start_presence_monitoring(class_id)
     return jsonify({
         'success': True, 
@@ -913,6 +949,9 @@ def get_config():
         'mask_friendly': True,
         'late_threshold_minutes': LATE_THRESHOLD_MINUTES,
         'early_departure_enabled': EARLY_DEPARTURE_ENABLED,
+        'early_departure_threshold_minutes': EARLY_DEPARTURE_THRESHOLD_MINUTES,
+        'presence_check_interval_minutes': PRESENCE_CHECK_INTERVAL_MINUTES,
+        'camera_inactive_timeout_minutes': CAMERA_INACTIVE_TIMEOUT_MINUTES,
         'auto_absent_enabled': AUTO_ABSENT_ENABLED
     })
 
@@ -921,6 +960,17 @@ def get_config():
 def get_presence_status(class_id):
     now = datetime.now()
     threshold = timedelta(minutes=EARLY_DEPARTURE_THRESHOLD_MINUTES)
+    
+    # Get camera status
+    camera_active = False
+    last_frame_ago = None
+    with _last_frame_time_lock:
+        last_frame = _last_frame_time.get(class_id)
+        if last_frame:
+            time_since_frame = now - last_frame
+            last_frame_ago = int(time_since_frame.total_seconds())
+            camera_active = time_since_frame <= timedelta(minutes=CAMERA_INACTIVE_TIMEOUT_MINUTES)
+    
     with _presence_tracker_lock:
         class_tracker = _presence_tracker.get(class_id, {})
     students = []
@@ -928,7 +978,14 @@ def get_presence_status(class_id):
         last_seen = data['last_seen']
         time_since = now - last_seen
         students.append({'student_id': student_id, 'name': data.get('name'), 'last_seen': last_seen.strftime('%H:%M:%S'), 'minutes_ago': int(time_since.total_seconds() / 60), 'is_present': time_since <= threshold})
-    return jsonify({'success': True, 'class_id': class_id, 'students': students, 'monitoring_active': class_id in _presence_check_threads})
+    return jsonify({
+        'success': True, 
+        'class_id': class_id, 
+        'students': students, 
+        'monitoring_active': class_id in _presence_check_threads,
+        'camera_active': camera_active,
+        'last_frame_seconds_ago': last_frame_ago
+    })
 
 
 @attendance_ai_bp.route('/presence/check-early/<int:class_id>', methods=['POST'])

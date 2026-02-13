@@ -255,9 +255,8 @@ def seed_classes(classes_per_sem: int=5):
 def seed_attendance():
     with get_session() as session:
         classes = session.query(Class).all()
-        # Create a copy of statuses to avoid modifying the original enum
+        # Get all valid attendance statuses (no longer includes "unmarked")
         statuses = list(AttendanceStatusEnum.enums)
-        statuses.remove("unmarked")
 
         # Track all attendance records to count them
         all_attendance_records = []

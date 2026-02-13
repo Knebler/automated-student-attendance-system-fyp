@@ -43,10 +43,10 @@ class StudentControl:
                 a = term_stats.get("absent", 0)
                 l = term_stats.get("late", 0)
                 e = term_stats.get("excused", 0)
-                unmarked = term_stats.get("unmarked", 0)
+                unmarked_count = term_stats.get(None, 0)  # None status means no record
                 
                 marked = p + a + l + e
-                total = marked + unmarked
+                total = marked + unmarked_count
                 
                 # Calculate percentages
                 present_percent = ((p + l + e) / marked * 100) if marked > 0 else 0
@@ -67,7 +67,7 @@ class StudentControl:
                         'absent': a,
                         'late': l,
                         'excused': e,
-                        'unmarked': unmarked,
+                        'unmarked_count': unmarked_count,
                         'total': total,
                         'marked': marked
                     }
@@ -151,10 +151,10 @@ class StudentControl:
                 a = term_stats.get("absent", 0)
                 l = term_stats.get("late", 0)
                 e = term_stats.get("excused", 0)
-                unmarked = term_stats.get("unmarked", 0)
+                unmarked_count = term_stats.get(None, 0)  # None status means no record
                 
                 marked = p + a + l + e
-                total = marked + unmarked
+                total = marked + unmarked_count
                 
                 # Calculate percentages
                 present_percent = ((p + l + e) / marked * 100) if marked > 0 else 0
@@ -727,7 +727,7 @@ class StudentControl:
                             'lecturer_email': lecturer.email,
                             'status': class_status,
                             'attendance_taken': attendance_taken is not None,
-                            'attendance_status': attendance_taken.status if attendance_taken else 'unmarked'
+                            'attendance_status': attendance_taken.status if attendance_taken else None
                         })
                 
                 # Get attendance statistics
@@ -736,10 +736,10 @@ class StudentControl:
                 a = term_stats.get("absent", 0)
                 l = term_stats.get("late", 0)
                 e = term_stats.get("excused", 0)
-                unmarked = term_stats.get("unmarked", 0)
+                unmarked_count = term_stats.get(None, 0)  # None status means no record
                 
                 marked = p + a + l + e
-                total = marked + unmarked
+                total = marked + unmarked_count
                 
                 present_percent = ((p + l + e) / marked * 100) if marked > 0 else 0
                 absent_percent = (a / marked * 100) if marked > 0 else 0
@@ -1206,10 +1206,10 @@ class StudentControl:
                 a = term_stats.get("absent", 0)
                 l = term_stats.get("late", 0)
                 e = term_stats.get("excused", 0)
-                unmarked = term_stats.get("unmarked", 0)
+                unmarked_count = term_stats.get(None, 0)  # None status means no record
                 
                 marked = p + a + l + e
-                total = marked + unmarked
+                total = marked + unmarked_count
                 
                 # Calculate percentages
                 present_percent = ((p + l + e) / marked * 100) if marked > 0 else 0
@@ -1230,7 +1230,7 @@ class StudentControl:
                         'late_count': l,
                         'excused_count': e,
                         'marked_count': marked,
-                        'unmarked_count': unmarked,
+                        'unmarked_count': unmarked_count,
                         'total_count': total,
                         'required_percent': required_percent,
                         'is_meeting_requirement': is_meeting_requirement,
@@ -1327,7 +1327,7 @@ class StudentControl:
                 can_check_in = False
                 if class_status in ['upcoming', 'in_progress']:
                     # Can check in if class hasn't ended and attendance not taken
-                    if not attendance_record or attendance_record.status == 'unmarked':
+                    if not attendance_record:
                         # Check if within check-in window (e.g., 15 minutes before start to end time)
                         if class_obj.start_time:
                             check_in_start = class_obj.start_time - timedelta(minutes=15)
@@ -1372,7 +1372,7 @@ class StudentControl:
                 # Format attendance info
                 attendance_info = {
                     'attendance_taken': attendance_record is not None,
-                    'attendance_status': attendance_record.status if attendance_record else 'unmarked',
+                    'attendance_status': attendance_record.status if attendance_record else None,
                     'attendance_id': attendance_record.attendance_id if attendance_record else None,
                     'recorded_at': attendance_record.recorded_at.strftime('%B %d, %Y %I:%M %p') if attendance_record and attendance_record.recorded_at else None,
                     'notes': attendance_record.notes if attendance_record else None,

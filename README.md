@@ -318,3 +318,7 @@ Run the unit tests with:
 ```bash
 pytest -q
 ```
+
+### Current Implementation
+
+* Visit this link: https://automated-student-attendance-system-fyp-1.onrender.com/

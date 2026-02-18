@@ -6,13 +6,9 @@ A full-stack web application built as a school project which aims to demonstrate
 
 - [Overview](#overview)
 - [Project Structure](#project-structure)
-  - [application/ (backend)](#application)
-  - [templates/ (UI)](#templates)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
-  - [Quickstart — Windows (PowerShell)](#quickstart---windows-powershell)
-  - [Quickstart — macOS / Linux](#quickstart---macos--linux)
 - [Attendance / Facial-recognition module](#attendance--facial-recognition-module)
 - [Running tests](#running-tests)
 
@@ -45,7 +41,7 @@ automated-student-attendance-system-fyp/
 ├── .env.example
 ├── .env
 ├── .gitignore
-├── .venv/                                   # local virtual environment (optional, not committed)
+├── .venv/                                   # local virtual environment (not committed)
 ├── .vscode/                                 # VS Code workspace settings
 ├── .pytest_cache/
 ├── backups/

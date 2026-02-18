@@ -2,6 +2,20 @@
 
 A full-stack web application built as a school project which aims to demonstrate the integration of generative AI within a modern, secure web environment. The project uses Python and Flask on the backend, MySQL for data storage, Bootstrap for a responsive user interface, and a local DB-backed authentication system.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Project Structure](#project-structure)
+  - [application/ (backend)](#application)
+  - [templates/ (UI)](#templates)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Getting Started](#getting-started)
+  - [Quickstart — Windows (PowerShell)](#quickstart---windows-powershell)
+  - [Quickstart — macOS / Linux](#quickstart---macos--linux)
+- [Attendance / Facial-recognition module](#attendance--facial-recognition-module)
+- [Running tests](#running-tests)
+
 ## Overview
 
 This application showcases generative artificial intelligence capabilities with a focus on Facial Recognition. Users should use this system for their educational institute entirely for attendance taking purposes. Our application allows for a seamless integration experience with any educational institute's operations as the application's primary interface is Web-based. All data is managed through a MySQL database, and user sessions are handled via Flask server-side sessions backed by the local users table.
@@ -9,154 +23,203 @@ This application showcases generative artificial intelligence capabilities with 
 ## Project Structure
 ```
 automated-student-attendance-system-fyp/
-├── README.md                           # Project documentation
-├── requirements.txt                    # Python dependencies
-├── config.py                           # Application configuration
-├── app.py                             # Main Flask application entry point
-├── .env.example                        # Environment variables template
-├── .env                                # Environment variables (create from .env.example)
-├── .db_initialized                     # Database initialization marker (auto-created)
-├── .gitignore                          # Git ignore file
-├── LICENSE                             # Project license
-│
-├── .github/                            # GitHub-specific files
-│   └── copilot-instructions.md         # AI agent guidance for the repo
-│
-├── database/                           # Database-related files
-│   └── schema.sql                      # Complete database schema
-│
-├── helper/                             # Helper scripts and utilities
-│   └── db/                             # Database helpers
+├── README.md
+├── requirements.txt
+├── config.py
+├── app.py
+├── attendance_ai_blueprint.py
+├── attendance_client.py
+├── bulk_facial_data_collector.py
+├── bulk_facial_data_gui.py
+├── bulk_facial_data_importer.py
+├── delete_bad_facial_data.py
+├── fix_facial_data.py
+├── increase_facial_data_column.py
+├── launch_bulk_facial_gui.bat
+├── run_faq_migration.bat
+├── ATTENDANCE_AUDIT_README.md
+├── BULK_FACIAL_DATA_README.md
+├── SENTIMENT_ANALYSIS_README.md
+├── combined-ca-certificates.pem
+├── LICENSE
+├── .env.example
+├── .env
+├── .gitignore
+├── .venv/                                   # local virtual environment (optional, not committed)
+├── .vscode/                                 # VS Code workspace settings
+├── .pytest_cache/
+├── backups/
+├── database/                                # DB schema & migration helpers
+│   ├── schema.sql
+│   ├── manage_db.py
+│   ├── migrations/
+│   └── models.py
+├── application/                             # Backend (BCE structure)
+│   ├── __init__.py
+│   ├── extensions.py
+│   ├── boundaries/                           # HTTP/API boundaries (Flask blueprints)
+│   │   ├── attendance_boundary.py
+│   │   ├── auth_boundary.py
+│   │   ├── dev_actions.py
+│   │   ├── dev_boundary.py
+│   │   ├── facial_recognition_boundary.py
+│   │   ├── institution_admin_boundary.py
+│   │   ├── lecturer_boundary.py
+│   │   ├── main_boundary.py
+│   │   └── platform_boundary.py
+│   ├── controls/                             # Business logic / controllers
+│   │   ├── announcement_control.py
+│   │   ├── attendance_control.py
+│   │   ├── auth_control.py
+│   │   ├── class_control.py
+│   │   ├── course_control.py
+│   │   ├── database_control.py
+│   │   ├── facial_recognition_control.py
+│   │   ├── import_data_control.py
+│   │   ├── institution_control.py
+│   │   ├── lecturer_control.py
+│   │   ├── platformissue_control.py
+│   │   ├── platform_control.py
+│   │   ├── student_control.py
+│   │   └── testimonial_control.py
+│   ├── entities/                             # Legacy / domain entities
+│   │   ├── base_entity.py
+│   │   ├── attendance_record.py
+│   │   ├── course.py
+│   │   ├── enrollment.py
+│   │   ├── institution.py
+│   │   ├── institution_admin.py
+│   │   ├── lecturer.py
+│   │   ├── platform_manager.py
+│   │   ├── report.py
+│   │   ├── session.py
+│   │   ├── student.py
+│   │   ├── subscription.py
+│   │   ├── subscription_plan.py
+│   │   ├── timetable_slot.py
+│   │   ├── unregistered_user.py
+│   │   └── venue.py
+│   └── entities2/                            # Current data models (entities2)
 │       ├── __init__.py
-│       ├── delete_database.py          # Database deletion utility
-│       ├── create_database.py          # Database creation utility
-│       ├── migrate_sqlalchemy.py       # SQLAlchemy migration helper
-│       └── populate_dummy_data.py      # Dummy data population
-│
-├── application/                        # BCE Architecture Structure
-│   ├── __init__.py                     # Application package initializer with blueprint registration
-│   ├── extensions.py                   # Flask extensions (if needed)
-│   │
-│   ├── entities/                       # Data Models (Entities)
-│   │   ├── __init__.py                 # Import all entities
-│   │   ├── base_entity.py              # Base entity class with common DB operations
-│   │   ├── attendance_record.py        # Attendance record entity
-│   │   ├── course.py                   # Course entity
-│   │   ├── enrollment.py               # Enrollment entity
-│   │   ├── institution.py              # Institution entity
-│   │   ├── lecturer.py                 # Lecturer entity
-│   │   ├── platform_manager.py         # Platform Manager entity
-│   │   ├── session.py                  # Session entity
-│   │   ├── student.py                  # Student entity
-│   │   ├── subscription.py             # Subscription entity
-│   │   ├── subscription_plan.py        # Subscription Plan entity
-│   │   ├── timetable_slot.py           # Timetable Slot entity
-│   │   ├── user.py                     # User entity
-│   │   └── venue.py                    # Venue entity
-│   │
-│   ├── boundaries/                     # Interfaces/APIs (Boundaries)
-│   │   ├── __init__.py                 # Import all boundaries
-│   │   ├── admin_boundary.py           # Platform admin routes
-│   │   ├── attendance_boundary.py      # Attendance-related routes
-│   │   ├── auth_boundary.py            # Authentication routes (login, register, logout)
-│   │   ├── dashboard_boundary.py       # Dashboard routes for all user types
-│   │   ├── dev_actions.py              # Developer action registration
-│   │   ├── dev_boundary.py             # Developer routes
-│   │   ├── institution_admin_boundary.py # Institution admin routes
-│   │   ├── institution_boundary.py     # Institution management (compatibility wrapper)
-│   │   ├── lecturer_boundary.py        # Lecturer-specific routes
-│   │   ├── main_boundary.py            # Main site routes (home, about, health)
-│   │   ├── platform_boundary.py        # Platform manager routes
-│   │   └── student_boundary.py         # Student-specific routes
-│   │
-│   └── controls/                       # Business Logic (Controls)
-│       ├── __init__.py                 # Import all controls
-│       ├── attendance_control.py       # Attendance business logic
-│       ├── auth_control.py             # Authentication business logic
-│       ├── database_control.py         # Database initialization and maintenance
-│       └── institution_control.py      # Institution management logic
-│
-├── src/                                # AI/ML Model code
-│   └── ai_model.py                     # AI model integration (currently placeholder)
-│
-├── static/                             # Static assets
-│   ├── css/                            # CSS files
-│   │   ├── bootstrap.css               # Bootstrap CSS
-│   │   ├── bootstrap.min.css           # Bootstrap CSS (minified)
-│   │   ├── bootstrap-grid.css          # Bootstrap grid CSS
-│   │   ├── bootstrap-grid.min.css      # Bootstrap grid CSS (minified)
-│   │   ├── bootstrap-reboot.css        # Bootstrap reboot CSS
-│   │   └── bootstrap-reboot.min.css    # Bootstrap reboot CSS (minified)
-│   │
-│   ├── js/                             # JavaScript files
-│   │   ├── bootstrap.js                # Bootstrap JS
-│   │   ├── bootstrap.min.js            # Bootstrap JS (minified)
-│   │   ├── bootstrap.bundle.js         # Bootstrap bundle JS
-│   │   └── bootstrap.bundle.min.js     # Bootstrap bundle JS (minified)
-│   │
-│   └── img/                            # Image assets
-│
-├── templates/                          # HTML Templates (Jinja2)
-│   ├── layouts/                        # Base layouts
-│   │   └── base.html                   # Base template with role-aware navigation
-│   │
-│   ├── auth/                           # Authentication templates
-│   │   ├── login.html                  # Login page
-│   │   └── register.html               # Registration page
-│   │
-│   ├── institution/                    # Institution management templates
-│   │   ├── admin/                      # Institution admin templates
-│   │   │   ├── institution_admin_dashboard.html
-│   │   │   ├── institution_admin_user_management.html
+│       ├── announcement.py
+│       ├── attendance_appeal.py
+│       ├── attendance_record.py
+│       ├── base_entity.py
+│       ├── classes.py
+│       ├── course.py
+│       ├── course_user.py
+│       ├── institution.py
+│       ├── notification.py
+│       ├── platformissue.py
+│       ├── semester.py
+│       ├── subscription.py
+│       ├── subscription_plans.py
+│       ├── testimonial.py
+│       ├── user.py
+│       └── venue.py
+├── AttendanceAI/                            # Facial-recognition module / helpers
+│   ├── app.py                               # optional Streamlit viewer
+│   ├── add_faces.py                         # webcam capture helper
+│   ├── test.py
+│   └── data/
+│       ├── haarcascade_frontalface_default.xml
+│       ├── faces_data.pkl
+│       └── names.pkl
+├── instance/
+├── src/                                     # ML / AI experiments
+│   └── ai_model.py
+├── static/                                  # frontend static assets (css/js/img)
+├── templates/                                # Jinja2 templates for UI
+│   ├── layouts/
+│   │   ├── base.html
+│   │   └── navbar.html
+│   ├── auth/
+│   │   ├── login.html
+│   │   ├── payment.html
+│   │   └── register.html
+│   ├── institution/
+│   │   ├── admin/
+│   │   │   ├── import_institution_data.html
+│   │   │   ├── import_institution_data_results.html
+│   │   │   ├── institution_admin_add_class.html
+│   │   │   ├── institution_admin_add_course.html
+│   │   │   ├── institution_admin_add_user.html
+│   │   │   ├── institution_admin_appeal_management.html
 │   │   │   ├── institution_admin_attendance_management.html
-│   │   │   ├── institution_admin_attendance_management_student_details.html
 │   │   │   ├── institution_admin_attendance_management_class_details.html
 │   │   │   ├── institution_admin_attendance_management_report.html
+│   │   │   ├── institution_admin_attendance_management_student_details.html
+│   │   │   ├── institution_admin_audit_attendance.html
 │   │   │   ├── institution_admin_class_management.html
-│   │   │   ├── institution_admin_institute_profile.html
-│   │   │   └── import_institution_data.html
-│   │   ├── lecturer/                   # Lecturer templates
-│   │   │   └── lecturer_dashboard.html
-│   │   └── student/                    # Student templates
-│   │
-│   ├── unregistered/                   # Unregistered user pages
+│   │   │   ├── institution_admin_class_management_module_classes_details.html
+│   │   │   ├── institution_admin_class_management_module_details.html
+│   │   │   ├── institution_admin_create_announcement.html
+│   │   │   ├── institution_admin_dashboard.html
+│   │   │   ├── institution_admin_edit_class.html
+│   │   │   ├── institution_admin_institution_profile.html
+│   │   │   ├── institution_admin_manage_announcements.html
+│   │   │   ├── institution_admin_profile_update.html
+│   │   │   ├── institution_admin_student_class_attendance_page.html
+│   │   │   ├── institution_admin_user_management.html
+│   │   │   ├── institution_admin_user_management_user_details.html
+│   │   │   ├── institution_admin_user_management_user_edit.html
+│   │   │   ├── institution_admin_view_announcement.html
+│   │   │   └── institution_admin_view_appeal.html
+│   │   ├── lecturer/
+│   │   │   ├── lecturer_attendance_management.html
+│   │   │   ├── lecturer_attendance_management_statistics.html
+│   │   │   ├── lecturer_class_management.html
+│   │   │   ├── lecturer_dashboard.html
+│   │   │   └── lecturer_timetable.html
+│   │   └── student/
+│   │       ├── student_announcements.html
+│   │       ├── student_appeal_management.html
+│   │       ├── student_appeal_management_appeal_form.html
+│   │       ├── student_appeal_management_module_details.html
+│   │       ├── student_attendance_management.html
+│   │       ├── student_attendance_management_history.html
+│   │       ├── student_class_checkin.html
+│   │       ├── student_class_checkin_face.html
+│   │       ├── student_class_details.html
+│   │       ├── student_dashboard.html
+│   │       ├── student_facial_recognition_retrain.html
+│   │       ├── student_inbox_management.html
+│   │       ├── student_profile_management.html
+│   │       ├── student_timetable.html
+│   │       └── student_update_facial_data.html
+│   ├── unregistered/
 │   │   ├── aboutus.html
 │   │   ├── faq.html
 │   │   ├── features.html
 │   │   ├── subscriptionsummary.html
-│   │   └── testimonials.html
-│   │
-│   ├── platmanager/                    # Platform manager templates
-│   │   └── platform_dashboard.html
-│   │
-│   ├── errors/                         # Error pages
-│   │   ├── 404.html                    # 404 Not Found
-│   │   └── 500.html                    # 500 Internal Server Error
-│   │
-│   ├── components/                     # Reusable components
-│   │
-│   ├── dev/                            # Developer-only pages
-│   │   └── test_endpoint.html          # Endpoint testing page
-│   │
-│   └── index.html                      # Home page with feature tabs
-│
-├── instance/                           # Instance folder (for sensitive config)
-│
-├── dummy_data/                         # Dummy data helpers
-│   ├── dummy_data_reference.csv        # Shorthand dummy data for reference
-│   └── load_dummy_data.py              # Standalone data loader script
-│
-├── AttendanceAI/                       # Facial Recognition AI module (separate)
-│   ├── app.py
-│   ├── add_faces.py
-│   ├── test.py
-│   ├── data/
-│   │   └── haarcascade_frontalface_default.xml
-│   └── Attendance/
-│
-├── .venv/                              # Python virtual environment (created locally)
-│
-└── .pytest_cache/                      # pytest cache directory
+│   │   ├── testimonialdetails.html
+│   │   ├── testimonials.html
+│   │   └── testimonial_submission.html
+│   ├── platmanager/
+│   │   ├── platform_manager_dashboard.html
+│   │   ├── platform_manager_feature_management.html
+│   │   ├── platform_manager_landing_page.html
+│   │   ├── platform_manager_performance_management.html
+│   │   ├── platform_manager_report_management.html
+│   │   ├── platform_manager_report_management_report_details.html
+│   │   ├── platform_manager_settings_management.html
+│   │   ├── platform_manager_subscription_management.html
+│   │   ├── platform_manager_subscription_management_pending_registrations.html
+│   │   ├── platform_manager_subscription_management_profile_creator.html
+│   │   ├── platform_manager_testimonial_approve.html
+│   │   └── platform_manager_user_management.html
+│   ├── errors/
+│   │   ├── 404.html
+│   │   └── 500.html
+│   ├── components/
+│   │   ├── my_reports.html
+│   │   ├── report_issue_button.html
+│   │   └── report_issue_details.html
+│   ├── dev/
+│   │   └── test_endpoint.html
+│   └── index.html
+├── test_sentiment_analysis.py
+└── __pycache__/
 ```
 
 ## Features
@@ -176,7 +239,7 @@ automated-student-attendance-system-fyp/
 
 ## Getting Started
 
-Follow these instructions to get the project running.
+Follow these instructions to get the project running locally. The examples include a Windows PowerShell quickstart (project is cross-platform).
 
 ### Prerequisites
 
@@ -184,49 +247,78 @@ Follow these instructions to get the project running.
 *   MySQL Server installed and running
 *   Git installed
 
-### Installation Steps
+---
 
-1.  **Clone the Repository**
-    ```bash
-    git clone github.com
-    cd automated-student-attendance-system-fyp
-    ```
+### Quickstart — Windows (PowerShell)
 
-2.  **Set up a Virtual Environment**
-    ```
-    python3 -m venv venv
-    # Activate the environment (Mac/Linux)
-    source venv/bin/activate
-    # Activate the environment (Windows)
-    .\venv\Scripts\activate
-    ```
+```powershell
+# clone
+git clone <repo-url>
+cd automated-student-attendance-system-fyp
 
-3.  **Install Python Dependencies**
-    ```
-    pip install -r requirements.txt
-    ```
+# create + activate venv
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 
-4.  **Set up Environment Variables**
-    cp .env.example .env
-    * Edit .env with your MySQL credentials
+# install deps
+pip install -r requirements.txt
 
-5.  **Run schema.sql to create the Database**
-    mysql -u root -p < schema.sql
+# copy env file and edit DB_* values
+Copy-Item .env.example .env
+# edit .env with your DB credentials (DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT)
 
-6.  **Running the Application**
-        Run app.py and go to http://localhost:5000 / http://127.0.0.1:5000 / http://192.168.18.64:5000
+# create schema (using MySQL client)
+mysql -u root -p < database\schema.sql
 
-### Dev helper endpoint
-For local development there is a small developer-only testing page that accepts a plain-text message (POST) and returns it as text/plain so you can quickly verify basic endpoint behavior or echo request bodies. Visit:
+# run the server
+python app.py
+# open http://localhost:5000
+```
 
-    - GET/POST /dev/test-endpoint
+### Quickstart — macOS / Linux
 
-This endpoint is intended for development only and should not be exposed in production.
+```bash
+git clone <repo-url>
+cd automated-student-attendance-system-fyp
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env    # edit .env
+mysql -u root -p < database/schema.sql
+python app.py
+```
 
-### Contribution Areas
- *  "application" folder is for anything backend related
- *  "src" folder is for anything AI/model related
- *  "templates" folder is for anything frontend related
- *  "static" folder is for anything frontend related in styles
+---
 
-This file will be updated when message standards are consolidated.
+### Environment variables
+
+Edit `.env` (copied from `.env.example`) and set your MySQL connection values (`DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_PORT`) and SSL options if needed.
+
+### Database & migrations
+
+* Primary schema: `database/schema.sql`
+* Helper scripts: `helper/db/create_database.py`, `helper/db/populate_dummy_data.py`, and `database/manage_db.py` for maintenance/migrations.
+
+### Running the web application
+
+* Start the server: `python app.py` (recommended for local dev).
+* The server exposes an Attendance AI API at `/api` and the web UI at `/`.
+* To start facial recognition from the client: `python attendance_client.py` or POST `/api/recognition/start`.
+
+### Attendance / Facial-recognition module
+
+Location: `AttendanceAI/` and `application` (server-side API)
+
+* Collect training images: `python AttendanceAI/add_faces.py` (local webcam) — images and names are stored under `AttendanceAI/data/`.
+* Desktop client: `attendance_client.py` — run locally and point to `http://localhost:5000` (client uploads recognition results to the server).
+* Streamlit attendance viewer (optional): `streamlit run AttendanceAI/app.py` (install `streamlit` separately if you want to run this UI).
+
+> Note: `AttendanceAI/add_faces.py` and `attendance_client.py` expect OpenCV (`opencv-python`) and scikit-learn which are listed in `requirements.txt`.
+
+### Running tests
+
+Run the unit tests with:
+
+```bash
+pytest -q
+```

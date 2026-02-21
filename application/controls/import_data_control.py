@@ -55,15 +55,11 @@ def process_excel_data(job_id: str, file_data: bytes):
         wb = load_workbook(BytesIO(file_data))
         import_tasks = ["import_students", "import_lecturers", "import_venues", "import_semesters", "import_courses", "assign_courses", "import_classes"]
 
-        # Update count first - special handling for students/lecturers which share same sheet
+        # Check if all required worksheets exist
         for task in import_tasks:
             ws_name = job_state[task]["ws_name"]
             if ws_name not in wb.sheetnames:
                 job_state[task]["errors"].append({"row": 0, "error": f"Worksheet {ws_name} not found."})
-                continue
-            # For students and lecturers, we'll count them during parsing
-            if task not in ["import_students", "import_lecturers"]:
-                job_state[task]["total"] = wb[job_state[task]["ws_name"]].max_row - 1
         if any(job_state[task]["errors"] for task in import_tasks):
             return
 
@@ -117,6 +113,9 @@ def parse_user_sheet(job_id: str, ws: Worksheet):
     for idx, row in enumerate(ws.iter_rows(), 1):
         if idx == 1:
             continue
+        # Skip empty rows
+        if all(cell.value is None for cell in row):
+            continue
         try:
             zipped_data = dict(zip(headers, [cell.value for cell in row]))
             role = zipped_data.get('role', '').lower()
@@ -152,15 +151,23 @@ def parse_venue_sheet(job_id: str, ws: Worksheet) -> List[Venue]:
     }
     headers = ['name', 'capacity']
     venues = []
+    venue_count = 0
     for idx, row in enumerate(ws.iter_rows(), 1):
         if idx == 1:
+            continue
+        # Skip empty rows
+        if all(cell.value is None for cell in row):
             continue
         try:
             zipped_data = dict(zip(headers, [cell.value for cell in row]))
             venues.append((idx, Venue(**base_info, **zipped_data)))
+            venue_count += 1
         except Exception as e:
             ALL_IMPORT_JOBS[job_id][task_name]["failed"] += 1
             ALL_IMPORT_JOBS[job_id][task_name]["errors"].append({"row": idx, "error": str(e)})
+    
+    # Update total
+    ALL_IMPORT_JOBS[job_id][task_name]["total"] = venue_count
     return venues
 
 def parse_semester_sheet(job_id: str, ws: Worksheet) -> List:
@@ -172,8 +179,12 @@ def parse_semester_sheet(job_id: str, ws: Worksheet) -> List:
     }
     headers = ["name", "start_date", "end_date"]
     semesters = []
+    semester_count = 0
     for idx, row in enumerate(ws.iter_rows(), 1):
         if idx == 1:
+            continue
+        # Skip empty rows
+        if all(cell.value is None for cell in row):
             continue
         try:
             zipped_data = dict(zip(headers, [cell.value for cell in row]))
@@ -186,9 +197,13 @@ def parse_semester_sheet(job_id: str, ws: Worksheet) -> List:
                 zipped_data["end_date"] = datetime.fromisoformat(zipped_data["end_date"])
             
             semesters.append((idx, Semester(**zipped_data)))
+            semester_count += 1
         except Exception as e:
             ALL_IMPORT_JOBS[job_id][task_name]["failed"] += 1
             ALL_IMPORT_JOBS[job_id][task_name]["errors"].append({"row": idx, "error": str(e)})
+    
+    # Update total
+    ALL_IMPORT_JOBS[job_id][task_name]["total"] = semester_count
     return semesters
 
 def parse_course_sheet(job_id: str, ws: Worksheet) -> List[Course]:
@@ -198,15 +213,23 @@ def parse_course_sheet(job_id: str, ws: Worksheet) -> List[Course]:
     }
     headers = ["code", "name", "description", "credits"]
     courses = []
+    course_count = 0
     for idx, row in enumerate(ws.iter_rows(), 1):
         if idx == 1:
+            continue
+        # Skip empty rows
+        if all(cell.value is None for cell in row):
             continue
         try:
             zipped_data = dict(zip(headers, [cell.value for cell in row]))
             courses.append((idx, Course(**base_info, **zipped_data)))
+            course_count += 1
         except Exception as e:
             ALL_IMPORT_JOBS[job_id][task_name]["failed"] += 1
             ALL_IMPORT_JOBS[job_id][task_name]["errors"].append({"row": idx, "error": str(e)})
+    
+    # Update total
+    ALL_IMPORT_JOBS[job_id][task_name]["total"] = course_count
     return courses
 
 def parse_assignment_sheet(job_id: str, ws: Worksheet) -> List[CourseUser]:
@@ -226,8 +249,12 @@ def parse_assignment_sheet(job_id: str, ws: Worksheet) -> List[CourseUser]:
         users = user_model.get_all(institution_id=inst_id)
         user_email_to_id = {user.email: user.user_id for user in users}
 
+    assignment_count = 0
     for idx, row in enumerate(ws.iter_rows(), 1):
         if idx == 1:
+            continue
+        # Skip empty rows
+        if all(cell.value is None for cell in row):
             continue
         try:
             zipped_data = dict(zip(headers, [cell.value for cell in row]))
@@ -241,9 +268,13 @@ def parse_assignment_sheet(job_id: str, ws: Worksheet) -> List[CourseUser]:
             if zipped_data["user_id"] is None:
                 raise ValueError("Invalid user email")
             assignments.append((idx, CourseUser(**zipped_data)))
+            assignment_count += 1
         except Exception as e:
             ALL_IMPORT_JOBS[job_id][task_name]["failed"] += 1
             ALL_IMPORT_JOBS[job_id][task_name]["errors"].append({"row": idx, "error": str(e)})
+    
+    # Update total
+    ALL_IMPORT_JOBS[job_id][task_name]["total"] = assignment_count
     return assignments
 
 def parse_class_sheet(job_id: str, ws: Worksheet) -> List[Class]:
@@ -267,8 +298,12 @@ def parse_class_sheet(job_id: str, ws: Worksheet) -> List[Class]:
         lecturers = user_model.get_all(institution_id=inst_id, role="lecturer")
         lecturer_email_to_id = {lecturer.email: lecturer.user_id for lecturer in lecturers}
 
+    class_count = 0
     for idx, row in enumerate(ws.iter_rows(), 1):
         if idx == 1:
+            continue
+        # Skip empty rows
+        if all(cell.value is None for cell in row):
             continue
         try:
             zipped_data = dict(zip(headers, [cell.value for cell in row]))
@@ -285,9 +320,13 @@ def parse_class_sheet(job_id: str, ws: Worksheet) -> List[Class]:
             if zipped_data["lecturer_id"] is None:
                 raise ValueError("Invalid lecturer email")
             classes.append((idx, Class(**zipped_data)))
+            class_count += 1
         except Exception as e:
             ALL_IMPORT_JOBS[job_id][task_name]["failed"] += 1
             ALL_IMPORT_JOBS[job_id][task_name]["errors"].append({"row": idx, "error": str(e)})
+    
+    # Update total
+    ALL_IMPORT_JOBS[job_id][task_name]["total"] = class_count
     return classes
 
 if __name__ == "__main__":

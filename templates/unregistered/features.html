@@ -336,7 +336,7 @@
         flex-wrap: wrap;
     }
 
-    .modal-try, .modal-close-btn {
+    .modal-close-btn {
         padding: 0.75rem 1.5rem;
         cursor: pointer;
     }
@@ -487,7 +487,6 @@
         <h2 class="modal-title"></h2>
         <div class="modal-body"></div>
         <div class="modal-actions">
-            <button type="button" class="btn-primary modal-try">Try This Feature</button>
             <button type="button" class="btn-outline modal-close-btn">Close</button>
         </div>
     </div>
@@ -614,7 +613,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalIcon = modal.querySelector('.modal-icon');
     const modalTitle = modal.querySelector('.modal-title');
     const modalBody = modal.querySelector('.modal-body');
-    const modalTryBtn = modal.querySelector('.modal-try');
     const closeButtons = modal.querySelectorAll('.modal-close, .modal-close-btn');
     
     // Feature data from backend
@@ -646,11 +644,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p><strong>${feature.description}</strong></p>
                     ${feature.details}
                 `;
-                modalTryBtn.onclick = () => {
-                    if (feature.tryUrl) {
-                        window.location.href = feature.tryUrl;
-                    }
-                };
                 
                 modal.style.display = 'flex';
                 document.body.style.overflow = 'hidden';
